@@ -1,4 +1,5 @@
 """Generating MARC XML files by retrieving from a server."""
+
 import abc
 import functools
 import os
@@ -24,6 +25,8 @@ import speedwagon
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import reports, validators, workflow
 from speedwagon.job import Workflow
+
+from speedwagon.config import SettingsData
 
 __all__ = ['GenerateMarcXMLFilesWorkflow']
 
@@ -68,7 +71,7 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
 
     def __init__(
             self,
-            global_settings: Optional[Dict[str, str]] = None
+            global_settings: Optional[SettingsData] = None
     ) -> None:
         """Generate Marc XML files.
 

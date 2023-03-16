@@ -3,6 +3,7 @@ import abc
 import json
 import os.path
 import typing
+from collections import defaultdict
 from typing import \
     Union, \
     Optional, \
@@ -11,14 +12,14 @@ from typing import \
     TypedDict, \
     List
 
-try:
+try:  # pragma: no cover
     from typing import TypeAlias
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import TypeAlias
 
-try:
+try:  # pragma: no cover
     from typing import NotRequired
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import NotRequired
 
 
@@ -71,7 +72,7 @@ class EditDelegateWidget(QtWidgets.QWidget):
         inner_layout = QtWidgets.QHBoxLayout()
         inner_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(inner_layout)
-        self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
 
     @property
     def data(self) -> UseDataType:
@@ -613,3 +614,44 @@ def get_workspace(
     )
     widget.settings_form.setMinimumHeight(100)
     return widget
+
+
+class PluginConfig(QtWidgets.QWidget):
+    changes_made = QtCore.Signal()
+    plugin_list_view: QtWidgets.QListView
+
+    def __init__(
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ) -> None:
+        super().__init__(parent)
+        with as_file(
+                resources.files(ui).joinpath("plugin_settings.ui")
+        ) as ui_file:
+            ui_loader.load_ui(str(ui_file), self)
+
+        self.model = models.PluginActivationModel()
+        self.model.dataChanged.connect(self.changes_made)
+        self.plugin_list_view.setModel(self.model)
+
+    @property
+    def modified(self):
+        return self.model.data_modified
+
+    def enabled_plugins(self):
+
+        active_plugins = defaultdict(list)
+        for i in range(self.model.rowCount()):
+            checked = self.model.data(
+                self.model.index(i), QtCore.Qt.ItemDataRole.CheckStateRole
+            )
+            if checked == QtCore.Qt.CheckState.Checked:
+                source = \
+                    self.model.data(self.model.index(i), self.model.ModuleRole)
+
+                active_plugins[source].append(
+                    self.model.data(
+                        self.model.index(i), QtCore.Qt.ItemDataRole.DisplayRole
+                    )
+                )
+        return dict(active_plugins)

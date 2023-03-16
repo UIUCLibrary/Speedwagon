@@ -427,7 +427,7 @@ class TestTabsYaml:
             tabs.write_tabs_yaml("tabs.yml", sample_tab_data)
             assert m.called is True
         handle = m()
-        handle.write.assert_has_calls([call('dummy_tab')])
+        handle.write.assert_has_calls([call('dummy_tab: []\n')])
 
 
 def test_get_workflow_errors_returns_none_if_found_nothing():

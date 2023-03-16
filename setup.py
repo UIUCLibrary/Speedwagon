@@ -14,7 +14,7 @@ if __name__ == "__main__":
             "uiucprescon.images",
             "pykdu-compress>=0.1.8",
             'importlib_resources;python_version<"3.9"',
-            'importlib-metadata;python_version<"3.8"',
+            'importlib-metadata;python_version<"3.10"',
             'typing-extensions;python_version<"3.11"',
             'lxml',
             "requests",

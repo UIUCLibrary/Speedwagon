@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import abc
+import io
 import logging
 import os
 import sys
@@ -568,6 +569,7 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
                             )
                         )
                     model.add_workflow(empty_workflow)
+                    model.reset_modified()
                 new_tab = TabData(tab_name, model)
                 yield new_tab
 
@@ -593,8 +595,7 @@ def read_tabs_yaml(yaml_file: str) -> Iterator[TabData]:
             raise
 
 
-def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
-    """Write out tab custom information to a yaml file."""
+def serialize_tabs_yaml(tabs: List[TabData]) -> str:
     tabs_data = {}
     for tab in tabs:
         tab_model = tab.workflows_model
@@ -602,8 +603,17 @@ def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
         tabs_data[tab.tab_name] = \
             [workflow.name for workflow in tab_model.workflows]
 
-    with open(yaml_file, "w", encoding="utf-8") as file_handle:
+    with io.StringIO() as file_handle:
         yaml.dump(tabs_data, file_handle, default_flow_style=False)
+        value = file_handle.getvalue()
+    return value
+
+
+def write_tabs_yaml(yaml_file: str, tabs: List[TabData]) -> None:
+    """Write out tab custom information to a yaml file."""
+    with open(yaml_file, "w", encoding="utf-8") as file_handle:
+        data = serialize_tabs_yaml(tabs)
+        file_handle.write(data)
 
 
 def extract_tab_information(

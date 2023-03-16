@@ -26,7 +26,9 @@ from setuptools.config import read_configuration
 
 
 def get_project_metadata():
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../setup.cfg"))
+    path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../setup.cfg")
+    )
     return read_configuration(path)["metadata"]
 
 

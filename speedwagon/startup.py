@@ -30,7 +30,7 @@ from speedwagon import job
 
 try:
     from typing import Final
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import Final  # type: ignore
 
 if TYPE_CHECKING:
@@ -165,8 +165,10 @@ class ApplicationLauncher:
     Examples:
     .. testsetup::
 
-        from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl import CaptureOneToDlCompoundAndDLWorkflow  # noqa: E501 pylint: disable=line-too-long
-        from speedwagon.frontend.qtwidgets.gui_startup import SingleWorkflowLauncher  # noqa: E501 pylint: disable=line-too-long
+        from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl \
+            import CaptureOneToDlCompoundAndDLWorkflow
+        from speedwagon.frontend.qtwidgets.gui_startup \
+            import SingleWorkflowLauncher
 
 
     .. testcode::
@@ -306,6 +308,7 @@ class SingleWorkflowJSON(AbsStarter):
         super().__init__()
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
         self.global_settings = None
+        self.workflow = None
 
     def run(self) -> int:
         speedwagon.simple_api_run_workflow(

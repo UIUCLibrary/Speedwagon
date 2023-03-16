@@ -193,7 +193,7 @@ class LocateImagesTask(speedwagon.tasks.Subtask):
         for root, _, files in os.walk(self._root):
             for file_name in files:
                 _, ext = os.path.splitext(file_name)
-                if not ext.lower() in self._profile.valid_extensions:
+                if ext.lower() not in self._profile.valid_extensions:
                     continue
                 image_file = os.path.join(root, file_name)
                 self.log(f"Found {image_file}")

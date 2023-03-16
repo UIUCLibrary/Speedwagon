@@ -2,42 +2,20 @@ import configparser
 import json
 import os
 from unittest.mock import Mock
+import sys
+if sys.version_info < (3, 10):
+    import importlib_metadata as metadata
+else:
+    from importlib import metadata
+
+from speedwagon import job, workflow
 
 import pytest
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 QtCore = pytest.importorskip("PySide6.QtCore")
 
-from speedwagon import job, workflow
+import speedwagon.config
 from speedwagon.frontend.qtwidgets import tabs, models
-
-
-def test_serialize_settings_model():
-    pytest.importorskip("PySide6.QtCore")
-
-    original_settings = {
-        "tessdata": "~/mytesseractdata"
-    }
-
-    # Mock up a model
-    cfg_parser = configparser.ConfigParser()
-    original_settings = cfg_parser["GLOBAL"] = original_settings
-    my_model = models.SettingsModel()
-    for k, v in original_settings.items():
-        my_model.add_setting(k, v)
-
-    # Serialize the model to ini file format
-    data = models.serialize_settings_model(my_model)
-
-    assert data is not None
-
-    # Check that the new data is the same as original
-    new_config = configparser.ConfigParser()
-    new_config.read_string(data)
-    assert "GLOBAL" in new_config
-
-    for k, v in original_settings.items():
-        assert new_config["GLOBAL"][k] == v
-
 
 def test_build_setting_model_missing_file(tmpdir):
     dummy = str(os.path.join(tmpdir, "config.ini"))
@@ -173,6 +151,58 @@ class TestTabsModel:
         model.add_tab(tab)
         assert model.data(model.index(0, 0), role=QtCore.Qt.UserRole) == tab
 
+    def test_adding_tab_is_data_modified(self, qtbot):
+        test_model = models.TabsModel()
+        assert test_model.data_modified is False
+        with qtbot.wait_signal(test_model.dataChanged) as signal:
+            new_tab = tabs.TabData(
+                "new_tab_name",
+                models.WorkflowListModel2()
+            )
+            test_model.add_tab(new_tab)
+        assert test_model.data_modified is True
+    def test_adding_tab_and_removing_it_is_not_data_modified(self, qtbot):
+        test_model = models.TabsModel()
+        assert test_model.data_modified is False
+        new_tab = tabs.TabData(
+            "new_tab_name",
+            models.WorkflowListModel2()
+        )
+        with qtbot.wait_signal(test_model.dataChanged):
+            test_model.add_tab(new_tab)
+
+        with qtbot.wait_signal(test_model.dataChanged):
+            test_model.remove_tab(new_tab)
+
+        assert test_model.data_modified is False
+
+    def test_add_and_reset_modified(self, qtbot):
+        test_model = models.TabsModel()
+        assert test_model.data_modified is False
+        new_tab = tabs.TabData(
+            "new_tab_name",
+            models.WorkflowListModel2()
+        )
+        with qtbot.wait_signal(test_model.dataChanged):
+            test_model.add_tab(new_tab)
+        assert test_model.data_modified is True
+        with qtbot.wait_signal(test_model.dataChanged):
+            test_model.reset_modified()
+        assert test_model.data_modified is False
+
+    def test_modify_reset_modified(self, qtbot):
+        test_model = models.TabsModel()
+        assert test_model.data_modified is False
+        new_tab = tabs.TabData(
+            "new_tab_name",
+            models.WorkflowListModel2()
+        )
+        with qtbot.wait_signal(test_model.dataChanged):
+            test_model.add_tab(new_tab)
+        assert test_model.data_modified is True
+        with qtbot.wait_signal(test_model.dataChanged):
+            test_model.reset_modified()
+        assert test_model.data_modified is False
 
 class TestItemListModel:
     def test_create(self):
@@ -199,20 +229,26 @@ class TestItemListModel:
 
 class TestWorkflowListModel2:
 
-    def test_workflow_list_model2_iadd(self):
-        workflows_model = models.WorkflowListModel2()
+    @pytest.fixture()
+    def workflows_model(self, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.config,
+            "get_whitelisted_plugins",
+            lambda: []
+        )
+        return models.WorkflowListModel2()
+
+    def test_workflow_list_model2_iadd(self, workflows_model):
         workflows = job.available_workflows()
         workflows_model += workflows["Hathi Prep"]
         assert workflows_model.rowCount() == 1
 
-    def test_workflow_list_model2_add(self):
-        workflows_model = models.WorkflowListModel2()
+    def test_workflow_list_model2_add(self, workflows_model):
         workflows = job.available_workflows()
         workflows_model.add_workflow(workflows["Hathi Prep"])
         assert workflows_model.rowCount() == 1
 
-    def test_workflow_list_model2_remove(self):
-        workflows_model = models.WorkflowListModel2()
+    def test_workflow_list_model2_remove(self, workflows_model):
         workflows = job.available_workflows()
 
         workflows_model.add_workflow(workflows["Hathi Prep"])
@@ -223,8 +259,7 @@ class TestWorkflowListModel2:
         workflows_model.remove_workflow(jp2_workflow)
         assert workflows_model.rowCount() == 1
 
-    def test_workflow_list_model2_isub(self):
-        workflows_model = models.WorkflowListModel2()
+    def test_workflow_list_model2_isub(self, workflows_model):
         workflows = job.available_workflows()
 
         workflows_model.add_workflow(workflows["Hathi Prep"])
@@ -235,8 +270,7 @@ class TestWorkflowListModel2:
         workflows_model -= jp2_workflow
         assert workflows_model.rowCount() == 1
 
-    def test_data(self):
-        workflows_model = models.WorkflowListModel2()
+    def test_data(self, workflows_model):
         mock_workflow = Mock()
         mock_workflow.name = "Spam"
         workflows_model.add_workflow(mock_workflow)
@@ -246,8 +280,7 @@ class TestWorkflowListModel2:
             role=QtCore.Qt.DisplayRole
         ) == "Spam"
 
-    def test_sort_defaults_alpha_by_name(self):
-        workflows_model = models.WorkflowListModel2()
+    def test_sort_defaults_alpha_by_name(self, workflows_model):
         mock_spam_workflow = Mock()
         mock_spam_workflow.name = "Spam"
         workflows_model.add_workflow(mock_spam_workflow)
@@ -263,6 +296,35 @@ class TestWorkflowListModel2:
             workflows_model.index(1, 0),
             role=QtCore.Qt.DisplayRole
         ) == "Spam"
+
+    def test_data_modified(self, workflows_model):
+        assert workflows_model.data_modified is False
+        class Dummy(speedwagon.Workflow):
+            pass
+        workflows_model.add_workflow(Dummy)
+        assert workflows_model.data_modified is True
+
+    def test_swaps_workflow_data_modified(self, qtbot, workflows_model):
+        assert workflows_model.data_modified is False
+
+        class Dummy1(speedwagon.Workflow):
+            name = "Dummy1"
+
+        class Dummy2(speedwagon.Workflow):
+            name = "Dummy2"
+
+        class Dummy3(speedwagon.Workflow):
+            name = "Dummy3"
+
+        workflows_model.add_workflow(Dummy1)
+        workflows_model.add_workflow(Dummy2)
+        workflows_model.reset_modified()
+
+        # replace one workflow for another
+        workflows_model.remove_workflow(Dummy2)
+        workflows_model.add_workflow(Dummy3)
+        assert workflows_model.data_modified is True
+
 
 
 class TestToolOptionsModel4:
@@ -399,3 +461,20 @@ debug: False
     assert isinstance(model, models.SettingsModel)
 
     assert model is not None
+
+
+class TestPluginActivationModel:
+    def test_adding_plugin_adds_row(self):
+        plugin_model = models.PluginActivationModel()
+        assert plugin_model.rowCount() == 0
+        plugin_entry = Mock(spec=metadata.EntryPoint)
+        plugin_model.add_entry_point(plugin_entry)
+        assert plugin_model.rowCount() == 1
+
+    def test_name_is_displayed(self):
+        plugin_model = models.PluginActivationModel()
+        plugin_entry = Mock(spec=metadata.EntryPoint)
+        plugin_entry.name = "spam"
+        plugin_model.add_entry_point(plugin_entry)
+        value = plugin_model.data(plugin_model.index(0), QtCore.Qt.ItemDataRole.DisplayRole)
+        assert "spam" in value

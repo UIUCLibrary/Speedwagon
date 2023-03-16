@@ -7,6 +7,11 @@ import pytest
 
 QtCore = pytest.importorskip("PySide6.QtCore")
 from PySide6 import QtWidgets, QtGui
+import sys
+if sys.version_info < (3, 10):
+    import importlib_metadata as metadata
+else:
+    from importlib import metadata
 
 import speedwagon.workflow
 import speedwagon.frontend.qtwidgets.widgets
@@ -431,3 +436,74 @@ class TestDynamicForm:
 
         form.paintEvent(event)
         assert drawPrimitive.called is True
+
+
+class TestPluginConfig:
+    def test_no_plugins_by_default(self, qtbot):
+        plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
+        qtbot.addWidget(plugin_widget)
+        assert plugin_widget.enabled_plugins() == {}
+
+    def test_checkbox_selection(self, qtbot):
+        plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
+        entry_point = Mock(metadata.EntryPoint)
+        entry_point.name = "Spam"
+        entry_point.module = "SpamPlugins"
+
+        plugin_widget.model.add_entry_point(entry_point)
+        qtbot.addWidget(plugin_widget)
+
+        plugin_widget.model.setData(
+            plugin_widget.model.index(0, 0),
+            QtCore.Qt.CheckState.Checked.value,
+            QtCore.Qt.ItemDataRole.CheckStateRole
+        )
+
+        assert plugin_widget.enabled_plugins() == {"SpamPlugins": ["Spam"]}
+
+    @pytest.fixture()
+    def plugin_with_spam(self, qtbot):
+        plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
+        entry_point = Mock(metadata.EntryPoint)
+        entry_point.name = "Spam"
+
+        plugin_widget.model.add_entry_point(entry_point)
+        qtbot.addWidget(plugin_widget)
+        return plugin_widget
+
+    def test_changes_made_signal(self, qtbot, plugin_with_spam):
+
+        with qtbot.wait_signal(plugin_with_spam.changes_made):
+            plugin_with_spam.model.setData(
+                plugin_with_spam.model.index(0, 0),
+                QtCore.Qt.CheckState.Checked.value,
+                QtCore.Qt.ItemDataRole.CheckStateRole
+            )
+        assert plugin_with_spam.modified is True
+
+    def test_changes_made_signal_reverting_makes_arg_false(self, qtbot, plugin_with_spam):
+
+        with qtbot.wait_signal(plugin_with_spam.changes_made):
+            plugin_with_spam.model.setData(
+                plugin_with_spam.model.index(0, 0),
+                QtCore.Qt.CheckState.Checked.value,
+                QtCore.Qt.ItemDataRole.CheckStateRole
+            )
+        with qtbot.wait_signal(plugin_with_spam.changes_made) as signal:
+            plugin_with_spam.model.setData(
+                plugin_with_spam.model.index(0, 0),
+                QtCore.Qt.CheckState.Unchecked.value,
+                QtCore.Qt.ItemDataRole.CheckStateRole
+            )
+        assert plugin_with_spam.modified is False
+
+# def test_write_to_config_file_writes_file(self, qtbot, mocker):
+    #     plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
+    #     entry_point = Mock(metadata.EntryPoint)
+    #     entry_point.name = "Spam"
+    #
+    #     plugin_widget.model.add_entry_point(entry_point, enabled=True)
+    #     qtbot.addWidget(plugin_widget)
+    #     mocker.patch("builtins.open")
+    #     plugin_widget.write_to_config_file("somefile")
+    #     builtins.open.assert_called_once_with("somefile", "w")

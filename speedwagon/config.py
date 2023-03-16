@@ -32,6 +32,10 @@ __all__ = [
     "AbsConfig"
 ]
 
+SettingsDataType = typing.Union[str, bool, int]
+SettingsData = Dict[str, SettingsDataType]
+PluginDataType = Dict[str, Dict[str, bool]]
+
 
 class AbsConfig(collections.abc.Mapping):
     """Abstract class for defining where speedwagon should find data files."""
@@ -39,7 +43,7 @@ class AbsConfig(collections.abc.Mapping):
     def __init__(self) -> None:
         """Populate the base structure of a config class."""
         super().__init__()
-        self._data: Dict[str,  Union[str, bool]] = {}
+        self._data: SettingsData = {}
 
     @abc.abstractmethod
     def get_user_data_directory(self) -> str:
@@ -67,7 +71,7 @@ class AbsConfig(collections.abc.Mapping):
 
         return x in self._data
 
-    def __getitem__(self, k: str) -> Union[str, bool]:
+    def __getitem__(self, k: str) -> Union[str, bool, int]:
         """Get configuration value from a key."""
         if k == "user_data_directory":
             return self.get_user_data_directory()
@@ -137,15 +141,16 @@ class ConfigManager(contextlib.AbstractContextManager):
                  exctype: Optional[Type[BaseException]],
                  excinst: Optional[BaseException],
                  exctb: Optional[TracebackType]) -> Optional[bool]:
+        """Clean up."""
         return None
 
     @property
-    def global_settings(self) -> Dict[str, Union[str, bool]]:
+    def global_settings(self) -> SettingsData:
         """Global settings."""
         if self.cfg_parser is None:
             return {}
 
-        global_settings: Dict[str, Union[str, bool]] = {}
+        global_settings: SettingsData = {}
         try:
             global_section = self.cfg_parser["GLOBAL"]
             for setting in ConfigManager.BOOLEAN_SETTINGS:
@@ -160,6 +165,23 @@ class ConfigManager(contextlib.AbstractContextManager):
         except KeyError:
             print("Unable to load global settings.", file=sys.stderr)
         return global_settings
+
+    @property
+    def plugins(self) -> Dict[str, Dict[str, bool]]:
+        """Get plugin information from the config file."""
+        if self.cfg_parser is None:
+            return {}
+        plugins = {}
+
+        plugin_prefix = 'PLUGINS.'
+        for section in self.cfg_parser.sections():
+            if not section.startswith(plugin_prefix):
+                continue
+            plugins[section.replace(plugin_prefix, '')] = {
+                entry: self.cfg_parser[section].getboolean(entry)
+                for entry in self.cfg_parser[section].keys()
+            }
+        return plugins
 
 
 def generate_default(config_file: str) -> None:
@@ -269,13 +291,13 @@ class AbsSetting(metaclass=abc.ABCMeta):
     @staticmethod
     @property
     @abc.abstractmethod
-    def friendly_name():
-        return NotImplementedError
+    def friendly_name() -> str:
+        raise NotImplementedError()
 
     def update(
             self,
-            settings: Optional[Dict[str, Union[str, bool]]] = None
-    ) -> Dict["str", Union[str, bool]]:
+            settings: Optional[SettingsData] = None
+    ) -> SettingsData:
         if settings is None:
             return {}
         return settings
@@ -286,8 +308,8 @@ class DefaultsSetter(AbsSetting):
 
     def update(
             self,
-            settings: Optional[Dict[str, Union[str, bool]]] = None
-    ) -> Dict["str", Union[str, bool]]:
+            settings: Optional[SettingsData] = None
+    ) -> SettingsData:
         new_settings = super().update(settings)
         new_settings["debug"] = False
         return new_settings
@@ -302,8 +324,8 @@ class ConfigFileSetter(AbsSetting):
 
     def update(
             self,
-            settings: Optional[Dict[str, Union[str, bool]]] = None
-    ) -> Dict["str", Union[str, bool]]:
+            settings: Optional[SettingsData] = None
+    ) -> SettingsData:
         """Update setting configuration."""
         new_settings = super().update(settings)
         with speedwagon.config.ConfigManager(self.config_file) as cfg:
@@ -321,8 +343,8 @@ class CliArgsSetter(AbsSetting):
 
     def update(
             self,
-            settings: Optional[Dict[str, Union[str, bool]]] = None
-    ) -> Dict["str", Union[str, bool]]:
+            settings: Optional[SettingsData] = None
+    ) -> SettingsData:
         new_settings = super().update(settings)
 
         args = self._parse_args(self.args)
@@ -384,9 +406,18 @@ class CliArgsSetter(AbsSetting):
 class ConfigLoader:
 
     @staticmethod
-    def read_settings_file(settings_file: str) -> Dict[str, Union[str, bool]]:
+    def read_settings_file_globals(
+            settings_file: str
+    ) -> SettingsData:
         with speedwagon.config.ConfigManager(settings_file) as config:
             return config.global_settings
+
+    @staticmethod
+    def read_settings_file_plugins(
+            settings_file: str
+    ) -> PluginDataType:
+        with speedwagon.config.ConfigManager(settings_file) as config:
+            return config.plugins
 
     def __init__(self, config_file: str) -> None:
         super().__init__()
@@ -394,15 +425,15 @@ class ConfigLoader:
         self.resolution_strategy_order: Optional[List[AbsSetting]] = None
         self.platform_settings = get_platform_settings()
         self.logger = logging.getLogger(__package__)
-        self.startup_settings: Dict[str, Union[str, bool]] = {}
+        self.startup_settings: SettingsData = {}
 
     @staticmethod
     def _resolve(
             resolution_strategy_order: Iterable[AbsSetting],
             config_file: str,
-            starting_settings: Dict[str, Union[str, bool]],
+            starting_settings: SettingsData,
             logger: logging.Logger
-    ) -> Dict[str, Union[str, bool]]:
+    ) -> SettingsData:
 
         settings = starting_settings.copy()
         for settings_strategy in resolution_strategy_order:
@@ -424,8 +455,7 @@ class ConfigLoader:
                     logger.warning("%s is an invalid setting", error)
         return settings
 
-    def get_settings(self) -> Dict[str, Union[str, bool]]:
-        self.read_settings_file(self.config_file)
+    def get_settings(self) -> SettingsData:
         if self.resolution_strategy_order is None:
             resolution_order = [
                 speedwagon.config.DefaultsSetter(),
@@ -569,7 +599,7 @@ class WindowsOpenSettings(AbsOpenSettings):
 
     def system_open_directory(self, settings_directory: str) -> None:
         # pylint: disable=no-member
-        os.startfile(settings_directory)  # type: ignore
+        os.startfile(settings_directory)  # type: ignore[attr-defined]
 
 
 class OpenSettingsDirectory:
@@ -582,3 +612,18 @@ class OpenSettingsDirectory:
 
     def open(self) -> None:
         self.strategy.open()
+
+
+def get_whitelisted_plugins() -> Set[typing.Tuple[str, str]]:
+    platform_settings = get_platform_settings()
+    settings_path = platform_settings.get_app_data_directory()
+    settings_ini = os.path.join(
+        settings_path, speedwagon.startup.CONFIG_INI_FILE_NAME
+    )
+    plugin_settings = ConfigLoader.read_settings_file_plugins(
+        settings_ini)
+    white_listed_plugins = set()
+    for module, entry_points in plugin_settings.items():
+        for entry_point in entry_points:
+            white_listed_plugins.add((module, entry_point))
+    return white_listed_plugins

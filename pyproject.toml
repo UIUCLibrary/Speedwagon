@@ -22,3 +22,10 @@ python_version = "3.11"
 follow_imports_for_stubs=true
 # incremental is problematic because of dependency ruamel.yaml
 incremental=false
+
+[tool.ruff]
+exclude = [
+    "windows_build",
+    "tests",
+]
+line-length = 79
