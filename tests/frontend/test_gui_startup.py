@@ -11,7 +11,7 @@ gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 from PySide6 import QtWidgets
 from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
-
+from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
@@ -414,6 +414,11 @@ class TestSingleWorkflowJSON:
         assert "no data" in str(error.value).lower()
 
     def test_runner_strategies_called(self, monkeypatch, qtbot):
+        monkeypatch.setattr(
+            speedwagon.config,
+            "get_whitelisted_plugins",
+            lambda: []
+        )
         import tracemalloc
         tracemalloc.start()
         monkeypatch.setattr(
@@ -529,7 +534,12 @@ class TestSingleWorkflowJSON:
         startup.run()
         assert startup.on_exit.called is True
 
-    def test_load_json(self):
+    def test_load_json(self, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.config,
+            "get_whitelisted_plugins",
+            lambda: []
+        )
         startup = gui_startup.SingleWorkflowJSON(app=None)
 
         startup.load_json_string(
@@ -650,7 +660,7 @@ class TestStartQtThreaded:
         dialog.getSaveFileName = MagicMock(return_value=("make_jp2.json", ""))
 
         serialization_strategy = Mock()
-        starter.save_workflow_config(
+        save_workflow_config(
             workflow_name="Spam",
             data={},
             parent=parent,
@@ -904,7 +914,7 @@ class TestStartQtThreaded:
         starter.run()
         loader = Mock()
         loader.get_settings = Mock(return_value={})
-        loader.read_settings_file = Mock(return_value={})
+        loader.read_settings_file_globals = Mock(return_value={})
         starter.resolve_settings(resolution_order=[], loader=loader)
         try:
             assert loader.get_settings.called is True

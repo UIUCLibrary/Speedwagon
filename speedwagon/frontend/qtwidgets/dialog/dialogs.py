@@ -445,7 +445,11 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         self._parent_logger: typing.Optional[logging.Logger] = None
 
         self._console_data = QtGui.QTextDocument(parent=self)
+
+        # The extra typehint is to fix typehints due to the way
+        # QtGui.QTextCursor is reporting it as Callable[[QWidget], QCursor]
         self.cursor: QtGui.QTextCursor = QtGui.QTextCursor(self._console_data)
+
         self.cursor.movePosition(self.cursor.MoveOperation.End)
 
     def write_html_block_to_console(self, html: str) -> None:

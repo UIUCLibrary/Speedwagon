@@ -38,6 +38,7 @@ from speedwagon.job import Workflow
 if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
     from speedwagon.worker import AbsToolJobManager
+    from speedwagon.config import SettingsData
 
 __all__ = [
     "MainWindow1"
@@ -112,7 +113,7 @@ class ToolConsole(QtWidgets.QWidget):
         self._console.setFont(monospaced_font)
 
         self._attached_logger: typing.Optional[logging.Logger] = None
-        self.cursor = QtGui.QTextCursor(self._log)
+        self.cursor: QtGui.QTextCursor = QtGui.QTextCursor(self._log)
 
     def close(self) -> bool:
         self.detach_logger()
@@ -567,17 +568,12 @@ class MainWindow1(MainProgram):
 
         config_dialog.add_tab(global_settings_tab, "Global Settings")
 
-        # pylint: disable=no-member
-        config_dialog.accepted.connect(  # type: ignore
-            global_settings_tab.on_okay
-        )
-
         tabs_tab = qtwidgets.dialog.TabsConfigurationTab()
 
         if self.work_manager.settings_path is not None:
             tabs_tab.settings_location = \
                 os.path.join(self.work_manager.settings_path, "tabs.yml")
-            tabs_tab.load()
+            tabs_tab.load(tabs_tab.settings_location)
 
         config_dialog.add_tab(tabs_tab, "Tabs")
         config_dialog.accepted.connect(tabs_tab.on_okay)  # type: ignore
@@ -647,7 +643,7 @@ class MainWindow2(MainWindow2UI):
             self,
             job_manager: "speedwagon.runner_strategies.BackgroundJobManager",
             settings: typing.Optional[
-                typing.Dict[str, typing.Union[str, bool]]
+                SettingsData
             ] = None
             ) -> None:
         super().__init__()

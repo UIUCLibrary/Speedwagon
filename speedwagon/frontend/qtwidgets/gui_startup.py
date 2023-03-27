@@ -31,9 +31,10 @@ if typing.TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets import gui
     from speedwagon.frontend.qtwidgets.dialog import dialogs
     from speedwagon.job import AbsWorkflow, AbsJobConfigSerializationStrategy
+    from speedwagon.config import SettingsData
 
 
-class AbsGuiStarter(speedwagon.startup.AbsStarter):
+class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
 
     def __init__(self, app) -> None:
         super().__init__()
@@ -47,10 +48,36 @@ class AbsGuiStarter(speedwagon.startup.AbsStarter):
         """Run the gui application."""
 
 
+def save_workflow_config(
+        workflow_name,
+        data,
+        parent: QtWidgets.QWidget,
+        dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
+        serialization_strategy: typing.Optional[
+            speedwagon.job.AbsJobConfigSerializationStrategy
+        ] = None
+) -> None:
+    serialization_strategy = \
+        serialization_strategy or speedwagon.job.ConfigJSONSerialize()
+
+    dialog_box = dialog_box or QtWidgets.QFileDialog()
+    export_file_name, _ = dialog_box.getSaveFileName(
+        parent,
+        "Export Job Configuration",
+        f"{workflow_name}.json",
+        "Job Configuration JSON (*.json)"
+    )
+
+    if export_file_name:
+        serialization_strategy.file_name = export_file_name
+        serialization_strategy.save(workflow_name, data)
+
+
 class StartQtThreaded(AbsGuiStarter):
 
     def __init__(self, app: Optional[QtWidgets.QApplication] = None) -> None:
-        self.startup_settings: Dict[str, Union[str, bool]] = {'debug': False}
+        super().__init__(app)
+        self.startup_settings: SettingsData = {'debug': False}
 
         self.windows: Optional[gui.MainWindow2] = None
         self.logger = logging.getLogger()
@@ -102,31 +129,6 @@ class StartQtThreaded(AbsGuiStarter):
         parent.set_active_workflow(workflow_name)
         parent.set_current_workflow_settings(data)
 
-    @staticmethod
-    def save_workflow_config(
-            workflow_name,
-            data,
-            parent: QtWidgets.QWidget,
-            dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
-            serialization_strategy: typing.Optional[
-                speedwagon.job.AbsJobConfigSerializationStrategy
-            ] = None
-    ) -> None:
-        serialization_strategy = \
-            serialization_strategy or speedwagon.job.ConfigJSONSerialize()
-
-        dialog_box = dialog_box or QtWidgets.QFileDialog()
-        export_file_name, _ = dialog_box.getSaveFileName(
-                parent,
-                "Export Job Configuration",
-                f"{workflow_name}.json",
-                "Job Configuration JSON (*.json)"
-        )
-
-        if export_file_name:
-            serialization_strategy.file_name = export_file_name
-            serialization_strategy.save(workflow_name, data)
-
     def load_settings(self) -> None:
         self.user_data_dir = typing.cast(
             str, self.platform_settings.get("user_data_directory")
@@ -159,7 +161,7 @@ class StartQtThreaded(AbsGuiStarter):
         config.ensure_settings_files(self, logger=self.logger)
 
     @staticmethod
-    def read_settings_file(settings_file: str) -> Dict[str, Union[str, bool]]:
+    def read_settings_file(settings_file: str) -> SettingsData:
 
         with config.ConfigManager(settings_file) as current_config:
             return current_config.global_settings
@@ -170,12 +172,12 @@ class StartQtThreaded(AbsGuiStarter):
                 List[config.AbsSetting]
             ] = None,
             loader: Optional[config.ConfigLoader] = None
-    ) -> Dict[str, Union[str, bool]]:
+    ) -> SettingsData:
 
         loader = loader or config.ConfigLoader(self.config_file)
 
         self.platform_settings._data.update(
-            loader.read_settings_file(self.config_file)
+            loader.read_settings_file_globals(self.config_file)
         )
 
         loader.logger = self.logger
@@ -296,26 +298,42 @@ class StartQtThreaded(AbsGuiStarter):
     @staticmethod
     def request_settings(parent: Optional[QtWidgets.QWidget] = None) -> None:
         platform_settings = config.get_platform_settings()
+
+        dialog_builder = dialog.settings.SettingsBuilder2(parent=parent)
+
         settings_path = platform_settings.get_app_data_directory()
-
-        dialog_builder = dialog.settings.SettingsBuilder(parent=parent)
-
-        dialog_builder.add_open_settings(
-            platform_settings.get_app_data_directory()
+        settings_ini = os.path.join(
+            settings_path, speedwagon.startup.CONFIG_INI_FILE_NAME
         )
 
-        dialog_builder.add_global_settings(
-            os.path.join(
-                settings_path,
-                speedwagon.startup.CONFIG_INI_FILE_NAME
-            )
-        )
+        global_settings_tab = dialog.settings.GlobalSettingsTab()
+        global_settings_tab.load_ini_file(settings_ini)
+        dialog_builder.add_tab("Global Settings", global_settings_tab)
 
-        dialog_builder.add_tabs_setting(
-            os.path.join(settings_path, speedwagon.startup.TABS_YML_FILE_NAME)
+        tabs_config = dialog.settings.TabsConfigurationTab()
+        tabs_yaml_file = os.path.join(
+            settings_path, speedwagon.startup.TABS_YML_FILE_NAME
         )
+        tabs_config.load(tabs_yaml_file)
+        dialog_builder.add_tab("Tabs", tabs_config)
 
-        config_dialog = dialog_builder.build()
+        plugins_tab = dialog.settings.PluginsTab()
+        plugins_tab.load(settings_ini)
+        dialog_builder.add_tab("Plugins", plugins_tab)
+
+        saver = dialog.settings.ConfigSaver(parent)
+
+        def success(parent):
+            msg_box = QtWidgets.QMessageBox(parent)
+            msg_box.setWindowTitle("Saved changes")
+            msg_box.setText("Please restart changes to take effect")
+            msg_box.exec()
+
+        saver.set_notify_success(success)
+        saver.tabs_yaml_path = tabs_yaml_file
+        saver.config_file_path = settings_ini
+        dialog_builder.set_saver_strategy(saver)
+        config_dialog: dialog.settings.SettingsDialog = dialog_builder.build()
         config_dialog.exec_()
 
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
@@ -338,9 +356,7 @@ class StartQtThreaded(AbsGuiStarter):
 
             self.windows.save_logs_requested.connect(self.save_log)
 
-            self.windows.export_job_config.connect(
-                self.save_workflow_config
-            )
+            self.windows.export_job_config.connect(save_workflow_config)
 
             self.windows.import_job_config.connect(
                 self.import_workflow_config
@@ -504,8 +520,7 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.rejected.connect(self.on_cancel)  # type: ignore
 
     def load_all_workflows(self) -> None:
-        workflows = speedwagon.job.available_workflows()
-        self.editor.set_all_workflows(workflows)
+        self.editor.set_all_workflows(speedwagon.job.available_workflows())
 
     def on_okay(self) -> None:
         if self.editor.modified is True:

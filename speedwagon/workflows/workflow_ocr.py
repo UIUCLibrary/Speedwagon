@@ -1,5 +1,5 @@
 """Workflow for performing OCR on image files."""
-
+from __future__ import annotations
 import io
 import os
 import typing
@@ -11,6 +11,9 @@ import speedwagon
 import speedwagon.workflow
 
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
+
+if typing.TYPE_CHECKING:
+    from speedwagon.config import SettingsData
 
 __all__ = ['OCRWorkflow']
 
@@ -46,7 +49,8 @@ class OCRWorkflow(speedwagon.Workflow):
         """Create a OCR Workflow."""
         super().__init__(*args, **kwargs)
         self.global_settings = kwargs.get('global_settings', {})
-        self.tessdata_path = self._get_tessdata_dir(args, self.global_settings)
+        self.tessdata_path: Optional[str] = \
+            self._get_tessdata_dir(args, self.global_settings)
 
         if self.tessdata_path is None:
             raise MissingConfiguration(
@@ -82,9 +86,10 @@ class OCRWorkflow(speedwagon.Workflow):
         self.set_description(description)
 
     @staticmethod
-    def _get_tessdata_dir(args,
-                          global_settings: Dict[str, str]
-                          ) -> Optional[str]:
+    def _get_tessdata_dir(
+            args,
+            global_settings: SettingsData
+    ) -> Optional[str]:
 
         tessdata_path = global_settings.get("tessdata")
         if tessdata_path is None:
@@ -92,7 +97,7 @@ class OCRWorkflow(speedwagon.Workflow):
                 tessdata_path = args[0].get('tessdata')
             except IndexError:
                 pass
-        return tessdata_path
+        return typing.cast(Optional[str], tessdata_path)
 
     @classmethod
     def set_description(cls, text: str) -> None:
@@ -197,9 +202,12 @@ class OCRWorkflow(speedwagon.Workflow):
             package_root_option
         ]
 
-    def get_tesseract_path(self):
+    def get_tesseract_path(self) -> Optional[str]:
         """Get the path to the tesseract data files."""
-        self.tessdata_path = self.global_settings.get("tessdata")
+        self.tessdata_path = typing.cast(
+            Optional[str],
+            self.global_settings.get("tessdata")
+        )
         return self.tessdata_path
 
     @staticmethod

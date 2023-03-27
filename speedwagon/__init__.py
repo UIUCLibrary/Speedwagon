@@ -15,5 +15,5 @@ __all__ = [
     "simple_api_run_workflow",
     "worker",
     "JobCancelled",
-    "frontend"
+    "frontend",
 ]

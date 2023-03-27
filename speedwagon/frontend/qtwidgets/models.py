@@ -1,29 +1,35 @@
 """Data models for displaying data to user in the user interface."""
 from __future__ import annotations
 import abc
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 import configparser
 import enum
-import io
 import os
 
-import sys
 import typing
-from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
+from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast, Mapping
 
 try:
     from typing import Final
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import Final  # type: ignore
-
+from dataclasses import dataclass
 import warnings
+import sys
+
 
 from PySide6.QtCore import QAbstractItemModel
 from PySide6 import QtCore, QtGui  # type: ignore
+
 if typing.TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets import tabs
     from speedwagon.job import AbsWorkflow, Workflow
     from speedwagon.workflow import AbsOutputOptionDataType
+    from speedwagon.config import SettingsDataType, SettingsData
+if sys.version_info < (3, 10):  # pragma: no cover
+    import importlib_metadata as metadata
+else:  # pragma: no cover
+    from importlib import metadata
 
 
 __all__ = [
@@ -50,7 +56,7 @@ class JobModelData(enum.Enum):
 class ItemListModel(QtCore.QAbstractTableModel):
     """List model for items."""
 
-    def __init__(self, data: typing.Mapping[str, Type[Workflow]]) -> None:
+    def __init__(self, data: Mapping[str, Type[Workflow]]) -> None:
         """Create a new ItemListModel qt list model for workflows."""
         super().__init__()
         self.jobs: List[Type[Workflow]] = list(data.values())
@@ -114,7 +120,7 @@ class WorkflowListModel(ItemListModel):
 
         return None
 
-    def sort(self, key=None, order=None):
+    def sort(self, key=None, order=None) -> None:
         """Sort workflows.
 
         Defaults alphabetically by title.
@@ -132,7 +138,18 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
     def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
         """Create a new WorkflowListModel2 qt list model."""
         super().__init__(parent)
+        self._unmodified_data: List[Type[Workflow]] = []
         self.workflows: List[Type[Workflow]] = []
+
+    @property
+    def data_modified(self) -> bool:
+        """Get if the data has been modified since originally added."""
+        if len(self.workflows) != len(self._unmodified_data):
+            return True
+        for original, current in zip(self._unmodified_data, self.workflows):
+            if original.name != current.name:
+                return True
+        return False
 
     def __iadd__(self, other: Type["Workflow"]) -> "WorkflowListModel2":
         """Add a workflow to the model."""
@@ -190,6 +207,13 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
         self.workflows.sort(key=key or (lambda i: i.name))
         self.layoutChanged.emit()  # type: ignore
 
+    def reset_modified(self) -> None:
+        """Reset if the data has been modified.
+
+        Running this and the current data will appear to be unaltered.
+        """
+        self._unmodified_data = self.workflows.copy()
+
     def add_workflow(self, workflow: Type[Workflow]) -> None:
         """Add workflow to model."""
         for existing_workflow in self.workflows:
@@ -245,6 +269,26 @@ class WorkflowListModel2(QtCore.QAbstractListModel):
                 [QtCore.Qt.ItemDataRole.EditRole]
             )
             self.endRemoveRows()
+
+    @classmethod
+    def init_from_data(
+            cls,
+            workflows: typing.Iterable[Type[Workflow]],
+            parent: Optional[QtCore.QObject] = None
+    ) -> "WorkflowListModel2":
+        """Create a new WorkflowListModel2 from workflow data."""
+        new_class = cls(parent)
+
+        for workflow in workflows:
+            row = len(new_class.workflows)
+            index = new_class.createIndex(row, 0)
+            new_class.beginInsertRows(index, 0, new_class.rowCount())
+            new_class.workflows.insert(row, workflow)
+            new_class._unmodified_data.insert(row, workflow)
+            # pylint: disable=no-member
+            new_class.endInsertRows()
+            # new_class.add_workflow(workflow)
+        return new_class
 
 
 class ToolOptionsModel(QtCore.QAbstractTableModel):
@@ -513,14 +557,14 @@ class ModelDataFormatter:
     def _select_display_role(
             cls,
             item: AbsOutputOptionDataType
-    ) -> Optional[str]:
+    ) -> Optional[SettingsDataType]:
         if cls._should_use_placeholder_text(item) is True:
             return item.placeholder_text
         if isinstance(item.value, bool):
             return item.value
         if item.value is None:
             return item.value
-        return str(item.value)
+        return item.value
 
     @staticmethod
     def _should_use_placeholder_text(
@@ -545,7 +589,7 @@ class ModelDataFormatter:
     def display_role(
             self,
             setting: AbsOutputOptionDataType
-    ) -> Optional[str]:
+    ) -> Optional[SettingsDataType]:
         return self._select_display_role(setting)
 
     def format(
@@ -576,11 +620,18 @@ class SettingsModel(QtCore.QAbstractTableModel):
     def __init__(self, *__args) -> None:
         """Create a new settings Qt model."""
         super().__init__(*__args)
+        self._unmodified_data: List[Tuple[str, str]] = []
         self._data: List[Tuple[str, str]] = []
-        self._headers = {
-            0: "Key",
-            1: "Value"
-        }
+        self._headers = {0: "Key", 1: "Value"}
+        self.data_modified = False
+        self.dataChanged.connect(self._update_modified)
+
+    def _update_modified(self) -> None:
+        for original, current in zip(self._unmodified_data, self._data):
+            if original[1] != current[1]:
+                self.data_modified = True
+                return
+        self.data_modified = False
 
     def data(
             self,
@@ -611,6 +662,7 @@ class SettingsModel(QtCore.QAbstractTableModel):
     def add_setting(self, name: str, value: str) -> None:
         """Add setting key value to the settings."""
         self._data.append((name, value))
+        self._unmodified_data.append((name, value))
 
     def columnCount(
             self,
@@ -686,7 +738,31 @@ class TabsModel(QtCore.QAbstractListModel):
     def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
         """Create a new tab qt list model."""
         super().__init__(parent)
+        self._unmodified_data: List[tabs.TabData] = []
         self.tabs: List[tabs.TabData] = []
+
+    def reset_modified(self) -> None:
+        """Reset if the data has been modified.
+
+        Running this and the current data will appear to be unaltered.
+        """
+        self._unmodified_data = self.tabs.copy()
+        index = self.index(0, 0)
+        self.dataChanged.emit(  # type: ignore
+            index,
+            index,
+            [QtCore.Qt.ItemDataRole.DisplayRole]
+        )
+
+    @property
+    def data_modified(self) -> bool:
+        """Get if the data has been modified since originally added."""
+        if len(self._unmodified_data) != len(self.tabs):
+            return True
+        for original, current in zip(self._unmodified_data, self.tabs):
+            if original[1] != current[1]:
+                return True
+        return False
 
     def __contains__(self, value: str) -> bool:
         """Check if a tab is in the model."""
@@ -740,7 +816,10 @@ class TabsModel(QtCore.QAbstractListModel):
         index = self.createIndex(row, 0)
         self.beginInsertRows(index, 0, self.rowCount())
         self.tabs.insert(row, tab)
-
+        tab.workflows_model.dataChanged.connect(
+            lambda source_index=index: self.dataChanged.emit(
+                source_index, source_index, [QtCore.Qt.ItemDataRole.EditRole])
+        )
         # pylint: disable=no-member
         self.dataChanged.emit(  # type: ignore
             index,
@@ -805,24 +884,100 @@ def build_setting_qt_model(config_file: str) -> SettingsModel:
     return my_model
 
 
-def serialize_settings_model(model: QAbstractItemModel) -> str:
-    """Convert a SettingsModel into a format that can be written to a file.
-
-    Note:
-        This only generates and returns a string. You are still responsible to
-        write that data to a file.
-
-    """
-    config_data = configparser.ConfigParser()
-    config_data["GLOBAL"] = {}
-    global_data: Dict[str, str] = OrderedDict()
+def unpack_global_settings_model(model: QAbstractItemModel) -> SettingsData:
+    global_data: SettingsData = {}
 
     for i in range(model.rowCount()):
-        key = model.index(i, 0).data()
-        value = model.index(i, 1).data()
+        key: str = model.index(i, 0).data()
+        value: SettingsDataType = model.index(i, 1).data()
         global_data[key] = value
-    config_data["GLOBAL"] = global_data
+    return global_data
 
-    with io.StringIO() as string_writer:
-        config_data.write(string_writer)
-        return string_writer.getvalue()
+
+@dataclass
+class PluginModelItem:
+    entrypoint: metadata.EntryPoint
+    enabled: bool
+
+
+class PluginActivationModel(QtCore.QAbstractListModel):
+    ModuleRole = cast(int, QtCore.Qt.ItemDataRole.UserRole) + 1
+
+    def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
+        super().__init__(parent)
+        self.data_modified = False
+        self._starting_data: List[PluginModelItem] = []
+        self._data: List[PluginModelItem] = []
+        self.dataChanged.connect(self._update_modified)
+
+    def _update_modified(self) -> None:
+        for original, current in zip(self._starting_data, self._data):
+            if original.enabled != current.enabled:
+                self.data_modified = True
+                return
+        self.data_modified = False
+
+    def rowCount(
+            self,
+            parent: Union[
+                QtCore.QModelIndex,
+                QtCore.QPersistentModelIndex,
+                None
+            ] = None
+    ) -> int:
+        return len(self._data)
+
+    def add_entry_point(
+            self,
+            entry_point: metadata.EntryPoint,
+            enabled: bool = False
+    ) -> None:
+        self._starting_data.append(PluginModelItem(entry_point, enabled))
+        self._data.append(PluginModelItem(entry_point, enabled))
+
+    def flags(
+        self, index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+    ) -> QtCore.Qt.ItemFlag:
+        if index.isValid():
+            return (
+                QtCore.Qt.ItemFlag.ItemIsUserCheckable
+                | QtCore.Qt.ItemFlag.ItemIsSelectable
+                | QtCore.Qt.ItemFlag.ItemIsEnabled
+            )
+        return super().flags(index)
+
+    def data(
+        self,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
+
+        if role == QtCore.Qt.ItemDataRole.CheckStateRole:
+
+            return (
+                QtCore.Qt.CheckState.Checked
+                if self._data[index.row()].enabled
+                else QtCore.Qt.CheckState.Unchecked
+            )
+
+        if role == self.ModuleRole:
+            return self._data[index.row()].entrypoint.module
+
+        if role == QtCore.Qt.ItemDataRole.DisplayRole:
+            return self._data[index.row()].entrypoint.name
+        return None
+
+    def setData(
+        self,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+        value: Any,
+        role: int = QtCore.Qt.ItemDataRole.EditRole,
+    ) -> bool:
+        if role == QtCore.Qt.ItemDataRole.CheckStateRole:
+            self._data[index.row()].enabled = (
+                value == QtCore.Qt.CheckState.Checked.value
+            )
+            self.dataChanged.emit(index, index, (role,))
+            return True
+
+        return super().setData(index, value, role)

@@ -18,9 +18,13 @@ from types import TracebackType
 from typing import List, Any, Dict, Optional, Type
 
 import speedwagon
+import speedwagon.config
 import speedwagon.exceptions
 from speedwagon import runner
-from speedwagon.job import AbsWorkflow, Workflow
+
+if typing.TYPE_CHECKING:
+    from speedwagon.job import AbsWorkflow, Workflow
+    from speedwagon.config import SettingsData
 
 __all__ = [
     "RunRunner",
@@ -573,15 +577,15 @@ class Run(TaskScheduler):
         self.valid_workflows = None
 
     def get_workflow(self, workflow_name: str) -> typing.Type[Workflow]:
-        if self.valid_workflows is not None:
-            if workflow_name is None:
-                raise AssertionError("workflow_name is not set")
+        if self.valid_workflows is None:
             workflow_class = \
-                self.valid_workflows.get(workflow_name)
-
+                    speedwagon.job.available_workflows().get(workflow_name)
+        elif workflow_name is None:
+            raise AssertionError("workflow_name is not set")
         else:
             workflow_class = \
-                speedwagon.job.available_workflows().get(workflow_name)
+                    self.valid_workflows.get(workflow_name)
+
         if workflow_class is None:
             raise AssertionError(f"Workflow not found: {workflow_name}")
         return workflow_class
@@ -596,7 +600,7 @@ class BackgroundJobManager(AbsJobManager2):
         self._background_thread: Optional[threading.Thread] = None
         self.request_more_info = lambda *args, **kwargs: None
         self.global_settings: \
-            Optional[Dict[str, typing.Union[str, bool]]] = None
+            Optional[SettingsData] = None
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
