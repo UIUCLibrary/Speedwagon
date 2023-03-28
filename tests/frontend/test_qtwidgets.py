@@ -10,6 +10,7 @@ from uiucprescon.packager.common import Metadata as PackageMetadata
 import speedwagon
 import speedwagon.exceptions
 from speedwagon.frontend import qtwidgets, interaction
+from speedwagon.frontend.qtwidgets import widgets
 from speedwagon.frontend.qtwidgets.dialog import title_page_selection
 
 
@@ -335,3 +336,41 @@ def test_get_additional_info_opens_dialog():
         pretask_results=[MagicMock()]
     )
     assert user_request_factory.package_title_page_selection.called is True
+
+
+class TestSelectWorkflow:
+    def test_add_workflow_adds_to_model(self, qtbot):
+        parent = QtWidgets.QWidget()
+        selector = widgets.SelectWorkflow(parent)
+        qtbot.addWidget(selector)
+        class FakeWorkflow(speedwagon.Workflow):
+            pass
+        assert selector.workflowSelectionView.model().rowCount() == 0
+        selector.add_workflow(FakeWorkflow)
+        assert selector.workflowSelectionView.model().rowCount() == 1
+
+    def test_set_current_by_name(self, qtbot):
+        parent = QtWidgets.QWidget()
+        selector = widgets.SelectWorkflow(parent)
+        qtbot.addWidget(selector)
+
+        class FakeWorkflow(speedwagon.Workflow):
+            name = "dummy"
+
+        assert selector.workflowSelectionView.model().rowCount() == 0
+        selector.add_workflow(FakeWorkflow)
+        selector.set_current_by_name("dummy")
+        assert selector.get_current_workflow_type() == FakeWorkflow
+
+    def test_set_current_by_name_invalid_raises(self, qtbot):
+        parent = QtWidgets.QWidget()
+        selector = widgets.SelectWorkflow(parent)
+        qtbot.addWidget(selector)
+
+        class FakeWorkflow(speedwagon.Workflow):
+            name = "dummy"
+
+        assert selector.workflowSelectionView.model().rowCount() == 0
+        selector.add_workflow(FakeWorkflow)
+        with pytest.raises(ValueError):
+            selector.set_current_by_name("invalid workflow")

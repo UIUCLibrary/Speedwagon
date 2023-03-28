@@ -20,6 +20,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Workspace</class>
+   <extends>QWidget</extends>
+   <header>speedwagon.frontend.qtwidgets.widgets</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -204,28 +204,6 @@ class TestTabsModel:
             test_model.reset_modified()
         assert test_model.data_modified is False
 
-class TestItemListModel:
-    def test_create(self):
-        data = {
-            "spam": Mock()
-        }
-        new_model = models.ItemListModel(data)
-        assert new_model.jobs == list(data.values())
-
-    def test_columns_are_always_two(self):
-        data = {
-            "spam": Mock()
-        }
-        new_model = models.ItemListModel(data)
-        assert new_model.columnCount() == 2
-
-    def test_columns_row_count_is_the_size_of_data(self):
-        data = {
-            "spam": Mock()
-        }
-        new_model = models.ItemListModel(data)
-        assert new_model.rowCount() == len(data)
-
 
 class TestWorkflowListModel2:
 

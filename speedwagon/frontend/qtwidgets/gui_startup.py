@@ -6,12 +6,11 @@ import io
 import json
 import logging
 import os
-import queue
 import sys
 import threading
 import time
 import typing
-from typing import Dict, Union, Optional, cast, List, Type
+from typing import Dict, Optional, cast, List, Type
 import webbrowser
 try:  # pragma: no cover
     from importlib import metadata
@@ -26,7 +25,6 @@ from . import dialog
 from . import runners
 
 if typing.TYPE_CHECKING:
-    from typing import Tuple
     from speedwagon import runner_strategies
     from speedwagon.frontend.qtwidgets import gui
     from speedwagon.frontend.qtwidgets.dialog import dialogs
@@ -579,71 +577,6 @@ def standalone_tab_editor(
     app.exec()
 
 
-class SingleWorkflowLauncher(AbsGuiStarter):
-    """Single workflow launcher.
-
-    .. versionadded:: 0.2.0
-       Added SingleWorkflowLauncher class for running a single workflow \
-            without user interaction. Useful for building new workflows.
-
-    """
-
-    def __init__(
-            self,
-            app,
-            logger: typing.Optional[logging.Logger] = None
-    ) -> None:
-        """Set up window for running a single workflow."""
-        super().__init__(app)
-        self.window: Optional[
-            speedwagon.frontend.qtwidgets.gui.MainWindow1
-        ] = None
-        self._active_workflow: Optional[AbsWorkflow] = None
-        self.options: Dict[str, Union[str, bool]] = {}
-        self.logger = logger or logging.getLogger(__name__)
-
-    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        """Run the workflow configured with the options given."""
-        if self._active_workflow is None:
-            raise AttributeError("Workflow has not been set")
-
-        with speedwagon.frontend.qtwidgets.worker.ToolJobManager() \
-                as work_manager:
-            work_manager.logger = self.logger
-            self._run(work_manager)
-        return 0
-
-    def _run(
-            self,
-            work_manager: speedwagon.frontend.qtwidgets.worker.ToolJobManager
-    ) -> None:
-        if self._active_workflow is None:
-            raise ValueError("No active workflow set")
-
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow1(
-            work_manager=work_manager,
-            debug=False)
-
-        window.show()
-        if self._active_workflow.name is not None:
-            window.setWindowTitle(self._active_workflow.name)
-        runner_strategy = \
-            speedwagon.frontend.qtwidgets.runners.QtRunner(window)
-
-        self._active_workflow.validate_user_options(**self.options)
-        # runner_strategy.additional_info_callback
-
-        runner_strategy.run(self._active_workflow,
-                            self.options,
-                            window.log_manager)
-        window.log_manager.handlers.clear()
-        window.close()
-
-    def set_workflow(self, workflow: AbsWorkflow) -> None:
-        """Set the current workflow."""
-        self._active_workflow = workflow
-
-
 def report_exception_dialog(exc, dialog_box_title, parent):
     text = str(exc)
     dialog_box = QtWidgets.QMessageBox(parent)
@@ -786,58 +719,3 @@ class SingleWorkflowJSON(AbsGuiStarter):
             window.setWindowTitle(title)
 
         return window
-
-
-class MultiWorkflowLauncher(AbsGuiStarter):
-
-    def __init__(self, app, logger:  Optional[logging.Logger] = None) -> None:
-        super().__init__(app)
-        self.logger = logger or logging.getLogger(__name__)
-        self._pending_tasks: \
-            "queue.Queue[Tuple[AbsWorkflow, Dict[str, typing.Any]]]" \
-            = queue.Queue()
-
-    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-
-        with speedwagon.frontend.qtwidgets.worker.ToolJobManager() as \
-                work_manager:
-            work_manager.logger = self.logger
-            self._run(work_manager)
-        return 0
-
-    def _run(
-            self,
-            work_manager: speedwagon.worker.AbsToolJobManager
-    ) -> None:
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow1(
-            work_manager=work_manager,
-            debug=False)
-
-        window.show()
-        try:
-            while not self._pending_tasks.empty():
-                active_workflow, options = self._pending_tasks.get()
-                if active_workflow.name is not None:
-                    window.setWindowTitle(active_workflow.name)
-                runner_strategy = \
-                    speedwagon.frontend.qtwidgets.runners.QtRunner(window)
-
-                active_workflow.validate_user_options(**options)
-
-                runner_strategy.run(
-                    active_workflow,
-                    options,
-                    window.log_manager
-                )
-
-                self._pending_tasks.task_done()
-        except speedwagon.frontend.qtwidgets.runners.TaskFailed as task_error:
-            raise \
-                speedwagon.exceptions.JobCancelled(task_error) from task_error
-
-        finally:
-            window.log_manager.handlers.clear()
-            window.close()
-
-    def add_job(self, workflow, args):
-        self._pending_tasks.put((workflow, args))

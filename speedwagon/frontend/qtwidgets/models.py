@@ -7,14 +7,13 @@ import enum
 import os
 
 import typing
-from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast, Mapping
+from typing import Type, Dict, List, Any, Union, Tuple, Optional, cast
 
 try:
     from typing import Final
 except ImportError:  # pragma: no cover
     from typing_extensions import Final  # type: ignore
 from dataclasses import dataclass
-import warnings
 import sys
 
 
@@ -23,8 +22,8 @@ from PySide6 import QtCore, QtGui  # type: ignore
 
 if typing.TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets import tabs
-    from speedwagon.job import AbsWorkflow, Workflow
-    from speedwagon.workflow import AbsOutputOptionDataType
+    from speedwagon.job import Workflow
+    from speedwagon.workflow import AbsOutputOptionDataType, UserDataType
     from speedwagon.config import SettingsDataType, SettingsData
 if sys.version_info < (3, 10):  # pragma: no cover
     import importlib_metadata as metadata
@@ -33,10 +32,7 @@ else:  # pragma: no cover
 
 
 __all__ = [
-    "ItemListModel",
-    "WorkflowListModel",
     "WorkflowListModel2",
-    "ToolOptionsPairsModel",
     "ToolOptionsModel4",
     "SettingsModel",
     "TabsModel"
@@ -44,7 +40,7 @@ __all__ = [
 
 QtConstant = int
 
-# Qt has non-pythonic names for it's methods
+# Qt has non-pythonic method names
 # pylint: disable=invalid-name, unused-argument
 
 
@@ -53,83 +49,7 @@ class JobModelData(enum.Enum):
     DESCRIPTION = 1
 
 
-class ItemListModel(QtCore.QAbstractTableModel):
-    """List model for items."""
-
-    def __init__(self, data: Mapping[str, Type[Workflow]]) -> None:
-        """Create a new ItemListModel qt list model for workflows."""
-        super().__init__()
-        self.jobs: List[Type[Workflow]] = list(data.values())
-
-    def columnCount(self, *args, parent=QtCore.QModelIndex(), **kwargs) -> int:
-        """Return 2.
-
-        One for the label and one of the idem.
-        """
-        return 2
-
-    def rowCount(
-            self,
-            *args,
-            parent: Optional[
-                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
-            ] = None,
-            **kwargs) -> int:
-        """Get the number of jobs in the model."""
-        return len(self.jobs)
-
-    @staticmethod
-    def _extract_job_metadata(
-            job: Type[AbsWorkflow],
-            data_type: JobModelData
-    ) -> Optional[str]:
-        static_data_values: Dict[JobModelData, Optional[str]] = {
-            JobModelData.NAME: job.name,
-            JobModelData.DESCRIPTION: job.description
-        }
-        return static_data_values[data_type]
-
-
 OptionPair = namedtuple("OptionPair", ("label", "data"))
-
-
-class WorkflowListModel(ItemListModel):
-    """Model for listing workflows."""
-
-    def data(
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            role: Optional[QtConstant] = None
-    ) -> Optional[Union[str, Type[Workflow], QtCore.QSize, QtCore.QObject]]:
-        """Get data at a specific index."""
-        if index.isValid():
-            data = self.jobs[index.row()]
-            if role in [
-                QtCore.Qt.ItemDataRole.DisplayRole,
-                QtCore.Qt.ItemDataRole.EditRole
-            ]:
-                return self._extract_job_metadata(
-                    job=data,
-                    data_type=JobModelData(index.column())
-                ) or None
-
-            if role == QtCore.Qt.ItemDataRole.UserRole:
-                return self.jobs[index.row()]
-            if role == QtCore.Qt.ItemDataRole.SizeHintRole:
-                return QtCore.QSize(10, 20)
-
-        return None
-
-    def sort(self, key=None, order=None) -> None:
-        """Sort workflows.
-
-        Defaults alphabetically by title.
-        """
-        # pylint: disable=no-member
-        self.layoutAboutToBeChanged.emit()  # type: ignore
-
-        self.jobs.sort(key=key or (lambda i: i.name))
-        self.layoutChanged.emit()  # type: ignore
 
 
 class WorkflowListModel2(QtCore.QAbstractListModel):
@@ -339,78 +259,6 @@ class ToolOptionsModel(QtCore.QAbstractTableModel):
         return QtCore.Qt.ItemFlag.NoItemFlags
 
 
-class ToolOptionsPairsModel(ToolOptionsModel):
-    """Tool Options Pairs Qt table model.
-
-    Warnings:
-        This class is deprecated. Use ToolOptionsModel2 instead.
-    """
-
-    def __init__(self, data: Dict[str, str], parent=None) -> None:
-        """Create a new ToolOptionsPairsModel model.
-
-        Warnings:
-            This is deprecated. Use ToolOptionsModel2 instead.
-        """
-        warnings.warn("Use ToolOptionsModel2 instead", DeprecationWarning)
-        super().__init__(parent)
-        for key, value in data.items():
-            self._data.append(OptionPair(key, value))
-
-    def data(self,
-             index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-             role: Optional[QtConstant] = None):
-        """Get data at a certain index."""
-        if index.isValid():
-            if role == QtCore.Qt.ItemDataRole.DisplayRole:
-                return self._data[index.row()].data
-            if role == QtCore.Qt.ItemDataRole.EditRole:
-                return self._data[index.row()].data
-        return None
-
-    def setData(
-            self,
-            index,
-            data,
-            role=None
-    ) -> bool:
-        """Set data at a certain index."""
-        if not index.isValid():
-            return False
-        existing_data = self._data[index.row()]
-        self._data[index.row()] = OptionPair(existing_data.label, data)
-        return True
-
-    def headerData(
-            self,
-            index: int,
-            orientation: QtCore.Qt.Orientation,
-            role: Optional[QtConstant] = None
-    ) -> Union[None, str, QtCore.QObject]:
-        """Get header information."""
-        if orientation == QtCore.Qt.Orientation.Vertical \
-                and role == QtCore.Qt.ItemDataRole.DisplayRole:
-            title = self._data[index].label
-            return str(title)
-        return None
-
-    def get(self) -> dict:
-        """Access all underlining data."""
-        return {data.label: data.data for data in self._data}
-
-
-def _lookup_constant(value: int) -> List[str]:
-    res = []
-    for m in [
-        attr for attr in dir(QtCore.Qt)
-        if not callable(getattr(QtCore.Qt, attr)) and not attr.startswith("_")
-    ]:
-
-        if getattr(QtCore.Qt, m) == value and "role" in m.lower():
-            res.append(m)
-    return res
-
-
 class ToolOptionsModel4(QtCore.QAbstractListModel):
     """Tool Model Options."""
 
@@ -515,11 +363,11 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             return True
         return super().setData(index, value, role)
 
-    def serialize(self):
+    def serialize(self) -> Dict[str, UserDataType]:
         """Serialize model data to a dictionary."""
         return {data.label: data.value for data in self._data}
 
-    def get(self) -> Dict[str, Any]:
+    def get(self) -> Dict[str, UserDataType]:
         """Access the key value settings for all options."""
         return self.serialize()
 

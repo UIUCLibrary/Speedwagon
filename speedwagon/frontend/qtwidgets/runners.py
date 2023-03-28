@@ -4,12 +4,9 @@ from __future__ import annotations
 
 import abc
 import logging
-import tempfile
 import typing
-import warnings
 from types import TracebackType
-from typing import Optional, Type, Dict, Any, Callable
-import contextlib
+from typing import Optional, Type
 
 from PySide6 import QtWidgets, QtCore
 
@@ -148,84 +145,6 @@ class AbsRunner(metaclass=abc.ABCMeta):
     def run(self, parent: QtWidgets.QWidget, job: AbsWorkflow, options: dict,
             logger: logging.Logger, completion_callback=None) -> None:
         """Run the workflow."""
-
-
-class QtRunner(speedwagon.runner.AbsRunner2):
-    """Job runner for Qt Widgets."""
-
-    def __init__(self,
-                 parent: Optional[QtWidgets.QWidget] = None) -> None:
-        """Create a new runner."""
-        self.parent = parent
-
-    @staticmethod
-    def update_progress(
-            runner: WorkRunnerExternal3,
-            current: int,
-            total: int) -> None:
-        """Update the current job progress."""
-        if runner.dialog is None:
-            return
-
-        dialog_box = runner.dialog
-        if total != dialog_box.maximum():
-            dialog_box.setMaximum(total)
-        if current != dialog_box.value():
-            dialog_box.setValue(current)
-
-        if current == total:
-            dialog_box.accept()
-
-    def request_more_info(
-            self,
-            workflow: speedwagon.job.Workflow,
-            options: Dict[str, Any],
-            pretask_results: typing.List[speedwagon.tasks.Result]
-    ) -> Dict[str, Any]:
-        """Request more information from the user."""
-        if self.parent is not None and \
-                hasattr(workflow, "get_additional_info"):
-            return workflow.get_additional_info(
-                self.parent, options, pretask_results.copy()
-            )
-        return {}
-
-    def run(self,
-            job: AbsWorkflow,
-            options: typing.Dict[str, Any],
-            logger: Optional[logging.Logger] = None,
-            completion_callback=None
-            ) -> None:
-        """Execute run."""
-        with tempfile.TemporaryDirectory() as build_dir:
-            task_scheduler = \
-                speedwagon.runner_strategies.TaskScheduler(
-                    working_directory=build_dir
-                )
-
-            task_scheduler.reporter = QtDialogProgress(parent=self.parent)
-
-            task_scheduler.logger = logger or logging.getLogger(__name__)
-
-            if isinstance(job, speedwagon.job.Workflow):
-                self.run_abs_workflow(
-                    task_scheduler=task_scheduler,
-                    job=job,
-                    options=options,
-                    logger=logger
-                )
-
-    def run_abs_workflow(
-        self,
-        task_scheduler: speedwagon.runner_strategies.TaskScheduler,
-        job: speedwagon.job.Workflow,
-        options: typing.Dict[str, Any],
-        logger: Optional[logging.Logger] = None
-    ) -> None:
-        """Run workflow."""
-        task_scheduler.logger = logger or logging.getLogger(__name__)
-        task_scheduler.request_more_info = self.request_more_info
-        task_scheduler.run(job, options)
 
 
 class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
@@ -395,59 +314,3 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
     def status(self, text: str) -> None:
         """Set the status."""
         self.signals.set_status(text)
-
-
-class WorkRunnerExternal3(contextlib.AbstractContextManager):
-    """Work runner that uses external manager."""
-
-    def __init__(
-            self,
-            parent: typing.Optional[QtWidgets.QWidget] = None
-    ) -> None:
-        """Create a work runner."""
-        self.results: typing.List[speedwagon.tasks.Result] = []
-        self._parent = parent
-        self.abort_callback: Optional[Callable[[], None]] = None
-        self.was_aborted = False
-        self._dialog: Optional[
-            frontend.qtwidgets.dialog.WorkProgressBar
-        ] = None
-        # self.progress_dialog_box_handler: \
-        #     Optional[ProgressMessageBoxLogHandler] = None
-
-    @property
-    def dialog(self) -> Optional[frontend.qtwidgets.dialog.WorkProgressBar]:
-        """Get the progress bar dialog."""
-        warnings.warn("Don't use the dialog", DeprecationWarning)
-        return self._dialog
-
-    @dialog.setter
-    def dialog(
-            self,
-            value: Optional[frontend.qtwidgets.dialog.WorkProgressBar]
-    ) -> None:
-        self._dialog = value
-
-    def __enter__(self) -> WorkRunnerExternal3:
-        """Start worker."""
-        self.dialog = \
-            speedwagon.frontend.qtwidgets.dialog.WorkProgressBar(self._parent)
-
-        self.dialog.close()
-        return self
-
-    def abort(self) -> None:
-        """Abort on any running tasks."""
-        self.was_aborted = True
-        if callable(self.abort_callback):
-            self.abort_callback()  # pylint: disable=not-callable
-
-    def __exit__(self,
-                 exc_type: Optional[Type[BaseException]],
-                 exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]) -> None:
-        """Close runner."""
-        if self.dialog is None:
-            raise AttributeError("dialog was set to None before closing")
-
-        self.dialog.close()

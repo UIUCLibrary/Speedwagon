@@ -16,6 +16,7 @@ else:
 import speedwagon.workflow
 import speedwagon.frontend.qtwidgets.widgets
 import speedwagon.frontend.qtwidgets.models
+from speedwagon import Workflow
 
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
@@ -497,13 +498,27 @@ class TestPluginConfig:
             )
         assert plugin_with_spam.modified is False
 
-# def test_write_to_config_file_writes_file(self, qtbot, mocker):
-    #     plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
-    #     entry_point = Mock(metadata.EntryPoint)
-    #     entry_point.name = "Spam"
-    #
-    #     plugin_widget.model.add_entry_point(entry_point, enabled=True)
-    #     qtbot.addWidget(plugin_widget)
-    #     mocker.patch("builtins.open")
-    #     plugin_widget.write_to_config_file("somefile")
-    #     builtins.open.assert_called_once_with("somefile", "w")
+class TestWorkspace:
+    @pytest.fixture()
+    def sample_workflow_klass(self, qtbot):
+        class Spam(Workflow):
+            name = "Spam bacon eggs"
+            description = "some description"
+            def discover_task_metadata(
+                    self,
+                    initial_results,
+                    additional_data, **user_args):
+                return []
+        return Spam
+
+    def test_show_workflow_name(self, qtbot, sample_workflow_klass):
+        workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
+        workspace.set_workflow(sample_workflow_klass)
+        assert workspace.workflow_name == \
+               sample_workflow_klass.name
+
+    def test_show_workflow_description(self, qtbot, sample_workflow_klass):
+        workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
+        workspace.set_workflow(sample_workflow_klass)
+        assert workspace.workflow_description == \
+               sample_workflow_klass.description

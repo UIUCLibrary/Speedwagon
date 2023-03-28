@@ -5,13 +5,9 @@ that do the work
 """
 from __future__ import annotations
 
-import io
 import logging
 import logging.handlers
-import os
-import time
 import typing
-import webbrowser
 from typing import List, Optional, Dict, Union
 
 try:  # pragma: no cover
@@ -41,21 +37,12 @@ if typing.TYPE_CHECKING:
     from speedwagon.config import SettingsData
 
 __all__ = [
-    "MainWindow1"
+    "MainWindow2"
 ]
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-TAB_WIDGET_SIZE_POLICY = QtWidgets.QSizePolicy(
-    QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-    QtWidgets.QSizePolicy.Policy.Maximum
-)
-
-CONSOLE_SIZE_POLICY = QtWidgets.QSizePolicy(
-    QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-    QtWidgets.QSizePolicy.Policy.Minimum
-)
 
 Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
@@ -152,6 +139,7 @@ class ToolConsole(QtWidgets.QWidget):
 
 
 class ItemTabsWidget(QtWidgets.QWidget):
+    tabs: QtWidgets.QTabWidget
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
@@ -159,14 +147,17 @@ class ItemTabsWidget(QtWidgets.QWidget):
                 resources.files(qtwidgets.ui).joinpath("setup_job.ui")
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
-        # ======================================================================
-        # Type Hints
-        self.tabs: QtWidgets.QTabWidget
-        # ======================================================================
         self.layout().addWidget(self.tabs)
 
     def add_tab(self, tab: QtWidgets.QWidget, name: str) -> None:
         self.tabs.addTab(tab, name)
+
+    @property
+    def current_tab(self) -> qtwidgets.tabs.WorkflowsTab3:
+        return typing.cast(
+            qtwidgets.tabs.WorkflowsTab3,
+            self.tabs.currentWidget()
+        )
 
 
 class MainProgram(QtWidgets.QMainWindow):
@@ -352,265 +343,11 @@ class MainWindowMenuBuilder:
             job_menu.addAction(import_button)
 
 
-class MainWindow1(MainProgram):
-    def __init__(
-            self,
-            work_manager: AbsToolJobManager,
-            debug: bool = False
-    ) -> None:
-
-        super().__init__(work_manager, debug)
-        with as_file(
-                resources.files(qtwidgets.ui).joinpath("main_window2.ui")
-        ) as ui_file:
-            self.load_ui_file(str(ui_file))
-
-        # ======================================================================
-        # Type hints
-        # ======================================================================
-        self.main_layout: QtWidgets.QVBoxLayout
-        self.main_splitter: QtWidgets.QSplitter
-        # ======================================================================
-
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_layout.addWidget(self.main_splitter)
-
-        ###########################################################
-        # Tabs
-        ###########################################################
-        self._create_tabs_widget()
-
-        ###########################################################
-        #  Console
-        ###########################################################
-        self._create_console()
-
-        ###########################################################
-        self.debug_mode(debug)
-        self.setup_menu()
-
-        # ##################
-
-        self.statusBar()
-
-        # ##################
-        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
-
-    def load_ui_file(self, ui_file: str) -> None:
-        qtwidgets.ui_loader.load_ui(ui_file, self)
-
-    def show_about_window(self) -> None:
-        qtwidgets.dialog.about_dialog_box(parent=self)
-
-    def show_system_info(self) -> None:
-        system_info_dialog = qtwidgets.dialog.SystemInfoDialog(self)
-        system_info_dialog.exec()
-
-    def show_help(self) -> None:
-        try:
-            pkg_metadata: metadata.PackageMetadata = \
-                metadata.metadata(speedwagon.__name__)
-            webbrowser.open_new(pkg_metadata['Home-page'])
-        except metadata.PackageNotFoundError as error:
-            self.log_manager.warning(
-                f"No help link available. Reason: {error}"
-            )
-
-    def setup_menu(self) -> None:
-        # Add menu bar
-        menu_bar = self.menuBar()
-
-        # File Menu
-        file_menu = menu_bar.addMenu("File")
-
-        # File --> Export Log
-        export_logs_button = QtGui.QAction(" &Export Log", self)
-        export_logs_button.setIcon(
-            self.style().standardIcon(
-                QtWidgets.QStyle.StandardPixmap.SP_DialogSaveButton
-            )
-        )
-
-        # pylint: disable=no-member
-        export_logs_button.triggered.connect(self.save_log)  # type: ignore
-
-        file_menu.addAction(export_logs_button)
-        file_menu.setObjectName("fileMenu")
-        file_menu.addAction(export_logs_button)
-        file_menu.setObjectName("fileMenu")
-        file_menu.addSeparator()
-
-        # File --> Exit
-        # Create Exit button
-        exit_button = QtGui.QAction(" &Exit", self)
-        exit_button.setObjectName("exitAction")
-        exit_button.triggered.connect(  # type: ignore
-            QtWidgets.QApplication.exit
-        )
-        file_menu.addAction(exit_button)
-        system_menu = menu_bar.addMenu("System")
-        system_menu.setObjectName("systemMenu")
-
-        # System --> Configuration
-        # Create a system info menu item
-        system_settings_menu_item = \
-            QtGui.QAction("Settings", self)
-        system_settings_menu_item.setObjectName('settingsAction')
-
-        system_settings_menu_item.triggered.connect(  # type: ignore
-            self.show_configuration)
-
-        system_settings_menu_item.setShortcut("Ctrl+Shift+S")
-        system_menu.addAction(system_settings_menu_item)
-
-        # System --> System Info
-        # Create a system info menu item
-        system_info_menu_item = QtGui.QAction("System Info", self)
-        system_info_menu_item.setObjectName("systemInfoAction")
-        system_info_menu_item.triggered.connect(  # type: ignore
-            self.show_system_info
-        )
-        system_menu.addAction(system_info_menu_item)
-
-        # Help Menu
-        help_menu = menu_bar.addMenu("Help")
-
-        # Help --> Help
-        # Create a Help menu item
-        help_button = QtGui.QAction(" &Help ", self)
-        help_button.triggered.connect(self.show_help)  # type: ignore
-        help_menu.addAction(help_button)
-
-        # Help --> About
-        # Create an About button
-        about_button = QtGui.QAction(" &About ", self)
-        about_button.triggered.connect(self.show_about_window)  # type: ignore
-        help_menu.addAction(about_button)
-
-    def _create_console(self) -> None:
-
-        self.console = ToolConsole(self.main_splitter)
-        self.console.setMinimumHeight(75)
-        self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
-        self.main_splitter.addWidget(self.console)
-        self._log_data = io.StringIO()
-        self.log_data_handler = logging.StreamHandler(self._log_data)
-        self.log_data_handler.setFormatter(DEBUG_LOGGING_FORMAT)
-        self.log_manager.addHandler(self.log_data_handler)
-
-    def _create_tabs_widget(self) -> None:
-        self.tab_widget = ItemTabsWidget(self.main_splitter)
-        self.tab_widget.setVisible(False)
-        self._tabs: List[qtwidgets.tabs.ItemSelectionTab] = []
-        # Add the tabs widget as the first widget
-        self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
-        self.main_splitter.addWidget(self.tab_widget)
-        self.main_splitter.setStretchFactor(0, 0)
-        self.main_splitter.setStretchFactor(1, 2)
-
-    def debug_mode(self, debug: bool) -> None:
-        """Set debug mode on or off."""
-        super().debug_mode(debug)
-        if debug:
-            self._set_logging_level(logging.DEBUG)
-            self.console.log_handler.setFormatter(DEBUG_LOGGING_FORMAT)
-
-        else:
-            self._set_logging_level(logging.INFO)
-
-    def _set_logging_level(self, level: int) -> None:
-        self.console.log_handler.setLevel(level)
-        self.log_data_handler.setLevel(level)
-
-    def set_current_tab(self, tab_name: str) -> None:
-
-        size = self.tab_widget.tabs.count()
-        for tab in range(size):
-            tab_title = self.tab_widget.tabs.tabText(tab)
-            if tab_name == tab_title:
-                self.tab_widget.tabs.setCurrentIndex(tab)
-                return
-        self.log_manager.warning(f"Unable to set tab to {tab_name}.")
-
-    def add_tab(
-            self,
-            workflow_name: str,
-            workflows: typing.Dict[str, typing.Type[Workflow]]
-    ) -> None:
-
-        workflows_tab = qtwidgets.tabs.WorkflowsTab(
-            parent=self,
-            workflows=workflows,
-            work_manager=self.work_manager,
-            log_manager=self.log_manager
-        )
-        workflows_tab.parent = self
-        workflows_tab.workflows = workflows
-        self._tabs.append(workflows_tab)
-        self.tab_widget.add_tab(workflows_tab.tab_widget, workflow_name)
-        self.tab_widget.setVisible(True)
-
-    def show_configuration(self) -> None:
-
-        config_dialog = qtwidgets.dialog.settings.SettingsDialog(parent=self)
-
-        if self.work_manager.settings_path is not None:
-            config_dialog.settings_location = self.work_manager.settings_path
-
-        global_settings_tab = qtwidgets.dialog.GlobalSettingsTab()
-
-        if self.work_manager.settings_path is not None:
-            global_settings_tab.config_file = \
-                os.path.join(
-                    self.work_manager.settings_path, "config.ini")
-
-            global_settings_tab.read_config_data()
-
-        config_dialog.add_tab(global_settings_tab, "Global Settings")
-
-        tabs_tab = qtwidgets.dialog.TabsConfigurationTab()
-
-        if self.work_manager.settings_path is not None:
-            tabs_tab.settings_location = \
-                os.path.join(self.work_manager.settings_path, "tabs.yml")
-            tabs_tab.load(tabs_tab.settings_location)
-
-        config_dialog.add_tab(tabs_tab, "Tabs")
-        config_dialog.accepted.connect(tabs_tab.on_okay)  # type: ignore
-
-        config_dialog.exec()
-
-    def start_workflow(self) -> None:
-        num_selected = self._workflow_selector_view.selectedIndexes()
-        if len(num_selected) != 1:
-            print(
-                "`Invali`d number of selected Indexes. "
-                f"Expected 1. Found {num_selected}"
-            )
-
-    def save_log(self) -> None:
-        data = self._log_data.getvalue()
-
-        epoch_in_minutes = int(time.time() / 60)
-        log_file_name, _ = \
-            QtWidgets.QFileDialog.getSaveFileName(
-                self,
-                "Export Log",
-                f"speedwagon_log_{epoch_in_minutes}.txt",
-                "Text Files (*.txt)")
-
-        if not log_file_name:
-            return
-        with open(log_file_name, "w", encoding="utf-8") as file_handle:
-            file_handle.write(data)
-
-        self.log_manager.info(f"Saved log to {log_file_name}")
-
-
-MainWindow = MainWindow1
-
-
 class MainWindow2UI(QtWidgets.QMainWindow):
+    main_splitter: QtWidgets.QSplitter
+    main_layout: QtWidgets.QVBoxLayout
+    console: ToolConsole
+    tab_widget: ItemTabsWidget
 
     def __init__(
             self,
@@ -625,7 +362,6 @@ class MainWindow2UI(QtWidgets.QMainWindow):
         # ======================================================================
         # Type hints
         # ======================================================================
-        self.main_layout: QtWidgets.QVBoxLayout
         self.main_splitter: QtWidgets.QSplitter
         # ======================================================================
 
@@ -652,17 +388,17 @@ class MainWindow2(MainWindow2UI):
         self.user_settings = settings or {}
 
         self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_layout.addWidget(self.main_splitter)
-
-        ###########################################################
-        # Tabs
-        ###########################################################
-        self._create_tabs_widget()
 
         ###########################################################
         #  Console
         ###########################################################
-        self._create_console()
+        self.console.attach_logger(self.logger)
+        self.console.log_formatter.verbose = \
+            typing.cast(
+                bool,
+                self.user_settings.get('debug', False)
+            )
+        ###########################################################
         self.setup_menu()
         ###########################################################
 
@@ -682,12 +418,7 @@ class MainWindow2(MainWindow2UI):
         tab_index = self.locate_tab_index_by_name("All")
         if tab_index is None:
             raise AssertionError("Missing All tab")
-        all_tab = self._tabs[tab_index]
-        for i in range(all_tab.item_selector_view.model().rowCount()):
-            workflow_index = all_tab.item_selector_view.model().index(i, 0)
-            name = workflow_index.data()
-            if name == workflow_name:
-                all_tab.item_selector_view.setCurrentIndex(workflow_index)
+        self.tab_widget.current_tab.set_current_workflow(workflow_name)
 
     def set_current_workflow_settings(
             self,
@@ -696,31 +427,7 @@ class MainWindow2(MainWindow2UI):
         tab_index = self.locate_tab_index_by_name("All")
         if tab_index is None:
             raise AssertionError("Missing All tab")
-        all_tab = self._tabs[tab_index]
-        current_tab_index = self.tab_widget.tabs.currentIndex()
-        item_selected_index = \
-            self._tabs[
-                current_tab_index
-            ].item_selector_view.selectedIndexes()[0]
-        current_workflow = typing.cast(
-            typing.Type[Workflow],
-            self._tabs[
-                current_tab_index
-            ].item_selection_model.data(
-                item_selected_index,
-                role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
-            )
-        )
-        workflow_inst = current_workflow(self.user_settings)
-        workflow_inst.global_settings = self.user_settings
-        options = workflow_inst.get_user_options()
-        load_job_settings_model(
-            data,
-            all_tab.workspace_widget.settings_form,
-            options
-        )
-        self._tabs[current_tab_index].options_model = \
-            all_tab.workspace_widget.settings_form.model
+        self.tab_widget.current_tab.set_current_workflow_settings(data)
 
     def close(self) -> bool:
         self.console.close()
@@ -757,32 +464,18 @@ class MainWindow2(MainWindow2UI):
         builder.build()
 
     def get_current_workflow_name(self) -> typing.Optional[str]:
-        current_tab_index = self.tab_widget.tabs.currentIndex()
-
-        item_selected_index = \
-            self._tabs[
-                current_tab_index
-            ].item_selector_view.selectedIndexes()[0]
-
-        current_workflow = typing.cast(
-                Workflow,
-                self._tabs[
-                    current_tab_index
-                ].item_selection_model.data(
-                    item_selected_index,
-                    role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
-                )
-            )
-        return current_workflow.name
+        current_tab = self.tab_widget.current_tab
+        klass = current_tab.workflow_selector.get_current_workflow_type()
+        if klass:
+            return klass.name
+        return None
 
     def get_current_job_settings(self) -> typing.Dict[str, typing.Any]:
-        current_tab = self._tabs[self.tab_widget.tabs.currentIndex()]
+
+        current_tab = self.tab_widget.current_tab
         if current_tab is None:
             raise IndexError("Unable to locate the current tab")
-        if current_tab.options_model is None:
-            raise ValueError("Current tab has no option model")
-        current_tab.workspace_widget.settings_form.update_model()
-        return current_tab.options_model.get()
+        return current_tab.workspace.get_configuration()
 
     def add_tab(
             self,
@@ -792,18 +485,12 @@ class MainWindow2(MainWindow2UI):
                 typing.Type[Workflow]
             ]
     ) -> None:
-
-        workflows_tab = qtwidgets.tabs.WorkflowsTab2(
+        workflows_tab = qtwidgets.tabs.WorkflowsTab3(
             parent=self,
-            workflows=workflows,
         )
-        workflows_tab.tab_name = tab_name
-        workflows_tab.signals.start_workflow.connect(self._start_workflow)
-
-        workflows_tab.parent = self
-        self._tabs.append(workflows_tab)
-        self.tab_widget.add_tab(workflows_tab.tab_widget, tab_name)
-        self.tab_widget.setVisible(True)
+        workflows_tab.workflows = workflows
+        workflows_tab.start_workflow.connect(self._start_workflow)
+        self.tab_widget.add_tab(workflows_tab, tab_name)
 
     def _start_workflow(self,
                         workflow: str,
@@ -815,31 +502,6 @@ class MainWindow2(MainWindow2UI):
 
     def save_log(self) -> None:
         self.save_logs_requested.emit(self)
-
-    def _create_tabs_widget(self) -> None:
-        self.tab_widget = ItemTabsWidget(self.main_splitter)
-        self.tab_widget.setVisible(False)
-        self._tabs: List[qtwidgets.tabs.ItemSelectionTab] = []
-
-        # Add the tabs widget as the first widget
-        # self.tab_widget.setSizePolicy(TAB_WIDGET_SIZE_POLICY)
-        # self.main_splitter.addWidget(self.tab_widget)
-        # self.main_splitter.setStretchFactor(0, 1)
-        # self.main_splitter.setStretchFactor(1, 0)
-
-    def _create_console(self) -> None:
-
-        self.console = ToolConsole(self.main_splitter)
-        self.console.log_formatter.verbose = \
-            typing.cast(
-                bool,
-                self.user_settings.get('debug', False)
-            )
-
-        self.console.setMinimumHeight(75)
-        self.console.setSizePolicy(CONSOLE_SIZE_POLICY)
-        self.main_splitter.addWidget(self.console)
-        self.console.attach_logger(self.logger)
 
 
 def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
