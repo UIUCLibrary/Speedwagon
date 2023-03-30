@@ -257,12 +257,6 @@ class TestMainWindow2:
         bacon = MagicMock()
         bacon.name = "Bacon"
 
-        # eggs = Mock(name="eggsWorkflow")
-        # eggs.name = "Eggs"
-        # eggs.description = "Eggs description"
-        # eggs_type = Mock(name="eggsWorkflowType", return_value=eggs)
-        # eggs_type.name = "Eggs"
-
         class Eggs(speedwagon.Workflow):
             name = "Eggs"
             def discover_task_metadata(self, *args, **kwargs):
@@ -280,31 +274,10 @@ class TestMainWindow2:
         main_window.set_active_workflow("Eggs")
         assert main_window.get_current_workflow_name() == "Eggs"
 
-    def test_set_current_workflow_settings(self, qtbot):
+    def test_set_current_workflow_settings(self, qtbot, eggs_workflow_klass):
         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
 
-        class Eggs(speedwagon.Workflow):
-            name = "Eggs"
-            def discover_task_metadata(self, initial_results: List[Any],
-                                       additional_data: Dict[str, Any],
-                                       **user_args) -> List[dict]:
-                return []
-
-            def get_user_options(self) -> List[
-                speedwagon.workflow.AbsOutputOptionDataType
-            ]:
-                return [
-                    speedwagon.workflow.TextLineEditData("Dummy")
-                ]
-
-            def user_options(self) -> typing.List[Any]:
-                return [
-                    shared_custom_widgets.UserOptionPythonDataType2(
-                        label_text="Dummy"
-                    )
-                ]
-
-        main_window.add_tab("All", {"Eggs": Eggs})
+        main_window.add_tab("All", {"Eggs": eggs_workflow_klass})
 
         main_window.set_active_workflow("Eggs")
         assert main_window.get_current_workflow_name() == "Eggs"
@@ -316,8 +289,8 @@ class TestMainWindow2:
         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
         assert main_window.get_current_workflow_name() is None
 
-    def test_get_current_workflow_name_by_default(self, qtbot):
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+    @pytest.fixture()
+    def eggs_workflow_klass(self):
         class Eggs(speedwagon.Workflow):
             name = "Eggs"
             def discover_task_metadata(self, initial_results: List[Any],
@@ -338,10 +311,37 @@ class TestMainWindow2:
                         label_text="Dummy"
                     )
                 ]
+        return Eggs
 
-        main_window.add_tab("All", {"Eggs": Eggs})
+    def test_get_current_workflow_name_by_default(self, qtbot, eggs_workflow_klass):
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+
+        main_window.add_tab("All", {"Eggs": eggs_workflow_klass})
         assert main_window.get_current_workflow_name() is None
 
+    def test_set_active_workflow_without_all_raises_exception(
+            self,
+            qtbot,
+            eggs_workflow_klass
+    ):
+        # Notice: No "All" tab was added here
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+        main_window.add_tab("My workflows", {"Eggs": eggs_workflow_klass})
+        with pytest.raises(Exception):
+            main_window.set_active_workflow("Eggs")
+
+    def test_set_current_workflow_settings_all_raises_exception(
+            self,
+            qtbot,
+            eggs_workflow_klass
+    ):
+        # Notice: No "All" tab was added here
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+        main_window.add_tab("My workflows", {"Eggs": eggs_workflow_klass})
+        with pytest.raises(Exception):
+            main_window.set_current_workflow_settings(
+                data={"something here": True}
+            )
 
 def test_load_job_settings_model(qtbot):
     data = {

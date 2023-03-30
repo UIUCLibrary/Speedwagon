@@ -418,7 +418,9 @@ class MainWindow2(MainWindow2UI):
         tab_index = self.locate_tab_index_by_name("All")
         if tab_index is None:
             raise AssertionError("Missing All tab")
-        self.tab_widget.current_tab.set_current_workflow(workflow_name)
+        current_tab = self.tab_widget.current_tab
+        if current_tab:
+            current_tab.set_current_workflow(workflow_name)
 
     def set_current_workflow_settings(
             self,
@@ -468,9 +470,7 @@ class MainWindow2(MainWindow2UI):
         if not current_tab:
             return None
         klass = current_tab.workflow_selector.get_current_workflow_type()
-        if klass:
-            return klass.name
-        return None
+        return klass.name if klass else None
 
     def get_current_job_settings(self) -> typing.Dict[str, typing.Any]:
 
