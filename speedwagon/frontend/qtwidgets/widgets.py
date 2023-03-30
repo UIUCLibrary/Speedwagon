@@ -54,6 +54,7 @@ class EditDelegateWidget(QtWidgets.QWidget):
         When https://bugreports.qt.io/browse/PYSIDE-1434 is resolved, this
         should be made into an abstract base class.
     """
+
     editingFinished = QtCore.Signal()
     dataChanged = QtCore.Signal()
 
@@ -286,7 +287,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
 
     @abc.abstractmethod
     def drop_acceptable_data(self, param) -> bool:
-        """check if dropped item is accessible"""
+        """Check if dropped item is accessible."""
 
 
 class DirectorySelectWidget(FileSystemItemSelectWidget):
@@ -575,6 +576,11 @@ class DynamicForm(QtWidgets.QScrollArea):
 
 
 class Workspace(QtWidgets.QWidget):
+    """Workspace widget.
+
+    This widget contains the controls for a user to set up a new job.
+    """
+
     settingsWidget: QtWidgets.QWidget
     workflow_name_value: QtWidgets.QLineEdit
     descriptionView: QtWidgets.QTextBrowser
@@ -586,6 +592,7 @@ class Workspace(QtWidgets.QWidget):
             self,
             parent: Optional[QtWidgets.QWidget] = None
     ) -> None:
+        """Create Workspace widget."""
         super().__init__(parent)
         with as_file(
                 resources.files(ui).joinpath("workspace.ui")
@@ -594,38 +601,38 @@ class Workspace(QtWidgets.QWidget):
         self.user_settings: SettingsData = {}
 
     def set_workflow(self, workflow_klass: typing.Type[Workflow]) -> None:
+        """Set current workflow."""
         new_workflow = workflow_klass(global_settings=self.user_settings)
         if workflow_klass.name:
             self.workflow_name_value.setText(workflow_klass.name)
         if new_workflow.description:
-            self.set_workflow_description(new_workflow.description)
+            self.workflow_description_value.setText(new_workflow.description)
         self.settings_form.set_model(
             models.ToolOptionsModel4(new_workflow.get_user_options())
         )
 
-    def get_configuration(self) -> Dict[str, UserDataType]:
+    def _get_configuration(self) -> Dict[str, UserDataType]:
         return self.settings_form.get_configuration()
 
     @property
     def workflow_name(self) -> str:
-        return self.get_workflow_name()
+        """Get workflow name."""
+        return self._get_workflow_name()
 
-    def get_workflow_name(self) -> str:
+    def _get_workflow_name(self) -> str:
         return self.workflow_name_value.text()
 
     @property
     def workflow_description(self) -> str:
-        return self.get_workflow_description()
+        """Get workflow description."""
+        return self._get_workflow_description()
 
-    def get_workflow_description(self) -> str:
+    def _get_workflow_description(self) -> str:
         return self.workflow_description_value.toPlainText()
 
-    def set_workflow_description(self, value: str) -> None:
-        self.workflow_description_value.setText(value)
-
-    name = QtCore.Property(str, get_workflow_name)
-    description = QtCore.Property(str, get_workflow_description)
-    configuration = QtCore.Property(object, get_configuration)
+    name = QtCore.Property(str, _get_workflow_name)
+    description = QtCore.Property(str, _get_workflow_description)
+    configuration = QtCore.Property(object, _get_configuration)
 
 
 class SelectWorkflow(QtWidgets.QWidget):

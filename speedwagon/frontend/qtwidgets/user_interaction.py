@@ -19,6 +19,8 @@ if typing.TYPE_CHECKING:
 
 
 class ConfirmItem(TypedDict):
+    """Confirm plugin by name."""
+
     name: str
     checked: Qt.CheckState
 

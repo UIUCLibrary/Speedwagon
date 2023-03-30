@@ -480,7 +480,7 @@ class MainWindow2(MainWindow2UI):
         current_tab = self.tab_widget.current_tab
         if current_tab is None:
             raise IndexError("Unable to locate the current tab")
-        return current_tab.workspace.get_configuration()
+        return current_tab.workspace.configuration
 
     def add_tab(
             self,
