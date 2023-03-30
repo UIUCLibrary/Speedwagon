@@ -161,31 +161,6 @@ class ApplicationLauncher:
 
     .. versionadded:: 0.2.0
        Added ApplicationLauncher for launching speedwagon in different ways.
-
-    Examples:
-    .. testsetup::
-
-        from speedwagon.workflows.workflow_capture_one_to_dl_compound_and_dl \
-            import CaptureOneToDlCompoundAndDLWorkflow
-        from speedwagon.frontend.qtwidgets.gui_startup \
-            import SingleWorkflowLauncher
-
-
-    .. testcode::
-       :skipif: True
-
-       >>> startup_strategy = SingleWorkflowLauncher()
-       >>> startup_strategy.set_workflow(
-       ...      CaptureOneToDlCompoundAndDLWorkflow()
-       ... )
-       >>> startup_strategy.options = {
-       ...      "Input": "source/images/",
-       ...      "Package Type": "Capture One",
-       ...      "Output Digital Library": "output/dl",
-       ...      "Output HathiTrust": "output/ht"
-       ... }
-       >>> app = ApplicationLauncher(strategy=startup_strategy)
-       >>> app.run()
     """
 
     def __init__(self, strategy: Optional[AbsStarter] = None) -> None:

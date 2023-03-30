@@ -29,11 +29,33 @@
       <property name="childrenCollapsible">
        <bool>false</bool>
       </property>
+      <widget class="ItemTabsWidget" name="tab_widget">
+       <property name="text" stdset="0">
+        <string>Hello, speedwagon</string>
+       </property>
+      </widget>
+      <widget class="ToolConsole" name="console">
+       <property name="text" stdset="0">
+        <string>Hello, speedwagon</string>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ToolConsole</class>
+   <extends>QWidget</extends>
+   <header>speedwagon.frontend.qtwidgets.gui</header>
+  </customwidget>
+  <customwidget>
+   <class>ItemTabsWidget</class>
+   <extends>QWidget</extends>
+   <header>speedwagon.frontend.qtwidgets.gui</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

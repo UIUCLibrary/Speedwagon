@@ -4,6 +4,9 @@ import abc
 import json
 from typing import Any, Dict, List, Optional, Union
 
+UserDataType = Union[str, bool, int, None]
+UserData = Dict[str, UserDataType]
+
 
 class AbsOutputOptionDataType(abc.ABC):
     """Base case for generating user option types."""
