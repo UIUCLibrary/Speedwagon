@@ -374,3 +374,34 @@ class TestSelectWorkflow:
         selector.add_workflow(FakeWorkflow)
         with pytest.raises(ValueError):
             selector.set_current_by_name("invalid workflow")
+
+
+class TestWorkflowsTab3:
+    def test_set_current_workflow_settings_before_workflow_raises(
+            self,
+            qtbot
+    ):
+        tab = qtwidgets.tabs.WorkflowsTab3()
+        with pytest.raises(ValueError):
+            tab.set_current_workflow_settings({"does not exists": True})
+
+    def test_set_current_workflow_settings(self, qtbot):
+        class Spam(speedwagon.Workflow):
+            name = "spam"
+            def discover_task_metadata(self, *args, **kwargs):
+                return []
+        tab = qtwidgets.tabs.WorkflowsTab3()
+        tab.workflows = {"spam": Spam}
+        tab.set_current_workflow("spam")
+        tab.set_current_workflow_settings({"foo": True})
+
+    def test_add_workflows(self):
+        class Spam(speedwagon.Workflow):
+            name = "spam"
+            def discover_task_metadata(self, *args, **kwargs):
+                return []
+
+        tab = qtwidgets.tabs.WorkflowsTab3()
+        assert len(tab.workflows) == 0
+        tab.workflows = {"spam": Spam}
+        assert tab.workflows["spam"] == Spam

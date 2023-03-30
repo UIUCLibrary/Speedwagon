@@ -4,132 +4,13 @@ from __future__ import annotations
 
 import abc
 import logging
-import typing
-from types import TracebackType
-from typing import Optional, Type
+from typing import Optional
 
 from PySide6 import QtWidgets, QtCore
 
-import speedwagon
-from speedwagon import frontend
 from speedwagon import runner_strategies
 from speedwagon.frontend import qtwidgets
 from speedwagon.job import AbsWorkflow
-
-
-class QtDialogProgress(frontend.reporter.RunnerDisplay):
-    """Qt based dialog box showing progress."""
-
-    def __init__(
-            self,
-            parent: typing.Optional[QtWidgets.QWidget] = None
-    ) -> None:
-        """Create a new Qt based progress dialog box."""
-        super().__init__()
-        self.dialog = qtwidgets.dialog.WorkProgressBar(parent=parent)
-        self.dialog.setMaximum(0)
-        self.dialog.setValue(0)
-
-    @property
-    def details(self) -> str:
-        """Get dialog details."""
-        return self.dialog.labelText()
-
-    @details.setter
-    def details(self, value: str) -> None:
-        if self._details == value:
-            return
-
-        self._details = value
-        self.dialog.setLabelText(value)
-        QtWidgets.QApplication.processEvents()
-
-    @property
-    def user_canceled(self) -> bool:
-        """Get status of job cancellation."""
-        return self.dialog.wasCanceled()
-
-    @property
-    def current_task_progress(self) -> typing.Optional[int]:
-        """Get the current task number."""
-        return super().current_task_progress
-
-    @current_task_progress.setter
-    def current_task_progress(self, value: typing.Optional[int]) -> None:
-        self._current_task_progress = value
-        dialog_value = value or 0
-        self.dialog.setValue(dialog_value)
-
-    @property
-    def total_tasks_amount(self) -> typing.Optional[int]:
-        """Get the total estimated tasks."""
-        return super().total_tasks_amount
-
-    @total_tasks_amount.setter
-    def total_tasks_amount(self, value: typing.Optional[int]) -> None:
-        self._total_tasks_amount = value
-        if value is None:
-            self.dialog.setMaximum(0)
-            return
-
-        self.dialog.setMaximum(value)
-
-    @property
-    def title(self) -> str:
-        """Get the window title."""
-        return self.dialog.windowTitle()
-
-    @title.setter
-    def title(self, value: str) -> None:
-        self.dialog.setWindowTitle(value)
-
-    def refresh(self) -> None:
-        """Process Qt events."""
-        QtWidgets.QApplication.processEvents()
-
-        self.current_task_progress = self._current_task_progress
-        if (
-            self.task_runner is not None
-            and self.task_runner.current_task is not None
-        ):
-            self._update_window_task_info(self.task_runner.current_task)
-        if self.task_scheduler is not None:
-            self._update_progress(self.task_scheduler)
-        QtWidgets.QApplication.processEvents()
-
-    def __enter__(self) -> "QtDialogProgress":
-        """Show dialog box."""
-        self.dialog.show()
-        return self
-
-    def __exit__(self, __exc_type: Optional[Type[BaseException]],
-                 __exc_value: Optional[BaseException],
-                 __traceback: Optional[TracebackType]):
-        """Clean up dialog."""
-        self.dialog.accept()
-        self.close()
-        return super().__exit__(__exc_type, __exc_value, __traceback)
-
-    def close(self) -> None:
-        """Close dialog box."""
-        self.dialog.close()
-
-    def _update_window_task_info(
-            self,
-            current_task: speedwagon.tasks.Subtask
-    ) -> None:
-        self.details = "Processing" \
-            if current_task.name is None \
-            else current_task.name
-
-    def _update_progress(
-            self,
-            task_scheduler:
-            runner_strategies.TaskScheduler
-    ) -> None:
-        self.total_tasks_amount = task_scheduler.total_tasks
-        self.current_task_progress = task_scheduler.current_task_progress
-
 
 USER_ABORTED_MESSAGE = "User Aborted"
 

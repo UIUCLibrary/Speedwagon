@@ -11,13 +11,8 @@ from typing import \
     Dict, \
     Any, \
     TypedDict, \
-    List
-
-
-try:  # pragma: no cover
-    from typing import TypeAlias
-except ImportError:  # pragma: no cover
-    from typing_extensions import TypeAlias
+    List, \
+    Iterable
 
 try:  # pragma: no cover
     from typing import NotRequired
@@ -43,16 +38,13 @@ if typing.TYPE_CHECKING:
 __all__ = ['Workspace']
 
 
-UseDataType: TypeAlias = Union[str, bool, None]
-
-
 class WidgetMetadata(TypedDict):
     label: str
     widget_type: str
     filter: NotRequired[str]
     selections: NotRequired[List[str]]
     placeholder_text: NotRequired[str]
-    value: NotRequired[UseDataType]
+    value: NotRequired[UserDataType]
 
 
 class EditDelegateWidget(QtWidgets.QWidget):
@@ -79,12 +71,12 @@ class EditDelegateWidget(QtWidgets.QWidget):
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
 
     @property
-    def data(self) -> UseDataType:
+    def data(self) -> UserDataType:
         return self._data
 
     @data.setter
     @abc.abstractmethod
-    def data(self, value: UseDataType) -> None:
+    def data(self, value: UserDataType) -> None:
         """Set the value based on the widget used."""
 
 
@@ -475,7 +467,10 @@ class InnerForm(QtWidgets.QWidget):
             self.model.setData(index, self.widgets[model_data.label].data)
 
     @staticmethod
-    def iter_row_rect(layout: QtWidgets.QFormLayout, device):
+    def iter_row_rect(
+            layout: QtWidgets.QFormLayout,
+            device: InnerForm
+    ) -> Iterable[QtCore.QRect]:
         last_height = 0
         for row in range(layout.rowCount()):
             label = \
@@ -500,7 +495,7 @@ class InnerForm(QtWidgets.QWidget):
         for i, rect in enumerate(
                 self.iter_row_rect(
                     typing.cast(QtWidgets.QFormLayout, self.layout()),
-                    painter.device()
+                    typing.cast(InnerForm, painter.device())
                 )
         ):
             if i % 2 == 0:
@@ -600,8 +595,10 @@ class Workspace(QtWidgets.QWidget):
 
     def set_workflow(self, workflow_klass: typing.Type[Workflow]) -> None:
         new_workflow = workflow_klass(global_settings=self.user_settings)
-        self.workflow_name_value.setText(workflow_klass.name)
-        self.set_workflow_description(new_workflow.description)
+        if workflow_klass.name:
+            self.workflow_name_value.setText(workflow_klass.name)
+        if new_workflow.description:
+            self.set_workflow_description(new_workflow.description)
         self.settings_form.set_model(
             models.ToolOptionsModel4(new_workflow.get_user_options())
         )
@@ -685,6 +682,23 @@ class SelectWorkflow(QtWidgets.QWidget):
             )
         )
 
+    @property
+    def workflows(self) -> Dict[str, typing.Type[Workflow]]:
+        loaded_workflows = {}
+        for row_id in range(self._model.rowCount()):
+            index = self._model.index(row_id)
+            workflow_name = typing.cast(
+                str,
+                self._model.data(index, QtCore.Qt.ItemDataRole.DisplayRole)
+            )
+
+            loaded_workflows[workflow_name] = typing.cast(
+                typing.Type[Workflow],
+                self._model.data(index, QtCore.Qt.ItemDataRole.UserRole)
+            )
+
+        return loaded_workflows
+
 
 class PluginConfig(QtWidgets.QWidget):
     changes_made = QtCore.Signal()
@@ -710,18 +724,27 @@ class PluginConfig(QtWidgets.QWidget):
 
     def enabled_plugins(self) -> Dict[str, List[str]]:
 
-        active_plugins = defaultdict(list)
+        active_plugins: Dict[str, List[str]] = defaultdict(list)
         for i in range(self.model.rowCount()):
-            checked = self.model.data(
-                self.model.index(i), QtCore.Qt.ItemDataRole.CheckStateRole
-            )
-            if checked == QtCore.Qt.CheckState.Checked:
-                source = \
-                    self.model.data(self.model.index(i), self.model.ModuleRole)
-
-                active_plugins[source].append(
-                    self.model.data(
-                        self.model.index(i), QtCore.Qt.ItemDataRole.DisplayRole
-                    )
+            checked = typing.cast(
+                QtCore.Qt.ItemDataRole,
+                self.model.data(
+                    self.model.index(i), QtCore.Qt.ItemDataRole.CheckStateRole
                 )
+            )
+
+            if checked == QtCore.Qt.CheckState.Checked:
+                source = typing.cast(
+                    str,
+                    self.model.data(self.model.index(i), self.model.ModuleRole)
+                )
+                plugin_name = \
+                    typing.cast(
+                        str,
+                        self.model.data(
+                            self.model.index(i),
+                            QtCore.Qt.ItemDataRole.DisplayRole
+                        )
+                    )
+                active_plugins[source].append(plugin_name)
         return dict(active_plugins)

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import threading
 import typing
-from typing import Dict, Any, Optional, List, Union, Type
+from typing import Dict, Any, Optional, List, Union, Type, TypedDict
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
 from uiucprescon.packager import Metadata
@@ -16,6 +16,11 @@ from speedwagon.frontend.qtwidgets.dialog.title_page_selection import \
 if typing.TYPE_CHECKING:
     from uiucprescon.packager.packages import collection
     from speedwagon.job import Workflow
+
+
+class ConfirmItem(TypedDict):
+    name: str
+    checked: Qt.CheckState
 
 
 class QtWidgetFactory(interaction.UserRequestFactory):
@@ -53,23 +58,31 @@ class ConfirmListModel(QtCore.QAbstractListModel):
             items: Optional[List[str]] = None,
             parent: Optional[QtCore.QObject] = None
     ) -> None:
-        """Create a new confirm list model."""
+        """Create a new model."""
         super().__init__(parent)
-        self.items = items or []
+        self._items: List[ConfirmItem] = []
+        if items:
+            self._set_items(items)
 
-    @property
-    def items(self):
-        """Get the items."""
-        return self._items
-
-    @items.setter
-    def items(self, value):
+    def _set_items(self, item_names: List[str]) -> None:
         self._items = [{
-                "name": i,
-                "checked": Qt.CheckState.Checked
-            } for i in value
+            "name": i,
+            "checked": Qt.CheckState.Checked
+        } for i in item_names
         ]
         self.itemsChanged.emit()
+
+    @property
+    def items(self) -> List[str]:
+        """Get the items."""
+        keys = []
+        for item in self._items:
+            keys.append(item['name'])
+        return keys
+
+    @items.setter
+    def items(self, value: List[str]) -> None:
+        self._set_items(value)
 
     def selected(self) -> List[str]:
         """Get items in the model that have been checked."""
@@ -80,7 +93,12 @@ class ConfirmListModel(QtCore.QAbstractListModel):
                 self.data(index, Qt.ItemDataRole.CheckStateRole)
 
             if checked == Qt.CheckState.Checked:
-                selected.append(self.data(index, Qt.ItemDataRole.DisplayRole))
+                selected.append(
+                    typing.cast(
+                        str,
+                        self.data(index, Qt.ItemDataRole.DisplayRole)
+                    )
+                )
         return selected
 
     def rowCount(  # pylint: disable=invalid-name
@@ -202,7 +220,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         else:
             ok_button.setEnabled(False)
 
-    def _make_connections(self):
+    def _make_connections(self) -> None:
         # pylint: disable=E1101
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)

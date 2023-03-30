@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import logging.handlers
 import typing
-from typing import List, Optional, Dict, Union
+from typing import List, Optional, Dict
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -35,6 +35,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
     from speedwagon.worker import AbsToolJobManager
     from speedwagon.config import SettingsData
+    from speedwagon.frontend.qtwidgets.widgets import UserDataType
 
 __all__ = [
     "MainWindow2"
@@ -429,7 +430,9 @@ class MainWindow2(MainWindow2UI):
         tab_index = self.locate_tab_index_by_name("All")
         if tab_index is None:
             raise AssertionError("Missing All tab")
-        self.tab_widget.current_tab.set_current_workflow_settings(data)
+        current_tab = self.tab_widget.current_tab
+        if current_tab:
+            current_tab.set_current_workflow_settings(data)
 
     def close(self) -> bool:
         self.console.close()
@@ -482,14 +485,12 @@ class MainWindow2(MainWindow2UI):
     def add_tab(
             self,
             tab_name: str,
-            workflows: typing.Mapping[
+            workflows: typing.Dict[
                 str,
                 typing.Type[Workflow]
             ]
     ) -> None:
-        workflows_tab = qtwidgets.tabs.WorkflowsTab3(
-            parent=self,
-        )
+        workflows_tab = qtwidgets.tabs.WorkflowsTab3(parent=self)
         workflows_tab.workflows = workflows
         workflows_tab.start_workflow.connect(self._start_workflow)
         self.tab_widget.add_tab(workflows_tab, tab_name)
@@ -520,10 +521,10 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
 
 
 def load_job_settings_model(
-        data: Dict[str, Union[str, bool]],
+        data: Dict[str, UserDataType],
         settings_widget: widgets.DynamicForm,
         workflow_options: List[AbsOutputOptionDataType]
-):
+) -> None:
     model = models.ToolOptionsModel4(workflow_options)
     for key, value in data.items():
         for i in range(model.rowCount()):

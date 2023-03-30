@@ -5,16 +5,21 @@ import io
 import os
 import sys
 import typing
-from typing import List, Optional, Iterator, NamedTuple, cast, Type
+from typing import List, Optional, Iterator, NamedTuple, cast, Type, Dict
 
 import yaml
 from PySide6 import QtWidgets, QtCore  # type: ignore
 import speedwagon
 
+from speedwagon.job import NullWorkflow, Workflow
 from speedwagon.frontend import qtwidgets
 from speedwagon.frontend.qtwidgets.models import WorkflowListModel2
+if typing.TYPE_CHECKING:
+    from speedwagon.frontend.qtwidgets.widgets import \
+        Workspace, \
+        SelectWorkflow, \
+        UserDataType
 
-from speedwagon.job import NullWorkflow, Workflow
 
 try:  # pragma: no cover
     from importlib.resources import as_file
@@ -42,8 +47,8 @@ class WorkflowsTab3(QtWidgets.QWidget):
     settings_changed = QtCore.Signal()
 
     start_button: QtWidgets.QPushButton
-    workspace: qtwidgets.widgets.Workspace
-    workflow_selector: qtwidgets.widgets.SelectWorkflow
+    workspace: Workspace
+    workflow_selector: SelectWorkflow
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
@@ -54,65 +59,67 @@ class WorkflowsTab3(QtWidgets.QWidget):
                 ).joinpath("create_job_tab.ui")
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
-        # self._workflows = []
         self.start_button.clicked.connect(self.submit_job)
 
         # =============================================================
         # This is clunky, and should not have to worry about the parent
-        if hasattr(self._parent, "user_settings"):
-            self.workspace.user_settings = self._parent.user_settings
-        else:
-            self.workspace.user_settings = {}
+
+        self.workspace.user_settings = \
+            getattr(self._parent, "user_settings", {})
         # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         self.workflow_selector.workflow_selected.connect(
             self._handle_workflow_changed
         )
-        self._workflow_selected = None
+        self._workflow_selected: Optional[Type[speedwagon.Workflow]] = None
         self.settings_changed.connect(self._update_okay_button)
         self.settings_changed.emit()
 
     def set_current_workflow(self, workflow_name: str) -> None:
         self.workflow_selector.set_current_by_name(workflow_name)
 
-    def set_current_workflow_settings(self, data):
+    def set_current_workflow_settings(
+            self,
+            data: Dict[str, UserDataType]
+    ) -> None:
         workflow_klass = self.workflow_selector.get_current_workflow_type()
         if workflow_klass is None:
             raise ValueError(
                 "Current Workflow not set. Workflow must be set first."
             )
-        workflow_inst = self.workflow_selector.get_current_workflow_type()(
-            self.workspace.user_settings
-        )
+        workflow_inst = workflow_klass(self.workspace.user_settings)
         qtwidgets.gui.load_job_settings_model(
             data,
             self.workspace.settings_form,
             workflow_inst.get_user_options()
         )
 
-    def _handle_workflow_changed(self, workflow_klass: typing.Type[Workflow]):
+    def _handle_workflow_changed(
+            self,
+            workflow_klass: typing.Type[Workflow]
+    ) -> None:
         self._workflow_selected = workflow_klass
         self.workspace.set_workflow(workflow_klass)
         self.settings_changed.emit()
 
-    def _update_okay_button(self):
+    def _update_okay_button(self) -> None:
         if self._workflow_selected is None:
             self.start_button.setEnabled(False)
         else:
             self.start_button.setEnabled(True)
 
-    def submit_job(self):
+    def submit_job(self) -> None:
         self.start_workflow.emit(
             self.workspace.name,
             self.workspace.configuration
         )
 
     @property
-    def workflows(self):
-        return self.workflow_selector.workflow_selected
+    def workflows(self) -> Dict[str, Type[speedwagon.Workflow]]:
+        return self.workflow_selector.workflows
 
     @workflows.setter
-    def workflows(self, value):
+    def workflows(self, value: Dict[str, Type[speedwagon.Workflow]]) -> None:
         for workflow_klass in value.values():
             self.workflow_selector.add_workflow(workflow_klass)
 
