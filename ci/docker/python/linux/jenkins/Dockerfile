@@ -23,7 +23,7 @@ RUN python -m pip install  --no-cache-dir --upgrade pip &&  \
 #==============================================================================
 FROM base_image as SONAR_BUILDER
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends unzip=6.0-26+deb11u1
+    apt-get install -y --no-install-recommends unzip
 ENV SONAR_SCANNER_VERSION=4.6.2.2472
 ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
 ENV SONAR_USER_HOME=/opt/sonar/.sonar
@@ -41,20 +41,20 @@ RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
 FROM base_image
 
 RUN apt-get update &&  \
-    apt-get install -y --no-install-recommends tzdata=2021a-1+deb11u8 && \
+    apt-get install -y --no-install-recommends tzdata && \
     ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
     dpkg-reconfigure --frontend noninteractive tzdata && \
     apt-get install -y --no-install-recommends \
-      libxkbcommon-x11-0=1.0.3-2 \
-      libgl1-mesa-glx=20.3.5-1 \
-      locales=2.31-13+deb11u5 \
-      locales-all=2.31-13+deb11u5 \
-      latexmk=1:4.70b-0.2 \
-      tex-gyre=20180621-3.1 \
-      libegl-dev=1.3.2-1 \
-      libdbus-1-3=1.12.24-0+deb11u1 \
-      texlive-formats-extra=2020.20210202-3 \
-      xvfb=2:1.20.11-1+deb11u5 && \
+      libxkbcommon-x11-0 \
+      libgl1-mesa-glx \
+      locales \
+      locales-all \
+      latexmk \
+      tex-gyre \
+      libegl-dev \
+      libdbus-1-3 \
+      texlive-formats-extra \
+      xvfb && \
     rm -rf  /root/.cache
 RUN mkdir -p /.cache/pip && \
     chmod -R 777 /.cache
