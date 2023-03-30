@@ -35,7 +35,6 @@ if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
     from speedwagon.worker import AbsToolJobManager
     from speedwagon.config import SettingsData
-    from speedwagon.frontend.qtwidgets.widgets import UserDataType
 
 __all__ = [
     "MainWindow2"
@@ -475,12 +474,17 @@ class MainWindow2(MainWindow2UI):
         klass = current_tab.workflow_selector.get_current_workflow_type()
         return klass.name if klass else None
 
-    def get_current_job_settings(self) -> typing.Dict[str, typing.Any]:
+    def get_current_job_settings(
+            self
+    ) -> typing.Dict[str, widgets.UserDataType]:
 
         current_tab = self.tab_widget.current_tab
         if current_tab is None:
             raise IndexError("Unable to locate the current tab")
-        return current_tab.workspace.configuration
+        return typing.cast(
+            typing.Dict[str, widgets.UserDataType],
+            current_tab.workspace.configuration
+        )
 
     def add_tab(
             self,
@@ -521,7 +525,7 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
 
 
 def load_job_settings_model(
-        data: Dict[str, UserDataType],
+        data: Dict[str, widgets.UserDataType],
         settings_widget: widgets.DynamicForm,
         workflow_options: List[AbsOutputOptionDataType]
 ) -> None:
