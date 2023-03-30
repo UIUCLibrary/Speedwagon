@@ -153,9 +153,9 @@ class ItemTabsWidget(QtWidgets.QWidget):
         self.tabs.addTab(tab, name)
 
     @property
-    def current_tab(self) -> qtwidgets.tabs.WorkflowsTab3:
+    def current_tab(self) -> Optional[qtwidgets.tabs.WorkflowsTab3]:
         return typing.cast(
-            qtwidgets.tabs.WorkflowsTab3,
+            Optional[qtwidgets.tabs.WorkflowsTab3],
             self.tabs.currentWidget()
         )
 
@@ -465,6 +465,8 @@ class MainWindow2(MainWindow2UI):
 
     def get_current_workflow_name(self) -> typing.Optional[str]:
         current_tab = self.tab_widget.current_tab
+        if not current_tab:
+            return None
         klass = current_tab.workflow_selector.get_current_workflow_type()
         if klass:
             return klass.name

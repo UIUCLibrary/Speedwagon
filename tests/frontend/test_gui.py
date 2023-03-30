@@ -312,6 +312,36 @@ class TestMainWindow2:
         main_window.set_current_workflow_settings({"Dummy": "Yes"})
         assert main_window.get_current_job_settings()["Dummy"] == "Yes"
 
+    def test_get_current_workflow_name_is_nothing_with_no_tabs(self, qtbot):
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+        assert main_window.get_current_workflow_name() is None
+
+    def test_get_current_workflow_name_by_default(self, qtbot):
+        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+        class Eggs(speedwagon.Workflow):
+            name = "Eggs"
+            def discover_task_metadata(self, initial_results: List[Any],
+                                       additional_data: Dict[str, Any],
+                                       **user_args) -> List[dict]:
+                return []
+
+            def get_user_options(self) -> List[
+                speedwagon.workflow.AbsOutputOptionDataType
+            ]:
+                return [
+                    speedwagon.workflow.TextLineEditData("Dummy")
+                ]
+
+            def user_options(self) -> typing.List[Any]:
+                return [
+                    shared_custom_widgets.UserOptionPythonDataType2(
+                        label_text="Dummy"
+                    )
+                ]
+
+        main_window.add_tab("All", {"Eggs": Eggs})
+        assert main_window.get_current_workflow_name() is None
+
 
 def test_load_job_settings_model(qtbot):
     data = {
