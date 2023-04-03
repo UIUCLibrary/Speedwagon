@@ -393,27 +393,6 @@ class TestToolOptionsModel4:
         assert starting_value is None and changed_value == "spam"
 
 
-def test_get_settings_errors():
-    file_selection_option = workflow.FileSelectData(
-        'Checksum File',
-        required=True
-    )
-    # Note that no value has been selected for a required field
-    file_selection_option.value = None
-
-    data = [
-        file_selection_option
-    ]
-    model = models.ToolOptionsModel4(data)
-    error = models.get_settings_errors(
-        model,
-        [
-            models.check_required_settings_have_values
-        ]
-    )
-    assert len(error) > 0
-
-
 def test_check_required_settings_have_values_not_required_returns_nothing():
     option_data = Mock(workflow.AbsOutputOptionDataType, required=False)
     result = models.check_required_settings_have_values(option_data)

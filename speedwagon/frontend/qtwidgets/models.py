@@ -382,21 +382,6 @@ def check_required_settings_have_values(
     return None
 
 
-def get_settings_errors(
-        model: ToolOptionsModel4,
-        checks: List[typing.Callable[[AbsOutputOptionDataType], Optional[str]]]
-) -> List[str]:
-    errors = []
-    for row_id in range(model.rowCount()):
-        index = model.index(row_id)
-        data = model.data(index, model.DataRole)
-        for check_func in checks:
-            error_check_result = check_func(data)
-            if error_check_result is not None:
-                errors.append(error_check_result)
-    return errors
-
-
 class ModelDataFormatter:
     def __init__(self, model: ToolOptionsModel4):
         self._model = model

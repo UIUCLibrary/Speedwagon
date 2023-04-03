@@ -11,6 +11,8 @@ import speedwagon.startup
 import speedwagon.workflow
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 QtGui = pytest.importorskip("PySide6.QtGui")
+import speedwagon.config
+from speedwagon.frontend.qtwidgets.tabs import WorkflowsTab3
 from speedwagon.frontend.qtwidgets import shared_custom_widgets
 
 
@@ -114,6 +116,39 @@ class TestToolConsole:
         console.add_message("I'm a message")
         assert "I'm a message" in console.text
 
+class TestMainWindow3:
+    def test_updated_settings_uses_config_strategy(self, qtbot):
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        window.config_strategy = Mock(speedwagon.config.AbsConfigSettings)
+        window.update_settings()
+        assert window.config_strategy.settings.called is True
+
+    def test_debug_mode_reflected_in_window_title(self, qtbot):
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        window.config_strategy = \
+            Mock(
+                speedwagon.config.AbsConfigSettings,
+                settings=Mock(return_value={"debug": True})
+            )
+        window.update_settings()
+        assert "DEBUG" in window.windowTitle()
+#
+    def test_normal_mode_dose_not_have_debug_in_window_title_text(self, qtbot):
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        window.config_strategy = \
+            Mock(
+                speedwagon.config.AbsConfigSettings,
+                settings=Mock(return_value={"debug": False})
+            )
+        window.update_settings()
+        assert "DEBUG" not in window.windowTitle()
+
+    def test_export_job_config_triggered_by_action_export_job(self, qtbot):
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        tab = WorkflowsTab3()
+        window.tab_widget.add_tab(tab, "dummy")
+        with qtbot.waitSignal(window.export_job_config):
+            window.action_export_job.trigger()
 #
 # def test_window_save_log(qtbot, monkeypatch):
 #     mock_work_manager = MagicMock(settings_path="some-path")
@@ -196,152 +231,152 @@ class TestToolConsole:
 #         assert exec_.called is True
 
 
-class TestMainWindow2:
-    def test_exit(self, qtbot, monkeypatch):
-        exit_called = Mock()
-        manager = Mock()
-
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui.QtWidgets.QWidget,
-            "close",
-            exit_called
-        )
-
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(manager)
-        qtbot.addWidget(main_window)
-        main_window.findChild(QtGui.QAction, name="exitAction").trigger()
-        assert exit_called.called is True
-
-    @pytest.mark.parametrize("tab_name", ["Spam", "Dummy"])
-    def test_set_current_tab(self, qtbot, tab_name):
-        manager = Mock()
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(manager)
-
-        workflows_tab1 =\
-            speedwagon.frontend.qtwidgets.tabs.WorkflowsTab3(
-                parent=main_window.tab_widget
-            )
-        workflows_tab1.workflows = MagicMock()
-        main_window.tab_widget.add_tab(workflows_tab1, "Dummy")
-
-        workflows_tab2 = \
-            speedwagon.frontend.qtwidgets.tabs.WorkflowsTab3(
-                parent=main_window.tab_widget,
-            )
-        workflows_tab2.workflows = MagicMock()
-        main_window.tab_widget.add_tab(workflows_tab2, "Spam")
-
-        main_window.set_current_tab(tab_name)
-        current_tab_name = \
-            main_window.tab_widget.tabs.tabText(
-                main_window.tab_widget.tabs.currentIndex()
-            )
-        assert current_tab_name == tab_name
-
-    def test_set_current_tab_invalid_throws(self, qtbot):
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
-        tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab3(
-            parent=main_window.tab_widget,
-        )
-        tab.workflows=MagicMock()
-
-        main_window.tab_widget.add_tab(tab, "Spam")
-
-        # eggs is NOT a valid tab
-        with pytest.raises(IndexError):
-            main_window.set_current_tab("eggs")
-
-    def test_set_active_workflow(self, qtbot):
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
-
-        bacon = MagicMock()
-        bacon.name = "Bacon"
-
-        class Eggs(speedwagon.Workflow):
-            name = "Eggs"
-            def discover_task_metadata(self, *args, **kwargs):
-                return []
-
-        main_window.add_tab(
-            "All", {
-                "Bacon": bacon,
-                "Eggs": Eggs,
-            }
-        )
-        spam_tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab3(main_window.tab_widget)
-        spam_tab.workflows = {"Eggs": Eggs}
-        main_window.tab_widget.add_tab(spam_tab, "Spam")
-        main_window.set_active_workflow("Eggs")
-        assert main_window.get_current_workflow_name() == "Eggs"
-
-    def test_set_current_workflow_settings(self, qtbot, eggs_workflow_klass):
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
-
-        main_window.add_tab("All", {"Eggs": eggs_workflow_klass})
-
-        main_window.set_active_workflow("Eggs")
-        assert main_window.get_current_workflow_name() == "Eggs"
-
-        main_window.set_current_workflow_settings({"Dummy": "Yes"})
-        assert main_window.get_current_job_settings()["Dummy"] == "Yes"
-
-    def test_get_current_workflow_name_is_nothing_with_no_tabs(self, qtbot):
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
-        assert main_window.get_current_workflow_name() is None
-
-    @pytest.fixture()
-    def eggs_workflow_klass(self):
-        class Eggs(speedwagon.Workflow):
-            name = "Eggs"
-            def discover_task_metadata(self, initial_results: List[Any],
-                                       additional_data: Dict[str, Any],
-                                       **user_args) -> List[dict]:
-                return []
-
-            def get_user_options(self) -> List[
-                speedwagon.workflow.AbsOutputOptionDataType
-            ]:
-                return [
-                    speedwagon.workflow.TextLineEditData("Dummy")
-                ]
-
-            def user_options(self) -> typing.List[Any]:
-                return [
-                    shared_custom_widgets.UserOptionPythonDataType2(
-                        label_text="Dummy"
-                    )
-                ]
-        return Eggs
-
-    def test_get_current_workflow_name_by_default(self, qtbot, eggs_workflow_klass):
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
-
-        main_window.add_tab("All", {"Eggs": eggs_workflow_klass})
-        assert main_window.get_current_workflow_name() is None
-
-    def test_set_active_workflow_without_all_raises_exception(
-            self,
-            qtbot,
-            eggs_workflow_klass
-    ):
-        # Notice: No "All" tab was added here
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
-        main_window.add_tab("My workflows", {"Eggs": eggs_workflow_klass})
-        with pytest.raises(Exception):
-            main_window.set_active_workflow("Eggs")
-
-    def test_set_current_workflow_settings_all_raises_exception(
-            self,
-            qtbot,
-            eggs_workflow_klass
-    ):
-        # Notice: No "All" tab was added here
-        main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
-        main_window.add_tab("My workflows", {"Eggs": eggs_workflow_klass})
-        with pytest.raises(Exception):
-            main_window.set_current_workflow_settings(
-                data={"something here": True}
-            )
+# class TestMainWindow2:
+#     def test_exit(self, qtbot, monkeypatch):
+#         exit_called = Mock()
+#         manager = Mock()
+#
+#         monkeypatch.setattr(
+#             speedwagon.frontend.qtwidgets.gui.QtWidgets.QWidget,
+#             "close",
+#             exit_called
+#         )
+#
+#         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(manager)
+#         qtbot.addWidget(main_window)
+#         main_window.findChild(QtGui.QAction, name="exitAction").trigger()
+#         assert exit_called.called is True
+#
+#     @pytest.mark.parametrize("tab_name", ["Spam", "Dummy"])
+#     def test_set_current_tab(self, qtbot, tab_name):
+#         manager = Mock()
+#         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(manager)
+#
+#         workflows_tab1 =\
+#             speedwagon.frontend.qtwidgets.tabs.WorkflowsTab3(
+#                 parent=main_window.tab_widget
+#             )
+#         workflows_tab1.workflows = MagicMock()
+#         main_window.tab_widget.add_tab(workflows_tab1, "Dummy")
+#
+#         workflows_tab2 = \
+#             speedwagon.frontend.qtwidgets.tabs.WorkflowsTab3(
+#                 parent=main_window.tab_widget,
+#             )
+#         workflows_tab2.workflows = MagicMock()
+#         main_window.tab_widget.add_tab(workflows_tab2, "Spam")
+#
+#         main_window.set_current_tab(tab_name)
+#         current_tab_name = \
+#             main_window.tab_widget.tabs.tabText(
+#                 main_window.tab_widget.tabs.currentIndex()
+#             )
+#         assert current_tab_name == tab_name
+#
+#     def test_set_current_tab_invalid_throws(self, qtbot):
+#         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+#         tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab3(
+#             parent=main_window.tab_widget,
+#         )
+#         tab.workflows=MagicMock()
+#
+#         main_window.tab_widget.add_tab(tab, "Spam")
+#
+#         # eggs is NOT a valid tab
+#         with pytest.raises(IndexError):
+#             main_window.set_current_tab("eggs")
+#
+#     def test_set_active_workflow(self, qtbot):
+#         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+#
+#         bacon = MagicMock()
+#         bacon.name = "Bacon"
+#
+#         class Eggs(speedwagon.Workflow):
+#             name = "Eggs"
+#             def discover_task_metadata(self, *args, **kwargs):
+#                 return []
+#
+#         main_window.add_tab(
+#             "All", {
+#                 "Bacon": bacon,
+#                 "Eggs": Eggs,
+#             }
+#         )
+#         spam_tab = speedwagon.frontend.qtwidgets.tabs.WorkflowsTab3(main_window.tab_widget)
+#         spam_tab.workflows = {"Eggs": Eggs}
+#         main_window.tab_widget.add_tab(spam_tab, "Spam")
+#         main_window.set_active_workflow("Eggs")
+#         assert main_window.get_current_workflow_name() == "Eggs"
+#
+#     def test_set_current_workflow_settings(self, qtbot, eggs_workflow_klass):
+#         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+#
+#         main_window.add_tab("All", {"Eggs": eggs_workflow_klass})
+#
+#         main_window.set_active_workflow("Eggs")
+#         assert main_window.get_current_workflow_name() == "Eggs"
+#
+#         main_window.set_current_workflow_settings({"Dummy": "Yes"})
+#         assert main_window.get_current_job_settings()["Dummy"] == "Yes"
+#
+#     def test_get_current_workflow_name_is_nothing_with_no_tabs(self, qtbot):
+#         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+#         assert main_window.get_current_workflow_name() is None
+#
+#     @pytest.fixture()
+#     def eggs_workflow_klass(self):
+#         class Eggs(speedwagon.Workflow):
+#             name = "Eggs"
+#             def discover_task_metadata(self, initial_results: List[Any],
+#                                        additional_data: Dict[str, Any],
+#                                        **user_args) -> List[dict]:
+#                 return []
+#
+#             def get_user_options(self) -> List[
+#                 speedwagon.workflow.AbsOutputOptionDataType
+#             ]:
+#                 return [
+#                     speedwagon.workflow.TextLineEditData("Dummy")
+#                 ]
+#
+#             def user_options(self) -> typing.List[Any]:
+#                 return [
+#                     shared_custom_widgets.UserOptionPythonDataType2(
+#                         label_text="Dummy"
+#                     )
+#                 ]
+#         return Eggs
+#
+#     def test_get_current_workflow_name_by_default(self, qtbot, eggs_workflow_klass):
+#         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+#
+#         main_window.add_tab("All", {"Eggs": eggs_workflow_klass})
+#         assert main_window.get_current_workflow_name() is None
+#
+#     def test_set_active_workflow_without_all_raises_exception(
+#             self,
+#             qtbot,
+#             eggs_workflow_klass
+#     ):
+#         # Notice: No "All" tab was added here
+#         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+#         main_window.add_tab("My workflows", {"Eggs": eggs_workflow_klass})
+#         with pytest.raises(Exception):
+#             main_window.set_active_workflow("Eggs")
+#
+#     def test_set_current_workflow_settings_all_raises_exception(
+#             self,
+#             qtbot,
+#             eggs_workflow_klass
+#     ):
+#         # Notice: No "All" tab was added here
+#         main_window = speedwagon.frontend.qtwidgets.gui.MainWindow2(Mock())
+#         main_window.add_tab("My workflows", {"Eggs": eggs_workflow_klass})
+#         with pytest.raises(Exception):
+#             main_window.set_current_workflow_settings(
+#                 data={"something here": True}
+#             )
 
 def test_load_job_settings_model(qtbot):
     data = {
@@ -414,3 +449,24 @@ def test_load_items_with_choice(qtbot):
         'German',
         'Spanish'
     ]
+
+
+class TestItemTabsWidget:
+    def test_add_tab(self, qtbot):
+        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        dummy = QtWidgets.QWidget()
+        assert tabs_widget.count() == 0
+        tabs_widget.add_tab(dummy, "hello")
+        assert tabs_widget.count() == 1
+
+    def test_clear(self, qtbot):
+        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        dummy = QtWidgets.QWidget()
+        tabs_widget.add_tab(dummy, "hello")
+        assert tabs_widget.count() == 1
+        tabs_widget.clear_tabs()
+        assert tabs_widget.count() == 0
+
+    def test_empty_current_tab_is_none(self, qtbot):
+        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        assert tabs_widget.current_tab is None

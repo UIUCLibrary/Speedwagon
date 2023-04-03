@@ -1,4 +1,4 @@
-from unittest.mock import mock_open, patch
+from unittest.mock import mock_open, patch, Mock
 
 import pytest
 
@@ -82,3 +82,28 @@ variation2 = True
                     config_file
                 )
             assert "myworkflow" in plugins['mysampleplugin']
+
+
+class TestStandardConfig:
+    def test_settings_returns_a_dict(self):
+        config_strategy = speedwagon.config.StandardConfig()
+        config_strategy.config_loader_strategy = Mock(get_settings=Mock(return_value={}))
+        assert isinstance(config_strategy.settings(), dict)
+
+    def test_resolution_order(self):
+        config_strategy = speedwagon.config.StandardConfig()
+        config_loader_strategy = speedwagon.config.ConfigLoader("")
+        config_loader_strategy.resolution_strategy_order = [
+            Mock(update=Mock(return_value={"debug": True}))
+        ]
+        config_strategy.config_loader_strategy = config_loader_strategy
+        assert config_strategy.settings()['debug'] is True
+
+
+class TestAbsSetting:
+    def test_raises_if_init_without_friendly_name(self):
+
+        with pytest.raises(Exception):
+            class Incomplete(speedwagon.config.AbsSetting):
+                pass
+            Incomplete()

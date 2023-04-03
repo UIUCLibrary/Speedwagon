@@ -15,6 +15,7 @@ import collections.abc
 from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union, List
 from types import TracebackType
 import platform
+
 import speedwagon
 
 try:  # pragma: no cover
@@ -22,8 +23,6 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 
-if typing.TYPE_CHECKING:
-    from speedwagon.startup import AbsStarter
 
 __all__ = [
     "ConfigManager",
@@ -85,12 +84,10 @@ class AbsConfig(collections.abc.Mapping):
 class NixConfig(AbsConfig):
 
     def get_user_data_directory(self) -> str:
-        data_dir = os.path.join(self._get_app_dir(), "data")
-        return data_dir
+        return os.path.join(self._get_app_dir(), "data")
 
     def get_app_data_directory(self) -> str:
-        data_dir = self._get_app_dir()
-        return data_dir
+        return self._get_app_dir()
 
     @staticmethod
     def _get_app_dir() -> str:
@@ -191,7 +188,7 @@ def generate_default(config_file: str) -> None:
         os.makedirs(base_directory)
 
     platform_settings = get_platform_settings()
-    data_dir = platform_settings.get("user_data_directory")
+    data_dir: Optional[str] = platform_settings.get("user_data_directory")
     if data_dir is None:
         raise FileNotFoundError("Unable to locate user data directory")
 
@@ -286,13 +283,9 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
     return added if len(added) > 0 else None
 
 
-class AbsSetting(metaclass=abc.ABCMeta):
+class AbsSetting(metaclass=abc.ABCMeta):  # pylint: disable=R0903
 
-    @staticmethod
-    @property
-    @abc.abstractmethod
-    def friendly_name() -> str:
-        raise NotImplementedError()
+    friendly_name: str
 
     def update(
             self,
@@ -302,8 +295,15 @@ class AbsSetting(metaclass=abc.ABCMeta):
             return {}
         return settings
 
+    def __init_subclass__(cls) -> None:
+        if hasattr(cls, "friendly_name") is False:
+            raise NotImplementedError(
+                "required property friendly_name has not been not implemented"
+            )
+        super().__init_subclass__()
 
-class DefaultsSetter(AbsSetting):
+
+class DefaultsSetter(AbsSetting):  # pylint: disable=R0903
     friendly_name = "Setting defaults"
 
     def update(
@@ -315,7 +315,7 @@ class DefaultsSetter(AbsSetting):
         return new_settings
 
 
-class ConfigFileSetter(AbsSetting):
+class ConfigFileSetter(AbsSetting):  # pylint: disable=R0903
     friendly_name = "Config file settings"
 
     def __init__(self, config_file: str):
@@ -348,11 +348,14 @@ class CliArgsSetter(AbsSetting):
         new_settings = super().update(settings)
 
         args = self._parse_args(self.args)
-        if args.start_tab is not None:
-            new_settings["starting-tab"] = args.start_tab
 
-        if args.debug is True:
-            new_settings["debug"] = args.debug
+        starting_tab: Optional[str] = args.start_tab
+        if starting_tab is not None:
+            new_settings["starting-tab"] = starting_tab
+
+        debug: bool = args.debug
+        if debug:
+            new_settings["debug"] = debug
 
         return new_settings
 
@@ -403,7 +406,14 @@ class CliArgsSetter(AbsSetting):
         return parser.parse_args(args)
 
 
-class ConfigLoader:
+class AbsConfigLoader(abc.ABC):  # pylint: disable=R0903
+
+    @abc.abstractmethod
+    def get_settings(self) -> SettingsData:
+        """Get the settings data."""
+
+
+class ConfigLoader(AbsConfigLoader):
 
     @staticmethod
     def read_settings_file_globals(
@@ -501,14 +511,14 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
 
     def __init__(
             self,
-            app: AbsStarter,
             logger: Optional[logging.Logger] = None
     ) -> None:
         super().__init__(logger)
-        self.app = app
+        self.config_strategy = StandardConfigFileLocator()
 
     def ensure_config_file(self, file_path: Optional[str] = None) -> None:
-        file_path = file_path or self.app.config_file
+
+        file_path = file_path or self.config_strategy.get_config_file()
         if not os.path.exists(file_path):
             generate_default(file_path)
 
@@ -517,7 +527,8 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
             self.logger.debug("Found existing config file %s", file_path)
 
     def ensure_tabs_file(self, file_path: Optional[str] = None) -> None:
-        file_path = file_path or self.app.tabs_file
+
+        file_path = file_path or self.config_strategy.get_tabs_file()
         if not os.path.exists(file_path):
             pathlib.Path(file_path).touch()
 
@@ -529,7 +540,7 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
                 "Found existing tabs file %s", file_path)
 
     def ensure_user_data_dir(self, directory: Optional[str] = None) -> None:
-        directory = directory or self.app.user_data_dir
+        directory = directory or self.config_strategy.get_user_data_dir()
         if directory and not os.path.exists(directory):
             os.makedirs(directory)
             self.logger.debug("Created directory %s", directory)
@@ -541,7 +552,7 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
             )
 
     def ensure_app_data_dir(self, directory: Optional[str] = None) -> None:
-        directory = directory or self.app.app_data_dir
+        directory = directory or self.config_strategy.get_app_data_dir()
         if directory is not None and \
                 not os.path.exists(directory):
 
@@ -556,14 +567,12 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
 
 
 def ensure_settings_files(
-        starter: AbsStarter,
         logger: Optional[logging.Logger] = None,
         strategy: Optional[AbsEnsureConfigFile] = None
 ) -> None:
 
     logger = logger or logging.getLogger(__package__)
     strategy = strategy or CreateBasicMissingConfigFile(
-        app=starter,
         logger=logger
     )
     strategy.ensure_config_file()
@@ -615,15 +624,84 @@ class OpenSettingsDirectory:
 
 
 def get_whitelisted_plugins() -> Set[typing.Tuple[str, str]]:
-    platform_settings = get_platform_settings()
-    settings_path = platform_settings.get_app_data_directory()
-    settings_ini = os.path.join(
-        settings_path, speedwagon.startup.CONFIG_INI_FILE_NAME
-    )
+    config_strategy = speedwagon.config.StandardConfigFileLocator()
     plugin_settings = ConfigLoader.read_settings_file_plugins(
-        settings_ini)
+        config_strategy.get_config_file())
     white_listed_plugins = set()
     for module, entry_points in plugin_settings.items():
         for entry_point in entry_points:
             white_listed_plugins.add((module, entry_point))
     return white_listed_plugins
+
+
+class AbsSettingLocator(abc.ABC):
+    @abc.abstractmethod
+    def get_user_data_dir(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def get_app_data_dir(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def get_config_file(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def get_tabs_file(self) -> str:
+        pass
+
+
+class StandardConfigFileLocator(AbsSettingLocator):
+    def __init__(self) -> None:
+        self._platform_settings = get_platform_settings()
+
+    def get_user_data_dir(self) -> str:
+        return typing.cast(
+            str,
+            self._platform_settings.get("user_data_directory")
+        )
+
+    def get_config_file(self) -> str:
+        return os.path.join(
+            self._platform_settings.get_app_data_directory(),
+            speedwagon.startup.CONFIG_INI_FILE_NAME
+        )
+
+    def get_app_data_dir(self) -> str:
+        return typing.cast(str, self._platform_settings["app_data_directory"])
+
+    def get_tabs_file(self) -> str:
+        return os.path.join(
+            self._platform_settings.get_app_data_directory(),
+            speedwagon.startup.TABS_YML_FILE_NAME
+        )
+
+
+class AbsConfigSettings(abc.ABC):  # pylint: disable=R0903
+
+    @abc.abstractmethod
+    def settings(self) -> SettingsData:
+        """Get the current app settings."""
+
+
+class StandardConfig(AbsConfigSettings):
+    def __init__(self) -> None:
+        super().__init__()
+        self.config_loader_strategy: Optional[AbsConfigLoader] = None
+
+    def settings(self) -> SettingsData:
+        return self.resolve_settings()
+
+    def resolve_settings(self) -> SettingsData:
+        if self.config_loader_strategy:
+            loader = self.config_loader_strategy
+        else:
+            file_locator = StandardConfigFileLocator()
+            loader = ConfigLoader(file_locator.get_config_file())
+            loader.resolution_strategy_order = [
+                speedwagon.config.DefaultsSetter(),
+                ConfigFileSetter(file_locator.get_config_file()),
+                speedwagon.config.CliArgsSetter(),
+            ]
+        return loader.get_settings()

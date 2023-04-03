@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>546</width>
+    <height>607</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>300</width>
+    <height>500</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Speedwagon</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="main_layout">
+    <item>
+     <widget class="QSplitter" name="main_splitter">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
+      <widget class="ItemTabsWidget" name="tab_widget">
+      </widget>
+      <widget class="ToolConsole" name="console">
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menu_bar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>546</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="action_export_logs"/>
+    <addaction name="separator"/>
+    <addaction name="action_exit"/>
+   </widget>
+   <widget class="QMenu" name="menuJob">
+    <property name="title">
+     <string>Job</string>
+    </property>
+    <addaction name="action_export_job"/>
+    <addaction name="action_import_job"/>
+   </widget>
+   <widget class="QMenu" name="menuSystem">
+    <property name="title">
+     <string>System</string>
+    </property>
+    <addaction name="action_system_info_requested"/>
+    <addaction name="action_open_application_preferences"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="action_help_requested"/>
+    <addaction name="action_about"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuJob"/>
+   <addaction name="menuSystem"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <action name="action_export_logs">
+   <property name="icon">
+    <iconset>
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string> &amp;Export Log</string>
+   </property>
+  </action>
+  <action name="action_exit">
+   <property name="text">
+    <string> &amp;Exit</string>
+   </property>
+  </action>
+  <action name="action_export_job">
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
+  <action name="action_import_job">
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="action_system_info_requested">
+   <property name="text">
+    <string>System Info</string>
+   </property>
+  </action>
+  <action name="action_help_requested">
+   <property name="text">
+    <string> &amp;Help</string>
+   </property>
+  </action>
+  <action name="action_about">
+   <property name="text">
+    <string> &amp;About</string>
+   </property>
+  </action>
+  <action name="action_open_application_preferences">
+   <property name="text">
+    <string>Settings</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ToolConsole</class>
+   <extends>QWidget</extends>
+   <header>speedwagon.frontend.qtwidgets.gui</header>
+  </customwidget>
+  <customwidget>
+   <class>ItemTabsWidget</class>
+   <extends>QWidget</extends>
+   <header>speedwagon.frontend.qtwidgets.gui</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>action_exit</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>272</x>
+     <y>303</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

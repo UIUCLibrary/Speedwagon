@@ -1,7 +1,6 @@
 import typing
 
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCore import QMetaObject
 from PySide6 import QtWidgets
 from speedwagon.frontend.qtwidgets.gui import ToolConsole, ItemTabsWidget
 from speedwagon.frontend.qtwidgets.widgets import \
@@ -44,6 +43,4 @@ def load_ui(
     loader.registerCustomWidget(DynamicForm)
     loader.registerCustomWidget(SelectWorkflow)
     loader.registerCustomWidget(Workspace)
-    widget = loader.load(ui_file)
-    QMetaObject.connectSlotsByName(widget)
-    return widget
+    return loader.load(ui_file)

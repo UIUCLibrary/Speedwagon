@@ -435,9 +435,13 @@ class TestDynamicForm:
             drawPrimitive
         )
 
+
         form.paintEvent(event)
         assert drawPrimitive.called is True
 
+    def test_is_valid(self, qtbot):
+        form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
+        form.is_valid()
 
 class TestPluginConfig:
     def test_no_plugins_by_default(self, qtbot):
@@ -513,12 +517,14 @@ class TestWorkspace:
 
     def test_show_workflow_name(self, qtbot, sample_workflow_klass):
         workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
+        workspace.app_settings_lookup_strategy = Mock()
         workspace.set_workflow(sample_workflow_klass)
         assert workspace.workflow_name == \
                sample_workflow_klass.name
 
     def test_show_workflow_description(self, qtbot, sample_workflow_klass):
         workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
+        workspace.app_settings_lookup_strategy = Mock()
         workspace.set_workflow(sample_workflow_klass)
         assert workspace.workflow_description == \
                sample_workflow_klass.description

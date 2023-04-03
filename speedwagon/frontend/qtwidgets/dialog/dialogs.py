@@ -5,6 +5,7 @@ import logging.handlers
 import sys
 import typing
 import warnings
+import time
 from typing import Optional, Sequence
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
@@ -22,6 +23,7 @@ except ImportError:  # pragma: no cover
     from importlib_resources import as_file  # type: ignore
 
 import speedwagon
+from speedwagon.reports import ExceptionReport
 from speedwagon.frontend.qtwidgets import logging_helpers, ui_loader
 import speedwagon.frontend.qtwidgets.ui
 
@@ -399,6 +401,11 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
 
 
 class WorkflowProgressGui(QtWidgets.QDialog):
+    button_box: QtWidgets.QDialogButtonBox
+    banner: QtWidgets.QLabel
+    progress_bar: QtWidgets.QProgressBar
+    console: QtWidgets.QTextBrowser
+
     class DialogLogHandler(logging.handlers.BufferingHandler):
         class LogSignals(QtCore.QObject):
             message = QtCore.Signal(str)
@@ -602,3 +609,88 @@ class WorkflowProgress(WorkflowProgressGui):
 
         cursor.insertText("\n")
         cursor.endEditBlock()
+
+
+class AbsSaveReport(abc.ABC):  # pylint: disable=R0903
+    qt_parent: QtWidgets.QWidget
+    default_name: str
+
+    @abc.abstractmethod
+    def save(self, data: str) -> None:
+        """Save data to a file."""
+
+
+class SaveReportDialogBox(AbsSaveReport):
+    def __init__(self) -> None:
+        self.default_name = "report.txt"
+        self.qt_parent: QtWidgets.QWidget = QtWidgets.QWidget()
+
+    def save(self, data: str) -> None:
+        while True:
+            log_file_name: Optional[str]
+            log_file_name, _ = \
+                QtWidgets.QFileDialog.getSaveFileName(
+                    self.qt_parent,
+                    "Export crash data",
+                    self.default_name,
+                    "Text Files (*.txt)")
+            if not log_file_name:
+                return
+            if self.write_data(log_file_name, data) is False:
+                continue
+            print(f"Save crash info to {log_file_name}")
+            break
+
+    def write_data(self, file_name: str, data: str) -> bool:
+        """Write data to a file.
+
+        Returns True on success and False on failure.
+        """
+        try:
+            with open(file_name, "w", encoding="utf-8") as file_handle:
+                file_handle.write(data)
+            return True
+        except OSError as error:
+            message_box = QtWidgets.QMessageBox(self.qt_parent)
+            message_box.setText("Saving data failed")
+            message_box.setDetailedText(str(error))
+            message_box.exec()
+            return False
+
+
+class SpeedwagonUnhandledExceptionDialog(QtWidgets.QMessageBox):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None,
+                 ) -> None:
+        super().__init__(parent)
+        self.setIcon(self.Icon.Critical)
+        self.report_strategy = ExceptionReport()
+        self.save_report_strategy: AbsSaveReport = SaveReportDialogBox()
+
+        self.setText("Speedwagon has exited due to an unhandled exception")
+        self.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Close)
+
+        self.export_button = \
+            self.addButton(
+                "Export Details",
+                QtWidgets.QMessageBox.ButtonRole.ActionRole
+            )
+        self.export_button.clicked.disconnect()
+        self.export_button.clicked.connect(self.export_information)
+
+    def export_information(self) -> None:
+        epoch_in_minutes = int(time.time() / 60)
+        file_name = f"speedwagon_crash_{epoch_in_minutes}.txt"
+        self.save_report_strategy.default_name = file_name
+        self.save_report_strategy.qt_parent = self
+        self.save_report_strategy.save(self.report_strategy.report())
+
+    @property
+    def exception(self) -> Optional[BaseException]:
+        return self.report_strategy.exception
+
+    @exception.setter
+    def exception(self, value: BaseException) -> None:
+        self.report_strategy.exception = value
+        self.setWindowTitle(self.report_strategy.title())
+        self.setInformativeText(self.report_strategy.summary())
+        self.setDetailedText(self.report_strategy.report())

@@ -14,7 +14,6 @@ import abc
 import argparse
 import io
 import json
-import os
 import sys
 import typing
 from typing import Dict, Iterator, Tuple, List, cast, Type, TYPE_CHECKING, \
@@ -207,12 +206,16 @@ class SubCommand(abc.ABC):
 
 
 class RunCommand(SubCommand):
+    def get_gui_strategy(
+            self
+    ) -> speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON:
+        from speedwagon import frontend
+        return frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
+
     def json_startup(self) -> None:
         try:
-            from speedwagon import frontend
-            startup_strategy = \
-                frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
-        except AttributeError:
+            startup_strategy = self.get_gui_strategy()
+        except ImportError:
             startup_strategy = SingleWorkflowJSON()
 
         startup_strategy.global_settings = self.global_settings
@@ -236,13 +239,10 @@ class RunCommand(SubCommand):
 
 
 def get_global_options():
-    platform_settings = speedwagon.config.get_platform_settings()
-
-    config_file = os.path.join(
-        platform_settings.get_app_data_directory(),
-        CONFIG_INI_FILE_NAME
-    )
-    return speedwagon.config.ConfigLoader(config_file).get_settings()
+    config_locator = speedwagon.config.StandardConfigFileLocator()
+    return speedwagon.config.ConfigLoader(
+        config_locator.get_config_file()
+    ).get_settings()
 
 
 def run_command(
@@ -264,10 +264,6 @@ def run_command(
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
-    config_file: str
-    tabs_file: str
-    user_data_dir: str
-    app_data_dir: str
 
     @abc.abstractmethod
     def run(self) -> int:
