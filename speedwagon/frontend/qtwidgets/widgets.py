@@ -23,7 +23,7 @@ except ImportError:  # pragma: no cover
 from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets import models, ui_loader, ui
 from speedwagon.workflow import AbsOutputOptionDataType, UserDataType
-from speedwagon import Workflow
+from speedwagon import Workflow, exceptions, config
 try:  # pragma: no cover
     from importlib.resources import as_file
     from importlib import resources
@@ -31,9 +31,6 @@ except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
     from importlib_resources import as_file
 
-
-if typing.TYPE_CHECKING:
-    from speedwagon.config import SettingsData
 
 __all__ = ['Workspace']
 
@@ -547,6 +544,29 @@ class DynamicForm(QtWidgets.QScrollArea):
         self.modelChanged.connect(self._background.modelChanged)
         self.setWidget(self._background)
         self.ensurePolished()
+        self.issues: List[str] = []
+
+    def update_issues(self) -> None:
+        self.issues.clear()
+        self.update_model()
+        rows = self._background.model.rowCount()
+        for row in range(rows):
+            index = self._background.model.index(row)
+            data = typing.cast(
+                AbsOutputOptionDataType,
+                self._background.model.data(
+                    index,
+                    self._background.model.DataRole
+                )
+            )
+            if data.required and (data.value is None or data.value == ""):
+                self.issues.append(
+                    f" Required value {data.label} is missing."
+                )
+
+    def is_valid(self) -> bool:
+        self.update_issues()
+        return len(self.issues) == 0
 
     def create_editor(
             self,
@@ -588,28 +608,38 @@ class Workspace(QtWidgets.QWidget):
     workflow_description_value: QtWidgets.QTextBrowser
     settings_form: DynamicForm
 
-    def __init__(
-            self,
-            parent: Optional[QtWidgets.QWidget] = None
-    ) -> None:
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         """Create Workspace widget."""
         super().__init__(parent)
         with as_file(
                 resources.files(ui).joinpath("workspace.ui")
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
-        self.user_settings: SettingsData = {}
+        self.app_settings_lookup_strategy = config.StandardConfig()
 
     def set_workflow(self, workflow_klass: typing.Type[Workflow]) -> None:
         """Set current workflow."""
-        new_workflow = workflow_klass(global_settings=self.user_settings)
         if workflow_klass.name:
             self.workflow_name_value.setText(workflow_klass.name)
-        if new_workflow.description:
-            self.workflow_description_value.setText(new_workflow.description)
-        self.settings_form.set_model(
-            models.ToolOptionsModel4(new_workflow.get_user_options())
-        )
+        try:
+            settings = self.app_settings_lookup_strategy.settings()
+            new_workflow = workflow_klass(global_settings=settings)
+            if new_workflow.description:
+                self.workflow_description_value.setText(
+                    new_workflow.description
+                )
+            self.settings_form.set_model(
+                models.ToolOptionsModel4(new_workflow.get_user_options())
+            )
+        except exceptions.MissingConfiguration as exc:
+            self.workflow_description_value.setHtml(
+                f"<b>Workflow unavailable.</b><p><b>Reason: </b>{exc}</p>"
+            )
+            self.settings_form.set_model(models.ToolOptionsModel4())
+
+    def is_valid(self) -> bool:
+        """Check if the workflow configured is valid."""
+        return self.settings_form.is_valid()
 
     def _get_configuration(self) -> Dict[str, UserDataType]:
         return self.settings_form.get_configuration()

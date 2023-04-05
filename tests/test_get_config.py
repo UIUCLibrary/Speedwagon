@@ -252,7 +252,13 @@ def test_add_empty_keys_if_missing(tmpdir, monkeypatch):
     assert missing_keys is None
 
 
-def test_config_manager_empty_settings():
-    config_manager = speedwagon.config.ConfigManager("config.ini")
-    config_manager.cfg_parser = None
-    assert config_manager.global_settings == {}
+class TestConfigManager:
+    def test_config_manager_empty_settings(self):
+        config_manager = speedwagon.config.ConfigManager("config.ini")
+        config_manager.cfg_parser = None
+        assert config_manager.global_settings == {}
+
+    def test_config_manager_empty_plugins(self):
+        config_manager = speedwagon.config.ConfigManager("config.ini")
+        config_manager.cfg_parser = None
+        assert config_manager.plugins == {}

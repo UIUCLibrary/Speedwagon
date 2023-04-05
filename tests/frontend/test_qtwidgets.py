@@ -391,11 +391,12 @@ class TestWorkflowsTab3:
             def discover_task_metadata(self, *args, **kwargs):
                 return []
         tab = qtwidgets.tabs.WorkflowsTab3()
+        tab.app_settings_lookup_strategy = Mock()
         tab.workflows = {"spam": Spam}
         tab.set_current_workflow("spam")
         tab.set_current_workflow_settings({"foo": True})
 
-    def test_add_workflows(self):
+    def test_add_workflows(self, qtbot):
         class Spam(speedwagon.Workflow):
             name = "spam"
             def discover_task_metadata(self, *args, **kwargs):
@@ -405,3 +406,19 @@ class TestWorkflowsTab3:
         assert len(tab.workflows) == 0
         tab.workflows = {"spam": Spam}
         assert tab.workflows["spam"] == Spam
+
+    def test_set_current_workflow(self, qtbot):
+        class Spam(speedwagon.Workflow):
+            name = "spam"
+
+            def __init__(self, *args, **kwargs) -> None:
+                super().__init__(*args, **kwargs)
+                assert kwargs['global_settings']['spam'] == "eggs"
+
+            def discover_task_metadata(self, *args, **kwargs):
+                return []
+
+        tab = qtwidgets.tabs.WorkflowsTab3()
+        tab.app_settings_lookup_strategy = Mock(settings=Mock(return_value={"spam": "eggs"}))
+        tab.workflows = {"spam": Spam}
+        tab.set_current_workflow('spam')

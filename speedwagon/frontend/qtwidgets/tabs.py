@@ -10,7 +10,7 @@ from typing import List, Optional, Iterator, NamedTuple, cast, Type, Dict
 import yaml
 from PySide6 import QtWidgets, QtCore  # type: ignore
 import speedwagon
-
+from speedwagon.config import StandardConfig
 from speedwagon.job import NullWorkflow, Workflow
 from speedwagon.frontend import qtwidgets
 from speedwagon.frontend.qtwidgets.models import WorkflowListModel2
@@ -59,14 +59,9 @@ class WorkflowsTab3(QtWidgets.QWidget):
                 ).joinpath("create_job_tab.ui")
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
+
+        self.app_settings_lookup_strategy = StandardConfig()
         self.start_button.clicked.connect(self.submit_job)
-
-        # =============================================================
-        # This is clunky, and should not have to worry about the parent
-
-        self.workspace.user_settings = \
-            getattr(self._parent, "user_settings", {})
-        # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         self.workflow_selector.workflow_selected.connect(
             self._handle_workflow_changed
@@ -87,7 +82,9 @@ class WorkflowsTab3(QtWidgets.QWidget):
             raise ValueError(
                 "Current Workflow not set. Workflow must be set first."
             )
-        workflow_inst = workflow_klass(self.workspace.user_settings)
+        workflow_inst = workflow_klass(
+            self.workspace.app_settings_lookup_strategy.settings()
+        )
         qtwidgets.gui.load_job_settings_model(
             data,
             self.workspace.settings_form,
@@ -99,8 +96,14 @@ class WorkflowsTab3(QtWidgets.QWidget):
             workflow_klass: typing.Type[Workflow]
     ) -> None:
         self._workflow_selected = workflow_klass
+        self.workspace.app_settings_lookup_strategy = \
+            self.app_settings_lookup_strategy
+
         self.workspace.set_workflow(workflow_klass)
         self.settings_changed.emit()
+
+    def get_app_config(self):
+        return self.app_settings_lookup_strategy.settings()
 
     def _update_okay_button(self) -> None:
         if self._workflow_selected is None:
@@ -109,6 +112,17 @@ class WorkflowsTab3(QtWidgets.QWidget):
             self.start_button.setEnabled(True)
 
     def submit_job(self) -> None:
+        if not self.workspace.is_valid():
+            message = "\n".join(self.workspace.settings_form.issues)
+            config_error_dialog = QtWidgets.QMessageBox(self)
+            config_error_dialog.setWindowTitle("Settings Error")
+            config_error_dialog.setDetailedText(f"{message}")
+            config_error_dialog.setText(
+                "Speedwagon has a problem with current configuration "
+                "settings"
+            )
+            config_error_dialog.exec_()
+            return
         self.start_workflow.emit(
             self.workspace.name,
             self.workspace.configuration

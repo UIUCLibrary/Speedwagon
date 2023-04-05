@@ -10,6 +10,7 @@ import sys
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
 
+
 try:  # pragma: no cover
     from importlib.resources import as_file
     from importlib import resources
@@ -186,7 +187,6 @@ class SettingsDialog(QtWidgets.QDialog):
                     settings_directory=self.settings_location, parent=self)
             )
         )
-
         folder_opener.open()
 
 
@@ -382,7 +382,7 @@ class ConfigSaver(AbsConfigSaver):
             typing.Callable[[Optional[QtWidgets.QWidget]], None]
         ] = []
 
-    def set_notify_success(
+    def add_success_call_back(
             self,
             callback: typing.Callable[[Optional[QtWidgets.QWidget]], None]
     ) -> None:
@@ -488,9 +488,12 @@ class SettingsBuilder2:
         self._tabs: List[Tuple[str, SettingsTab]] = []
         self._on_save_callback = None
         self._save_strategy: Optional[AbsConfigSaver] = None
+        self.app_data_dir: Optional[str] = None
 
     def build(self) -> SettingsDialog:
         config_dialog = SettingsDialog(parent=self._parent)
+        if self.app_data_dir:
+            config_dialog.settings_location = self.app_data_dir
         for name, tab in self._tabs:
             tab.setParent(config_dialog.tabs_widget)
             tab.changes_made.connect(config_dialog.changes_made)

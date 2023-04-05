@@ -35,7 +35,7 @@ if __name__ == "__main__":
             'pytest',
             'pytest-mock'
         ],
-        python_requires=">=3.6",
+        python_requires=">=3.7",
         extras_require={
           "QT": ["PySide6==6.4.*"]
         },
@@ -49,11 +49,15 @@ if __name__ == "__main__":
         package_data={
             'speedwagon': ["favicon.ico", "logo.png"],
             'speedwagon.frontend.qtwidgets.ui': [
-                "tab_editor.ui",
-                "main_window_shell.ui",
-                "main_window2.ui",
                 "console.ui",
-                'setup_job.ui'
+                "main_window3.ui",
+                "main_window_shell.ui",
+                "plugin_settings.ui",
+                "select_workflow_widget.ui",
+                'setup_job.ui',
+                "tab_editor.ui",
+                "workflow_progress.ui",
+                "workspace.ui",
             ],
         },
     )

@@ -10,7 +10,10 @@ from uiucprescon import ocr
 import speedwagon
 import speedwagon.workflow
 
-from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
+from speedwagon.exceptions import \
+    MissingConfiguration, \
+    SpeedwagonException, \
+    JobCancelled
 
 if typing.TYPE_CHECKING:
     from speedwagon.config import SettingsData
@@ -162,7 +165,10 @@ class OCRWorkflow(speedwagon.Workflow):
         """Create a task to locate appropriate files."""
         root = user_args['Path']
         file_type = user_args["Image File Type"]
-        file_extension = self.get_file_extension(file_type)
+        try:
+            file_extension = self.get_file_extension(file_type)
+        except KeyError as exc:
+            raise JobCancelled(f"Invalid Image Type: {exc}") from exc
 
         task_builder.add_subtask(
             FindImagesTask(root, file_extension=file_extension)
@@ -178,6 +184,7 @@ class OCRWorkflow(speedwagon.Workflow):
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Request use settings for OCR job."""
         package_type = speedwagon.workflow.ChoiceSelection("Image File Type")
+        package_type.required = True
         package_type.placeholder_text = "Select Image Format"
         for file_type in OCRWorkflow.SUPPORTED_IMAGE_TYPES:
             package_type.add_selection(file_type)
@@ -239,9 +246,9 @@ class OCRWorkflow(speedwagon.Workflow):
             raise ValueError("No path selected")
         if not os.path.exists(path):
             raise ValueError(f"Unable to locate {path}.")
-
         if not os.path.isdir(path):
             raise ValueError(f"Input not a valid directory {path}.")
+
         return True
 
     @classmethod
