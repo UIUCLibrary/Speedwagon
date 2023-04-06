@@ -315,9 +315,13 @@ class StartQtThreaded(AbsGuiStarter):
         tabs_config.load(tabs_yaml_file)
         dialog_builder.add_tab("Tabs", tabs_config)
 
-        plugins_tab = dialog.settings.PluginsTab()
-        plugins_tab.load(settings_ini)
-        dialog_builder.add_tab("Plugins", plugins_tab)
+        plugins = \
+            dialog.settings.EntrypointsPluginModelLoader.plugin_entry_points()
+
+        if len(plugins) > 0:
+            plugins_tab = dialog.settings.PluginsTab()
+            plugins_tab.load(settings_ini)
+            dialog_builder.add_tab("Plugins", plugins_tab)
 
         saver = dialog.settings.ConfigSaver(parent)
 

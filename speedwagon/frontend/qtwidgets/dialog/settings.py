@@ -190,9 +190,12 @@ class SettingsDialog(QtWidgets.QDialog):
         folder_opener.open()
 
 
-class PluginModelLoader(abc.ABC):
+class PluginModelLoader(abc.ABC):  # pylint: disable=too-few-public-methods
     @abc.abstractmethod
-    def load_plugins_into_model(self, model: models.PluginActivationModel):
+    def load_plugins_into_model(
+            self,
+            model: models.PluginActivationModel
+    ) -> None:
         """Load plugins into the model."""
 
 
@@ -204,11 +207,12 @@ class EntrypointsPluginModelLoader(PluginModelLoader):
         self.config_file = config_file
 
     @classmethod
-    def plugin_entry_points(cls):
+    def plugin_entry_points(cls) -> metadata.EntryPoints:
         return metadata.entry_points(
             group=cls.entrypoint_group_name
         )
-    def is_entry_point_active(self, entry_point) -> bool:
+
+    def is_entry_point_active(self, entry_point: metadata.EntryPoint) -> bool:
         settings = ConfigLoader.read_settings_file_plugins(self.config_file)
         return (
             entry_point.module in settings
@@ -216,7 +220,10 @@ class EntrypointsPluginModelLoader(PluginModelLoader):
             and settings[entry_point.module][entry_point.name] is True
         )
 
-    def load_plugins_into_model(self, model: models.PluginActivationModel):
+    def load_plugins_into_model(
+            self,
+            model: models.PluginActivationModel
+    ) -> None:
         for entry_point in self.plugin_entry_points():
             model.add_entry_point(
                 entry_point, self.is_entry_point_active(entry_point)
@@ -244,18 +251,8 @@ class PluginsTab(SettingsTab):
         }
 
     def load(self, settings_ini: str) -> None:
-        # TODO: refactor into a strategy pattern
-        settings = ConfigLoader.read_settings_file_plugins(settings_ini)
-        for entry_point in metadata.entry_points(group='speedwagon.plugins'):
-            active = False
-            if (
-                entry_point.module in settings
-                and entry_point.name in settings[entry_point.module]
-                and settings[entry_point.module][entry_point.name] is True
-            ):
-                active = True
-
-            self.plugins_activation.model.add_entry_point(entry_point, active)
+        model_loader = EntrypointsPluginModelLoader(settings_ini)
+        model_loader.load_plugins_into_model(self.plugins_activation.model)
 
 
 class GlobalSettingsTab(SettingsTab):

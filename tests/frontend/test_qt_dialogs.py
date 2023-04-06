@@ -743,7 +743,7 @@ myworkflow = True
             add_entry_point.assert_called_once_with(entry_point, True)
 
 
-class TestIniFileConfigLoader:
+class TestEntrypointsPluginModelLoader:
     def test_load_plugins_into_model(self, monkeypatch):
         sample_ini_file = "config.ini"
         model = models.PluginActivationModel()

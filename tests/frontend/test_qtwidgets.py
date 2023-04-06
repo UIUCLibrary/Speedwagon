@@ -395,7 +395,7 @@ class TestWorkflowsTab3:
         tab.set_current_workflow("spam")
         tab.set_current_workflow_settings({"foo": True})
 
-    def test_add_workflows(self):
+    def test_add_workflows(self, qtbot):
         class Spam(speedwagon.Workflow):
             name = "spam"
             def discover_task_metadata(self, *args, **kwargs):
