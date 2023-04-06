@@ -188,6 +188,23 @@ def testSpeedwagonChocolateyPkg(version){
     bat 'speedwagon --help'
 }
 
+def testReinstallSpeedwagonChocolateyPkg(version){
+    script{
+        def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
+        chocolatey.reinstall_chocolatey_package(
+            name: 'speedwagon',
+            version: chocolatey.sanitize_chocolatey_version(version),
+            source: './packages/;CHOCOLATEY_SOURCE;chocolatey',
+            retries: 3
+        )
+    }
+    powershell(
+            label: 'Checking for Start Menu shortcut',
+            script: 'Get-ChildItem "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs" -Recurse -Include *.lnk'
+        )
+    bat 'speedwagon --help'
+}
+
 def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServer, devpiCredentialsId, devpiIndex) {
     node(){
         checkout scm
@@ -1037,9 +1054,23 @@ pipeline {
                                         equals expected: true, actual: params.TEST_STANDALONE_PACKAGE_DEPLOYMENT
                                         beforeAgent true
                                     }
-                                    steps{
-                                        unstash 'CHOCOLATEY_PACKAGE'
-                                        testSpeedwagonChocolateyPkg(props.Version)
+                                    stages{
+                                        stage('Install'){
+                                            steps{
+                                                unstash 'CHOCOLATEY_PACKAGE'
+                                                testSpeedwagonChocolateyPkg(props.Version)
+                                            }
+                                        }
+                                        stage('Reinstall/Upgrade'){
+                                            steps{
+                                                testReinstallSpeedwagonChocolateyPkg(props.Version)
+                                            }
+                                        }
+                                        stage('Uninstall'){
+                                            steps{
+                                                bat 'choco uninstall speedwagon --confirm'
+                                            }
+                                        }
                                     }
                                     post{
                                         failure{

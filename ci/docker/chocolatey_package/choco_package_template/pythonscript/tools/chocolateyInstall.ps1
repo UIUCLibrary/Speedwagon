@@ -16,7 +16,7 @@ $PYTHON = "C:\Python311\python.exe"
 $requirementSpecifier = "$($fileLocation)`[QT`]"
 If(test-path -PathType container $venvDir){
   Write-Host "Removing existing Python virtual environment"
-  Remove-Tree $venvDir
+  Remove-Item -Recurse -Force $venvDir
 }
 
 Write-Host "Creating Python virtualenv at $venvDir"
@@ -33,6 +33,7 @@ Install-ChocolateyShortcut `
   -ShortcutFilePath "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\$packageName\$packageName.lnk" `
   -TargetPath "$installDir\venv\Scripts\$packageName.exe" `
   -WorkingDirectory "C:\" `
+  -IconLocation "$installDir\venv\Lib\site-packages\speedwagon\favicon.ico" `
   -Description "Collection of tools and workflows for DS"
 
 Install-ChocolateyShortcut `

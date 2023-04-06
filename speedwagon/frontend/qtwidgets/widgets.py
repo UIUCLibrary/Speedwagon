@@ -285,7 +285,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
     ) -> str:
         mime_data = event.mimeData()
         urls = mime_data.urls()
-        return urls[0].path()
+        return urls[0].toLocalFile()
 
     @abc.abstractmethod
     def drop_acceptable_data(self, param) -> bool:
@@ -299,7 +299,7 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
         urls = mime_data.urls()
         if len(urls) != 1:
             return False
-        path = urls[0].path()
+        path = urls[0].toLocalFile()
         return os.path.exists(path) and os.path.isdir(path)
 
     def get_browse_action(self) -> QtGui.QAction:
@@ -337,7 +337,7 @@ class FileSelectWidget(FileSystemItemSelectWidget):
         urls = mime_data.urls()
         if len(urls) != 1:
             return False
-        path = urls[0].path()
+        path = urls[0].toLocalFile()
         return os.path.exists(path) and not os.path.isdir(path)
 
     def get_browse_action(self) -> QtGui.QAction:
