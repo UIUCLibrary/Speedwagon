@@ -406,9 +406,7 @@ class CliArgsSetter(AbsSetting):
 class ConfigLoader:
 
     @staticmethod
-    def read_settings_file_globals(
-            settings_file: str
-    ) -> SettingsData:
+    def read_settings_file_globals(settings_file: str) -> SettingsData:
         with speedwagon.config.ConfigManager(settings_file) as config:
             return config.global_settings
 

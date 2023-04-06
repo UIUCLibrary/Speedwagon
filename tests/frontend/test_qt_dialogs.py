@@ -1,6 +1,6 @@
 import platform
 import logging
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, patch, mock_open, MagicMock
 import pytest
 
 import speedwagon
@@ -706,6 +706,7 @@ class TestSettingsTab:
     def test_get_data_defaults_to_none(self, qtbot):
         new_tab = settings.SettingsTab()
         assert new_tab.get_data() is None
+
 class TestPluginsTab:
     def test_not_modified_from_init(self, qtbot):
         tab = settings.PluginsTab()
@@ -736,10 +737,35 @@ myworkflow = True
                 mp.setattr(
                     settings.metadata,
                     "entry_points",
-                    lambda *_, **__: [ entry_point]
+                    lambda *_, **__: [entry_point]
                 )
                 tab.load(config_file)
             add_entry_point.assert_called_once_with(entry_point, True)
+
+
+class TestIniFileConfigLoader:
+    def test_load_plugins_into_model(self, monkeypatch):
+        sample_ini_file = "config.ini"
+        model = models.PluginActivationModel()
+        assert model.rowCount() == 0
+        loader_strategy = \
+            settings.EntrypointsPluginModelLoader(sample_ini_file)
+
+        monkeypatch.setattr(
+            loader_strategy,
+            "plugin_entry_points",
+            Mock(return_value=[
+                Mock()
+            ])
+        )
+        read_settings_file_plugins = MagicMock()
+        monkeypatch.setattr(
+            settings.ConfigLoader,
+            "read_settings_file_plugins",
+            read_settings_file_plugins
+        )
+        loader_strategy.load_plugins_into_model(model)
+        assert model.rowCount() > 0
 
 
 class TestSettingsDialog:

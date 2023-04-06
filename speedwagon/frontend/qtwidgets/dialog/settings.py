@@ -190,6 +190,39 @@ class SettingsDialog(QtWidgets.QDialog):
         folder_opener.open()
 
 
+class PluginModelLoader(abc.ABC):
+    @abc.abstractmethod
+    def load_plugins_into_model(self, model: models.PluginActivationModel):
+        """Load plugins into the model."""
+
+
+class EntrypointsPluginModelLoader(PluginModelLoader):
+    entrypoint_group_name = 'speedwagon.plugins'
+
+    def __init__(self, config_file: str) -> None:
+        super().__init__()
+        self.config_file = config_file
+
+    @classmethod
+    def plugin_entry_points(cls):
+        return metadata.entry_points(
+            group=cls.entrypoint_group_name
+        )
+    def is_entry_point_active(self, entry_point) -> bool:
+        settings = ConfigLoader.read_settings_file_plugins(self.config_file)
+        return (
+            entry_point.module in settings
+            and entry_point.name in settings[entry_point.module]
+            and settings[entry_point.module][entry_point.name] is True
+        )
+
+    def load_plugins_into_model(self, model: models.PluginActivationModel):
+        for entry_point in self.plugin_entry_points():
+            model.add_entry_point(
+                entry_point, self.is_entry_point_active(entry_point)
+            )
+
+
 class PluginsTab(SettingsTab):
     def __init__(
             self,
@@ -211,6 +244,7 @@ class PluginsTab(SettingsTab):
         }
 
     def load(self, settings_ini: str) -> None:
+        # TODO: refactor into a strategy pattern
         settings = ConfigLoader.read_settings_file_plugins(settings_ini)
         for entry_point in metadata.entry_points(group='speedwagon.plugins'):
             active = False
