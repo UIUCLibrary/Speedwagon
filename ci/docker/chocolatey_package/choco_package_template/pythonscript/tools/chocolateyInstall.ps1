@@ -33,6 +33,7 @@ Install-ChocolateyShortcut `
   -ShortcutFilePath "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\$packageName\$packageName.lnk" `
   -TargetPath "$installDir\venv\Scripts\$packageName.exe" `
   -WorkingDirectory "C:\" `
+  -IconLocation "$installDir\venv\Lib\site-packages\speedwagon\favicon.ico" `
   -Description "Collection of tools and workflows for DS"
 
 Install-ChocolateyShortcut `
