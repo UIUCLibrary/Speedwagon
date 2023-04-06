@@ -16,7 +16,7 @@ $PYTHON = "C:\Python311\python.exe"
 $requirementSpecifier = "$($fileLocation)`[QT`]"
 If(test-path -PathType container $venvDir){
   Write-Host "Removing existing Python virtual environment"
-  Remove-Tree $venvDir
+  Remove-Item -Recurse -Force $venvDir
 }
 
 Write-Host "Creating Python virtualenv at $venvDir"
