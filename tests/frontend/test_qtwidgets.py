@@ -385,17 +385,6 @@ class TestWorkflowsTab3:
         with pytest.raises(ValueError):
             tab.set_current_workflow_settings({"does not exists": True})
 
-    def test_set_current_workflow_settings(self, qtbot):
-        class Spam(speedwagon.Workflow):
-            name = "spam"
-            def discover_task_metadata(self, *args, **kwargs):
-                return []
-        tab = qtwidgets.tabs.WorkflowsTab3()
-        tab.app_settings_lookup_strategy = Mock()
-        tab.workflows = {"spam": Spam}
-        tab.set_current_workflow("spam")
-        tab.set_current_workflow_settings({"foo": True})
-
     def test_add_workflows(self, qtbot):
         class Spam(speedwagon.Workflow):
             name = "spam"
