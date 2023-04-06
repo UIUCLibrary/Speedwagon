@@ -127,8 +127,8 @@ class SettingsDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_box)
 
         self.setLayout(layout)
-        self.setFixedHeight(480)
-        self.setFixedWidth(600)
+        self.setMinimumHeight(480)
+        self.setMinimumWidth(600)
         self.changes_made.connect(self._handle_changes)
 
     @property
