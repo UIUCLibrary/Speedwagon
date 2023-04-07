@@ -138,7 +138,7 @@ def runTox(){
         def tox = fileLoader.fromGit(
             'tox',
             'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-            '4',
+            '8',
             null,
             ''
         )
@@ -152,7 +152,8 @@ def runTox(){
                             label: 'linux && docker && x86',
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                            dockerRunArgs: '-v pipcache_speedwagon:/.cache/pip'
+                            dockerRunArgs: '-v pipcache_speedwagon:/.cache/pip',
+                            retry: 3
                         )
                 },
                 'Windows':{
@@ -161,7 +162,8 @@ def runTox(){
                             label: 'windows && docker && x86',
                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
-                            dockerRunArgs: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip'
+                            dockerRunArgs: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip',
+                            retry: 3
                      )
                 },
                 failFast: true
