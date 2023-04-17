@@ -75,12 +75,12 @@ def test_get_install_packages(monkeypatch):
 
 class TestSpeedwagonUnhandledExceptionDialog:
     def test_dialog(self, qtbot):
-        dialog = dialogs.SpeedwagonUnhandledExceptionDialog()
+        dialog = dialogs.SpeedwagonExceptionDialog()
         dialog.exception = ValueError("This is wrong")
         assert dialog.informativeText() == "This is wrong"
 
     def test_export_button(self, qtbot, monkeypatch):
-        dialog = dialogs.SpeedwagonUnhandledExceptionDialog()
+        dialog = dialogs.SpeedwagonExceptionDialog()
         qtbot.addWidget(dialog)
         dialog.exception = ValueError("This is wrong")
         assert any(
@@ -89,7 +89,7 @@ class TestSpeedwagonUnhandledExceptionDialog:
 
     def test_export_report(self, qtbot, monkeypatch):
         exec_window = Mock()
-        dialog = dialogs.SpeedwagonUnhandledExceptionDialog()
+        dialog = dialogs.SpeedwagonExceptionDialog()
         dialog.save_report_strategy = Mock(name="save_report_strategy")
         qtbot.addWidget(dialog)
         monkeypatch.setattr(dialogs.QtWidgets.QMessageBox, "exec", exec_window)
@@ -99,7 +99,7 @@ class TestSpeedwagonUnhandledExceptionDialog:
 
     def test_exception_property(self, qtbot):
         exception = ValueError("This is wrong")
-        dialog = dialogs.SpeedwagonUnhandledExceptionDialog()
+        dialog = dialogs.SpeedwagonExceptionDialog()
         dialog.exception = exception
         assert dialog.exception == exception
 

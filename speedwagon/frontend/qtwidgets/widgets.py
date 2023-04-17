@@ -208,7 +208,7 @@ class ComboWidget(EditDelegateWidget):
         model = self.combo_box.model()
         selections = []
         for i in range(model.rowCount()):
-            index = model.index(i)
+            index = model.index(i, column=0)
             selections.append(model.data(index))
         return selections
 
@@ -623,7 +623,8 @@ class Workspace(QtWidgets.QWidget):
             self.workflow_name_value.setText(workflow_klass.name)
         try:
             settings = self.app_settings_lookup_strategy.settings()
-            new_workflow = workflow_klass(global_settings=settings)
+            new_workflow = \
+                workflow_klass(global_settings=settings.get("GLOBAL", {}))
             if new_workflow.description:
                 self.workflow_description_value.setText(
                     new_workflow.description
@@ -668,6 +669,7 @@ class Workspace(QtWidgets.QWidget):
 class SelectWorkflow(QtWidgets.QWidget):
     workflowSelectionView: QtWidgets.QListView
     workflow_selected = QtCore.Signal(object)
+    selected_index_changed = QtCore.Signal(QtCore.QModelIndex)
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
@@ -677,8 +679,16 @@ class SelectWorkflow(QtWidgets.QWidget):
                 ).joinpath("select_workflow_widget.ui")
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
-        self._model = models.WorkflowListModel2()
-        self.workflowSelectionView.setModel(self._model)
+        self.workflowSelectionView.setModel(models.WorkflowList())
+
+    @property
+    def model(self) -> QtCore.QAbstractItemModel:
+        return self.workflowSelectionView.model()
+
+    @model.setter
+    def model(self, value: models.AbsWorkflowList) -> None:
+        # pass
+        self.workflowSelectionView.setModel(value)
         selection_model = self.workflowSelectionView.selectionModel()
         selection_model.currentChanged.connect(  # type: ignore
             self._update_tool_selected
@@ -691,47 +701,58 @@ class SelectWorkflow(QtWidgets.QWidget):
     ) -> None:
         item = typing.cast(
             typing.Type[Workflow],
-            self._model.data(
-                current, role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
+            self.model.data(
+                current,
+                role=typing.cast(int, models.TabsTreeModel.WorkflowClassRole)
             )
         )
+        self.selected_index_changed.emit(current)
         self.workflow_selected.emit(item)
 
     def add_workflow(self, workflow_klass: typing.Type[Workflow]) -> None:
-        self._model.add_workflow(workflow_klass)
+        new_row = self.model.rowCount()
+        self.model.insertRow(new_row)
+        self.model.setData(self.model.index(new_row, 0), workflow_klass)
 
     def set_current_by_name(self, workflow_name: str) -> None:
-        rows = self._model.rowCount()
+        rows = self.model.rowCount()
         for row_id in range(rows):
-            workflow_index = self._model.index(row_id, 0)
+            workflow_index = self.model.index(row_id, 0)
             name = workflow_index.data()
             if name == workflow_name:
                 self.workflowSelectionView.setCurrentIndex(workflow_index)
-                return None
-        raise ValueError(f"{workflow_name} not loaded in model")
+                self.workflow_selected.emit(
+                    self.model.data(
+                        workflow_index,
+                        models.TabsTreeModel.WorkflowClassRole
+                    )
+                )
+                break
+        else:
+            raise ValueError(f"{workflow_name} not loaded in model")
 
     def get_current_workflow_type(self) -> Optional[typing.Type[Workflow]]:
         return typing.cast(
             typing.Type[Workflow],
-            self._model.data(
+            self.model.data(
                 self.workflowSelectionView.currentIndex(),
-                role=typing.cast(int, QtCore.Qt.ItemDataRole.UserRole)
+                role=typing.cast(int, models.TabsTreeModel.WorkflowClassRole)
             )
         )
 
     @property
     def workflows(self) -> Dict[str, typing.Type[Workflow]]:
         loaded_workflows = {}
-        for row_id in range(self._model.rowCount()):
-            index = self._model.index(row_id)
+        for row_id in range(self.model.rowCount()):
+            index = self.model.index(row_id, 0)
             workflow_name = typing.cast(
                 str,
-                self._model.data(index, QtCore.Qt.ItemDataRole.DisplayRole)
+                self.model.data(index, QtCore.Qt.ItemDataRole.DisplayRole)
             )
 
             loaded_workflows[workflow_name] = typing.cast(
                 typing.Type[Workflow],
-                self._model.data(index, QtCore.Qt.ItemDataRole.UserRole)
+                self.model.data(index, QtCore.Qt.ItemDataRole.UserRole)
             )
 
         return loaded_workflows

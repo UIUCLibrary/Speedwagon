@@ -6,13 +6,15 @@ import os
 import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
+
 import speedwagon.config
 gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets.dialog import dialogs
-from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog
-from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config
+from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor
+from speedwagon.frontend.qtwidgets.models import AbsLoadTabDataModelStrategy
+from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
@@ -34,17 +36,85 @@ def test_standalone_tab_editor_loads(qtbot, monkeypatch):
         get_platform_settings
     )
 
-    gui_startup.standalone_tab_editor(app)
+    with pytest.raises(SystemExit):
+        gui_startup.standalone_tab_editor(app)
     assert app.exec.called is True
 
 
 class TestTabsEditorApp:
     def test_on_okay_closes(self, qtbot):
-        editor = gui_startup.TabsEditorApp()
+        editor = TabsEditorApp()
         qtbot.addWidget(editor)
         editor.close = Mock()
         editor.on_okay()
         assert editor.close.called is True
+
+    def test_save_on_modify(self, qtbot, monkeypatch):
+        app = TabsEditorApp()
+        qtbot.addWidget(app)
+        editor: TabEditor = app.editor
+
+        class DummyLoader(AbsLoadTabDataModelStrategy):
+            def load(self, model) -> None:
+                class Spam1(speedwagon.Workflow):
+                    name = "spam 1"
+
+                class Spam2(speedwagon.Workflow):
+                    name = "spam 2"
+
+                class Spam3(speedwagon.Workflow):
+                    name = "spam 3"
+
+                model.append_workflow_tab("All", [Spam1, Spam2, Spam3])
+                model.append_workflow_tab("Eggs", [Spam1])
+        # editor.set_tab_visibility("Eggs", True)
+        editor.load_tab_data_model_strategy = DummyLoader()
+        editor.load_data()
+        mo = editor.all_workflows_list_view.model()
+
+        qtbot.mouseClick(
+            editor.all_workflows_list_view.viewport(),
+            QtCore.Qt.LeftButton,
+            pos=editor.all_workflows_list_view.visualRect(
+                mo.index(1,0)
+            ).center()
+        )
+
+        assert editor.model.rowCount(editor.model.index(1)) == 1
+        with qtbot.waitSignal(editor.model.dataChanged):
+            qtbot.mouseClick(
+                editor.add_items_button,
+                QtCore.Qt.LeftButton,
+            )
+
+        def get_error_info():
+            existing_tabs = [
+                editor.model.data(
+                    editor.model.index(i, parent=editor.model.index(1))
+                )
+                for i in range(editor.model.rowCount(editor.model.index(1)))
+            ]
+            return f"Got the following workflows loaded: {*existing_tabs,}"
+
+        assert \
+            editor.model.rowCount(editor.model.index(1)) == 2, \
+            get_error_info()
+        save = Mock()
+        monkeypatch.setattr(app, "get_tab_config_strategy", Mock(return_value=Mock(save=save)))
+        okay_button = app.dialog_button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
+        qtbot.mouseClick(
+            okay_button,
+            QtCore.Qt.LeftButton,
+        )
+        save.assert_called_with(
+            [
+                speedwagon.config.CustomTabData(
+                    tab_name='Eggs',
+                    workflow_names=["spam 1", "spam 2"]
+                )
+            ]
+        )
+
 
 
 class TestSingleWorkflowJSON:
@@ -209,26 +279,6 @@ class TestSingleWorkflowJSON:
                startup.options["Output"] == "dummy_out" and \
                startup.workflow.name == 'Zip Packages'
 
-    def test_report_exception(self, qtbot, monkeypatch):
-        startup = \
-            speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
-                app=None
-            )
-        exception_dialog = \
-            Mock(gui_startup.dialog.dialogs.SpeedwagonUnhandledExceptionDialog)
-        monkeypatch.setattr(
-            gui_startup.dialog.dialogs,
-            "SpeedwagonUnhandledExceptionDialog",
-            Mock(
-                name="SpeedwagonUnhandledExceptionDialog",
-                return_value=exception_dialog
-            )
-        )
-        startup.report_exception(ValueError("something went wrong"))
-        assert exception_dialog.exec.called is True
-
-
-
 
 class TestStartQtThreaded:
     @pytest.fixture(scope="function")
@@ -257,14 +307,14 @@ class TestStartQtThreaded:
                 return ""
             def get_user_data_dir(self):
                 return ""
-        startup.config_loader_strategy = SettingsFileLocatorDummy()
+        # startup.config_loader_strategy = SettingsFileLocatorDummy()
         def read_settings_file_plugins(*args, **kwargs):
             return {}
-        monkeypatch.setattr(
-            speedwagon.config,
-            "ConfigLoader",
-            Mock(name="ConfigLoader", read_settings_file_plugins=read_settings_file_plugins)
-        )
+        # monkeypatch.setattr(
+        #     speedwagon.config,
+        #     "ConfigLoader",
+        #     Mock(name="ConfigLoader", read_settings_file_plugins=read_settings_file_plugins)
+        # )
         yield startup
         if startup.windows is not None:
             startup.windows.close()
@@ -297,6 +347,7 @@ class TestStartQtThreaded:
             serialization_strategy=serialization_strategy
         )
         assert serialization_strategy.load.called is True
+
     def test_load_workflow_config_cancel(self, qtbot, starter):
         dialog = Mock()
         dialog.getOpenFileName = MagicMock(return_value=("", ""))
@@ -309,12 +360,14 @@ class TestStartQtThreaded:
             serialization_strategy=serialization_strategy
         )
         assert serialization_strategy.load.called is False
+
     def test_load_workflows_no_window(self, starter, monkeypatch):
         load_custom_tabs = Mock()
         starter.windows = None
         monkeypatch.setattr(starter, "load_custom_tabs", load_custom_tabs)
         starter.load_workflows()
         assert load_custom_tabs.called is False
+
     def test_save_log_opens_dialog(self, qtbot, monkeypatch, starter):
         from PySide6 import QtWidgets
         getSaveFileName = Mock(
@@ -389,7 +442,7 @@ class TestStartQtThreaded:
 
     def test_request_settings_opens_setting_dialog(self, qtbot, monkeypatch):
         exec_ = Mock()
-        monkeypatch.setattr(SettingsDialog, "exec_", exec_)
+        monkeypatch.setattr(SettingsDialog, "exec", exec_)
         monkeypatch.setattr(
             speedwagon.frontend.qtwidgets.dialog.settings.GlobalSettingsTab,
             "read_config_data",
@@ -400,6 +453,15 @@ class TestStartQtThreaded:
             speedwagon.frontend.qtwidgets.dialog.settings.TabsConfigurationTab,
             "load",
             Mock()
+        )
+        def load(_, model):
+            data = {"All": []}
+            for tab_name, workflows in data.items():
+                model.append_workflow_tab(tab_name, workflows)
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.models.TabDataModelConfigLoader,
+            "load",
+            load
         )
 
         monkeypatch.setattr(
@@ -438,32 +500,40 @@ class TestStartQtThreaded:
             lambda *_, **__: ""
         )
 
-        monkeypatch.setattr(
-            gui_startup.dialog.settings.ConfigSaver,
-            "write_tabs_yml",
-            Mock()
-        )
-        monkeypatch.setattr(
-            gui_startup.dialog.settings.ConfigSaver,
-            "write_config_file",
+        monkeypatch.setattr(speedwagon.config.TabsYamlWriter,
+            "save",
             Mock()
         )
 
         monkeypatch.setattr(
-            SettingsDialog, "exec_", lambda _self: _self.accept()
+            SettingsDialog, "exec", lambda _self: _self.accept()
 
         )
-        load_workflows = Mock()
-        monkeypatch.setattr(starter, "load_workflows", load_workflows)
+        def load(_, model):
+            data = {"All": []}
+            for tab_name, workflows in data.items():
+                model.append_workflow_tab(tab_name, workflows)
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.models.TabDataModelConfigLoader,
+            "load",
+            load
+        )
+        monkeypatch.setattr(
+            speedwagon.config.IniConfigSaver,
+            "write_data_to_file",
+            Mock()
+        )
+
+        monkeypatch.setattr(starter, "load_workflows", Mock())
         starter.windows = Mock()
         starter.request_settings()
         assert starter.load_workflows.called is True
-
 
     def test_run_opens_window(self, qtbot, monkeypatch, starter):
 
         main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
         main_window3.show = Mock()
+        main_window3.config_strategy = Mock()
         # main_window3.console = Mock()
         MainWindow3 = Mock(
             name="MainWindow3",
@@ -473,6 +543,10 @@ class TestStartQtThreaded:
             speedwagon.frontend.qtwidgets.gui,
             "MainWindow3",
             MainWindow3
+        )
+        monkeypatch.setattr(
+            speedwagon.config.ConfigFileSetter,
+            "update", Mock()
         )
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
@@ -514,27 +588,23 @@ class TestStartQtThreaded:
             caplog,
             starter
     ):
-        show = Mock()
-
+        main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        main_window3.show = Mock()
+        main_window3.config_strategy = Mock()
+        # main_window3.console = Mock()
+        MainWindow3 = Mock(
+            name="MainWindow3",
+            return_value=main_window3,
+        )
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui.MainWindow3,
-            "show",
-            show
+            speedwagon.frontend.qtwidgets.gui,
+            "MainWindow3",
+            MainWindow3
         )
 
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
-        class SettingsFileLocatorDummy(speedwagon.config.AbsSettingLocator):
-            def get_app_data_dir(self):
-                return ""
 
-            def get_config_file(self):
-                return ""
-            def get_tabs_file(self):
-                return ""
-            def get_user_data_dir(self):
-                return ""
-        starter.config_loader_strategy = SettingsFileLocatorDummy()
         starter.run()
 
         monkeypatch.setattr(
@@ -550,12 +620,17 @@ class TestStartQtThreaded:
         assert any("No help link available" in m for m in caplog.messages)
 
     def test_load_help(self, qtbot, monkeypatch, starter):
-        show = Mock()
-
+        main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        main_window3.show = Mock()
+        main_window3.config_strategy = Mock()
+        MainWindow3 = Mock(
+            name="MainWindow3",
+            return_value=main_window3,
+        )
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui.MainWindow3,
-            "show",
-            show
+            speedwagon.frontend.qtwidgets.gui,
+            "MainWindow3",
+            MainWindow3
         )
 
         starter.load_custom_tabs = Mock()
@@ -590,33 +665,41 @@ class TestStartQtThreaded:
     ):
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui.MainWindow3,
-            "show",
-            lambda *args, **kwargs: None
+
+        main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        main_window3.show = Mock()
+        main_window3.config_strategy = Mock()
+        MainWindow3 = Mock(
+            name="MainWindow3",
+            return_value=main_window3,
         )
-
-        starter.run()
-        loader = Mock()
-        loader.get_settings = Mock(return_value={})
-        loader.read_settings_file_globals = Mock(return_value={})
-        starter.resolve_settings(resolution_order=[], loader=loader)
-        try:
-            assert loader.get_settings.called is True
-        finally:
-            starter.windows.console.detach_logger()
-
-    def test_read_settings_file(self, qtbot, monkeypatch, starter):
-        read = Mock()
-
         monkeypatch.setattr(
-            speedwagon.config.configparser.ConfigParser,
-            "read",
-            read
+            speedwagon.frontend.qtwidgets.gui,
+            "MainWindow3",
+            MainWindow3
         )
+        monkeypatch.setattr(
+            starter.settings_resolver,
+            "get_settings",
+            Mock(
+                name="get_settings",
+                return_value={}
+            )
+        )
+        starter.resolve_settings()
+        assert starter.settings_resolver.get_settings.called is True
 
-        starter.read_settings_file("somefile")
-        read.assert_called_with("somefile")
+    # def test_read_settings_file(self, qtbot, monkeypatch, starter):
+    #     read = Mock()
+    #
+    #     monkeypatch.setattr(
+    #         speedwagon.config.configparser.ConfigParser,
+    #         "read",
+    #         read
+    #     )
+    #
+    #     starter.read_settings_file("somefile")
+    #     read.assert_called_with("somefile")
 
     def test_request_more_info_emits_request_signal(self, qtbot, starter):
         workflow = Mock()
@@ -642,7 +725,8 @@ class TestStartQtThreaded:
         job_manager = Mock()
         workflow_name = "unknown_workflow"
         options = {}
-        starter.report_exception = Mock()
+        monkeypatch.setattr(gui_startup, "report_exception_dialog", Mock())
+        # starter.report_exception_dialog = Mock()
 
         # Simulate no valid workflow
         monkeypatch.setattr(
@@ -650,12 +734,12 @@ class TestStartQtThreaded:
         )
 
         starter.submit_job(
-            main_app,
             job_manager,
             workflow_name,
-            options
+            options,
+            main_app,
         )
-        assert starter.report_exception.called is True
+        assert gui_startup.report_exception_dialog.called is True
 
     def test_submit_job_submits_to_job_manager(
             self,
@@ -675,7 +759,6 @@ class TestStartQtThreaded:
         job_manager = Mock()
         workflow_name = "spam"
         options = {}
-        starter.report_exception = Mock()
         spam_workflow = Mock()
 
         monkeypatch.setattr(
@@ -696,24 +779,38 @@ class TestStartQtThreaded:
         )
         assert job_manager.submit_job.called is True
 
-    def test_except_hook_opens_dialog_box(self, qtbot, starter, monkeypatch):
-        print_tb = Mock()
-        monkeypatch.setattr(gui_startup.tb, "print_tb", print_tb)
-        exception_dialog = \
-            Mock(gui_startup.dialog.dialogs.SpeedwagonUnhandledExceptionDialog)
+    def test_initialize(self, qtbot):
+        start = gui_startup.StartQtThreaded(Mock())
+        start.ensure_settings_files = Mock(name="ensure_settings_files")
+        start.resolve_settings = Mock(name="resolve_settings")
+        start.initialize()
 
+        expected = {
+            "ensure_settings_files was called": True,
+            "resolve_settings was called": True,
+        }
+        actual = {
+            "ensure_settings_files was called":
+                start.ensure_settings_files.called,
+            "resolve_settings was called": start.resolve_settings.called,
+        }
+        assert actual == expected
+
+    def test_load_all_workflows_tab(self, qtbot):
+        start = gui_startup.StartQtThreaded(Mock())
+        main_window = Mock('MainWindow3', add_tab=Mock())
+        loaded_workflows = {}
+        start.load_all_workflows_tab(main_window, loaded_workflows)
+        main_window.add_tab.assert_called_with("All", {})
+    def test_ensure_settings_files(self, qtbot, monkeypatch):
+        start = gui_startup.StartQtThreaded(Mock())
         monkeypatch.setattr(
-            gui_startup.dialog.dialogs,
-            "SpeedwagonUnhandledExceptionDialog",
-            Mock(
-                name="SpeedwagonUnhandledExceptionDialog",
-                return_value=exception_dialog
-            )
+            gui_startup.config,
+            "ensure_settings_files",
+            Mock(name="ensure_settings_files")
         )
-        starter.exceptions_hook(ValueError, ValueError("dummy"), Mock())
-        assert exception_dialog.exec.called is True
-
-
+        start.ensure_settings_files()
+        assert gui_startup.config.ensure_settings_files.called is True
 class TestWorkflowProgressCallbacks:
 
     @pytest.fixture()
@@ -983,17 +1080,52 @@ def test_start_up_tab_editor(monkeypatch):
         speedwagon.startup.main(argv=["tab-editor"])
         assert standalone_tab_editor.called is True
 
-# class TestSettingLoader:
-#     def test_foo(self, qtbot):
-#         class Dummy(gui_startup.AbsSettingLoader):
-#             def __init__(self, window: gui.MainWindow2):
-#                 self.window = window
-#
-#             def set_app_settings(self):
-#                 self.window.
-#
-#         job_manager = Mock()
-#         window = gui.MainWindow2(job_manager)
-#         setter = Dummy(window)
-#         setter.set_app_settings()
-#
+
+class TestResolveSettings:
+    def test_get_settings(self, monkeypatch):
+        monkeypatch.setattr(
+            gui_startup.config.StandardConfigFileLocator,
+            "get_config_file",
+            lambda _ : "dummy.ini"
+        )
+        monkeypatch.setattr(
+            gui_startup.config.IniConfigManager,
+            "data",
+            lambda _: {}
+        )
+
+        resolver = gui_startup.ResolveSettings()
+        assert isinstance(resolver.get_settings(), dict)
+from pytestqt.qt_compat import qt_api
+class CustomQApplication(qt_api.QtWidgets.QApplication):
+    def __init__(self, *argv):
+        super().__init__(*argv)
+        self.custom_attr = "xxx"
+
+    def custom_function(self):
+        pass
+
+
+def test_gui_exceptions_hook(qtbot, monkeypatch):
+    monkeypatch.setattr(gui_startup.tb, "print_tb", Mock())
+    monkeypatch.setattr(gui_startup, "report_exception_dialog", Mock())
+    app = Mock()
+    gui_startup.gui_exceptions_hook(
+        BaseException,
+        Mock(name="BaseException"),
+        Mock(name="traceback: Optional[types.TracebackType]"),
+        app
+    )
+    app.exit.assert_called_with(1)
+
+
+def test_report_exception_dialog(qtbot, monkeypatch):
+    monkeypatch.setattr(
+        gui_startup.dialog.dialogs.SpeedwagonExceptionDialog,
+        "exec",
+        Mock(name='exec')
+    )
+    gui_startup.report_exception_dialog(RuntimeError())
+    assert \
+        gui_startup.dialog.dialogs.SpeedwagonExceptionDialog.exec.called \
+        is True

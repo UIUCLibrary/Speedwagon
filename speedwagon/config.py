@@ -12,11 +12,15 @@ import typing
 from pathlib import Path
 import abc
 import collections.abc
-from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union, List
+from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union, \
+    List, Callable, NamedTuple
 from types import TracebackType
 import platform
+import io
+import yaml
 
 import speedwagon
+from speedwagon.exceptions import TabLoadFailure
 
 try:  # pragma: no cover
     from importlib import metadata
@@ -25,15 +29,21 @@ except ImportError:  # pragma: no cover
 
 
 __all__ = [
+    "AbsConfig",
+    "AbsConfigSettings",
+    "AbsTabsConfigDataManagement",
     "ConfigManager",
+    "CustomTabsYamlConfig",
     "generate_default",
     "get_platform_settings",
-    "AbsConfig"
+    "SettingsData",
+    "SettingsDataType",
 ]
 
 SettingsDataType = typing.Union[str, bool, int]
 SettingsData = Dict[str, SettingsDataType]
 PluginDataType = Dict[str, Dict[str, bool]]
+FullSettingsData = Dict[str, SettingsData]
 
 
 class AbsConfig(collections.abc.Mapping):
@@ -285,33 +295,25 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
 
 class AbsSetting(metaclass=abc.ABCMeta):  # pylint: disable=R0903
 
-    friendly_name: str
-
     def update(
             self,
-            settings: Optional[SettingsData] = None
-    ) -> SettingsData:
+            settings: Optional[FullSettingsData] = None
+    ) -> FullSettingsData:
         if settings is None:
             return {}
         return settings
 
-    def __init_subclass__(cls) -> None:
-        if hasattr(cls, "friendly_name") is False:
-            raise NotImplementedError(
-                "required property friendly_name has not been not implemented"
-            )
-        super().__init_subclass__()
-
 
 class DefaultsSetter(AbsSetting):  # pylint: disable=R0903
-    friendly_name = "Setting defaults"
-
     def update(
             self,
-            settings: Optional[SettingsData] = None
-    ) -> SettingsData:
+            settings: Optional[FullSettingsData] = None
+    ) -> FullSettingsData:
         new_settings = super().update(settings)
-        new_settings["debug"] = False
+        if "GLOBAL" not in new_settings:
+            new_settings["GLOBAL"] = {}
+        global_settings = new_settings["GLOBAL"]
+        global_settings["debug"] = False
         return new_settings
 
 
@@ -321,21 +323,48 @@ class ConfigFileSetter(AbsSetting):  # pylint: disable=R0903
     def __init__(self, config_file: str):
         """Create a new config file setter."""
         self.config_file = config_file
+        self.boolean_settings: List[str] = [
+            "debug"
+        ]
+        self.int_settings: List[str] = []
+
+    @staticmethod
+    def read_config_data(config_file: str) -> str:
+        with open(config_file, encoding="utf-8") as file_handle:
+            return file_handle.read()
 
     def update(
             self,
-            settings: Optional[SettingsData] = None
-    ) -> SettingsData:
+            settings: Optional[FullSettingsData] = None
+    ) -> FullSettingsData:
         """Update setting configuration."""
         new_settings = super().update(settings)
-        with speedwagon.config.ConfigManager(self.config_file) as cfg:
-            new_settings.update(cfg.global_settings.items())
+        cfg_parser = configparser.ConfigParser()
+        cfg_parser.read_string(self.read_config_data(self.config_file))
+        settings_data = {
+            section_name: self.process_section(cfg_parser[section_name])
+            for section_name in cfg_parser.sections()
+        }
+        new_settings.update(settings_data)
         return new_settings
+
+    def process_section(
+            self,
+            section: configparser.SectionProxy
+    ) -> SettingsData:
+        processed_section: SettingsData = {}
+
+        for key, value in section.items():
+            if key in self.boolean_settings:
+                processed_section[key] = section.getboolean(key)
+            elif key in self.int_settings:
+                processed_section[key] = section.getint(key)
+            else:
+                processed_section[key] = value
+        return processed_section
 
 
 class CliArgsSetter(AbsSetting):
-
-    friendly_name = "Command line arguments setting"
 
     def __init__(self, args: Optional[typing.List[str]] = None) -> None:
         super().__init__()
@@ -343,19 +372,21 @@ class CliArgsSetter(AbsSetting):
 
     def update(
             self,
-            settings: Optional[SettingsData] = None
-    ) -> SettingsData:
+            settings: Optional[FullSettingsData] = None
+    ) -> FullSettingsData:
         new_settings = super().update(settings)
-
+        if "GLOBAL" not in new_settings:
+            new_settings["GLOBAL"] = {}
+        global_settings = new_settings['GLOBAL']
         args = self._parse_args(self.args)
 
         starting_tab: Optional[str] = args.start_tab
         if starting_tab is not None:
-            new_settings["starting-tab"] = starting_tab
+            global_settings["starting-tab"] = starting_tab
 
         debug: bool = args.debug
         if debug:
-            new_settings["debug"] = debug
+            global_settings["debug"] = debug
 
         return new_settings
 
@@ -406,81 +437,11 @@ class CliArgsSetter(AbsSetting):
         return parser.parse_args(args)
 
 
-class AbsConfigLoader(abc.ABC):  # pylint: disable=R0903
-
-    @abc.abstractmethod
-    def get_settings(self) -> SettingsData:
-        """Get the settings data."""
-
-
-class ConfigLoader(AbsConfigLoader):
-
-    @staticmethod
-    def read_settings_file_globals(
-            settings_file: str
-    ) -> SettingsData:
-        with speedwagon.config.ConfigManager(settings_file) as config:
-            return config.global_settings
-
-    @staticmethod
-    def read_settings_file_plugins(
-            settings_file: str
-    ) -> PluginDataType:
-        with speedwagon.config.ConfigManager(settings_file) as config:
-            return config.plugins
-
-    def __init__(self, config_file: str) -> None:
-        super().__init__()
-        self.config_file = config_file
-        self.resolution_strategy_order: Optional[List[AbsSetting]] = None
-        self.platform_settings = get_platform_settings()
-        self.logger = logging.getLogger(__package__)
-        self.startup_settings: SettingsData = {}
-
-    @staticmethod
-    def _resolve(
-            resolution_strategy_order: Iterable[AbsSetting],
-            config_file: str,
-            starting_settings: SettingsData,
-            logger: logging.Logger
-    ) -> SettingsData:
-
-        settings = starting_settings.copy()
-        for settings_strategy in resolution_strategy_order:
-
-            logger.debug("Loading settings from %s",
-                         settings_strategy.friendly_name)
-
-            try:
-                settings = settings_strategy.update(settings)
-            except ValueError as error:
-                if isinstance(settings_strategy, ConfigFileSetter):
-                    logger.warning(
-                        "%s contains an invalid setting. Details: %s",
-                        config_file,
-                        error
-                    )
-
-                else:
-                    logger.warning("%s is an invalid setting", error)
-        return settings
-
-    def get_settings(self) -> SettingsData:
-        if self.resolution_strategy_order is None:
-            resolution_order = [
-                speedwagon.config.DefaultsSetter(),
-                ConfigFileSetter(self.config_file),
-                speedwagon.config.CliArgsSetter(),
-            ]
-        else:
-            resolution_order = self.resolution_strategy_order
-
-        return self._resolve(
-            resolution_order,
-            config_file=self.config_file,
-            logger=self.logger,
-            starting_settings=self.startup_settings
-        )
+def read_settings_file_plugins(
+        settings_file: str
+) -> PluginDataType:
+    with speedwagon.config.ConfigManager(settings_file) as config:
+        return config.plugins
 
 
 class AbsEnsureConfigFile(abc.ABC):
@@ -625,8 +586,9 @@ class OpenSettingsDirectory:
 
 def get_whitelisted_plugins() -> Set[typing.Tuple[str, str]]:
     config_strategy = speedwagon.config.StandardConfigFileLocator()
-    plugin_settings = ConfigLoader.read_settings_file_plugins(
-        config_strategy.get_config_file())
+    plugin_settings = \
+        read_settings_file_plugins(config_strategy.get_config_file())
+
     white_listed_plugins = set()
     for module, entry_points in plugin_settings.items():
         for entry_point in entry_points:
@@ -637,19 +599,19 @@ def get_whitelisted_plugins() -> Set[typing.Tuple[str, str]]:
 class AbsSettingLocator(abc.ABC):
     @abc.abstractmethod
     def get_user_data_dir(self) -> str:
-        pass
+        """Get user data directory."""
 
     @abc.abstractmethod
     def get_app_data_dir(self) -> str:
-        pass
+        """Get app data directory."""
 
     @abc.abstractmethod
     def get_config_file(self) -> str:
-        pass
+        """Get config file used."""
 
     @abc.abstractmethod
     def get_tabs_file(self) -> str:
-        pass
+        """Get tabs settings file used."""
 
 
 class StandardConfigFileLocator(AbsSettingLocator):
@@ -679,9 +641,10 @@ class StandardConfigFileLocator(AbsSettingLocator):
 
 
 class AbsConfigSettings(abc.ABC):  # pylint: disable=R0903
+    """Abstract base class for getting settings."""
 
     @abc.abstractmethod
-    def settings(self) -> SettingsData:
+    def settings(self) -> FullSettingsData:
         """Get the current app settings."""
 
 
@@ -690,18 +653,247 @@ class StandardConfig(AbsConfigSettings):
         super().__init__()
         self.config_loader_strategy: Optional[AbsConfigLoader] = None
 
-    def settings(self) -> SettingsData:
+    def settings(self) -> FullSettingsData:
         return self.resolve_settings()
 
-    def resolve_settings(self) -> SettingsData:
-        if self.config_loader_strategy:
-            loader = self.config_loader_strategy
-        else:
-            file_locator = StandardConfigFileLocator()
-            loader = ConfigLoader(file_locator.get_config_file())
-            loader.resolution_strategy_order = [
-                speedwagon.config.DefaultsSetter(),
-                ConfigFileSetter(file_locator.get_config_file()),
-                speedwagon.config.CliArgsSetter(),
-            ]
+    def resolve_settings(self) -> FullSettingsData:
+        if self.config_loader_strategy is not None:
+            return self.config_loader_strategy.get_settings()
+
+        file_locator = StandardConfigFileLocator()
+        loader = MixedConfigLoader()
+        loader.resolution_strategy_order = [
+            DefaultsSetter(),
+            ConfigFileSetter(file_locator.get_config_file()),
+            CliArgsSetter(),
+        ]
         return loader.get_settings()
+
+
+class AbsTabsConfigDataManagement(abc.ABC):
+    """Abstract base model for managing saving and loading serialized data."""
+
+    @abc.abstractmethod
+    def data(self) -> List[CustomTabData]:
+        """Get the data for custom tabs."""
+
+    @abc.abstractmethod
+    def save(self, tabs: List[CustomTabData]):
+        """Get the data for custom tabs."""
+
+
+class CustomTabData(NamedTuple):
+    tab_name: str
+    workflow_names: List[str]
+
+
+class AbsTabsYamlFileReader(abc.ABC):
+    @staticmethod
+    @abc.abstractmethod
+    def read_file(yaml_file: str) -> str:
+        """Read file and return a string."""
+
+    @abc.abstractmethod
+    def decode_tab_settings_yml_data(self, data: str) -> Dict[str,  List[str]]:
+        """Decode data."""
+
+
+class TabsYamlFileReader(AbsTabsYamlFileReader):
+    @staticmethod
+    def read_file(yaml_file: str) -> str:
+        with open(yaml_file, encoding="utf-8") as file_handler:
+            return file_handler.read()
+
+    def decode_tab_settings_yml_data(self, data: str) -> Dict[str,  List[str]]:
+        tabs_config_data = yaml.load(data, Loader=yaml.SafeLoader)
+        if not isinstance(tabs_config_data, dict):
+            raise speedwagon.exceptions.FileFormatError("Failed to parse file")
+        return tabs_config_data
+
+
+class CustomTabsYamlConfig(AbsTabsConfigDataManagement):
+    """YAML config file manager."""
+
+    def __init__(self, yaml_file: str) -> None:
+        """Create a new yaml config object.
+
+        Args:
+            yaml_file: path to a yaml file to use to read or save to.
+        """
+        self.yaml_file = yaml_file
+        self.file_reader_strategy: AbsTabsYamlFileReader = TabsYamlFileReader()
+        self.file_writer_strategy: AbsTabWriter = TabsYamlWriter()
+        self.data_reader: Optional[Callable[[], str]] = None
+
+    def decode_data(self, data: str) -> Dict[str,  List[str]]:
+        """Decode a YAML string to a dictionary."""
+        return self.file_reader_strategy.decode_tab_settings_yml_data(data)
+
+    def data(self) -> List[CustomTabData]:
+        """Get Yaml file data."""
+        try:
+            if self.data_reader is not None:
+                data = self.data_reader()
+            else:
+                data = self.file_reader_strategy.read_file(self.yaml_file)
+            yml_data = \
+                self.file_reader_strategy.decode_tab_settings_yml_data(data)
+        except yaml.YAMLError as error:
+            raise TabLoadFailure(
+                f"{self.yaml_file} file failed to load."
+            ) from error
+        except FileNotFoundError as error:
+            raise TabLoadFailure(
+                f"Custom tabs file {self.yaml_file} not found"
+            ) from error
+        except (TypeError, speedwagon.exceptions.FileFormatError) as error:
+            raise TabLoadFailure() from error
+        return [
+            CustomTabData(tab_name, workflow_names)
+            for tab_name, workflow_names in yml_data.items()
+        ]
+
+    def save(self, tabs: List[CustomTabData]):
+        """Write tabs to a yaml file."""
+        self.file_writer_strategy.save(self.yaml_file, tabs)
+
+
+class AbsTabWriter(abc.ABC):  # pylint: disable=R0903
+    def save(self, file_name: str, tabs: List[CustomTabData]) -> None:
+        """Save tabs data to a file format."""
+
+
+class TabsYamlWriter(AbsTabWriter):
+    def save(self, file_name: str, tabs: List[CustomTabData]) -> None:
+        data = self.serialize(tabs)
+        self.write_data(file_name, data)
+
+    @staticmethod
+    def write_data(file_name, data):
+        with open(file_name, "w", encoding="utf-8") as file_handle:
+            file_handle.write(data)
+
+    @staticmethod
+    def serialize(tabs: List[CustomTabData]) -> str:
+        tabs_data = {
+            tab_name: list(tab_workflows) for tab_name, tab_workflows in tabs
+        }
+        with io.StringIO() as file_handle:
+            yaml.dump(tabs_data, file_handle, default_flow_style=False)
+            value = file_handle.getvalue()
+        return value
+
+
+class AbsGlobalConfigDataManagement(abc.ABC):
+    @abc.abstractmethod
+    def save(self, data: FullSettingsData) -> None:
+        """Save data."""
+
+    @abc.abstractmethod
+    def data(self) -> FullSettingsData:
+        """Get data."""
+
+
+class AbsConfigSaver(abc.ABC):  # pylint: disable=R0903
+    @abc.abstractmethod
+    def save(self, file_name: str, data: FullSettingsData):
+        """Save data to a file."""
+
+
+class IniConfigManager(AbsGlobalConfigDataManagement):
+
+    def __init__(self, ini_file: Optional[str] = None) -> None:
+        self.config_file: Optional[str] = ini_file
+        self.loader: Optional[AbsConfigLoader] = None
+        self.saver: Optional[AbsConfigSaver] = None
+        self.config_resolution_order: Optional[List[AbsSetting]] = None
+
+    def get_resolution_order(self) -> List[AbsSetting]:
+        if self.config_resolution_order is not None:
+            return self.config_resolution_order
+
+        config_file = \
+            self.config_file or \
+            StandardConfigFileLocator().get_config_file()
+        resolution_order: List[AbsSetting] = [
+            DefaultsSetter(),
+        ]
+        if self.config_file:
+            resolution_order.append(ConfigFileSetter(config_file))
+        resolution_order.append(speedwagon.config.CliArgsSetter())
+        return resolution_order
+
+    def loader_strategy(self) -> AbsConfigLoader:
+        if self.loader:
+            return self.loader
+        strategy = MixedConfigLoader()
+        strategy.resolution_strategy_order = self.get_resolution_order()
+        return strategy
+
+    def save_strategy(self) -> AbsConfigSaver:
+        if self.saver:
+            return self.saver
+        return IniConfigSaver()
+
+    def data(self) -> FullSettingsData:
+        return self.loader_strategy().get_settings()
+
+    def save(self, data: FullSettingsData) -> None:
+        if self.config_file is None:
+            return
+        self.save_strategy().save(self.config_file, data)
+
+
+class IniConfigSaver(AbsConfigSaver):
+
+    def save(self, file_name: str, data: FullSettingsData):
+        serialized_data = self.serialize(data)
+        self.write_data_to_file(
+            file_name,
+            serialized_data=serialized_data
+        )
+
+    def serialize(self, data: FullSettingsData) -> str:
+        config_data = configparser.ConfigParser()
+        for heading, item_data in data.items():
+            config_data[heading] = {
+                key: str(value)
+                for key, value in item_data.items()
+            }
+
+        with io.StringIO() as string_writer:
+            config_data.write(string_writer)
+            return string_writer.getvalue()
+
+    def write_data_to_file(self, file_name: str, serialized_data: str) -> None:
+        with open(file_name, "w", encoding="utf-8") as file_handler:
+            file_handler.write(serialized_data)
+
+
+class AbsConfigLoader(abc.ABC):  # pylint: disable=R0903
+
+    @abc.abstractmethod
+    def get_settings(self) -> FullSettingsData:
+        """Get the settings data."""
+
+
+class MixedConfigLoader(AbsConfigLoader):  # pylint: disable=R0903
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.resolution_strategy_order: List[AbsSetting] = [
+            speedwagon.config.DefaultsSetter()
+        ]
+        self.platform_settings = get_platform_settings()
+
+    @staticmethod
+    def _resolve(
+            resolution_strategy_order: Iterable[AbsSetting]
+    ) -> FullSettingsData:
+        settings: FullSettingsData = {}
+        for settings_strategy in resolution_strategy_order:
+            settings = settings_strategy.update(settings)
+        return settings
+
+    def get_settings(self) -> FullSettingsData:
+        return self._resolve(self.resolution_strategy_order)
