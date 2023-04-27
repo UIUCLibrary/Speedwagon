@@ -1,12 +1,15 @@
 """Workflow for Medusa Preingest.
 
 Added on 3/30/2022
+
+.. versionadded:: 0.3.0 added option for removing Thumbs.db files.
 """
 
+import abc
 import os
 import typing
 from typing import List, Any, Dict, Optional, Set, Iterator, Union, Callable
-
+from pathlib import Path
 import speedwagon
 from speedwagon import workflow, tasks
 from speedwagon.frontend import interaction
@@ -35,6 +38,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
         """
 -  Locates and deletes file that start with ._ (dot underscore)
 -  Locates and deletes .DS_Store files
+-  Locates and deletes Thumbs.db files
 -  Locates and deletes Capture One files
     """.strip()
 
@@ -133,6 +137,12 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             )
         delete_ds_store.value = True
 
+        delete_thumbs_db = \
+            speedwagon.workflow.BooleanSelect(
+                "Locate and delete Thumbs.db files"
+            )
+        delete_thumbs_db.value = True
+
         delete_capture_one = \
             speedwagon.workflow.BooleanSelect(
                 "Locate and delete Capture One files"
@@ -144,6 +154,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             include_subdirectories,
             delete_dot_underscore,
             delete_ds_store,
+            delete_thumbs_db,
             delete_capture_one
         ]
 
@@ -194,6 +205,46 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             )
 
 
+class AbsChecker(abc.ABC):  # pylint: disable=R0903
+
+    @abc.abstractmethod
+    def is_valid(self, path: Path) -> bool:
+        """Is path valid."""
+
+
+class AbsPathItemDecision(abc.ABC):  # pylint: disable=R0903
+    @abc.abstractmethod
+    def is_offending(self, path: Path) -> bool:
+        """Get if file is offending or not."""
+
+
+class DsStoreChecker(AbsChecker):  # pylint: disable=R0903
+    def is_valid(self, path: Path) -> bool:
+        return path.name != ".DS_Store"
+
+
+class ThumbsDbChecker(AbsChecker):  # pylint: disable=R0903
+    def is_valid(self, path: Path) -> bool:
+        return path.name != "Thumbs.db"
+
+
+class DotUnderScoreChecker(AbsChecker):  # pylint: disable=R0903
+    def is_valid(self, path: Path) -> bool:
+        return not path.name.startswith("._")
+
+
+class OffendingPathDecider(AbsPathItemDecision):
+
+    def __init__(self) -> None:
+        self._checkers: List[AbsChecker] = []
+
+    def add_checker(self, value: AbsChecker) -> None:
+        self._checkers.append(value)
+
+    def is_offending(self, path: Path) -> bool:
+        return any(not checker.is_valid(path) for checker in self._checkers)
+
+
 class FindOffendingFiles(tasks.Subtask):
 
     def __init__(self, **user_args) -> None:
@@ -202,14 +253,18 @@ class FindOffendingFiles(tasks.Subtask):
         self.root: str = user_args['Path']
         self._include_subdirectory = user_args['Include Subdirectories']
 
-        self._locate_dot_underscore: bool = \
-            user_args['Locate and delete dot underscore files']
-
-        self._locate_ds_store: bool = \
-            user_args['Locate and delete .DS_Store files']
-
         self._locate_capture_one: bool = \
             user_args['Locate and delete Capture One files']
+        self.file_deciding_strategy = OffendingPathDecider()
+
+        if user_args['Locate and delete dot underscore files']:
+            self.file_deciding_strategy.add_checker(DotUnderScoreChecker())
+
+        if user_args['Locate and delete .DS_Store files']:
+            self.file_deciding_strategy.add_checker(DsStoreChecker())
+
+        if user_args['Locate and delete Thumbs.db files']:
+            self.file_deciding_strategy.add_checker(ThumbsDbChecker())
 
     def task_description(self) -> Optional[str]:
         return f"Searching {self.root}"
@@ -255,17 +310,7 @@ class FindOffendingFiles(tasks.Subtask):
 
     def locate_offending_files(self, root_dir: str) -> Iterator[str]:
         for item in filter(lambda i: i.is_file(), os.scandir(root_dir)):
-            if all([
-                self._locate_dot_underscore,
-                item.name.startswith("._")
-            ]):
-                yield item.path
-                continue
-
-            if all([
-                self._locate_ds_store,
-                item.name == ".DS_Store"
-            ]):
+            if self.file_deciding_strategy.is_offending(Path(item.path)):
                 yield item.path
 
     def locate_offending_files_and_folders(
