@@ -34,7 +34,7 @@ from speedwagon.frontend.qtwidgets import widgets, models
 import speedwagon.runner_strategies
 from speedwagon.job import Workflow
 from speedwagon.workflow import AbsOutputOptionDataType
-from speedwagon.config import StandardConfig, SettingsData
+from speedwagon.config import StandardConfig, FullSettingsData
 
 __all__ = [
     "MainWindow3"
@@ -131,23 +131,62 @@ class ToolConsole(QtWidgets.QWidget):
             self._attached_logger = None
 
 
-class ItemTabsWidget(QtWidgets.QWidget):
-    tabs: QtWidgets.QTabWidget
-
+class ItemTabsUI(QtWidgets.QWidget):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         with as_file(
                 resources.files(qtwidgets.ui).joinpath("setup_job.ui")
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
+
+
+class ItemTabsWidget(ItemTabsUI):
+    tabs: QtWidgets.QTabWidget
+    submit_job = QtCore.Signal(str, dict)
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
         self.layout().addWidget(self.tabs)
+        self._model = models.TabsTreeModel()
+        self._model.modelReset.connect(self._model_reset)
+
+    def model(self):
+        return self._model
+
+    def _model_reset(self):
+        self.tabs.clear()
+        tab_count = self._model.rowCount()
+        for tab_row_id in range(tab_count):
+            tab_index = self._model.index(tab_row_id)
+            tab_name = self._model.data(tab_index)
+
+            workflows_tab = qtwidgets.tabs.WorkflowsTab3(parent=self.tabs)
+            workflows_tab.start_workflow.connect(self.submit_job)
+
+            workflow_klasses = {}
+            for workflow_row_id in range(self._model.rowCount(tab_index)):
+                workflow = self._model.data(
+                    self._model.index(workflow_row_id, parent=tab_index),
+                    role=models.TabsTreeModel.WorkflowClassRole
+                )
+
+                workflow_klasses[workflow.name] = workflow
+            tab_model = models.TabProxyModel()
+            tab_model.setSourceModel(self._model)
+            tab_model.set_source_tab(tab_name)
+            workflows_tab.set_model(tab_model)
+
+            self.tabs.addTab(workflows_tab, tab_name)
 
     def add_tab(self, tab: QtWidgets.QWidget, name: str) -> None:
         self.tabs.addTab(tab, name)
 
+    def add_workflows_tab(self, name, workflows):
+        self._model.append_workflow_tab(name, workflows)
+
     def clear_tabs(self) -> None:
-        for index in range(self.tabs.count()):
-            self.tabs.removeTab(index)
+        self._model.clear()
+        self._model_reset()
 
     def count(self) -> int:
         return self.tabs.count()
@@ -193,7 +232,10 @@ class MainWindow3(MainWindow3UI):
         self.job_manager: Optional[
             speedwagon.runner_strategies.BackgroundJobManager
         ] = None
-        self.config_strategy = StandardConfig()
+
+        self.config_strategy: speedwagon.config.AbsConfigSettings = \
+            StandardConfig()
+
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
         ###########################################################
@@ -208,10 +250,17 @@ class MainWindow3(MainWindow3UI):
         )
         ###########################################################
         self.action_export_job.triggered.connect(self._export_job_config)
+        self.tab_widget.submit_job.connect(self.submit_job)
+        self.submit_job.connect(lambda *args: print("got it"))
 
     def update_settings(self) -> None:
         settings = self._get_settings()
-        debug_mode = settings.get("debug", False)
+        global_settings = settings.get("GLOBAL")
+        if global_settings:
+            debug_mode = global_settings.get("debug", False)
+        else:
+            debug_mode = False
+
         if debug_mode is True:
             if self.console.log_handler.level != logging.DEBUG:
                 self.console.log_handler.setLevel(logging.DEBUG)
@@ -252,10 +301,7 @@ class MainWindow3(MainWindow3UI):
                 typing.Type[Workflow]
             ]
     ) -> None:
-        workflows_tab = qtwidgets.tabs.WorkflowsTab3(parent=self)
-        workflows_tab.workflows = workflows
-        workflows_tab.start_workflow.connect(self.submit_job)
-        self.tab_widget.add_tab(workflows_tab, tab_name)
+        self.tab_widget.add_workflows_tab(tab_name, workflows.values())
 
     def set_active_workflow(self, workflow_name: str) -> None:
         tab_index = self.locate_tab_index_by_name("All")
@@ -281,7 +327,7 @@ class MainWindow3(MainWindow3UI):
         self.console.detach_logger()
         super().closeEvent(event)
 
-    def _get_settings(self) -> SettingsData:
+    def _get_settings(self) -> FullSettingsData:
         return self.config_strategy.settings()
 
 

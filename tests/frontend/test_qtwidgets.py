@@ -10,7 +10,7 @@ from uiucprescon.packager.common import Metadata as PackageMetadata
 import speedwagon
 import speedwagon.exceptions
 from speedwagon.frontend import qtwidgets, interaction
-from speedwagon.frontend.qtwidgets import widgets
+from speedwagon.frontend.qtwidgets import widgets, models
 from speedwagon.frontend.qtwidgets.dialog import title_page_selection
 
 
@@ -345,9 +345,9 @@ class TestSelectWorkflow:
         qtbot.addWidget(selector)
         class FakeWorkflow(speedwagon.Workflow):
             pass
-        assert selector.workflowSelectionView.model().rowCount() == 0
+        assert selector.model.rowCount() == 0
         selector.add_workflow(FakeWorkflow)
-        assert selector.workflowSelectionView.model().rowCount() == 1
+        assert selector.model.rowCount() == 1
 
     def test_set_current_by_name(self, qtbot):
         parent = QtWidgets.QWidget()
@@ -357,7 +357,7 @@ class TestSelectWorkflow:
         class FakeWorkflow(speedwagon.Workflow):
             name = "dummy"
 
-        assert selector.workflowSelectionView.model().rowCount() == 0
+        assert selector.model.rowCount() == 0
         selector.add_workflow(FakeWorkflow)
         selector.set_current_by_name("dummy")
         assert selector.get_current_workflow_type() == FakeWorkflow
@@ -374,6 +374,37 @@ class TestSelectWorkflow:
         selector.add_workflow(FakeWorkflow)
         with pytest.raises(ValueError):
             selector.set_current_by_name("invalid workflow")
+    def test_model(self, qtbot):
+        selector = widgets.SelectWorkflow()
+        model = models.WorkflowList()
+        class FakeWorkflow(speedwagon.Workflow):
+            name = "dummy"
+        model.add_workflow(FakeWorkflow)
+        selector.model = model
+        assert selector.workflowSelectionView.model().rowCount() == 1
+
+    def test_selected_index_changed(self, qtbot):
+        class BaconWorkflow(speedwagon.Workflow):
+            name = "Bacon"
+
+        class SpamWorkflow(speedwagon.Workflow):
+            name = "Spam"
+
+        selector = widgets.SelectWorkflow()
+        model = models.WorkflowList()
+        model.add_workflow(BaconWorkflow)
+        model.add_workflow(SpamWorkflow)
+        selector.model = model
+        index = selector.model.index(0, 0)
+        with qtbot.wait_signal(selector.selected_index_changed) as signal:
+            qtbot.mouseClick(
+                selector.workflowSelectionView.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=selector.workflowSelectionView.visualRect(
+                    index
+                ).center()
+            )
+        assert signal.args[0] == index
 
 
 class TestWorkflowsTab3:
@@ -393,7 +424,10 @@ class TestWorkflowsTab3:
 
         tab = qtwidgets.tabs.WorkflowsTab3()
         assert len(tab.workflows) == 0
-        tab.workflows = {"spam": Spam}
+
+        tab.add_workflow(Spam)
+        assert "spam" in tab.workflows
+        # tab.workflows = {"spam": Spam}
         assert tab.workflows["spam"] == Spam
 
     def test_set_current_workflow(self, qtbot):
@@ -408,6 +442,84 @@ class TestWorkflowsTab3:
                 return []
 
         tab = qtwidgets.tabs.WorkflowsTab3()
-        tab.app_settings_lookup_strategy = Mock(settings=Mock(return_value={"spam": "eggs"}))
-        tab.workflows = {"spam": Spam}
-        tab.set_current_workflow('spam')
+        tab.app_settings_lookup_strategy = Mock(
+            settings=Mock(
+                return_value={"GLOBAL": {"spam": "eggs"}}
+            )
+        )
+        tab.workspace.app_settings_lookup_strategy =  Mock(
+            settings=Mock(
+                return_value={"GLOBAL": {"spam": "eggs"}}
+            )
+        )
+        with qtbot.wait_signal(tab.model().dataChanged):
+            tab.add_workflow(Spam)
+        with qtbot.wait_signal(tab.workflow_selected):
+            tab.set_current_workflow('spam')
+        assert tab.current_workflow() == "spam"
+    def test_workflows(self, qtbot):
+        class DummyWorkflow(speedwagon.Workflow):
+            name = "dummy 1"
+
+        base_model = models.TabsTreeModel()
+        base_model.append_workflow_tab(
+            "Dummy tab",
+            [
+                DummyWorkflow,
+            ]
+        )
+
+        model = models.TabProxyModel()
+        model.setSourceModel(base_model)
+        model.set_source_tab("Dummy tab")
+        tab = qtwidgets.tabs.WorkflowsTab3()
+        tab.set_model(model)
+        assert "dummy 1" in tab.workflows
+
+    def test_workflow_selected(self, qtbot):
+        class DummyWorkflow(speedwagon.Workflow):
+            name = "dummy 1"
+            description = "Dummy Description"
+            def discover_task_metadata(self, *args, **kwargs):
+                return []
+
+        tab = qtwidgets.tabs.WorkflowsTab3()
+        tab.add_workflow(DummyWorkflow)
+        tab.workspace.app_settings_lookup_strategy = \
+            Mock(
+                speedwagon.config.AbsConfigSettings,
+                settings=Mock(return_value={})
+        )
+        with qtbot.wait_signal(tab.workflow_selected):
+            qtbot.mouseClick(
+                tab.workflow_selector.workflowSelectionView.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=tab.workflow_selector.workflowSelectionView.visualRect(
+                    tab.workflow_selector.model.index(0, 0)
+                ).center()
+            )
+
+    def test_workflow_selected_updates_workspace(self, qtbot):
+        class DummyWorkflow(speedwagon.Workflow):
+            name = "dummy 1"
+            description = "Dummy Description"
+
+            def discover_task_metadata(self, *args, **kwargs):
+                return []
+
+        tab = qtwidgets.tabs.WorkflowsTab3()
+        tab.workspace.app_settings_lookup_strategy = Mock(
+            speedwagon.config.AbsConfigSettings,
+            settings=Mock(return_value={})
+        )
+        tab.add_workflow(DummyWorkflow)
+
+        with qtbot.wait_signal(tab.workflow_selected):
+            qtbot.mouseClick(
+                tab.workflow_selector.workflowSelectionView.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=tab.workflow_selector.workflowSelectionView.visualRect(
+                    tab.workflow_selector.model.index(0, 0)
+                ).center()
+            )
+        assert tab.workspace.name == "dummy 1"

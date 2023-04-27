@@ -658,15 +658,14 @@ class SaveReportDialogBox(AbsSaveReport):
             return False
 
 
-class SpeedwagonUnhandledExceptionDialog(QtWidgets.QMessageBox):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None,
-                 ) -> None:
+class SpeedwagonExceptionDialog(QtWidgets.QMessageBox):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         self.setIcon(self.Icon.Critical)
         self.report_strategy = ExceptionReport()
         self.save_report_strategy: AbsSaveReport = SaveReportDialogBox()
 
-        self.setText("Speedwagon has exited due to an unhandled exception")
+        self.setText("Speedwagon has hit an exception")
         self.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Close)
 
         self.export_button = \

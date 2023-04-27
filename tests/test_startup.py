@@ -63,33 +63,17 @@ def test_get_custom_tabs_missing_file(capsys, monkeypatch):
     all_workflows = {
         "my workflow": Mock()
     }
-    monkeypatch.setattr(os.path, "exists", lambda x: False)
+    monkeypatch.setattr(speedwagon.config.CustomTabsYamlConfig, "data", Mock(side_effect=FileNotFoundError))
     list(speedwagon.startup.get_custom_tabs(all_workflows, "not_a_real_file"))
     captured = capsys.readouterr()
     assert "file not found" in captured.err
-
-
-def test_get_custom_tabs_bad_data_raises_exception(monkeypatch):
-    test_file = "test.yml"
-    monkeypatch.setattr(os.path, "exists", lambda x: x == test_file)
-    with pytest.raises(speedwagon.startup.FileFormatError):
-        with patch('speedwagon.startup.open', mock_open(
-                read_data='not valid yml data')):
-            list(
-                speedwagon.startup.get_custom_tabs(
-                    {
-                        "my workflow": Mock(spec=speedwagon.Workflow)
-                    },
-                    test_file
-                )
-            )
 
 
 def test_missing_workflow(monkeypatch, capsys):
     test_file = "test.yml"
     monkeypatch.setattr(os.path, "exists", lambda x: x == test_file)
 
-    # These workflow are not valid
+    # These workflows are not valid
     tabs_config_data = {
         "my workflow": [
             "spam",
@@ -100,17 +84,20 @@ def test_missing_workflow(monkeypatch, capsys):
     load = Mock(name="load", return_value=tabs_config_data)
     load.__class__ = dict
     monkeypatch.setattr(yaml, "load", load)
-    with patch('speedwagon.startup.open', mock_open()):
-        list(
-            speedwagon.startup.get_custom_tabs(
-                {
-                    "my workflow": Mock()
-                },
-                test_file
-            )
+    def read_file(*args, **kwargs):
+        return ""
+    monkeypatch.setattr(speedwagon.config.TabsYamlFileReader, "read_file", read_file)
+
+    list(
+        speedwagon.startup.get_custom_tabs(
+            {
+                "my workflow": Mock()
+            },
+            test_file
         )
+    )
     captured = capsys.readouterr()
-    assert "Unable to load" in captured.err
+    assert "Unable to load workflow" in captured.err
 
 
 def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
@@ -127,7 +114,10 @@ def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
     load = Mock(name="load", return_value=tabs_config_data)
     load.__class__ = dict
     monkeypatch.setattr(yaml, "load", load)
-    with patch('speedwagon.startup.open', mock_open()):
+    def read_file(*args, **kwargs):
+        return ""
+    monkeypatch.setattr(speedwagon.config.TabsYamlFileReader, "read_file", read_file)
+    with patch('speedwagon.config.open', mock_open()):
         tab_name, workflows = next(
             speedwagon.startup.get_custom_tabs(all_workflows, test_file)
         )
@@ -138,48 +128,58 @@ class TestCustomTabsFileReader:
     def test_load_custom_tabs_file_not_found(self, capsys):
         all_workflows = Mock()
         reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
-        reader.read_yml_file = Mock()
-        reader.read_yml_file.side_effect = FileNotFoundError()
 
-        fake_file = Mock()
-        all(reader.load_custom_tabs(fake_file))
+        def read_file():
+            raise FileNotFoundError("File not found")
+
+        tabs_config_strategy = \
+            speedwagon.config.CustomTabsYamlConfig("fake_file.yml")
+
+        tabs_config_strategy.data_reader = read_file
+        all(reader.load_custom_tabs(strategy=tabs_config_strategy))
         captured = capsys.readouterr()
-        assert "Custom tabs file not found" in captured.err
+        assert "Custom tabs file fake_file.yml not found" in captured.err
 
     def test_load_custom_tabs_file_attribute_error(self, capsys):
         all_workflows = Mock()
         reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
-        reader.read_yml_file = Mock()
-        reader.read_yml_file.side_effect = AttributeError()
 
-        fake_file = Mock()
-        all(reader.load_custom_tabs(fake_file))
+        tabs_config_strategy = \
+            speedwagon.config.CustomTabsYamlConfig("fake_file")
+        def read_file():
+            raise AttributeError()
+        tabs_config_strategy.data_reader = read_file
+
+        all(reader.load_custom_tabs(tabs_config_strategy))
         captured = capsys.readouterr()
-        assert "Custom tabs file failed to load" in captured.err
+        assert "Custom tabs failed to load" in captured.err
 
-    def test_load_custom_tabs_file_yaml_error(self, capsys):
+    def test_load_custom_tabs_file_yaml_error(self, capsys, monkeypatch):
 
         all_workflows = Mock()
         reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
-        reader.read_yml_file = Mock()
-        reader.read_yml_file.side_effect = yaml.YAMLError()
-
-        fake_file = Mock()
-        all(reader.load_custom_tabs(fake_file))
+        class YamlReader(speedwagon.config.AbsTabsYamlFileReader):
+            def read_file(self, file_name) -> str:
+                return ""
+            def decode_tab_settings_yml_data(self, data):
+                raise yaml.YAMLError()
+        strategy = speedwagon.config.CustomTabsYamlConfig("fake_file")
+        strategy.file_reader_strategy = YamlReader()
+        all(reader.load_custom_tabs(strategy))
         captured = capsys.readouterr()
         assert "file failed to load" in captured.err
 
     def test_load_custom_tabs_file_error_loading_tab(self, capsys):
         all_workflows = Mock()
         reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
-        reader.read_yml_file = Mock(return_value={"my tab": []})
-        reader._get_tab_items = Mock()
-        reader._get_tab_items.side_effect = TypeError()
+        strategy = speedwagon.config.CustomTabsYamlConfig("fake_file")
+        def read_file() -> str:
+            raise TypeError()
+        strategy.data_reader = read_file
+        all(reader.load_custom_tabs(strategy))
 
-        fake_file = Mock()
-        all(reader.load_custom_tabs(fake_file))
         captured = capsys.readouterr()
-        assert "Error loading tab" in captured.err
+        assert "Custom tabs failed to load" in captured.err
 
 
 def test_run_command_invalid():
@@ -194,6 +194,7 @@ def test_run_command_valid(monkeypatch):
     monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
     monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
     monkeypatch.setattr(speedwagon.config.Path, "home", lambda: "/home/dummy")
+    monkeypatch.setattr(speedwagon.startup, "get_global_options", lambda: {})
 
     monkeypatch.setattr(
         speedwagon.config.WindowsConfig,

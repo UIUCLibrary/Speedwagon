@@ -16,16 +16,14 @@ import io
 import json
 import sys
 import typing
-from typing import Dict, Iterator, Tuple, List, cast, Type, TYPE_CHECKING, \
+from typing import Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, \
     Optional
-import yaml
 
 import speedwagon
 import speedwagon.config
-import speedwagon.exceptions
 
 from speedwagon import job
-
+from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
 
 try:
     from typing import Final
@@ -38,15 +36,10 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ApplicationLauncher",
-    "FileFormatError",
 ]
 
 CONFIG_INI_FILE_NAME: Final[str] = "config.ini"
 TABS_YML_FILE_NAME:  Final[str] = "tabs.yml"
-
-
-class FileFormatError(Exception):
-    """Exception is thrown when Something wrong with the contents of a file."""
 
 
 def parse_args() -> argparse.ArgumentParser:
@@ -68,17 +61,6 @@ class CustomTabsFileReader:
         """
         self.all_workflows = all_workflows
 
-    @staticmethod
-    def read_yml_file(yaml_file: str) -> Dict[str,  List[str]]:
-        """Read the contents of the yml file."""
-        with open(yaml_file, encoding="utf-8") as file_handler:
-            tabs_config_data = yaml.load(file_handler.read(),
-                                         Loader=yaml.SafeLoader)
-
-        if not isinstance(tabs_config_data, dict):
-            raise FileFormatError("Failed to parse file")
-        return tabs_config_data
-
     def _get_tab_items(self,
                        tab: List[str],
                        tab_name: str) -> Dict[str, Type[job.Workflow]]:
@@ -96,52 +78,60 @@ class CustomTabsFileReader:
                     f"tab {tab_name}", file=sys.stderr)
         return new_tab_items
 
-    def load_custom_tabs(self, yaml_file: str) -> Iterator[Tuple[str, dict]]:
+    def _load_workflow(self, workflow_name: str):
+        try:
+            workflow = self.all_workflows[workflow_name]
+            if workflow.active is False:
+                print("workflow not active")
+        except KeyError as tab_error:
+            raise WorkflowLoadFailure from tab_error
+        return workflow
+
+    def load_custom_tabs(
+            self,
+            strategy: speedwagon.config.AbsTabsConfigDataManagement
+    ) -> Iterator[Tuple[str, dict]]:
         """Get custom tabs data from config yaml.
 
         Args:
-            yaml_file: file path to a yaml file containing custom.
+            strategy: strategy for retrieving the tab data.
 
         Yields:
-            Yields a tuple containing the name of the tab and the containing
-                workflows.
-        Notes:
-            Failure to load will only a print message to standard error.
-
+            Yields a tuple containing the name of the tab and the
+                containing workflows.
         """
         try:
-            tabs_config_data = self.read_yml_file(yaml_file)
-            if tabs_config_data:
-                tabs_config_data = cast(Dict[str, List[str]], tabs_config_data)
-                for tab_name in tabs_config_data:
-                    try:
-                        new_tab = tabs_config_data.get(tab_name)
-                        if new_tab is not None:
-                            yield tab_name, \
-                                  self._get_tab_items(new_tab, tab_name)
+            for tab_entity in strategy.data():
+                try:
+                    new_tab_items = {}
+                    for item_name in tab_entity.workflow_names:
+                        try:
+                            workflow = self._load_workflow(item_name)
+                        except WorkflowLoadFailure as error:
+                            print(
+                                f"Unable to load workflow '{item_name}'. "
+                                f"Reason: {error}",
+                                file=sys.stderr
+                            )
+                            continue
+                        new_tab_items[item_name] = workflow
 
-                    except TypeError as tab_error:
-                        print(
-                            f"Error loading tab '{tab_name}'. "
-                            f"Reason: {tab_error}",
-                            file=sys.stderr
-                        )
-                        continue
-
-        except FileNotFoundError as error:
+                    yield tab_entity.tab_name, new_tab_items
+                except TabLoadFailure as error:
+                    print(
+                        f"Custom tab {tab_entity.tab_name} failed to load. "
+                        f"Reason: {error}",
+                        file=sys.stderr
+                    )
+                    raise
+        except TabLoadFailure as error:
             print(
-                f"Custom tabs file not found. Reason: {error}",
+                f"Custom tabs failed to load. Reason: {error}",
                 file=sys.stderr
             )
         except AttributeError as error:
             print(
-                f"Custom tabs file failed to load. Reason: {error}",
-                file=sys.stderr
-            )
-
-        except yaml.YAMLError as error:
-            print(
-                f"{yaml_file} file failed to load. Reason: {error}",
+                f"Custom tabs failed to load. Reason: {error}",
                 file=sys.stderr
             )
 
@@ -152,7 +142,15 @@ def get_custom_tabs(
 ) -> Iterator[Tuple[str, dict]]:
     """Load custom tab yaml file."""
     getter = CustomTabsFileReader(all_workflows)
-    yield from getter.load_custom_tabs(yaml_file)
+    try:
+        yield from getter.load_custom_tabs(
+            strategy=speedwagon.config.CustomTabsYamlConfig(yaml_file)
+        )
+    except FileNotFoundError as error:
+        print(
+            f"Custom tabs file not found. Reason: {error}",
+            file=sys.stderr
+        )
 
 
 class ApplicationLauncher:
@@ -240,9 +238,13 @@ class RunCommand(SubCommand):
 
 def get_global_options():
     config_locator = speedwagon.config.StandardConfigFileLocator()
-    return speedwagon.config.ConfigLoader(
-        config_locator.get_config_file()
-    ).get_settings()
+    loader = speedwagon.config.MixedConfigLoader()
+    loader.resolution_strategy_order = [
+        speedwagon.config.DefaultsSetter(),
+        speedwagon.config.ConfigFileSetter(config_locator.get_config_file()),
+        speedwagon.config.CliArgsSetter()
+    ]
+    return loader.get_settings().get("GLOBAL", {})
 
 
 def run_command(
@@ -282,10 +284,11 @@ class SingleWorkflowJSON(AbsStarter):
         self.workflow = None
 
     def run(self) -> int:
-        speedwagon.simple_api_run_workflow(
-            self.workflow,
-            self.options,
-        )
+        if self.workflow:
+            speedwagon.simple_api_run_workflow(
+                self.workflow,
+                self.options,
+            )
         return 0
 
     def load(self, file_pointer: io.TextIOBase) -> None:
