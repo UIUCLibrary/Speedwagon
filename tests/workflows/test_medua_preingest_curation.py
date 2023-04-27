@@ -215,6 +215,7 @@ class TestFindOffendingFiles:
                 "Locate and delete dot underscore files": True,
                 "Locate and delete .DS_Store files": True,
                 "Locate and delete Capture One files": True,
+                "Locate and delete Thumbs.db files": True,
             }
         )
         assert search_path in task.task_description()
@@ -243,6 +244,7 @@ class TestFindOffendingFiles:
                 "Locate and delete dot underscore files": True,
                 "Locate and delete .DS_Store files": True,
                 "Locate and delete Capture One files": True,
+                "Locate and delete Thumbs.db files": True,
             }
         )
         locate_results = Mock()
@@ -260,6 +262,7 @@ class TestFindOffendingFiles:
                 "Locate and delete dot underscore files": True,
                 "Locate and delete .DS_Store files": True,
                 "Locate and delete Capture One files": True,
+                "Locate and delete Thumbs.db files": True,
             }
         )
         with pytest.raises(FileNotFoundError):
@@ -274,6 +277,7 @@ class TestFindOffendingFiles:
                 "Locate and delete dot underscore files": True,
                 "Locate and delete .DS_Store files": True,
                 "Locate and delete Capture One files": True,
+                "Locate and delete Thumbs.db files": True,
             }
         )
         monkeypatch.setattr(
@@ -329,6 +333,7 @@ class TestFindOffendingFiles:
                 "Locate and delete dot underscore files": True,
                 "Locate and delete .DS_Store files": True,
                 "Locate and delete Capture One files": True,
+                "Locate and delete Thumbs.db files": True,
             }
         )
 
@@ -343,8 +348,11 @@ class TestFindOffendingFiles:
     def offending_files(self):
         def _make_mock_offending_files(search_path):
             ds_store_file = Mock(
+                os.DirEntry,
+                name=".DS_Store",
                 path=os.path.join(search_path, ".DS_Store"),
-                is_file=Mock(return_value=True)
+                is_file=Mock(return_value=True),
+                is_dir=Mock(return_value=False)
             )
             ds_store_file.name = ".DS_Store"
 
@@ -389,6 +397,7 @@ class TestFindOffendingFiles:
                 "Locate and delete dot underscore files": underscore,
                 "Locate and delete .DS_Store files": ds_store,
                 "Locate and delete Capture One files": True,
+                "Locate and delete Thumbs.db files": True,
             }
         )
 
