@@ -205,6 +205,7 @@ class NullWorkflow(Workflow):
 
     Does nothing.
     """
+
     name = ''
     description = ''
     def discover_task_metadata(self, initial_results: List[Any],
