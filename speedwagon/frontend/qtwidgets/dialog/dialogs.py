@@ -406,24 +406,6 @@ class WorkflowProgressGui(QtWidgets.QDialog):
     progress_bar: QtWidgets.QProgressBar
     console: QtWidgets.QTextBrowser
 
-    class DialogLogHandler(logging.handlers.BufferingHandler):
-        class LogSignals(QtCore.QObject):
-            message = QtCore.Signal(str)
-
-        def __init__(self, dialog: "WorkflowProgressGui") -> None:
-            super().__init__(capacity=100)
-            self.signals = WorkflowProgress.DialogLogHandler.LogSignals()
-            self._dialog = dialog
-            self.signals.message.connect(
-                self._dialog.write_html_block_to_console
-            )
-
-        def flush(self) -> None:
-            results = [self.format(log).strip() for log in self.buffer]
-            if results:
-                self.signals.message.emit("".join(results))
-            super().flush()
-
     def __init__(
             self,
             parent: typing.Optional[QtWidgets.QWidget] = None
@@ -470,7 +452,10 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
     def attach_logger(self, logger: logging.Logger) -> None:
         self._parent_logger = logger
-        self._log_handler = WorkflowProgressGui.DialogLogHandler(self)
+        self._log_handler = logging_helpers.QtSignalLogHandler(self)
+        self._log_handler.signals.messageSent.connect(
+            self.write_html_block_to_console
+        )
         formatter = logging_helpers.ConsoleFormatter()
         self._log_handler.setFormatter(formatter)
         self._parent_logger.addHandler(self._log_handler)
@@ -525,18 +510,7 @@ class WorkflowProgress(WorkflowProgressGui):
         self.state: AbsWorkflowProgressState = WorkflowProgressStateIdle(self)
         # =====================================================================
 
-        # Seems to be causing the segfault
-        # self.finished.connect(self.clean_local_console)
-
         self.finished.connect(self.remove_log_handles)  # type: ignore
-
-        self._refresh_timer = QtCore.QTimer(self)
-        self._refresh_timer.timeout.connect(self.flush)  # type: ignore
-        self.finished.connect(self.stop_timer)  # type: ignore
-        self._refresh_timer.start(100)
-
-    def stop_timer(self) -> None:
-        self._refresh_timer.stop()
 
     def clean_local_console(self) -> None:
         # CRITICAL: Running self.console.clear() seems to cause A SEGFAULT when

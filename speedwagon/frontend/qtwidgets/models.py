@@ -1201,7 +1201,7 @@ class AbsWorkflowItemData(abc.ABC):
             workflow: Type[speedwagon.Workflow],
             role: Union[int, QtCore.Qt.ItemDataRole]
     ) -> Any:
-        """Get the data from workflow"""
+        """Get the data from workflow."""
 
 
 class WorkflowItemData(AbsWorkflowItemData):

@@ -3,7 +3,12 @@ from __future__ import annotations
 
 import threading
 import typing
-from typing import Dict, Any, Optional, List, Union, Type, TypedDict
+from typing import Dict, Any, Optional, List, Union, Type
+try:  # pragma: no cover
+    from typing import TypedDict
+except ImportError:  # pragma: no cover
+    from typing_extensions import TypedDict
+
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
 from uiucprescon.packager import Metadata

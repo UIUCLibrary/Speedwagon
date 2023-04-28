@@ -3,6 +3,7 @@
 from typing import Iterator, Callable
 
 import logging
+from logging.handlers import BufferingHandler
 from contextlib import contextmanager
 
 
@@ -20,8 +21,7 @@ def log_config(
     """
     try:
         log_handler: logging.Handler
-        from speedwagon.frontend.qtwidgets.logging_helpers import GuiLogHandler
-        log_handler = GuiLogHandler(callback)
+        log_handler = CallbackLogHandler(callback)
     except ImportError:
         log_handler = logging.StreamHandler()
 
@@ -30,3 +30,19 @@ def log_config(
         yield
     finally:
         logger.removeHandler(log_handler)
+
+
+class CallbackLogHandler(BufferingHandler):
+    """Logger that runs a callback."""
+
+    def __init__(
+            self,
+            callback: Callable[[str], None],
+    ) -> None:
+        """Create a log handler for callbacks."""
+        super().__init__(capacity=5)
+        self.callback = callback
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Emit logged message to callback function."""
+        self.callback(logging.Formatter().format(record))

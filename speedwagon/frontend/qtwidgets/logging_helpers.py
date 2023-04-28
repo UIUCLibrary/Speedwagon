@@ -3,49 +3,15 @@ from __future__ import annotations
 
 import abc
 import logging
+from logging.handlers import BufferingHandler
 import typing
-from logging import handlers
 
-from typing import Callable
+from typing import Optional
+from PySide6 import QtCore
 if typing.TYPE_CHECKING:
     from logging import LogRecord
-    from PySide6 import QtCore
 
-
-class GuiLogHandler(handlers.BufferingHandler):
-    """Logger designed for gui."""
-
-    def __init__(
-            self,
-            callback: Callable[[str], None],
-    ) -> None:
-        """Create a gui log handler."""
-        super().__init__(capacity=5)
-        self.callback = callback
-
-    def emit(self, record: LogRecord) -> None:
-        """Emit logged message to callback function."""
-        self.callback(logging.Formatter().format(record))
-
-
-class SignalLogHandler(handlers.BufferingHandler):
-    """Qt Signal based log handler.
-
-    Emits the log as a signal.
-
-    Warnings:
-         This is problematic, the signal could be GC and cause a segfault
-    """
-
-    def __init__(self, signal: QtCore.SignalInstance) -> None:
-        """Create a new log handler for Qt signals."""
-        super().__init__(capacity=10)
-        self._signal = signal
-
-    def emit(self, record: LogRecord) -> None:
-        """Emit the record."""
-        result = logging.Formatter().format(record)
-        self._signal.emit(result, record.levelno)
+__all__ = ['QtSignalLogHandler']
 
 
 class AbsConsoleFormatter(abc.ABC):
@@ -102,7 +68,7 @@ class VerboseConsoleFormatStyle(AbsConsoleFormatter):
     """
 
     @staticmethod
-    def _basic_format(record: LogRecord):
+    def _basic_format(record: LogRecord) -> str:
         return logging.Formatter(
             '[%(levelname)s] (%(threadName)-10s) %(message)s'
         ).format(record).replace("\n", "<br>")
@@ -142,7 +108,7 @@ class ConsoleFormatter(logging.Formatter):
         self.verbose = False
 
     def format(self, record: LogRecord) -> str:
-        """Format record for an html based console."""
+        """Format record for html based consoles."""
         formatters: typing.Dict[bool, typing.Type[AbsConsoleFormatter]] = {
             False: DefaultConsoleFormatStyle,
             True: VerboseConsoleFormatStyle,
@@ -164,3 +130,42 @@ class ConsoleFormatter(logging.Formatter):
             return formatter.format_error(text, record)
 
         return formatter.format_info(text, record)
+
+
+class QtSignalLogHandler(BufferingHandler):
+    """Log handler for Qt signals."""
+
+    class Signals(QtCore.QObject):  # pylint: disable=R0903
+        """Qt Signals.
+
+        This needs of be an inner class because Qt/PySide does not like mixing
+        Qt parent classes with Python ones.
+        """
+
+        messageSent = QtCore.Signal(str)
+    # This needs of be an inner class because Qt/PySide does not like mixing
+    # Qt parent classes with Python ones.
+
+    def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
+        """Create a new QtSignalLogHandler object.
+
+        Args:
+            parent: Qt Object the handler is tied to keep it from being GC or
+                deleted too early.
+        """
+        super().__init__(capacity=100)
+        self.signals = self.Signals(parent)
+        self.flush_timer = QtCore.QTimer(parent)
+        self.flush_timer.timeout.connect(self.flush)
+        self.flush_timer.start(100)
+
+    def flush(self) -> None:
+        """Flush log buffer.
+
+        Notes:
+            If the buffer is empty, no signal with be emitted.
+        """
+        if len(self.buffer) > 0:
+            results = [self.format(log).strip() for log in self.buffer]
+            self.signals.messageSent.emit("".join(results))
+        super().flush()
