@@ -30,7 +30,7 @@ from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 import speedwagon
 from speedwagon.frontend import qtwidgets
-from speedwagon.frontend.qtwidgets import widgets, models
+from speedwagon.frontend.qtwidgets import widgets, models, logging_helpers
 import speedwagon.runner_strategies
 from speedwagon.job import Workflow
 from speedwagon.workflow import AbsOutputOptionDataType
@@ -51,29 +51,11 @@ class ToolConsole(QtWidgets.QWidget):
     """Logging console."""
     _console: QtWidgets.QTextBrowser
 
-    class ConsoleLogHandler(logging.handlers.BufferingHandler):
-        class Signals(QtCore.QObject):
-            message = QtCore.Signal(str)
-
-        def __init__(self, console_widget: "ToolConsole"):
-            super().__init__(capacity=10)
-            self.signals = ToolConsole.ConsoleLogHandler.Signals()
-            self.console_widget = console_widget
-            # self.console_widget.deleteLater()
-            self.signals.message.connect(self.console_widget.add_message)
-
-        def flush(self) -> None:
-            if len(self.buffer) > 0:
-                message_buffer = [
-                    self.format(record) for record in self.buffer
-                ]
-                message = "".join(message_buffer).strip()
-                self.signals.message.emit(message)
-            super().flush()
-
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
-        self.log_handler = ToolConsole.ConsoleLogHandler(self)
+
+        self.log_handler = logging_helpers.QtSignalLogHandler(self)
+        self.log_handler.signals.messageSent.connect(self.add_message)
 
         self.log_formatter = qtwidgets.logging_helpers.ConsoleFormatter()
         self.log_handler.setFormatter(self.log_formatter)
@@ -110,9 +92,9 @@ class ToolConsole(QtWidgets.QWidget):
             message: str,
     ) -> None:
 
-        self.cursor.movePosition(self.cursor.MoveOperation.End)
+        # self.cursor.movePosition(self.cursor.MoveOperation.End)
         self.cursor.beginEditBlock()
-        self._console.setTextCursor(self.cursor)
+        # self._console.setTextCursor(self.cursor)
         self.cursor.insertHtml(message)
         self.cursor.endEditBlock()
 

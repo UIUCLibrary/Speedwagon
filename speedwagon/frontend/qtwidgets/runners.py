@@ -148,11 +148,6 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
 
         self.signals = WorkflowProgressCallbacks.WorkflowSignals(dialog_box)
 
-        self.log_handler = \
-            qtwidgets.logging_helpers.SignalLogHandler(
-                signal=self.signals.message
-            )
-
     def log(self, text: str, level: int = logging.INFO) -> None:
         """Send a log message."""
         self.signals.log(text, level)

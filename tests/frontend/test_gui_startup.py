@@ -185,34 +185,6 @@ class TestSingleWorkflowJSON:
         startup.run()
         assert submit_job.called is True
 
-    def test_signal_is_sent(self, qtbot):
-        from PySide6 import QtCore
-
-        class Dummy(QtCore.QObject):
-            dummy_signal = QtCore.Signal(str, int)
-
-            def __init__(self):
-                super().__init__()
-                self.dummy_signal.connect(self.d)
-
-            def d(self, message, level):
-                print("hhh")
-
-        dummy = Dummy()
-
-        signal_log_handler = \
-            speedwagon.frontend.qtwidgets.logging_helpers.SignalLogHandler(
-                dummy.dummy_signal
-            )
-
-        logger = logging.getLogger()
-        logger.setLevel(logging.INFO)
-        logger.addHandler(signal_log_handler)
-
-        with qtbot.waitSignal(dummy.dummy_signal) as f:
-            logger.info("Spam!")
-        logger.removeHandler(signal_log_handler)
-
     def test_run_on_exit_is_called(self, qtbot, monkeypatch):
         startup = \
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
