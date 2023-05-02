@@ -87,6 +87,84 @@ class ResolveSettings(AbsResolveSettingsStrategy):  # pylint: disable=R0903
         return manager.data()
 
 
+class AbsStartupTask(abc.ABC):
+    @abc.abstractmethod
+    def run(self) -> None:
+        """Run a startup task."""
+
+    @abc.abstractmethod
+    def description(self) -> str:
+        """Get human-readable information about current task."""
+
+
+class EnsureGlobalConfigFiles(AbsStartupTask):
+
+    def __init__(self, logger) -> None:
+        super().__init__()
+        self.logger = logger
+
+    def run(self) -> None:
+        config.ensure_settings_files(logger=self.logger)
+
+    def description(self) -> str:
+        return "Ensuring global settings files are available and creating " \
+               "defaults where missing."
+
+
+class EnsureWorkflowConfigFiles(AbsStartupTask):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.config_file_location_strategy = \
+            speedwagon.config.StandardConfigFileLocator()
+
+    def run(self) -> None:
+        for name, workflow_klass in \
+                speedwagon.job.available_workflows().items():
+            try:
+                workflow = workflow_klass()
+                self.ensure_workflow_config(
+                    workflow, workflow.configuration_options()
+                )
+            except speedwagon.exceptions.MissingConfiguration:
+                print(f"[{name}] has missing config")
+
+    def get_config_file(self):
+        return os.path.join(
+            self.config_file_location_strategy.get_app_data_dir(),
+            speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME
+        )
+
+    def ensure_workflow_config(
+            self,
+            workflow: speedwagon.Workflow,
+            config_options: List[speedwagon.workflow.AbsOutputOptionDataType]
+    ):
+        yaml_file = self.get_config_file()
+
+        getter_strategy = \
+            speedwagon.config.WorkflowSettingsYAMLResolver(yaml_file)
+
+        setter_strategy = \
+            speedwagon.config.WorkflowSettingsYamlExporter(yaml_file)
+
+        manager = speedwagon.config.WorkflowSettingsManager(
+            getter_strategy=getter_strategy,
+            setter_strategy=setter_strategy
+        )
+        workflow_settings: speedwagon.config.SettingsData = {}
+        existing_options = manager.get_workflow_settings(workflow)
+        for option in config_options:
+            name = option.setting_name or option.label
+            workflow_settings[name] = existing_options.get(name)
+        if workflow_settings:
+            manager.save_workflow_settings(workflow, workflow_settings)
+
+    def description(self) -> str:
+        return "Ensuring workflow settings file are available and creating " \
+               "defaults where missing."
+
+
 class StartQtThreaded(AbsGuiStarter):
 
     def __init__(self, app: Optional[QtWidgets.QApplication] = None) -> None:
@@ -170,7 +248,14 @@ class StartQtThreaded(AbsGuiStarter):
         return self.startup_settings
 
     def initialize(self) -> None:
-        self.ensure_settings_files()
+        startup_tasks: List[AbsStartupTask] = [
+            EnsureGlobalConfigFiles(self.logger),
+            EnsureWorkflowConfigFiles()
+        ]
+        for task in startup_tasks:
+            task.run()
+
+        # self.ensure_settings_files()
         self.startup_settings = self.resolve_settings()
 
     def load_workflows(self) -> None:

@@ -7,13 +7,17 @@ import typing
 from typing import List, Any, Optional, Iterator, Dict
 import contextlib
 from uiucprescon import ocr
+
 import speedwagon
 import speedwagon.workflow
 
 from speedwagon.exceptions import \
     MissingConfiguration, \
+    InvalidConfiguration, \
     SpeedwagonException, \
     JobCancelled
+
+TESSERACT_PATH_LABEL = "Tesseract data file location"
 
 if typing.TYPE_CHECKING:
     from speedwagon.config import SettingsData
@@ -52,16 +56,10 @@ class OCRWorkflow(speedwagon.Workflow):
         """Create a OCR Workflow."""
         super().__init__(*args, **kwargs)
         self.global_settings = kwargs.get('global_settings', {})
-        self.tessdata_path: Optional[str] = \
-            self._get_tessdata_dir(args, self.global_settings)
-
-        if self.tessdata_path is None:
-            raise MissingConfiguration(
-                "Required setting not configured: tessdata"
-            )
-
-        if not os.path.exists(self.tessdata_path):
-            os.mkdir(self.tessdata_path)
+        try:
+            tessdata_path = self.tessdata_path
+        except AttributeError:
+            tessdata_path = ""
 
         description = \
             "Create OCR text files for images. \n" \
@@ -73,11 +71,10 @@ class OCRWorkflow(speedwagon.Workflow):
             "\n" \
             "Adding Additional Languages:\n" \
             "    To modify the available languages, place " \
-            "Tesseract traineddata files for " \
-            f"version {ocr.Engine(self.tessdata_path).get_version()} " \
+            "Tesseract traineddata files" \
             "into the following directory:\n" \
             "\n" \
-            f"{self.tessdata_path}.\n" \
+            f"{tessdata_path}.\n" \
             "\n" \
             "Note:\n" \
             "    It's important to use the correct version of the " \
@@ -113,9 +110,17 @@ class OCRWorkflow(speedwagon.Workflow):
                                additional_data: Dict[str, Any],
                                **user_args: str) -> List[dict]:
         """Create OCR task metadata for each file located."""
-        if self.tessdata_path is not None and \
-                not os.path.exists(self.tessdata_path):
-            raise MissingConfiguration("tessdata_path")
+        tessdata_path = \
+            self.get_workflow_configuration_value(TESSERACT_PATH_LABEL)
+        if tessdata_path is None:
+            raise InvalidConfiguration("Tesseract data file location not set")
+
+        if os.path.exists(tessdata_path) is False:
+            raise InvalidConfiguration(
+                f'Tesseract data file location "{tessdata_path}" '
+                f'does not exist'
+            )
+
         new_tasks = []
 
         for result in initial_results:
@@ -150,12 +155,18 @@ class OCRWorkflow(speedwagon.Workflow):
         destination_path = job_args["destination_path"]
         ocr_file_name = job_args["output_file_name"]
         lang_code = job_args["lang_code"]
+        tessdata_path: Optional[str] = \
+            self.get_workflow_configuration_value(TESSERACT_PATH_LABEL)
+        if tessdata_path is None:
+            raise MissingConfiguration(
+                "Tesseract data file location is not set"
+            )
 
         ocr_generation_task = GenerateOCRFileTask(
                 source_image=image_file,
                 out_text_file=os.path.join(destination_path, ocr_file_name),
                 lang=lang_code,
-                tesseract_path=self.tessdata_path
+                tesseract_path=tessdata_path
             )
         task_builder.add_subtask(ocr_generation_task)
 
@@ -279,6 +290,18 @@ class OCRWorkflow(speedwagon.Workflow):
             return True
 
         return list(filter(filter_ocr_gen_tasks, results))
+
+    def configuration_options(
+            self
+    ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        tesseract_path = \
+            speedwagon.workflow.DirectorySelect(
+                label=TESSERACT_PATH_LABEL
+            )
+        tesseract_path.required = True
+        return [
+            tesseract_path
+        ]
 
 
 class FindImagesTask(speedwagon.tasks.Subtask):

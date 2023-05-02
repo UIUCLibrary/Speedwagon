@@ -13,6 +13,7 @@ class AbsOutputOptionDataType(abc.ABC):
 
     label: str
     widget_name: str
+    setting_name: str
     required: bool
 
     def __init_subclass__(cls) -> None:
@@ -29,13 +30,15 @@ class AbsOutputOptionDataType(abc.ABC):
         self.value: Optional[Union[str, int, bool]] = None
         self.placeholder_text: Optional[str] = None
         self.required = required
+        self.setting_name: Optional[str] = None
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the data."""
         data = {
             "widget_type": self.widget_name,
             "label": self.label,
-            "required": self.required
+            "required": self.required,
+            "setting_name": self.setting_name or self.label.replace(" ", "_")
         }
         if self.value is not None:
             data['value'] = self.value

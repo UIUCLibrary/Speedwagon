@@ -30,7 +30,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
     from speedwagon.frontend.interaction import UserRequestFactory
     from speedwagon.tasks import TaskBuilder, Result
-    from speedwagon.config import SettingsData
+    from speedwagon.config import SettingsData, SettingsDataType
 
 
 __all__ = [
@@ -170,6 +170,13 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         You need to implement the discover_task_metadata() method.
     """
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._options_backends = None
+
+    def set_options_backend(self, value) -> None:
+        self._options_backends = value
+
     def get_additional_info(
             self,
             user_request_factory:  # pylint: disable=unused-argument
@@ -198,6 +205,21 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         Defaults to no args.
         """
         return []
+
+    def configuration_options(self) -> List[AbsOutputOptionDataType]:
+        """Get options configured at the application level.
+
+        Defaults to no args.
+        """
+        return []
+
+    def get_workflow_configuration_value(
+            self,
+            key: str
+    ) -> Optional[SettingsDataType]:
+        if self._options_backends is None:
+            return None
+        return self._options_backends.get(key)
 
 
 class NullWorkflow(Workflow):

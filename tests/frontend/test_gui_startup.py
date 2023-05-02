@@ -751,10 +751,15 @@ class TestStartQtThreaded:
         )
         assert job_manager.submit_job.called is True
 
-    def test_initialize(self, qtbot):
+    def test_initialize(self, qtbot, monkeypatch):
         start = gui_startup.StartQtThreaded(Mock())
-        start.ensure_settings_files = Mock(name="ensure_settings_files")
+        speedwagon.config.ensure_settings_files = Mock(name="ensure_settings_files")
         start.resolve_settings = Mock(name="resolve_settings")
+        monkeypatch.setattr(
+            speedwagon.config.WorkflowSettingsYamlExporter,
+            "write_data_to_file",
+            Mock()
+        )
         start.initialize()
 
         expected = {
@@ -763,7 +768,7 @@ class TestStartQtThreaded:
         }
         actual = {
             "ensure_settings_files was called":
-                start.ensure_settings_files.called,
+                speedwagon.config.ensure_settings_files.called,
             "resolve_settings was called": start.resolve_settings.called,
         }
         assert actual == expected
