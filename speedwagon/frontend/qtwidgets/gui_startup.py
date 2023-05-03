@@ -11,7 +11,7 @@ import threading
 import time
 import types
 import typing
-from typing import Dict, Optional, cast, List, Type
+from typing import Dict, Optional, cast, List, Type, Callable
 import traceback as tb
 import webbrowser
 try:  # pragma: no cover
@@ -21,9 +21,11 @@ except ImportError:  # pragma: no cover
 from PySide6 import QtWidgets
 
 import speedwagon
+from speedwagon.workflow import initialize_workflows
 from speedwagon import config
 from . import user_interaction
 from . import dialog
+from .dialog.settings import EntrypointsPluginModelLoader
 from . import runners
 
 if typing.TYPE_CHECKING:
@@ -157,12 +159,111 @@ class EnsureWorkflowConfigFiles(AbsStartupTask):
         for option in config_options:
             name = option.setting_name or option.label
             workflow_settings[name] = existing_options.get(name)
+            if (
+                    workflow_settings[name] is None and
+                    option.default_value is not None
+            ):
+                workflow_settings[name] = option.default_value
+
         if workflow_settings:
             manager.save_workflow_settings(workflow, workflow_settings)
 
     def description(self) -> str:
         return "Ensuring workflow settings file are available and creating " \
                "defaults where missing."
+
+
+def _setup_config_tab(
+        saver: dialog.settings.MultiSaver
+) -> dialog.settings.TabsConfigurationTab:
+    config_strategy = config.StandardConfigFileLocator()
+    tabs_config = dialog.settings.TabsConfigurationTab()
+    tabs_config.editor.load_data()
+    saver.config_savers.append(
+        dialog.settings.ConfigFileSaver(
+            dialog.settings.SettingsTabSaveStrategy(
+                tabs_config,
+                lambda widget: config.TabsYamlWriter().serialize(
+                    filter(
+                        lambda tab: tab.tab_name != "All",
+                        widget.get_data().get('tab_information', []),
+                    )
+                )
+            ),
+            config_strategy.get_tabs_file()
+        )
+    )
+    return tabs_config
+
+
+def _setup_workflow_settings_tab(
+        saver: dialog.settings.MultiSaver
+) -> dialog.settings.ConfigWorkflowSettingsTab:
+    workflow_settings_tab = dialog.settings.ConfigWorkflowSettingsTab()
+    config_strategy = config.StandardConfigFileLocator()
+    saver.config_savers.append(
+        dialog.settings.ConfigFileSaver(
+            dialog.settings.SettingsTabSaveStrategy(
+                workflow_settings_tab,
+                lambda widget: speedwagon.config.SettingsYamlSerializer
+                .serialize_structure_to_yaml(
+                    {
+                        workflow_name:
+                            speedwagon.config.SettingsYamlSerializer
+                            .structure_workflow_data(value)
+                        for (workflow_name, value) in
+                        widget.get_data()['workflow settings'].items()
+                    }
+                )
+            ),
+            os.path.join(
+                config_strategy.get_app_data_dir(),
+                speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME
+            )
+        )
+    )
+    # Only add workflows to the configuration if it has something to
+    # configure. Otherwise, this gets overly cluttered.
+    workflow_settings_tab.set_workflows(
+        filter(
+            lambda workflow: len(workflow.configuration_options()) != 0,
+            initialize_workflows()
+        )
+    )
+    return workflow_settings_tab
+
+
+def _setup_global_settings_tab(
+        saver: dialog.settings.MultiSaver
+) -> dialog.settings.GlobalSettingsTab:
+    config_strategy = config.StandardConfigFileLocator()
+    global_settings_tab = dialog.settings.GlobalSettingsTab()
+    saver.config_savers.append(
+        dialog.settings.ConfigFileSaver(
+            dialog.settings.SettingsTabSaveStrategy(
+                global_settings_tab,
+                lambda widget: config.IniConfigSaver().serialize(
+                    {
+                        'GLOBAL': typing.cast(
+                            speedwagon.config.SettingsData, widget.get_data()
+                        )
+                    }
+                )
+            ),
+            config_strategy.get_config_file()
+        )
+    )
+    global_settings_tab.load_ini_file(config_strategy.get_config_file())
+    return global_settings_tab
+
+
+def _setup_plugins_tab(
+        _: dialog.settings.MultiSaver
+) -> dialog.settings.PluginsTab:
+    config_strategy = config.StandardConfigFileLocator()
+    plugins_tab = dialog.settings.PluginsTab()
+    plugins_tab.load(config_strategy.get_config_file())
+    return plugins_tab
 
 
 class StartQtThreaded(AbsGuiStarter):
@@ -367,28 +468,33 @@ class StartQtThreaded(AbsGuiStarter):
             self,
             parent: Optional[QtWidgets.QWidget] = None
     ) -> None:
+
+        class TabData(typing.NamedTuple):
+            name: str
+            setup_function: Callable[
+                [dialog.settings.MultiSaver], dialog.settings.SettingsTab
+            ]
+            active: bool
+
+        def are_there_any_plugins() -> bool:
+            return len(EntrypointsPluginModelLoader.plugin_entry_points()) > 0
+
+        tabs: List[TabData] = [
+            TabData("Workflow Settings", _setup_workflow_settings_tab, True),
+            TabData("Global Settings", _setup_global_settings_tab, True),
+            TabData("Tabs", _setup_config_tab, True),
+            TabData("Plugins", _setup_plugins_tab, are_there_any_plugins()),
+        ]
         config_strategy = config.StandardConfigFileLocator()
 
         dialog_builder = dialog.settings.SettingsBuilder2(parent=parent)
         dialog_builder.app_data_dir = config_strategy.get_app_data_dir()
 
-        global_settings_tab = dialog.settings.GlobalSettingsTab()
-        global_settings_tab.load_ini_file(config_strategy.get_config_file())
-        dialog_builder.add_tab("Global Settings", global_settings_tab)
+        saver = dialog.settings.MultiSaver(parent=parent)
 
-        tabs_config = dialog.settings.TabsConfigurationTab()
-        tabs_config.editor.load_data()
-        dialog_builder.add_tab("Tabs", tabs_config)
-
-        plugins = \
-            dialog.settings.EntrypointsPluginModelLoader.plugin_entry_points()
-
-        if len(plugins) > 0:
-            plugins_tab = dialog.settings.PluginsTab()
-            plugins_tab.load(config_strategy.get_config_file())
-            dialog_builder.add_tab("Plugins", plugins_tab)
-
-        saver = dialog.settings.ConfigSaver(parent)
+        for tab in tabs:
+            if tab.active is True:
+                dialog_builder.add_tab(tab.name, tab.setup_function(saver))
 
         def success(_) -> None:
             if self.windows:
@@ -397,8 +503,6 @@ class StartQtThreaded(AbsGuiStarter):
             self.load_workflows()
 
         saver.add_success_call_back(success)
-        saver.tabs_yaml_path = config_strategy.get_tabs_file()
-        saver.config_file_path = config_strategy.get_config_file()
         dialog_builder.set_saver_strategy(saver)
         config_dialog: dialog.settings.SettingsDialog = dialog_builder.build()
 

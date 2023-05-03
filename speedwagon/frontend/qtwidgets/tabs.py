@@ -8,11 +8,14 @@ from typing import \
     Dict
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
+
+from speedwagon.frontend.qtwidgets.models import workflows as workflow_models
+from speedwagon.frontend.qtwidgets.models.common import WorkflowClassRole
+
 import speedwagon
 from speedwagon.config import StandardConfig, FullSettingsData
 from speedwagon.job import Workflow
 from speedwagon.frontend import qtwidgets
-from speedwagon.frontend.qtwidgets import models
 if typing.TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets.widgets import \
         Workspace, \
@@ -57,7 +60,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
         """Create a new WorkflowTab3 object."""
         super().__init__(parent)
         self._parent = parent
-        self.set_model(models.WorkflowList())
+        self.set_model(workflow_models.WorkflowList())
         self.app_settings_lookup_strategy = StandardConfig()
         self.start_button.clicked.connect(self.submit_job)
         self.workflow_selector.selected_index_changed.connect(
@@ -71,14 +74,17 @@ class WorkflowsTab3(WorkflowsTab3UI):
         """Get the model used by the current tab."""
         return self._model
 
-    def set_model(self, model: models.AbsWorkflowList) -> None:
+    def set_model(self, model: workflow_models.AbsWorkflowList) -> None:
         """Set the current model used by the tab."""
         self._model = model
         self.workflow_selector.model = self._model
 
     def _handle_selector_changed(self, index: QtCore.QModelIndex) -> None:
         workflow = \
-            self._model.data(index, models.TabsTreeModel.WorkflowClassRole)
+            self._model.data(
+                index,
+                WorkflowClassRole
+            )
 
         self.workspace.set_workflow(workflow)
         self._handle_workflow_changed(workflow)
@@ -154,7 +160,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
             workflows[workflow_name] = \
                 self._model.data(
                     index,
-                    role=models.TabsTreeModel.WorkflowClassRole
+                    role=WorkflowClassRole
                 )
         return workflows
 

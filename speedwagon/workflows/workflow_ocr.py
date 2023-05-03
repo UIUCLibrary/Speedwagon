@@ -291,14 +291,27 @@ class OCRWorkflow(speedwagon.Workflow):
 
         return list(filter(filter_ocr_gen_tasks, results))
 
+    @staticmethod
+    def default_tesseract_data_path():
+        return os.path.join(
+            speedwagon.config.StandardConfigFileLocator().get_user_data_dir(),
+            "tessdata"
+        )
+
     def configuration_options(
-            self
+        self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        """Set the settings for get marc workflow.
+
+        This needs the path to the tesseract data.
+        """
         tesseract_path = \
             speedwagon.workflow.DirectorySelect(
                 label=TESSERACT_PATH_LABEL
             )
+
         tesseract_path.required = True
+        tesseract_path.default_value = self.default_tesseract_data_path()
         return [
             tesseract_path
         ]

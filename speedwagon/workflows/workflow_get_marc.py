@@ -6,8 +6,6 @@ import os
 import re
 from copy import deepcopy
 
-
-
 try:  # pragma: no cover
     from typing import Final
 except ImportError:  # pragma: no cover
@@ -26,8 +24,6 @@ import requests
 import speedwagon
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import reports, validators, workflow
-
-from speedwagon.config import SettingsData
 
 if TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
@@ -72,25 +68,6 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
                   "uses the GetMARC service to retrieve these MARC.XML " \
                   "files from the Library."
     required_settings_keys: Set[str] = {"getmarc_server_url"}
-
-    def __init__(
-            self,
-            global_settings: Optional[SettingsData] = None
-    ) -> None:
-        """Generate Marc XML files.
-
-        Args:
-            global_settings:
-                Settings that could affect the way the workflow runs.
-        """
-        super().__init__()
-
-        # if global_settings is not None:
-        #     self.global_settings = global_settings
-        # for k in GenerateMarcXMLFilesWorkflow.required_settings_keys:
-        #     value = self.global_settings.get(k)
-        #     if value is None:
-        #         raise MissingConfiguration(f"Missing value for {k}")
 
     def get_user_options(self) -> List[AbsOutputOptionDataType]:
         """Request user options.
@@ -327,11 +304,15 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         return results['identifier'], results.get('volume')
 
     def configuration_options(self) -> List[AbsOutputOptionDataType]:
+        """Set the settings for get marc workflow.
+
+        This needs the getmarc server url.
+        """
         return [
             speedwagon.workflow.TextLineEditData(
                 'Getmarc server url',
                 required=True
-            )
+            ),
         ]
 
 

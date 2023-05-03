@@ -4,11 +4,14 @@ import abc
 import os
 import platform
 import typing
-from typing import Optional, Dict, cast, List, Tuple, Callable
+from typing import (
+    Optional, Dict, cast, List, Tuple, Callable, Iterable, TYPE_CHECKING
+)
 import sys
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
 
+import speedwagon
 
 try:  # pragma: no cover
     from importlib.resources import as_file
@@ -19,8 +22,17 @@ except ImportError:  # pragma: no cover
 
 from speedwagon import config
 from speedwagon.frontend import qtwidgets
-from speedwagon.frontend.qtwidgets.widgets import PluginConfig
+from speedwagon.frontend.qtwidgets.widgets import (
+    PluginConfig,
+    WorkflowSettingsEditor
+)
+from speedwagon.frontend.qtwidgets.models import tabs as tab_models
+from speedwagon.frontend.qtwidgets.models.settings import\
+    unpack_global_settings_model,\
+    build_setting_qt_model
 from speedwagon.frontend.qtwidgets import models
+if TYPE_CHECKING:
+    from speedwagon.frontend.qtwidgets.models import plugins as plugin_models
 
 if sys.version_info < (3, 10):  # pragma: no cover
     import importlib_metadata as metadata
@@ -29,7 +41,7 @@ else:
 
 __all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
 
-SaveCallback = typing.Callable[["SettingsTab"], Dict[str, typing.Any]]
+SaveCallback = Callable[["SettingsTab"], Dict[str, typing.Any]]
 
 
 class UnsupportedOpenSettings(config.AbsOpenSettings):
@@ -60,8 +72,8 @@ class SettingsTab(QtWidgets.QWidget):
             f"{self.__class__.__name__}"
         )
 
-    def get_data(self) -> Optional[Dict[str, typing.Any]]:
-        return None
+    def get_data(self) -> Dict[str, typing.Any]:
+        return {}
 
 
 class SettingsDialog(QtWidgets.QDialog):
@@ -184,7 +196,7 @@ class PluginModelLoader(abc.ABC):  # pylint: disable=too-few-public-methods
     @abc.abstractmethod
     def load_plugins_into_model(
             self,
-            model: models.PluginActivationModel
+            model: plugin_models.PluginActivationModel
     ) -> None:
         """Load plugins into the model."""
 
@@ -212,7 +224,7 @@ class EntrypointsPluginModelLoader(PluginModelLoader):
 
     def load_plugins_into_model(
             self,
-            model: models.PluginActivationModel
+            model: plugin_models.PluginActivationModel
     ) -> None:
         for entry_point in self.plugin_entry_points():
             model.add_entry_point(
@@ -235,7 +247,7 @@ class PluginsTab(SettingsTab):
     def data_is_modified(self) -> bool:
         return self.plugins_activation.model.data_modified
 
-    def get_data(self) -> Optional[Dict[str, typing.Any]]:
+    def get_data(self) -> Dict[str, typing.Any]:
         return {
             "enabled_plugins": self.plugins_activation.enabled_plugins()
         }
@@ -267,7 +279,8 @@ class GlobalSettingsTab(SettingsTab):
         self.config_file: Optional[str] = None
         self._modified = False
 
-        self._table_model: Optional[models.SettingsModel] = \
+        self._table_model: Optional[
+            models.SettingsModel] = \
             models.SettingsModel()
         self._table_model.dataChanged.connect(self.changes_made)
         self.changes_made.connect(self.on_modified)
@@ -283,11 +296,12 @@ class GlobalSettingsTab(SettingsTab):
         layout.addWidget(self.settings_table)
         self.setLayout(layout)
 
-    def get_data(self) -> Optional[config.SettingsData]:
+    def get_data(self) -> config.SettingsData:
         """Get the global settings data."""
         if self._table_model:
-            return models.unpack_global_settings_model(self._table_model)
-        return None
+            return \
+                unpack_global_settings_model(self._table_model)
+        return {}
 
     def data_is_modified(self) -> bool:
         """Get if the data has been modified since originally added."""
@@ -309,7 +323,9 @@ class GlobalSettingsTab(SettingsTab):
             raise FileNotFoundError("No Configuration file set")
         if not os.path.exists(self.config_file):
             raise FileNotFoundError("Invalid Configuration file set")
-        self._table_model = models.build_setting_qt_model(self.config_file)
+        self._table_model = \
+            build_setting_qt_model(self.config_file)
+
         self.settings_table.setModel(self._table_model)
 
         self._table_model.dataChanged.connect(  # type: ignore
@@ -350,7 +366,7 @@ class TabsConfigurationTab(SettingsTab):
         """Check if data has changed since originally set."""
         return self.editor.modified
 
-    def get_data(self) -> Optional[Dict[str, typing.Any]]:
+    def get_data(self) -> Dict[str, typing.Any]:
         """Get the data the user entered."""
         return {"tab_information": self.editor.model.tab_information()}
 
@@ -388,11 +404,92 @@ class TabsConfigurationTab(SettingsTab):
 
     def load(
             self,
-            strategy: models.AbsLoadTabDataModelStrategy
+            strategy: tab_models.AbsLoadTabDataModelStrategy
     ) -> None:
         """Load configuration settings."""
         strategy.load(self.editor.model)
         self.editor.selected_tab_combo_box.setCurrentIndex(0)
+
+
+class ConfigWorkflowSettingsTab(SettingsTab):
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        layout = QtWidgets.QVBoxLayout(self)
+        self._editor = WorkflowSettingsEditor(self)
+        layout.addWidget(self._editor)
+        self.setLayout(layout)
+        self._editor.workflow_settings_view.header().resizeSection(0, 300)
+        self.model = models.WorkflowSettingsModel()
+        self._editor.model = self.model
+
+    def set_workflows(self, workflows: Iterable[speedwagon.Workflow]):
+        self.model.clear()
+        for workflow in workflows:
+            self.model.add_workflow(workflow)
+        self.model.reset_modified()
+        self._editor.workflow_settings_view.expandAll()
+        self.model.dataChanged.connect(self.changes_made)
+
+    def data_is_modified(self) -> bool:
+        return self.model.modified()
+
+    def get_data(self) -> Dict[str, typing.Any]:
+        return {"workflow settings": self.model.results()}
+
+
+class AbsConfigSaver2(abc.ABC):  # pylint: disable=too-few-public-methods
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__()
+        self.parent = parent
+
+    @abc.abstractmethod
+    def save(self) -> None:
+        """Save to file."""
+
+
+class AbsSaveStrategy(abc.ABC):
+
+    @abc.abstractmethod
+    def write_file(self, data: str, file: str) -> None:
+        """Write data to a file."""
+
+    @abc.abstractmethod
+    def serialize_data(self) -> str:
+        """Serialize data into a string."""
+
+
+class AbsConfigSaverCallbacks(AbsConfigSaver2, abc.ABC):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        self._success_callbacks: List[
+            Callable[[Optional[QtWidgets.QWidget]], None]
+        ] = []
+
+    def add_success_call_back(
+            self,
+            callback: typing.Callable[[Optional[QtWidgets.QWidget]], None]
+    ) -> None:
+        self._success_callbacks.append(callback)
+
+    def notify_success(self):
+        for callback in self._success_callbacks:
+            callback(self.parent)
+
+
+class MultiSaver(AbsConfigSaverCallbacks):
+    def __init__(
+            self,
+            config_savers: Optional[List[AbsConfigSaver2]] = None,
+            parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
+        super().__init__(parent)
+        self.config_savers: list[AbsConfigSaver2] = config_savers or []
+
+    def save(self):
+        for saver in self.config_savers:
+            saver.save()
+        self.notify_success()
 
 
 class AbsConfigSaver(abc.ABC):  # pylint: disable=too-few-public-methods
@@ -403,6 +500,41 @@ class AbsConfigSaver(abc.ABC):  # pylint: disable=too-few-public-methods
     @abc.abstractmethod
     def save(self, tab_widgets: Dict[str, SettingsTab]) -> None:
         """Save data to a file."""
+
+
+class ConfigFileSaver(AbsConfigSaverCallbacks):
+
+    def __init__(
+            self,
+            save_strategy: AbsSaveStrategy,
+            file_path: str,
+            parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
+        super().__init__(parent)
+        self.save_strategy = save_strategy
+        self.file_path = file_path
+
+    def save(self) -> None:
+        data = self.save_strategy.serialize_data()
+        self.save_strategy.write_file(data, self.file_path)
+
+
+class SaveStrategy(AbsSaveStrategy, abc.ABC):
+    def write_file(self, data: str, file: str) -> None:
+        with open(file, 'w', encoding="utf8") as file_handel:
+            file_handel.write(data)
+
+
+class SettingsTabSaveStrategy(SaveStrategy):
+    def __init__(
+            self,
+            settings_tab_widget: SettingsTab,
+            serialization_function: Callable[[SettingsTab], str]) -> None:
+        self.widget = settings_tab_widget
+        self.serialization_function = serialization_function
+
+    def serialize_data(self) -> str:
+        return self.serialization_function(self.widget)
 
 
 class ConfigSaver(AbsConfigSaver):
@@ -501,7 +633,7 @@ class SettingsBuilder2:
         self._on_save_callback: Optional[
             Callable[[SettingsDialog, Dict[str, SettingsTab]], None]
         ] = None
-        self._save_strategy: Optional[AbsConfigSaver] = None
+        self._save_strategy: Optional[AbsConfigSaverCallbacks] = None
         self.app_data_dir: Optional[str] = None
 
     def build(self) -> SettingsDialog:
@@ -515,10 +647,7 @@ class SettingsBuilder2:
 
         if self._save_strategy is not None:
             config_dialog.accepted.connect(  # type: ignore
-                lambda callback=self._on_save_callback:
-                self._save_strategy.save(
-                    config_dialog.settings_tabs
-                )
+                self._save_strategy.save
             )
 
         if self._on_save_callback is not None:
@@ -537,7 +666,7 @@ class SettingsBuilder2:
     ) -> None:
         self._tabs.append((name, widget))
 
-    def set_saver_strategy(self, value: AbsConfigSaver) -> None:
+    def set_saver_strategy(self, value: AbsConfigSaverCallbacks) -> None:
         self._save_strategy = value
 
     def add_on_save_callback(
@@ -594,8 +723,8 @@ class TabEditor(TabEditorWidgetUI):
         """Create a tab editor widget."""
         super().__init__(parent, flags)
         self.load_tab_data_model_strategy: \
-            models.AbsLoadTabDataModelStrategy = \
-            models.TabDataModelConfigLoader()
+            tab_models.AbsLoadTabDataModelStrategy = \
+            tab_models.TabDataModelConfigLoader()
 
         self.model = models.TabsTreeModel()
         self._user_tabs_model = QtCore.QSortFilterProxyModel()
@@ -612,12 +741,12 @@ class TabEditor(TabEditorWidgetUI):
 
         self._tabs_file: Optional[str] = None
 
-        self._all_workflows_model = models.TabProxyModel()
+        self._all_workflows_model = tab_models.TabProxyModel()
         self._all_workflows_model.setSourceModel(self._tabs_model)
         self._all_workflows_model.set_source_tab("All")
         self.all_workflows_list_view.setModel(self._all_workflows_model)
 
-        self._active_tab_workflows_model = models.TabProxyModel()
+        self._active_tab_workflows_model = tab_models.TabProxyModel()
         self._active_tab_workflows_model.setSourceModel(self._tabs_model)
 
         self.tab_workflows_list_view.setModel(
@@ -739,14 +868,14 @@ class TabEditor(TabEditorWidgetUI):
 
     def _add_items_to_tab(self) -> None:
         model = cast(
-            models.TabProxyModel,
+            tab_models.TabProxyModel,
             self.tab_workflows_list_view.model()
         )
         for selected_index in self.all_workflows_list_view.selectedIndexes():
             new_workflow = \
                 self._all_workflows_model.data(
                     selected_index,
-                    role=models.TabsTreeModel.WorkflowClassRole
+                    role=models.WorkflowClassRole
                 )
             active_tab_index = self._active_tab_workflows_model.get_tab_index()
             starting_row_count = model.rowCount()
@@ -764,7 +893,7 @@ class TabEditor(TabEditorWidgetUI):
             self.tab_workflows_list_view.model()
         )
         items_to_remove = [
-            i.data(role=models.TabsTreeModel.WorkflowClassRole)
+            i.data(role=models.WorkflowClassRole)
             for i in self.tab_workflows_list_view.selectedIndexes()
         ]
 

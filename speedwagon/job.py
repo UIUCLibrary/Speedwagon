@@ -171,10 +171,12 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
     """
 
     def __init__(self, *args, **kwargs) -> None:
+        """Create a new workflow object."""
         super().__init__(*args, **kwargs)
         self._options_backends = None
 
     def set_options_backend(self, value) -> None:
+        """Set the option backend."""
         self._options_backends = value
 
     def get_additional_info(
@@ -217,6 +219,7 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
             self,
             key: str
     ) -> Optional[SettingsDataType]:
+        """Get a value from the workflow configuration."""
         if self._options_backends is None:
             return None
         return self._options_backends.get(key)

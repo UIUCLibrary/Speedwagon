@@ -14,6 +14,7 @@ from typing import \
     List, \
     Iterable
 
+
 try:  # pragma: no cover
     from typing import NotRequired
 except ImportError:  # pragma: no cover
@@ -21,9 +22,15 @@ except ImportError:  # pragma: no cover
 
 
 from PySide6 import QtWidgets, QtCore, QtGui
-from speedwagon.frontend.qtwidgets import models, ui_loader, ui
+from speedwagon.frontend.qtwidgets import ui_loader, ui
 from speedwagon.workflow import AbsOutputOptionDataType, UserDataType
 from speedwagon import Workflow, exceptions, config
+
+from speedwagon.frontend.qtwidgets.models.workflows import AbsWorkflowList
+
+from speedwagon.frontend.qtwidgets import models
+
+
 try:  # pragma: no cover
     from importlib.resources import as_file
     from importlib import resources
@@ -367,9 +374,7 @@ class FileSelectWidget(FileSystemItemSelectWidget):
                     parent=self,
                     filter=self.filter
                 )
-            if result:
-                return result[0]
-            return None
+            return result[0] if result else None
 
         selection = (get_file_callback or use_qt_file_dialog)()
         if selection:
@@ -427,7 +432,9 @@ class InnerForm(QtWidgets.QWidget):
             serialized_json_data: str = \
                 typing.cast(
                     str,
-                    index.data(role=models.ToolOptionsModel4.JsonDataRole)
+                    index.data(
+                        role=models.ToolOptionsModel4.JsonDataRole
+                    )
                 )
             json_data = \
                 typing.cast(WidgetMetadata, json.loads(serialized_json_data))
@@ -456,10 +463,7 @@ class InnerForm(QtWidgets.QWidget):
                 return
             model_data = typing.cast(
                 AbsOutputOptionDataType,
-                self.model.data(
-                    index,
-                    models.ToolOptionsModel4.DataRole
-                )
+                self.model.data(index, models.ToolOptionsModel4.DataRole)
             )
 
             self.model.setData(index, self.widgets[model_data.label].data)
@@ -630,13 +634,16 @@ class Workspace(QtWidgets.QWidget):
                     new_workflow.description
                 )
             self.settings_form.set_model(
-                models.ToolOptionsModel4(new_workflow.get_user_options())
+                models.ToolOptionsModel4(
+                    new_workflow.get_user_options()
+                )
             )
         except exceptions.MissingConfiguration as exc:
             self.workflow_description_value.setHtml(
                 f"<b>Workflow unavailable.</b><p><b>Reason: </b>{exc}</p>"
             )
-            self.settings_form.set_model(models.ToolOptionsModel4())
+            self.settings_form.set_model(
+                models.ToolOptionsModel4())
 
     def is_valid(self) -> bool:
         """Check if the workflow configured is valid."""
@@ -686,7 +693,7 @@ class SelectWorkflow(QtWidgets.QWidget):
         return self.workflowSelectionView.model()
 
     @model.setter
-    def model(self, value: models.AbsWorkflowList) -> None:
+    def model(self, value: AbsWorkflowList) -> None:
         # pass
         self.workflowSelectionView.setModel(value)
         selection_model = self.workflowSelectionView.selectionModel()
@@ -703,7 +710,7 @@ class SelectWorkflow(QtWidgets.QWidget):
             typing.Type[Workflow],
             self.model.data(
                 current,
-                role=typing.cast(int, models.TabsTreeModel.WorkflowClassRole)
+                role=typing.cast(int, models.WorkflowClassRole)
             )
         )
         self.selected_index_changed.emit(current)
@@ -722,10 +729,7 @@ class SelectWorkflow(QtWidgets.QWidget):
             if name == workflow_name:
                 self.workflowSelectionView.setCurrentIndex(workflow_index)
                 self.workflow_selected.emit(
-                    self.model.data(
-                        workflow_index,
-                        models.TabsTreeModel.WorkflowClassRole
-                    )
+                    self.model.data(workflow_index, models.WorkflowClassRole)
                 )
                 break
         else:
@@ -736,7 +740,7 @@ class SelectWorkflow(QtWidgets.QWidget):
             typing.Type[Workflow],
             self.model.data(
                 self.workflowSelectionView.currentIndex(),
-                role=typing.cast(int, models.TabsTreeModel.WorkflowClassRole)
+                role=typing.cast(int, models.WorkflowClassRole)
             )
         )
 
@@ -806,3 +810,33 @@ class PluginConfig(QtWidgets.QWidget):
                     )
                 active_plugins[source].append(plugin_name)
         return dict(active_plugins)
+
+
+class WorkflowSettingsEditorUI(QtWidgets.QWidget):
+    workflow_settings_view: QtWidgets.QTreeView
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        with as_file(
+                resources.files(ui).joinpath("tab_workflow_options.ui")
+        ) as ui_file:
+            ui_loader.load_ui(str(ui_file), self)
+
+
+class WorkflowSettingsEditor(WorkflowSettingsEditorUI):
+    _model: QtCore.QAbstractItemModel
+    data_changed = QtCore.Signal()
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        self.model = models.WorkflowSettingsModel()
+
+    @property
+    def model(self) -> QtCore.QAbstractItemModel:
+        return self._model
+
+    @model.setter
+    def model(self, value: QtCore.QAbstractItemModel) -> None:
+        self._model = value
+        self.workflow_settings_view.setModel(self._model)
+        self.model.dataChanged.connect(self.data_changed)

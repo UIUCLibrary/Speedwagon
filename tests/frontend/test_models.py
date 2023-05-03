@@ -1,8 +1,10 @@
-import configparser
 import json
 import os
+from typing import List, Any, Dict, Optional
 from unittest.mock import Mock
 import sys
+
+
 if sys.version_info < (3, 10):
     import importlib_metadata as metadata
 else:
@@ -13,25 +15,31 @@ import pytest
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 QtCore = pytest.importorskip("PySide6.QtCore")
 QtGui = pytest.importorskip("PySide6.QtGui")
-
+from PySide6.QtCore import Qt
 import speedwagon.config
 from speedwagon import workflow
 from speedwagon.frontend.qtwidgets import models
-
+from speedwagon.frontend.qtwidgets.models.settings import (
+    build_setting_qt_model,
+    WorkflowSettingsModel,
+)
 
 def test_build_setting_model_missing_file(tmpdir):
     dummy = str(os.path.join(tmpdir, "config.ini"))
     with pytest.raises(FileNotFoundError):
-        models.build_setting_qt_model(dummy)
+        build_setting_qt_model(dummy)
 
 
 class TestSettingsModel:
+    @pytest.fixture()
+    def model(self):
+        return  models.SettingsModel(None)
+
     @pytest.mark.parametrize("role", [
         QtCore.Qt.DisplayRole,
         QtCore.Qt.EditRole,
     ])
-    def test_data(self, role):
-        model = models.SettingsModel(None)
+    def test_data(self, role, model):
         model.add_setting("spam", "eggs")
         assert model.data(model.index(0, 0), role=role) == "spam"
 
@@ -39,16 +47,14 @@ class TestSettingsModel:
         (0, "Key"),
         (1, "Value"),
     ])
-    def test_header_data(self, index, expected):
-        model = models.SettingsModel(None)
+    def test_header_data(self, index, expected, model):
         value = model.headerData(index,
                                  QtCore.Qt.Horizontal,
                                  role=QtCore.Qt.DisplayRole)
 
         assert value == expected
 
-    def test_set_data(self):
-        model = models.SettingsModel(None)
+    def test_set_data(self, model):
         model.add_setting("spam", "eggs")
         model.setData(model.index(0, 0), data="dumb")
         assert model._data[0][1] == "dumb"
@@ -57,29 +63,54 @@ class TestSettingsModel:
         (0, QtCore.Qt.NoItemFlags),
         (1, QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable),
     ])
-    def test_flags(self, column, expected):
-        model = models.SettingsModel(None)
+    def test_flags(self, column, expected, model):
         model.add_setting("spam", "eggs")
         flags = model.flags(model.index(0, column))
         assert flags == expected
 
-    def test_settings_model_empty(self):
-        test_model = models.SettingsModel()
-        assert test_model.rowCount() == 0
-        assert test_model.columnCount() == 2
-        index = test_model.index(0, 0)
+    def test_settings_model_empty(self, model):
+        assert model.rowCount() == 0
+        assert model.columnCount() == 2
+        index = model.index(0, 0)
         assert index.data() is None
 
-    def test_settings_model_added(self):
-        test_model = models.SettingsModel()
-        test_model.add_setting("mysetting", "eggs")
-        assert test_model.rowCount() == 1
-        assert test_model.columnCount() == 2
-        assert test_model.index(0, 0).data() == "mysetting"
-        assert test_model.index(0, 1).data() == "eggs"
+    def test_settings_model_added(self, model):
+        model.add_setting("mysetting", "eggs")
+        assert model.rowCount() == 1
+        assert model.columnCount() == 2
+        assert model.index(0, 0).data() == "mysetting"
+        assert model.index(0, 1).data() == "eggs"
 
-        index = test_model.index(0, 1)
-        assert test_model.data(index) is None
+        index = model.index(0, 1)
+        assert model.data(index) is None
+
+    def test_modified(self, model):
+        model.add_setting("spam", "eggs")
+        model.setData(model.index(0, 0), data="dumb")
+        assert model.data_modified is True
+
+    def test_not_modified(self, model):
+        model.add_setting("spam", "eggs")
+        assert model.data_modified is False
+
+    def test_not_modified_after_reverted(self, model):
+        model.add_setting("spam", "eggs")
+        model.setData(model.index(0, 0), data="dumb")
+        # revert back to original
+        model.setData(model.index(0, 0), data="eggs")
+        assert model.data_modified is False
+
+    def test_data_for_invalid_index_is_none(self, model):
+        index = model.index(-1, -1)
+        assert model.data(index) is None
+
+    def test_no_vertical_header_data(self, model):
+        assert model.headerData(0, QtCore.Qt.Orientation.Vertical) is None
+
+    def test_set_data_on_invalid_data_returns_false(self, model):
+        index = model.index(-1, -1)
+        assert model.setData(index, "data") is False
+
 
 class TestToolOptionsModel4:
     @pytest.fixture()
@@ -169,19 +200,6 @@ class TestToolOptionsModel4:
         assert starting_value is None and changed_value == "spam"
 
 
-def test_check_required_settings_have_values_not_required_returns_nothing():
-    option_data = Mock(workflow.AbsOutputOptionDataType, required=False)
-    result = models.check_required_settings_have_values(option_data)
-    assert result is None
-
-
-def test_check_required_settings_have_values_required_and_has_value_returns_nothing():
-    option_data = Mock(workflow.AbsOutputOptionDataType, required=True)
-    option_data.value = "something"
-    result = models.check_required_settings_have_values(option_data)
-    assert result is None
-
-
 def test_build_setting_model(tmpdir):
 
     dummy = str(os.path.join(tmpdir, "config.ini"))
@@ -190,7 +208,7 @@ debug: False
         """
     with open(dummy, "w") as wf:
         wf.write(empty_config_data)
-    model = models.build_setting_qt_model(dummy)
+    model = build_setting_qt_model(dummy)
     assert isinstance(model, models.SettingsModel)
 
     assert model is not None
@@ -352,7 +370,7 @@ class TestTabsTreeModel:
                 TestTabsTreeModel.BaconWorkflow,
             ]
         )
-        tab_item: models.TabStandardItem = model.get_item(model.index(0,0))
+        tab_item: models.TabStandardItem = model.get_item(model.index(0, 0))
         assert all(
          [
              tab_item.child(0).name == "spam",
@@ -471,7 +489,7 @@ class TestTabsTreeModel:
         )
         assert model.data(
             model.index(0, 0, parent=model.index(0, 0)),
-            role=models.TabsTreeModel.WorkflowClassRole
+            role=models.WorkflowClassRole
         ) == TestTabsTreeModel.SpamWorkflow
 
     @pytest.mark.parametrize(
@@ -953,3 +971,508 @@ class TestWorkflowList:
         assert model.rowCount() == 1
         model.removeRow(0)
         assert model.rowCount() == 0
+
+
+# def sample_model():
+#     return WorkflowSettingsModel2()
+#
+# only_real_model = pytest.mark.skipif(isinstance(sample_model(), WorkflowSettingsStandardModel), reason="wrong model")
+
+
+class TestWorkflowSettingsModel:
+    class SpamWorkflow(speedwagon.Workflow):
+        name = "Spam"
+
+        def configuration_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+
+            return [
+                speedwagon.workflow.TextLineEditData("Dummy config", required=True)
+            ]
+
+        def discover_task_metadata(
+                self,
+                initial_results: List[Any],
+                additional_data: Dict[str, Any],
+                **user_args) -> List[dict]:
+            return []
+
+    class BaconWorkflow(speedwagon.Workflow):
+        name = "Bacon"
+
+        def configuration_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+
+            return [
+                speedwagon.workflow.TextLineEditData("Bacon config 1", required=True),
+                speedwagon.workflow.TextLineEditData("Bacon config 2", required=True)
+            ]
+
+        def discover_task_metadata(
+                self,
+                initial_results: List[Any],
+                additional_data: Dict[str, Any],
+                **user_args) -> List[dict]:
+            return []
+
+    class NoConfigWorkflow(speedwagon.Workflow):
+        name = "Workflow that has no config options"
+        def discover_task_metadata(
+                self,
+                initial_results: List[Any],
+                additional_data: Dict[str, Any],
+                **user_args) -> List[dict]:
+            return []
+
+    @pytest.fixture()
+    def model(self):
+        return WorkflowSettingsModel()
+
+    def test_starting_column_count(self, model):
+        assert model.columnCount() == 2
+
+    def test_column_count(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        assert model.columnCount() == 2
+
+    def test_column_count_no_items(self, model):
+        model.add_workflow(self.NoConfigWorkflow())
+        model.add_workflow(self.SpamWorkflow())
+        assert model.columnCount() == 2
+
+    def test_column_count_child(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        assert model.columnCount(model.index(0,0)) == 2
+
+    def test_starting_row_count(self, model):
+        assert model.rowCount() == 0
+
+    def test_row_count_after_adding(self, model, qtbot):
+        model.add_workflow(self.SpamWorkflow())
+        assert model.rowCount() == 1
+
+    def test_row_count_with_parent_after_adding(self, model):
+        model.add_workflow(self.BaconWorkflow())
+        model.add_workflow(self.SpamWorkflow())
+        index = model.index(0, 0)
+        assert model.rowCount(index) == 2
+
+    @pytest.mark.parametrize(
+        "row, expected_column_count",
+        [
+            (0, 2),
+            (1, 2),
+        ]
+    )
+    def test_column_count_with_parent_after_adding(self, model, row, expected_column_count):
+        model.add_workflow(self.BaconWorkflow())
+        model.add_workflow(self.SpamWorkflow())
+        parent = model.index(row, 0)
+        assert model.columnCount(parent) == expected_column_count
+
+    def test_column_count_with_parent(self, model):
+        model.add_workflow(self.BaconWorkflow())
+        model.add_workflow(self.SpamWorkflow())
+        parent = model.index(0,0)
+        index = model.index(0, 0, parent=parent)
+        assert model.columnCount(index) == 2
+
+    @pytest.mark.parametrize(
+        "row, column, expected_text",
+        [
+            (0, 0, "Bacon"),
+            (1, 0, "Spam"),
+            (2, 0, None),
+            (0, 1, None),
+            (1, 1, None),
+            (2, 1, None),
+        ]
+    )
+    def test_data_display_top_level(self, model, row, column, expected_text):
+        model.add_workflow(self.BaconWorkflow())
+        model.add_workflow(self.SpamWorkflow())
+        index = model.index(row, column)
+        assert model.data(index) == expected_text
+
+    @pytest.mark.parametrize(
+        [
+            "workflow_row",
+            "workflow_column",
+            "child_row",
+            "child_column",
+            "role",
+            "expected_text"
+        ],
+        [
+            (0, 0, 0, 0, QtCore.Qt.DisplayRole, "Bacon config 1"),
+            (0, 0, 0, 0, QtCore.Qt.EditRole, "Bacon config 1"),
+            (0, 0, 1, 0, QtCore.Qt.DisplayRole, "Bacon config 2"),
+            (0, 0, 1, 0, QtCore.Qt.EditRole, "Bacon config 2"),
+            (0, 0, 2, 0, QtCore.Qt.DisplayRole, None),
+
+            (1, 0, 0, 0, QtCore.Qt.DisplayRole, "Dummy config"),
+            (1, 0, 1, 0, QtCore.Qt.DisplayRole, None),
+            (1, 0, 1, 0, QtCore.Qt.DisplayRole, None),
+
+            (0, 1, 0, 0, QtCore.Qt.DisplayRole, None),
+            (0, 1, 0, 1, QtCore.Qt.DisplayRole, None),
+            (0, 1, 0, 2, QtCore.Qt.DisplayRole, None),
+            (0, 1, 1, 0, QtCore.Qt.DisplayRole, None),
+            (0, 1, 1, 1, QtCore.Qt.DisplayRole, None),
+            (0, 1, 1, 2, QtCore.Qt.DisplayRole, None),
+            (0, 2, 0, 0, QtCore.Qt.DisplayRole, None),
+            (0, 2, 0, 1, QtCore.Qt.DisplayRole, None),
+            (0, 2, 0, 2, QtCore.Qt.DisplayRole, None),
+            (0, 0, 0, 1, QtCore.Qt.DisplayRole, None),
+            (1, 0, 0, 1, QtCore.Qt.DisplayRole, None),
+            (2, 0, 0, 0, QtCore.Qt.DisplayRole, None),
+            (0, 1, 0, 0, QtCore.Qt.DisplayRole, None),
+            (1, 1, 0, 0, QtCore.Qt.DisplayRole, None),
+            (2, 1, 0, 0, QtCore.Qt.DisplayRole, None),
+        ]
+    )
+    def test_data_display_one_level_down(self, model, workflow_row, workflow_column, child_row, child_column, role, expected_text):
+        model.add_workflow(self.BaconWorkflow())
+        model.add_workflow(self.SpamWorkflow())
+        parent_index = model.index(workflow_row, workflow_column)
+        index = model.index(child_row, child_column, parent=parent_index)
+        model.data(index, role=role) ==  expected_text
+
+    def test_index_without_anything(self, model):
+        index = model.index(0, 0)
+        assert index.isValid() is False
+
+    @pytest.mark.parametrize("index_values, expected", [
+        ((0,0), True),
+        ((0,1), True),
+    ])
+    def test_index_workflow_level(self, model, index_values, expected):
+        model.add_workflow(self.SpamWorkflow())
+        index = model.index(*index_values)
+        assert index.isValid() is expected
+
+    @pytest.mark.parametrize("workflow_options_index_values, expected", [
+        ((0, 0), True),
+        ((1, 0), False),
+    ])
+    def test_index_options_level(self, model, workflow_options_index_values, expected):
+        model.add_workflow(self.SpamWorkflow())
+        parent_index = model.index(0, 0)
+        index = model.index(
+            *workflow_options_index_values, parent=parent_index
+        )
+        assert index.isValid() is expected, f"data for model = {model.data(index)}"
+
+    @pytest.mark.parametrize("column, expected_valid", [
+        (0, True),
+        (1, True),
+        (2, False)
+    ])
+    def test_second_level_index(self, model, column, expected_valid):
+        model.add_workflow(self.SpamWorkflow())
+        parent = model.index(0, 0)
+        index = model.index(0, column, parent=parent)
+        assert index.isValid() is expected_valid, f"data for model = {model.data(index)}"
+
+    def test_add_workflow(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        assert model.rowCount() == 1
+
+    def test_remove_workflow(self, model):
+        workflow = self.SpamWorkflow()
+        model.add_workflow(workflow)
+        assert model.rowCount() == 1
+        model.remove_workflow(workflow)
+        assert model.rowCount() == 0
+
+    @pytest.mark.parametrize(
+        "column,expected_value",
+        [
+            (0, "Spam"),
+            (1, None),
+            (2, None)
+        ]
+    )
+    def test_top_level_data(self, model, column, expected_value):
+        model.add_workflow(self.SpamWorkflow())
+        assert model.data(model.index(0, column)) == expected_value
+
+    @pytest.mark.parametrize(
+        "index_values, parent_index_values, expected_value",
+        [
+            ((0, 0), None, "Spam"),
+            ((0, 1), None, None),
+            ((0, 2), None, None),
+            ((0, 0), (0, 0), 'Dummy config'),
+        ]
+    )
+    def test_data(self, model, index_values, parent_index_values, expected_value):
+        model.add_workflow(self.SpamWorkflow())
+        parent_index = \
+            model.index(*parent_index_values) \
+                if parent_index_values is not None \
+            else QtCore.QModelIndex()
+        index = model.index(*index_values, parent=parent_index)
+        assert model.data(index) == expected_value
+
+    def test_second_level(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        workflow_index = model.index(0, 0)
+        workflow_metadata_data_index = model.index(0, 0, parent=workflow_index)
+        assert model.data(workflow_metadata_data_index) == "Dummy config"
+
+    def test_setting(self, model):
+        backend = Mock(get=lambda key: "foo" if key == "Dummy config" else None)
+        workflow = self.SpamWorkflow()
+        workflow.set_options_backend(backend)
+        model.add_workflow(workflow)
+        workflow_index = model.index(0, 0)
+        workflow_metadata_data_index = model.index(0, 1, parent=workflow_index)
+        assert model.data(workflow_metadata_data_index) == "foo"
+    def test_items_with_settings(self, model):
+        assert model.rowCount() == 0
+        model.add_workflow(self.SpamWorkflow())
+        assert model.rowCount() == 1
+        model.add_workflow(self.NoConfigWorkflow())
+        assert model.rowCount() == 2
+
+    @pytest.mark.parametrize(
+        "workflow, expected",
+        [
+            (SpamWorkflow(), True),
+            (NoConfigWorkflow(), False)
+        ]
+    )
+    def test_has_children(self, model, workflow, expected):
+        model.add_workflow(workflow)
+        assert model.hasChildren(model.index(0,0)) is expected
+        assert model.hasChildren(model.index(0,0)) is expected
+    def test_has_children_root(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        assert model.hasChildren() is True
+
+    def test_clear(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        assert model.rowCount() == 1
+        model.clear()
+        assert model.rowCount() == 0
+
+    @pytest.mark.parametrize(
+        "workflow, expected_display",
+        [
+            (SpamWorkflow(), "Spam"),
+            (NoConfigWorkflow(), "Workflow that has no config options"),
+            (BaconWorkflow(), "Bacon")
+        ]
+    )
+    def test_data_name(self, model, workflow, expected_display):
+        model.add_workflow(workflow)
+        assert model.data(model.index(0, 0)) == expected_display
+
+    def test_data_name_multiple_workflows(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        model.add_workflow(self.NoConfigWorkflow())
+        index = model.index(1, 0)
+        assert model.data(index) == "Workflow that has no config options"
+
+    @pytest.mark.parametrize(
+        "expected_flags, index, parent_index",
+        [
+            (Qt.ItemFlag.ItemIsEnabled, (0, 0), None),
+            (Qt.ItemFlag.ItemIsEnabled, (0, 1), None),
+            (
+                (
+                    Qt.ItemFlag.ItemIsEnabled and
+                    Qt.ItemFlag.ItemIsSelectable and
+                    Qt.ItemFlag.ItemIsEditable
+                ),
+                (0, 1), (0, 0)
+            ),
+            (
+                (
+                    Qt.ItemFlag.ItemIsEnabled and
+                    Qt.ItemFlag.ItemIsSelectable
+                ),
+                (0, 0), (0, 0)
+            )
+        ],
+    )
+    def test_flags(self, model, expected_flags, index, parent_index):
+        model.add_workflow(self.SpamWorkflow())
+        if parent_index is not None:
+            index = model.index(*index, parent=model.index(*parent_index))
+        else:
+            index = model.index(*index)
+        assert expected_flags in model.flags(index)
+
+    @pytest.mark.parametrize(
+        ["section", "orientation", "role", "expected"],
+        [
+            (0, Qt.Orientation.Horizontal, Qt.DisplayRole, 'Property'),
+            (0, Qt.Orientation.Vertical, Qt.DisplayRole, 1),
+            (1, Qt.Orientation.Horizontal, Qt.DisplayRole, 'Value'),
+            (1, Qt.Orientation.Vertical, Qt.DisplayRole, None)
+        ]
+    )
+    def test_header_data(self, model, section, orientation, role, expected):
+        model.add_workflow(self.SpamWorkflow())
+        assert model.headerData(section, orientation, role=role) == expected
+
+    def test_index(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        workflow_index = model.index(0, 0)
+        assert workflow_index.isValid()
+        option_index = model.index(0, 0, parent=workflow_index)
+        assert option_index.isValid()
+        is_parent_valid = option_index.parent().isValid()
+        assert is_parent_valid is True
+
+    def test_set_data_updates_settings(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        index = model.index(0, 1, parent=model.index(0, 0))
+        model.setData(index, "new edits")
+        assert model.data(index) == "new edits"
+
+    def test_set_data_calls_data_changed(self, model, qtbot):
+        model.add_workflow(self.SpamWorkflow())
+        index = model.index(0, 1, parent=model.index(0, 0))
+        with qtbot.wait_signal(model.dataChanged):
+            model.setData(index, "new edits")
+
+    @pytest.mark.parametrize(
+        'expected_valid, index, parent_index',
+        [
+            (True,  (0, 1), (0, 0)),
+            (False, (0, 0), (0, 0)),
+            (False, (0, 1), None),
+            (False, (1, 0), None),
+        ]
+    )
+    def test_set_data_valid_indexes(self, model, expected_valid, index, parent_index):
+        model.add_workflow(self.SpamWorkflow())
+        if parent_index is None:
+            index = model.index(*index)
+        else:
+            index = model.index(*index, parent=model.index(*parent_index))
+        assert model.setData(index, "new edits") is expected_valid
+
+    def test_workflows(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        assert len(model.workflows) == 1
+
+    def test_results(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        index = model.index(0, 1, parent=model.index(0, 0))
+        model.setData(index, "new edits")
+        assert model.results() == {
+            "Spam": {
+                'Dummy config': "new edits"
+            }
+        }
+
+    def test_not_modified_by_default(self, model):
+        assert model.modified() is False
+
+    def test_modified_is_true_if_added_workflow(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        assert model.modified() is True
+
+    def test_not_modified_by_after_reset(self, model):
+        model.add_workflow(self.SpamWorkflow())
+        model.reset_modified()
+        assert model.modified() is False
+
+
+class TestWorkflowSettingsMetadata:
+    @pytest.fixture()
+    def empty_model(self):
+        return models.settings.WorkflowSettingsMetadata()
+
+    def test_child(self, empty_model):
+        child = Mock(name="child_item")
+        model = empty_model
+        model.child_items.append(child)
+        assert model.child(0) == child
+
+    def test_invalid_child(self, empty_model):
+        assert empty_model.child(0) is None
+
+    def test_label(self, empty_model):
+        model = empty_model
+        model.option = workflow.BooleanSelect(label="Spam")
+        assert model.label == "Spam"
+
+    def test_label_is_none_on_when_no_options(self, empty_model):
+        model = empty_model
+        model.option = None
+        assert model.label is None
+
+    def test_insert_child_returns_false(self, empty_model):
+        assert empty_model.insert_children(0, 1, 0) is False
+
+    def test_remove_child_returns_false(self, empty_model):
+        assert empty_model.remove_children(0, 1) is False
+
+    def test_child_number_with_no_parent_is_zero(self, empty_model):
+        assert empty_model.child_number() == 0
+
+    def test_child_number(self):
+        parent_model = models.settings.WorkflowSettingsItemWorkflow()
+        other_item = models.settings.WorkflowSettingsMetadata(parent=parent_model)
+        model = models.settings.WorkflowSettingsMetadata(parent = parent_model)
+        parent_model.child_items.append(other_item)
+        parent_model.child_items.append(model)
+        assert model.child_number() == 1
+
+    def test_last_child(self, empty_model):
+        model = empty_model
+        child_item = Mock(name="child item")
+        model.child_items.append(child_item)
+        assert model.last_child() == child_item
+
+
+class TestWorkflowSettingsRoot:
+    @pytest.fixture()
+    def model(self):
+        return models.settings.WorkflowSettingsRoot()
+
+    def test_insert_children_invalid_index_returns_false(self, model):
+        assert model.insert_children(-1, 0, 0) is False
+
+    def test_data_column_none_data_role(self, model):
+        assert model.data_column(0, QtCore.Qt.ItemDataRole.FontRole) is None
+
+    def test_data_column_invalid_column(self, model):
+        assert model.data_column(-1) is None
+
+    def test_data_column(self, model):
+        assert model.data_column(0) == 'Property'
+
+    def test_flags(self, model):
+        assert \
+            model.flags(Mock(name='index')) == QtCore.Qt.ItemFlag.NoItemFlags
+
+    def test_data_invalid_index_is_none(self, model):
+        assert model.data(-1) is None
+
+    def test_parent(self, model):
+        parent = Mock(name="parent")
+        model.parent_item = parent
+        assert model.parent() == parent
+
+    def test_child_number_defaults_to_zero(self):
+        model = models.settings.WorkflowSettingsRoot()
+        assert model.child_number() == 0
+
+
+class TestWorkflowSettingsItemWorkflow:
+    @pytest.fixture()
+    def model(self):
+        return models.settings.WorkflowSettingsItemWorkflow()
+
+    def test_remove_children(self, model):
+        model.child_items.append(Mock())
+        model.remove_children(0,1)
+        assert len(model.child_items) == 0
+
+    def test_remove_children_when_empty_returns_false(self, model):
+        assert model.remove_children(0,1) is False
+

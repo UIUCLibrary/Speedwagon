@@ -87,7 +87,7 @@ def test_nix_get_app_data_directory(monkeypatch, tmpdir):
     speedwagon_config = speedwagon.config.NixConfig()
     user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
-        speedwagon.config.Path,
+        speedwagon.config.pathlib.Path,
         "home",
         lambda *args, **kwargs: pathlib.Path(user_path)
     )
@@ -101,7 +101,7 @@ def test_nix_get_user_data_directory(monkeypatch):
     speedwagon_config = speedwagon.config.NixConfig()
     user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
-        speedwagon.config.Path,
+        speedwagon.config.pathlib.Path,
         "home",
         lambda *args, **kwargs: pathlib.Path(user_path)
     )

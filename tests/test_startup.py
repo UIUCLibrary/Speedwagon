@@ -193,7 +193,7 @@ def test_run_command_valid(monkeypatch):
     command = Mock(return_value=good)
     monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
     monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
-    monkeypatch.setattr(speedwagon.config.Path, "home", lambda: "/home/dummy")
+    monkeypatch.setattr(speedwagon.config.pathlib.Path, "home", lambda: "/home/dummy")
     monkeypatch.setattr(speedwagon.startup, "get_global_options", lambda: {})
 
     monkeypatch.setattr(

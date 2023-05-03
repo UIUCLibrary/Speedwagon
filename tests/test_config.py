@@ -301,11 +301,12 @@ class TestCliArgsSetter:
 class TestCreateBasicMissingConfigFile:
     def test_ensure_config_file_calls_generate_default(self, monkeypatch):
         generate_default = Mock()
-        monkeypatch.setattr(
-            speedwagon.config,
+        monkeypatch.setattr(speedwagon.config.os.path, "exists", lambda path: False)
+        monkeypatch.setattr(speedwagon.config,
             "generate_default",
             generate_default
         )
+
         ensure_file = speedwagon.config.CreateBasicMissingConfigFile()
         ensure_file.ensure_config_file("dummy.ini")
         assert generate_default.called is True
@@ -448,7 +449,8 @@ Bacon:
     def test_get_response(self, monkeypatch):
 
         workflow = TestWorkflowSettingsYAMLResolver.BaconWorkflow()
-        resolver = speedwagon.config.WorkflowSettingsYAMLResolver("workflows.yml")
+        resolver = \
+            speedwagon.config.WorkflowSettingsYAMLResolver("workflows.yml")
 
         config_data = {
             "Bacon": [
@@ -463,6 +465,26 @@ Bacon:
         assert "Some input path" in response
 
 
+class TestSettingsYamlSerializer:
+    @pytest.fixture()
+    def serializer(self):
+        return speedwagon.config.SettingsYamlSerializer()
+
+    def test_structure_workflow_data(self, serializer):
+        assert serializer.structure_workflow_data(
+            {'Some input path': '/home/dummy/spam'}
+        ) == [
+            {'name': 'Some input path', 'value': '/home/dummy/spam'}
+        ]
+
+    def test_serialize_structure_to_yaml(self, serializer):
+        data = {
+            'Dummy': [{'name': 'Some input path', 'value': '/home/dummy/spam'}]
+        }
+        assert serializer.serialize_structure_to_yaml(data) == """Dummy:
+  - name: Some input path
+    value: /home/dummy/spam
+"""
 class TestWorkflowSettingsYamlExporter:
     class DummyWorkflow(speedwagon.Workflow):
         name = "Dummy"
