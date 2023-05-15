@@ -8,10 +8,11 @@ import typing
 
 from typing import Optional
 from PySide6 import QtCore
+
 if typing.TYPE_CHECKING:
     from logging import LogRecord
 
-__all__ = ['QtSignalLogHandler']
+__all__ = ["QtSignalLogHandler"]
 
 
 class AbsConsoleFormatter(abc.ABC):
@@ -49,11 +50,11 @@ class DefaultConsoleFormatStyle(AbsConsoleFormatter):
 
     def format_warning(self, text: str, record: LogRecord) -> str:
         """Format warning messages in yellow."""
-        return f"<div><font color=\"yellow\">{text}</font><br></div>"
+        return f'<div><font color="yellow">{text}</font><br></div>'
 
     def format_error(self, text: str, record: LogRecord) -> str:
         """Format error messages in red."""
-        return f"<div><font color=\"red\">{text}</font><br></div>"
+        return f'<div><font color="red">{text}</font><br></div>'
 
     def format_info(self, text: str, record: LogRecord) -> str:
         """No special formatting for info messages."""
@@ -69,9 +70,13 @@ class VerboseConsoleFormatStyle(AbsConsoleFormatter):
 
     @staticmethod
     def _basic_format(record: LogRecord) -> str:
-        return logging.Formatter(
-            '[%(levelname)s] (%(threadName)-10s) %(message)s'
-        ).format(record).replace("\n", "<br>")
+        return (
+            logging.Formatter(
+                "[%(levelname)s] (%(threadName)-10s) %(message)s"
+            )
+            .format(record)
+            .replace("\n", "<br>")
+        )
 
     def format_debug(self, text: str, record: LogRecord) -> str:
         """Italicize debug messages."""
@@ -79,15 +84,13 @@ class VerboseConsoleFormatStyle(AbsConsoleFormatter):
 
     def format_warning(self, text: str, record: LogRecord) -> str:
         """Format warning messages in yellow."""
-        return \
-            f"""<div>
+        return f"""<div>
             <font color=\"yellow\">{self._basic_format(record)}</font>
             </div>"""
 
     def format_error(self, text: str, record: LogRecord) -> str:
         """Format error messages in red."""
-        return \
-            f"""<div>
+        return f"""<div>
             <font color=\"red\">{self._basic_format(record)}</font>
             </div>"""
 
@@ -112,7 +115,6 @@ class ConsoleFormatter(logging.Formatter):
         formatters: typing.Dict[bool, typing.Type[AbsConsoleFormatter]] = {
             False: DefaultConsoleFormatStyle,
             True: VerboseConsoleFormatStyle,
-
         }
 
         formatter: AbsConsoleFormatter = formatters[self.verbose]()
@@ -143,6 +145,7 @@ class QtSignalLogHandler(BufferingHandler):
         """
 
         messageSent = QtCore.Signal(str)
+
     # This needs of be an inner class because Qt/PySide does not like mixing
     # Qt parent classes with Python ones.
 

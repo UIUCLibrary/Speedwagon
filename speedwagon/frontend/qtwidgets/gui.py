@@ -39,12 +39,11 @@ from speedwagon.job import Workflow
 from speedwagon.workflow import AbsOutputOptionDataType
 from speedwagon.config import StandardConfig, FullSettingsData
 
-__all__ = [
-    "MainWindow3"
-]
+__all__ = ["MainWindow3"]
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 
 Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
@@ -52,6 +51,7 @@ Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 class ToolConsole(QtWidgets.QWidget):
     """Logging console."""
+
     _console: QtWidgets.QTextBrowser
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
@@ -64,15 +64,14 @@ class ToolConsole(QtWidgets.QWidget):
         self.log_handler.setFormatter(self.log_formatter)
 
         with as_file(
-                resources.files(qtwidgets.ui).joinpath("console.ui")
+            resources.files(qtwidgets.ui).joinpath("console.ui")
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
         #
         # #  Use a monospaced font based on what's on system running
-        monospaced_font = \
-            QtGui.QFontDatabase.systemFont(
-                QtGui.QFontDatabase.SystemFont.FixedFont
-            )
+        monospaced_font = QtGui.QFontDatabase.systemFont(
+            QtGui.QFontDatabase.SystemFont.FixedFont
+        )
 
         self._log = QtGui.QTextDocument()
         self._log.setDefaultFont(monospaced_font)
@@ -91,10 +90,9 @@ class ToolConsole(QtWidgets.QWidget):
 
     @QtCore.Slot(str)
     def add_message(
-            self,
-            message: str,
+        self,
+        message: str,
     ) -> None:
-
         # self.cursor.movePosition(self.cursor.MoveOperation.End)
         self.cursor.beginEditBlock()
         # self._console.setTextCursor(self.cursor)
@@ -120,7 +118,7 @@ class ItemTabsUI(QtWidgets.QWidget):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         with as_file(
-                resources.files(qtwidgets.ui).joinpath("setup_job.ui")
+            resources.files(qtwidgets.ui).joinpath("setup_job.ui")
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
@@ -152,7 +150,7 @@ class ItemTabsWidget(ItemTabsUI):
             for workflow_row_id in range(self._model.rowCount(tab_index)):
                 workflow = self._model.data(
                     self._model.index(workflow_row_id, parent=tab_index),
-                    role=models.WorkflowClassRole
+                    role=models.WorkflowClassRole,
                 )
 
                 workflow_klasses[workflow.name] = workflow
@@ -179,8 +177,7 @@ class ItemTabsWidget(ItemTabsUI):
     @property
     def current_tab(self) -> Optional[qtwidgets.tabs.WorkflowsTab3]:
         return typing.cast(
-            Optional[qtwidgets.tabs.WorkflowsTab3],
-            self.tabs.currentWidget()
+            Optional[qtwidgets.tabs.WorkflowsTab3], self.tabs.currentWidget()
         )
 
 
@@ -202,7 +199,7 @@ class MainWindow3UI(QtWidgets.QMainWindow):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         with as_file(
-                resources.files(qtwidgets.ui).joinpath("main_window3.ui")
+            resources.files(qtwidgets.ui).joinpath("main_window3.ui")
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
@@ -218,8 +215,9 @@ class MainWindow3(MainWindow3UI):
             speedwagon.runner_strategies.BackgroundJobManager
         ] = None
 
-        self.config_strategy: speedwagon.config.AbsConfigSettings = \
+        self.config_strategy: speedwagon.config.AbsConfigSettings = (
             StandardConfig()
+        )
 
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -266,7 +264,7 @@ class MainWindow3(MainWindow3UI):
             self.export_job_config.emit(
                 self.tab_widget.current_tab.workspace.name,
                 self.tab_widget.current_tab.workspace.configuration,
-                self
+                self,
             )
 
     def locate_tab_index_by_name(self, name: str) -> typing.Optional[int]:
@@ -279,12 +277,7 @@ class MainWindow3(MainWindow3UI):
         self.tab_widget.clear_tabs()
 
     def add_tab(
-            self,
-            tab_name: str,
-            workflows: typing.Dict[
-                str,
-                typing.Type[Workflow]
-            ]
+        self, tab_name: str, workflows: typing.Dict[str, typing.Type[Workflow]]
     ) -> None:
         self.tab_widget.add_workflows_tab(tab_name, workflows.values())
 
@@ -298,8 +291,7 @@ class MainWindow3(MainWindow3UI):
             current_tab.set_current_workflow(workflow_name)
 
     def set_current_workflow_settings(
-            self,
-            data: typing.Dict[str, typing.Any]
+        self, data: typing.Dict[str, typing.Any]
     ) -> None:
         tab_index = self.locate_tab_index_by_name("All")
         if tab_index is None:
@@ -318,7 +310,7 @@ class MainWindow3(MainWindow3UI):
 
 def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
     with as_file(
-            resources.files("speedwagon").joinpath("favicon.ico")
+        resources.files("speedwagon").joinpath("favicon.ico")
     ) as favicon_file:
         app.setWindowIcon(QtGui.QIcon(str(favicon_file)))
     with contextlib.suppress(metadata.PackageNotFoundError):
@@ -328,9 +320,9 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
 
 
 def load_job_settings_model(
-        data: Dict[str, widgets.UserDataType],
-        settings_widget: widgets.DynamicForm,
-        workflow_options: List[AbsOutputOptionDataType]
+    data: Dict[str, widgets.UserDataType],
+    settings_widget: widgets.DynamicForm,
+    workflow_options: List[AbsOutputOptionDataType],
 ) -> None:
     model = option_models.ToolOptionsModel4(workflow_options)
     for key, value in data.items():
@@ -338,7 +330,7 @@ def load_job_settings_model(
             index = model.index(i)
             option_data = typing.cast(
                 AbsOutputOptionDataType,
-                model.data(index, option_models.ToolOptionsModel4.DataRole)
+                model.data(index, option_models.ToolOptionsModel4.DataRole),
             )
 
             if option_data.label == key:

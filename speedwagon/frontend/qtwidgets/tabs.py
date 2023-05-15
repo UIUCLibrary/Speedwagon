@@ -2,10 +2,7 @@
 from __future__ import annotations
 
 import typing
-from typing import \
-    Optional, \
-    Type, \
-    Dict
+from typing import Optional, Type, Dict
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
 
@@ -16,11 +13,13 @@ import speedwagon
 from speedwagon.config import StandardConfig, FullSettingsData
 from speedwagon.job import Workflow
 from speedwagon.frontend import qtwidgets
+
 if typing.TYPE_CHECKING:
-    from speedwagon.frontend.qtwidgets.widgets import \
-        Workspace, \
-        SelectWorkflow, \
-        UserDataType
+    from speedwagon.frontend.qtwidgets.widgets import (
+        Workspace,
+        SelectWorkflow,
+        UserDataType,
+    )
 
 
 try:  # pragma: no cover
@@ -31,7 +30,7 @@ except ImportError:  # pragma: no cover
     from importlib_resources import as_file
 
 
-__all__ = ['WorkflowsTab3']
+__all__ = ["WorkflowsTab3"]
 
 
 class WorkflowsTab3UI(QtWidgets.QWidget):
@@ -42,9 +41,9 @@ class WorkflowsTab3UI(QtWidgets.QWidget):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         with as_file(
-                resources.files(
-                    "speedwagon.frontend.qtwidgets.ui"
-                ).joinpath("create_job_tab.ui")
+            resources.files("speedwagon.frontend.qtwidgets.ui").joinpath(
+                "create_job_tab.ui"
+            )
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
@@ -80,11 +79,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
         self.workflow_selector.model = self._model
 
     def _handle_selector_changed(self, index: QtCore.QModelIndex) -> None:
-        workflow = \
-            self._model.data(
-                index,
-                WorkflowClassRole
-            )
+        workflow = self._model.data(index, WorkflowClassRole)
 
         self.workspace.set_workflow(workflow)
         self._handle_workflow_changed(workflow)
@@ -94,8 +89,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
         self.workflow_selector.set_current_by_name(workflow_name)
 
     def set_current_workflow_settings(
-            self,
-            data: Dict[str, UserDataType]
+        self, data: Dict[str, UserDataType]
     ) -> None:
         """Set settings for the current workflow."""
         workflow_klass = self.workflow_selector.get_current_workflow_type()
@@ -107,18 +101,16 @@ class WorkflowsTab3(WorkflowsTab3UI):
             self.workspace.app_settings_lookup_strategy.settings()
         )
         qtwidgets.gui.load_job_settings_model(
-            data,
-            self.workspace.settings_form,
-            workflow_inst.job_options()
+            data, self.workspace.settings_form, workflow_inst.job_options()
         )
 
     def _handle_workflow_changed(
-            self,
-            workflow_klass: typing.Type[Workflow]
+        self, workflow_klass: typing.Type[Workflow]
     ) -> None:
         self._workflow_selected = workflow_klass
-        self.workspace.app_settings_lookup_strategy = \
+        self.workspace.app_settings_lookup_strategy = (
             self.app_settings_lookup_strategy
+        )
         self.settings_changed.emit()
         self.workflow_selected.emit(workflow_klass)
 
@@ -146,8 +138,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
             config_error_dialog.exec_()
             return
         self.start_workflow.emit(
-            self.workspace.name,
-            self.workspace.configuration
+            self.workspace.name, self.workspace.configuration
         )
 
     @property
@@ -157,11 +148,9 @@ class WorkflowsTab3(WorkflowsTab3UI):
         for row_id in range(self._model.rowCount()):
             index = self._model.index(row_id, 0)
             workflow_name = self._model.data(index)
-            workflows[workflow_name] = \
-                self._model.data(
-                    index,
-                    role=WorkflowClassRole
-                )
+            workflows[workflow_name] = self._model.data(
+                index, role=WorkflowClassRole
+            )
         return workflows
 
     def add_workflow(self, workflow: Type[speedwagon.Workflow]) -> None:

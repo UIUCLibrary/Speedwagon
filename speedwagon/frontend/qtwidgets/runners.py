@@ -23,8 +23,14 @@ class AbsRunner(metaclass=abc.ABCMeta):
     """Abstract base class for running workflows."""
 
     @abc.abstractmethod
-    def run(self, parent: QtWidgets.QWidget, job: AbsWorkflow, options: dict,
-            logger: logging.Logger, completion_callback=None) -> None:
+    def run(
+        self,
+        parent: QtWidgets.QWidget,
+        job: AbsWorkflow,
+        options: dict,
+        logger: logging.Logger,
+        completion_callback=None,
+    ) -> None:
         """Run the workflow."""
 
 
@@ -44,22 +50,17 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         finished = QtCore.Signal(runner_strategies.JobSuccess)
 
         def __init__(
-                self,
-                parent: qtwidgets.dialog.dialogs.WorkflowProgress
+            self, parent: qtwidgets.dialog.dialogs.WorkflowProgress
         ) -> None:
             """Create a new workprogress callback object."""
             super().__init__(parent)
             self.dialog_box = parent
             self.status_changed.connect(self.set_banner_text)
-            self.progress_changed.connect(
-                self.dialog_box.set_current_progress
-            )
+            self.progress_changed.connect(self.dialog_box.set_current_progress)
             self.finished.connect(self._finished)
-            self.total_jobs_changed.connect(
-                self.dialog_box.set_total_jobs)
+            self.total_jobs_changed.connect(self.dialog_box.set_total_jobs)
             self.error.connect(self._error_message)
-            self.cancel_complete.connect(
-                self.dialog_box.cancel_completed)
+            self.cancel_complete.connect(self.dialog_box.cancel_completed)
 
             self.started.connect(self.dialog_box.show)
 
@@ -80,10 +81,10 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             self.status_changed.emit(text)
 
         def _error_message(
-                self,
-                message: Optional[str] = None,
-                exc: Optional[BaseException] = None,
-                traceback: Optional[str] = None
+            self,
+            message: Optional[str] = None,
+            exc: Optional[BaseException] = None,
+            traceback: Optional[str] = None,
         ) -> None:
             if message is not None:
                 self.dialog_box.write_to_console(message)
@@ -110,8 +111,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
                 self.dialog_box.reject()
 
         def finished_called(
-                self,
-                result: runner_strategies.JobSuccess
+            self, result: runner_strategies.JobSuccess
         ) -> None:
             """Signal that job is finished."""
             self.finished.emit(result)
@@ -122,8 +122,9 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             self.cancel_complete.emit()
             self.dialog_box.flush()
 
-        def update_progress(self, current: Optional[int],
-                            total: Optional[int]) -> None:
+        def update_progress(
+            self, current: Optional[int], total: Optional[int]
+        ) -> None:
             """Update the progress completed."""
             if total is not None:
                 self.total_jobs_changed.emit(total)
@@ -131,17 +132,16 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
                 self.progress_changed.emit(current)
 
         def submit_error(
-                self,
-                message: Optional[str] = None,
-                exc: Optional[BaseException] = None,
-                traceback_string: Optional[str] = None
+            self,
+            message: Optional[str] = None,
+            exc: Optional[BaseException] = None,
+            traceback_string: Optional[str] = None,
         ) -> None:
             """Submit an error or exception."""
             self.error.emit(message, exc, traceback_string)
 
     def __init__(
-            self,
-            dialog_box: qtwidgets.dialog.dialogs.WorkflowProgress
+        self, dialog_box: qtwidgets.dialog.dialogs.WorkflowProgress
     ) -> None:
         """Create a new callback for a dialog box."""
         super().__init__()
@@ -157,10 +157,10 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         self.signals.set_banner_text(text)
 
     def error(
-            self,
-            message: Optional[str] = None,
-            exc: Optional[BaseException] = None,
-            traceback_string: Optional[str] = None
+        self,
+        message: Optional[str] = None,
+        exc: Optional[BaseException] = None,
+        traceback_string: Optional[str] = None,
     ) -> None:
         """Signal an error message."""
         self.signals.submit_error(message, exc, traceback_string)
@@ -182,8 +182,9 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         """Process Qt events."""
         QtCore.QCoreApplication.processEvents()
 
-    def update_progress(self, current: Optional[int],
-                        total: Optional[int]) -> None:
+    def update_progress(
+        self, current: Optional[int], total: Optional[int]
+    ) -> None:
         """Update the progress."""
         self.signals.update_progress(current, total)
 

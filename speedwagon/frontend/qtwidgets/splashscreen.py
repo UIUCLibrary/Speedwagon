@@ -14,7 +14,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 def create_splash() -> QtWidgets.QSplashScreen:
     """Create a splash screen."""
     with as_file(
-            resources.files("speedwagon").joinpath("logo.png")
+        resources.files("speedwagon").joinpath("logo.png")
     ) as logo_file:
         logo = QtGui.QPixmap()
         logo.load(str(logo_file), format=None)
@@ -24,8 +24,8 @@ def create_splash() -> QtWidgets.QSplashScreen:
     splash.setWindowFlags(
         typing.cast(
             QtCore.Qt.WindowType,
-            QtCore.Qt.WindowType.WindowStaysOnTopHint |
-            QtCore.Qt.WindowType.FramelessWindowHint
+            QtCore.Qt.WindowType.WindowStaysOnTopHint
+            | QtCore.Qt.WindowType.FramelessWindowHint,
         )
     )
     return splash

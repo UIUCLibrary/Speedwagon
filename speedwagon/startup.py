@@ -16,8 +16,7 @@ import io
 import json
 import sys
 import typing
-from typing import Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, \
-    Optional
+from typing import Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional
 
 import speedwagon
 import speedwagon.config
@@ -39,7 +38,7 @@ __all__ = [
 ]
 
 CONFIG_INI_FILE_NAME: Final[str] = "config.ini"
-TABS_YML_FILE_NAME:  Final[str] = "tabs.yml"
+TABS_YML_FILE_NAME: Final[str] = "tabs.yml"
 
 
 def parse_args() -> argparse.ArgumentParser:
@@ -51,8 +50,7 @@ class CustomTabsFileReader:
     """Reads the tab file data."""
 
     def __init__(
-            self,
-            all_workflows: Dict[str, Type[speedwagon.job.Workflow]]
+        self, all_workflows: Dict[str, Type[speedwagon.job.Workflow]]
     ) -> None:
         """Load all workflows supported.
 
@@ -61,9 +59,9 @@ class CustomTabsFileReader:
         """
         self.all_workflows = all_workflows
 
-    def _get_tab_items(self,
-                       tab: List[str],
-                       tab_name: str) -> Dict[str, Type[job.Workflow]]:
+    def _get_tab_items(
+        self, tab: List[str], tab_name: str
+    ) -> Dict[str, Type[job.Workflow]]:
         new_tab_items = {}
         for item_name in tab:
             try:
@@ -74,8 +72,9 @@ class CustomTabsFileReader:
 
             except LookupError:
                 print(
-                    f"Unable to load '{item_name}' in "
-                    f"tab {tab_name}", file=sys.stderr)
+                    f"Unable to load '{item_name}' in tab {tab_name}",
+                    file=sys.stderr,
+                )
         return new_tab_items
 
     def _load_workflow(self, workflow_name: str):
@@ -88,8 +87,7 @@ class CustomTabsFileReader:
         return workflow
 
     def load_custom_tabs(
-            self,
-            strategy: speedwagon.config.AbsTabsConfigDataManagement
+        self, strategy: speedwagon.config.AbsTabsConfigDataManagement
     ) -> Iterator[Tuple[str, dict]]:
         """Get custom tabs data from config yaml.
 
@@ -111,7 +109,7 @@ class CustomTabsFileReader:
                             print(
                                 f"Unable to load workflow '{item_name}'. "
                                 f"Reason: {error}",
-                                file=sys.stderr
+                                file=sys.stderr,
                             )
                             continue
                         new_tab_items[item_name] = workflow
@@ -121,24 +119,21 @@ class CustomTabsFileReader:
                     print(
                         f"Custom tab {tab_entity.tab_name} failed to load. "
                         f"Reason: {error}",
-                        file=sys.stderr
+                        file=sys.stderr,
                     )
                     raise
         except TabLoadFailure as error:
             print(
-                f"Custom tabs failed to load. Reason: {error}",
-                file=sys.stderr
+                f"Custom tabs failed to load. Reason: {error}", file=sys.stderr
             )
         except AttributeError as error:
             print(
-                f"Custom tabs failed to load. Reason: {error}",
-                file=sys.stderr
+                f"Custom tabs failed to load. Reason: {error}", file=sys.stderr
             )
 
 
 def get_custom_tabs(
-        all_workflows: Dict[str, Type[speedwagon.job.Workflow]],
-        yaml_file: str
+    all_workflows: Dict[str, Type[speedwagon.job.Workflow]], yaml_file: str
 ) -> Iterator[Tuple[str, dict]]:
     """Load custom tab yaml file."""
     getter = CustomTabsFileReader(all_workflows)
@@ -147,10 +142,7 @@ def get_custom_tabs(
             strategy=speedwagon.config.CustomTabsYamlConfig(yaml_file)
         )
     except FileNotFoundError as error:
-        print(
-            f"Custom tabs file not found. Reason: {error}",
-            file=sys.stderr
-        )
+        print(f"Custom tabs file not found. Reason: {error}", file=sys.stderr)
 
 
 class ApplicationLauncher:
@@ -168,8 +160,9 @@ class ApplicationLauncher:
         """
         super().__init__()
         try:
-            from speedwagon.frontend.qtwidgets.gui_startup import \
-                StartQtThreaded
+            from speedwagon.frontend.qtwidgets.gui_startup import (
+                StartQtThreaded,
+            )
 
             self.strategy = strategy or StartQtThreaded()
         except ImportError:
@@ -183,8 +176,10 @@ class ApplicationLauncher:
         """Run Speedwagon."""
         if app:
             try:
-                from speedwagon.frontend.qtwidgets.gui_startup \
-                    import AbsGuiStarter
+                from speedwagon.frontend.qtwidgets.gui_startup import (
+                    AbsGuiStarter,
+                )
+
                 if isinstance(self.strategy, AbsGuiStarter):
                     return self.strategy.start_gui(app)
             except ImportError:
@@ -205,9 +200,10 @@ class SubCommand(abc.ABC):
 
 class RunCommand(SubCommand):
     def get_gui_strategy(
-            self
+        self,
     ) -> speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON:
         from speedwagon import frontend
+
         return frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
 
     def json_startup(self) -> None:
@@ -222,8 +218,9 @@ class RunCommand(SubCommand):
 
     @staticmethod
     def _run_strategy(startup_strategy):
-        app_launcher = \
-            speedwagon.startup.ApplicationLauncher(strategy=startup_strategy)
+        app_launcher = speedwagon.startup.ApplicationLauncher(
+            strategy=startup_strategy
+        )
 
         app = ApplicationLauncher()
         app.initialize()
@@ -242,19 +239,15 @@ def get_global_options():
     loader.resolution_strategy_order = [
         speedwagon.config.DefaultsSetter(),
         speedwagon.config.ConfigFileSetter(config_locator.get_config_file()),
-        speedwagon.config.CliArgsSetter()
+        speedwagon.config.CliArgsSetter(),
     ]
     return loader.get_settings().get("GLOBAL", {})
 
 
 def run_command(
-        command_name: str,
-        args: argparse.Namespace,
-        command=None
+    command_name: str, args: argparse.Namespace, command=None
 ) -> None:
-    commands = {
-        "run": RunCommand
-    }
+    commands = {"run": RunCommand}
     command = command or commands.get(command_name)
 
     if command is None:
@@ -266,7 +259,6 @@ def run_command(
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
-
     @abc.abstractmethod
     def run(self) -> int:
         pass
@@ -276,7 +268,6 @@ class AbsStarter(metaclass=abc.ABCMeta):
 
 
 class SingleWorkflowJSON(AbsStarter):
-
     def __init__(self) -> None:
         super().__init__()
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
@@ -299,8 +290,8 @@ class SingleWorkflowJSON(AbsStarter):
 
         """
         loaded_data = json.load(file_pointer)
-        self.options = loaded_data['Configuration']
-        self._set_workflow(loaded_data['Workflow'])
+        self.options = loaded_data["Configuration"]
+        self._set_workflow(loaded_data["Workflow"])
 
     def _set_workflow(self, workflow_name: str) -> None:
         available_workflows = speedwagon.job.available_workflows()
@@ -310,7 +301,6 @@ class SingleWorkflowJSON(AbsStarter):
 
 
 class CLIStarter(AbsStarter):
-
     def run(self) -> int:
         print("Try running --help for info on the commands")
         return 0
@@ -334,5 +324,5 @@ def main(argv: Optional[List[str]] = None) -> None:
     sys.exit(app.run())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

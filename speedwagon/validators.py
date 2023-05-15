@@ -68,9 +68,9 @@ class OptionValidatorFactory:
         """Create an option validator factory."""
         self._validators: Dict[str, AbsOptionValidator] = {}
 
-    def register_validator(self,
-                           key: str,
-                           validator: AbsOptionValidator) -> None:
+    def register_validator(
+        self, key: str, validator: AbsOptionValidator
+    ) -> None:
         """Register validator."""
         self._validators[key] = validator
 

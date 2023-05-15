@@ -9,8 +9,7 @@ from contextlib import contextmanager
 
 @contextmanager
 def log_config(
-        logger: logging.Logger,
-        callback: Callable[[str], None]
+    logger: logging.Logger, callback: Callable[[str], None]
 ) -> Iterator[None]:
     """Configure logs so they get forwarded to the speedwagon console.
 
@@ -36,8 +35,8 @@ class CallbackLogHandler(BufferingHandler):
     """Logger that runs a callback."""
 
     def __init__(
-            self,
-            callback: Callable[[str], None],
+        self,
+        callback: Callable[[str], None],
     ) -> None:
         """Create a log handler for callbacks."""
         super().__init__(capacity=5)

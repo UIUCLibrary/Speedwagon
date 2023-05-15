@@ -24,18 +24,16 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     DataRole = JsonDataRole + 1
 
     def __init__(
-            self,
-            data: Optional[List[AbsOutputOptionDataType]] = None,
-            parent: Optional[QtCore.QObject] = None
+        self,
+        data: Optional[List[AbsOutputOptionDataType]] = None,
+        parent: Optional[QtCore.QObject] = None,
     ) -> None:
         """Create a new ToolOptionsModel4 object."""
         super().__init__(parent)
         self._data = data or []
 
     def __setitem__(
-            self,
-            key: str,
-            value: Optional[Union[str, int, bool]]
+        self, key: str, value: Optional[Union[str, int, bool]]
     ) -> None:
         """Set the [key] operator.
 
@@ -52,44 +50,45 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
             raise KeyError(f"Key not found: {key}")
 
     def flags(
-            self,
-            index: Union[   # pylint: disable=unused-argument
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ]) -> QtCore.Qt.ItemFlag:
+        self,
+        index: Union[  # pylint: disable=unused-argument
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ],
+    ) -> QtCore.Qt.ItemFlag:
         """Get Qt Widget item flags used for an index."""
-        return QtCore.Qt.ItemFlag.ItemIsSelectable | \
-            QtCore.Qt.ItemFlag.ItemIsEnabled | \
-            QtCore.Qt.ItemFlag.ItemIsEditable
+        return (
+            QtCore.Qt.ItemFlag.ItemIsSelectable
+            | QtCore.Qt.ItemFlag.ItemIsEnabled
+            | QtCore.Qt.ItemFlag.ItemIsEditable
+        )
 
     def rowCount(  # pylint: disable=invalid-name
-            self,
-            parent: Optional[  # pylint: disable=unused-argument
-                Union[
-                    QtCore.QModelIndex,
-                    QtCore.QPersistentModelIndex
-                ]
-            ] = None
+        self,
+        parent: Optional[  # pylint: disable=unused-argument
+            Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        ] = None,
     ) -> int:
         """Get the amount of entries in the model."""
         return len(self._data)
 
     def headerData(  # pylint: disable=invalid-name
-            self,
-            section: int,
-            orientation: QtCore.Qt.Orientation,
-            role: int = cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
+        self,
+        section: int,
+        orientation: QtCore.Qt.Orientation,
+        role: int = cast(int, QtCore.Qt.ItemDataRole.DisplayRole),
     ) -> Any:
         """Get model header data."""
-        if orientation == QtCore.Qt.Orientation.Vertical and \
-                role == QtCore.Qt.ItemDataRole.DisplayRole:
+        if (
+            orientation == QtCore.Qt.Orientation.Vertical
+            and role == QtCore.Qt.ItemDataRole.DisplayRole
+        ):
             return self._data[section].label
         return None
 
     def data(
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
+        self,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+        role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole),
     ) -> Optional[Any]:
         """Get data from model."""
         if not index.isValid():
@@ -98,14 +97,14 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         formatter = ModelDataFormatter(self)
         return formatter.format(
             setting=self._data[index.row()],
-            role=typing.cast(QtCore.Qt.ItemDataRole, role)
+            role=typing.cast(QtCore.Qt.ItemDataRole, role),
         )
 
     def setData(  # pylint: disable=invalid-name
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            value: Optional[Any],
-            role: int = typing.cast(int, QtCore.Qt.ItemDataRole.EditRole)
+        self,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+        value: Optional[Any],
+        role: int = typing.cast(int, QtCore.Qt.ItemDataRole.EditRole),
     ) -> bool:
         """Set model data.
 
@@ -136,8 +135,7 @@ class ModelDataFormatter:
 
     @classmethod
     def _select_display_role(
-            cls,
-            item: AbsOutputOptionDataType
+        cls, item: AbsOutputOptionDataType
     ) -> Optional[SettingsDataType]:
         if cls._should_use_placeholder_text(item) is True:
             return item.placeholder_text
@@ -148,9 +146,7 @@ class ModelDataFormatter:
         return item.value
 
     @staticmethod
-    def _should_use_placeholder_text(
-            item: AbsOutputOptionDataType
-    ) -> bool:
+    def _should_use_placeholder_text(item: AbsOutputOptionDataType) -> bool:
         if item.value is not None:
             return False
         if item.placeholder_text is None:
@@ -158,8 +154,7 @@ class ModelDataFormatter:
         return True
 
     def font_role(
-            self,
-            setting: AbsOutputOptionDataType
+        self, setting: AbsOutputOptionDataType
     ) -> Optional[QtGui.QFont]:
         if self._should_use_placeholder_text(setting) is True:
             font = QtGui.QFont()
@@ -168,23 +163,19 @@ class ModelDataFormatter:
         return None
 
     def display_role(
-            self,
-            setting: AbsOutputOptionDataType
+        self, setting: AbsOutputOptionDataType
     ) -> Optional[SettingsDataType]:
         return self._select_display_role(setting)
 
     def format(
-            self,
-            setting: AbsOutputOptionDataType,
-            role: QtCore.Qt.ItemDataRole
+        self, setting: AbsOutputOptionDataType, role: QtCore.Qt.ItemDataRole
     ) -> Optional[Any]:
         formatter = {
             QtCore.Qt.ItemDataRole.DisplayRole: self.display_role,
             QtCore.Qt.ItemDataRole.EditRole: lambda setting_: setting_.value,
             QtCore.Qt.ItemDataRole.FontRole: self.font_role,
-            self._model.JsonDataRole:
-                lambda setting_: setting_.build_json_data(),
-            self._model.DataRole: lambda setting_: setting_
+            self._model.JsonDataRole: lambda conf: conf.build_json_data(),
+            self._model.DataRole: lambda setting_: setting_,
         }.get(role)
 
         if formatter is not None:

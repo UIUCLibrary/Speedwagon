@@ -17,10 +17,7 @@ class MakeChecksumTask(speedwagon.tasks.Subtask):
     name = "Create Checksum"
 
     def __init__(
-            self,
-            source_path: str,
-            filename: str,
-            checksum_report: str
+        self, source_path: str, filename: str, checksum_report: str
     ) -> None:
         """Create a make checksum task."""
         super().__init__()
@@ -43,9 +40,9 @@ class MakeChecksumTask(speedwagon.tasks.Subtask):
         result = {
             ResultsValues.SOURCE_FILE: item_file_name,
             ResultsValues.SOURCE_HASH: checksum.calculate_md5_hash(
-                file_to_calculate),
-            ResultsValues.CHECKSUM_FILE: report_path_to_save_to
-
+                file_to_calculate
+            ),
+            ResultsValues.CHECKSUM_FILE: report_path_to_save_to,
         }
         self.set_results(result)
 
@@ -61,11 +58,11 @@ class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
     name = "Checksum Report Creation"
 
     def __init__(
-            self,
-            output_filename: str,
-            checksum_calculations: typing.Iterable[
-                typing.Mapping[ResultsValues, str]
-            ]
+        self,
+        output_filename: str,
+        checksum_calculations: typing.Iterable[
+            typing.Mapping[ResultsValues, str]
+        ],
     ) -> None:
         """Create a checksum report task."""
         super().__init__()
@@ -104,11 +101,7 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
         FILENAME = "filename"
         REPORT = "report"
 
-    def __init__(
-            self,
-            filename: str,
-            profile_name: str
-    ) -> None:
+    def __init__(self, filename: str, profile_name: str) -> None:
         """Create an image validation subtask.
 
         Args:
@@ -119,7 +112,7 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
         self._filename = filename
         self._profile = typing.cast(
             imagevalidate.profiles.AbsProfile,
-            imagevalidate.get_profile(profile_name)
+            imagevalidate.get_profile(profile_name),
         )
 
     def task_description(self) -> Optional[str]:
@@ -144,7 +137,7 @@ class ValidateImageMetadataTask(speedwagon.tasks.Subtask):
         result = {
             ValidateImageMetadataTask.ResultValues.FILENAME: self._filename,
             ValidateImageMetadataTask.ResultValues.VALID: is_valid,
-            ValidateImageMetadataTask.ResultValues.REPORT: f"* {report_text}"
+            ValidateImageMetadataTask.ResultValues.REPORT: f"* {report_text}",
         }
 
         self.set_results(result)

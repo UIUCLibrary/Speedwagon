@@ -5,6 +5,7 @@ import abc
 import typing
 from types import TracebackType
 from typing import Optional, Type
+
 if typing.TYPE_CHECKING:
     from speedwagon.runner_strategies import TaskDispatcher, TaskScheduler
 
@@ -72,8 +73,11 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
         """Open."""
         return self
 
-    def __exit__(self, __exc_type: Optional[Type[BaseException]],
-                 __exc_value: Optional[BaseException],
-                 __traceback: Optional[TracebackType]) -> Optional[bool]:
+    def __exit__(
+        self,
+        __exc_type: Optional[Type[BaseException]],
+        __exc_value: Optional[BaseException],
+        __traceback: Optional[TracebackType],
+    ) -> Optional[bool]:
         """Clean up."""
         return None

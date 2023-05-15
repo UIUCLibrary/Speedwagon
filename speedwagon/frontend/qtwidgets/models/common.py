@@ -39,11 +39,11 @@ class WorkflowItem(QtGui.QStandardItem):
         return None if self.workflow is None else self.workflow.name
 
 
-class AbsWorkflowItemData(abc.ABC):   # pylint: disable=too-few-public-methods
+class AbsWorkflowItemData(abc.ABC):  # pylint: disable=too-few-public-methods
     def data(
-            self,
-            workflow: Type[speedwagon.Workflow],
-            role: Union[int, QtCore.Qt.ItemDataRole]
+        self,
+        workflow: Type[speedwagon.Workflow],
+        role: Union[int, QtCore.Qt.ItemDataRole],
     ) -> Any:
         """Get the data from workflow."""
 
@@ -51,13 +51,13 @@ class AbsWorkflowItemData(abc.ABC):   # pylint: disable=too-few-public-methods
 WorkflowClassRole = cast(int, QtCore.Qt.ItemDataRole.UserRole) + 1
 
 
-class WorkflowItemData(   # pylint: disable=too-few-public-methods
+class WorkflowItemData(  # pylint: disable=too-few-public-methods
     AbsWorkflowItemData
 ):
     def data(
-            self,
-            workflow: Type[speedwagon.Workflow],
-            role: Union[int, QtCore.Qt.ItemDataRole]
+        self,
+        workflow: Type[speedwagon.Workflow],
+        role: Union[int, QtCore.Qt.ItemDataRole],
     ) -> Any:
         if role == QtCore.Qt.ItemDataRole.DisplayRole:
             return workflow.name

@@ -9,23 +9,22 @@ from uiucprescon.packager.packages import collection
 import speedwagon
 import speedwagon.exceptions
 from speedwagon.frontend import interaction
-from speedwagon.frontend.interaction import \
-    AbstractConfirmFilesystemItemRemoval
+from speedwagon.frontend.interaction import (
+    AbstractConfirmFilesystemItemRemoval,
+)
 
 
 class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
     """Commandline interface for selecting package title pages."""
 
     def get_user_response(
-            self,
-            options: dict,
-            pretask_results: list
+        self, options: dict, pretask_results: list
     ) -> Dict[str, Any]:
         """Get user response of which is the title page for a package."""
         packages = []
         for package in self.get_packages(
-                options['input'],
-                self.image_str_to_enum(options['Image File Type'])
+            options["input"],
+            self.image_str_to_enum(options["Image File Type"]),
         ):
             files: List[str] = self.get_package_files(package)
             files.sort()
@@ -34,20 +33,16 @@ class CLIPackageBrowserWidget(interaction.AbstractPackageBrowser):
             print(f"\nSelect title page for {object_id}")
             title_page = self.ask_user_to_select_title_page(files)
             print(f'Using "{title_page}" as the title page')
-            package.component_metadata[collection.Metadata.TITLE_PAGE] = \
-                title_page
+            package.component_metadata[
+                collection.Metadata.TITLE_PAGE
+            ] = title_page
             packages.append(package)
 
-        return {
-            "packages": packages
-        }
+        return {"packages": packages}
 
     @staticmethod
     def ask_user_to_select_title_page(
-            files: List[str],
-            strategy: Optional[
-                Callable[[], int]
-            ] = None
+        files: List[str], strategy: Optional[Callable[[], int]] = None
     ) -> str:
         """Request user input on which file represents the title page."""
         while True:
@@ -93,9 +88,7 @@ class CLIConfirmFilesystemItemRemoval(
         YES_ALL = 2
 
     def get_user_response(
-            self,
-            options: dict,
-            pretask_results: list
+        self, options: dict, pretask_results: list
     ) -> Dict[str, Any]:
         """Request user input for deletion."""
         data: List[str] = pretask_results[0].data
@@ -109,16 +102,14 @@ class CLIConfirmFilesystemItemRemoval(
         else:
             print(CLIConfirmFilesystemItemRemoval.NO_FILES_LOCATED_MESSAGE)
             items_to_remove = []
-        return {
-            "items": items_to_remove
-        }
+        return {"items": items_to_remove}
 
     @staticmethod
     def user_resolve_items(
-            items: List[str],
-            confirm_strategy: Optional[
-                Callable[[str], 'CLIConfirmFilesystemItemRemoval.Confirm']
-            ] = None
+        items: List[str],
+        confirm_strategy: Optional[
+            Callable[[str], "CLIConfirmFilesystemItemRemoval.Confirm"]
+        ] = None,
     ) -> List[str]:
         """Go through a list of file names and confirm each file or folder.
 
@@ -158,10 +149,7 @@ class CLIConfirmFilesystemItemRemoval(
 
 
 def user_confirm_removal_stdin(
-        item: str,
-        stdin_request_strategy: Optional[
-            Callable[[], str]
-        ] = None
+    item: str, stdin_request_strategy: Optional[Callable[[], str]] = None
 ) -> CLIConfirmFilesystemItemRemoval.Confirm:
     """Confirm with stdin."""
     while True:

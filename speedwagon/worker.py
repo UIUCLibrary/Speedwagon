@@ -21,9 +21,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.tasks.tasks import AbsSubtask
     from speedwagon.config import AbsConfig
 
-__all__ = [
-    "SubtaskJobAdapter"
-]
+__all__ = ["SubtaskJobAdapter"]
 
 MessageLog = namedtuple("MessageLog", ("message",))
 
@@ -75,12 +73,12 @@ class AbsJobWorker:
 
 
 class ProcessJobWorker(AbsJobWorker):
-    _mq: 'Optional[queue.Queue[str]]' = None
+    _mq: "Optional[queue.Queue[str]]" = None
 
     def process(self, *args, **kwargs) -> None:
         """Process job."""
 
-    def set_message_queue(self, value: 'queue.Queue[str]') -> None:
+    def set_message_queue(self, value: "queue.Queue[str]") -> None:
         """Set message queue."""
         self._mq = value
 
@@ -154,9 +152,9 @@ class AbsSubject(metaclass=abc.ABCMeta):
 
 class AbsJobManager(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def add_job(self,
-                new_job: ProcessJobWorker,
-                settings: Dict[str, Any]) -> None:
+    def add_job(
+        self, new_job: ProcessJobWorker, settings: Dict[str, Any]
+    ) -> None:
         """Add job to pending queue."""
 
     @abc.abstractmethod
@@ -181,10 +179,9 @@ class JobExecutor:
         self.futures: typing.List[concurrent.futures.Future] = []
         self.active = False
 
-    def add_job(self,
-                new_job: ProcessJobWorker,
-                settings: Dict[str, Any]) -> None:
-
+    def add_job(
+        self, new_job: ProcessJobWorker, settings: Dict[str, Any]
+    ) -> None:
         self._pending_jobs.put(JobPair(new_job, settings))
 
     def start(self) -> None:
@@ -255,8 +252,7 @@ class AbsJobAdapter(metaclass=abc.ABCMeta):
         pass
 
 
-class SubtaskJobAdapter(AbsJobAdapter,
-                        ProcessJobWorker):
+class SubtaskJobAdapter(AbsJobAdapter, ProcessJobWorker):
     """Adapter class for jobs."""
 
     def __init__(self, adaptee: AbsSubtask) -> None:
@@ -276,7 +272,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
         self.adaptee.exec()
         self.result = self.adaptee.task_result
 
-    def set_message_queue(self, value: 'queue.Queue[str]') -> None:
+    def set_message_queue(self, value: "queue.Queue[str]") -> None:
         """Set message queue."""
         self.adaptee.parent_task_log_q.set_message_queue(value)
 
@@ -285,8 +281,11 @@ class SubtaskJobAdapter(AbsJobAdapter,
         """Get the settings for the subtask."""
         if self.adaptee.settings:
             return self.adaptee.settings
-        return {key: value for key, value in self.adaptee.__dict__.items()
-                if key != "parent_task_log_q"}
+        return {
+            key: value
+            for key, value in self.adaptee.__dict__.items()
+            if key != "parent_task_log_q"
+        }
 
     @property
     def name(self) -> str:  # type: ignore
@@ -295,9 +294,7 @@ class SubtaskJobAdapter(AbsJobAdapter,
 
 
 class AbsToolJobManager(
-    contextlib.AbstractContextManager,
-    AbsJobManager,
-    abc.ABC
+    contextlib.AbstractContextManager, AbsJobManager, abc.ABC
 ):
     """Tool job manager."""
 
@@ -332,10 +329,12 @@ class AbsToolJobManager(
 
         return self
 
-    def __exit__(self,
-                 exc_type: Optional[typing.Type[BaseException]],
-                 exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[typing.Type[BaseException]],
+        exc_value: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         """Clean up manager and show down the executor."""
         self._job_runtime.cleanup(self.logger)
         self._job_runtime.shutdown()
@@ -344,9 +343,11 @@ class AbsToolJobManager(
         """Open a runner with the a given job arguments."""
         return runner(*args, **kwargs, parent=parent)
 
-    def add_job(self,
-                new_job: speedwagon.worker.ProcessJobWorker,
-                settings: Dict[str, Any]) -> None:
+    def add_job(
+        self,
+        new_job: speedwagon.worker.ProcessJobWorker,
+        settings: Dict[str, Any],
+    ) -> None:
         """Add job to the run queue."""
         self._job_runtime.add_job(new_job, settings)
 
@@ -360,10 +361,8 @@ class AbsToolJobManager(
 
     @abc.abstractmethod
     def get_results(
-            self,
-            timeout_callback: Optional[
-                typing.Callable[[int, int], None]
-            ] = None
+        self,
+        timeout_callback: Optional[typing.Callable[[int, int], None]] = None,
     ) -> typing.Generator[typing.Any, None, None]:
         """Process jobs and return results."""
 
@@ -388,11 +387,10 @@ class JobProcessor:
 
     def _process_all_futures(self, futures):
         for completed_futures in concurrent.futures.as_completed(
-                self._parent.futures,
-                timeout=0.01):
+            self._parent.futures, timeout=0.01
+        ):
             self._parent.flush_message_buffer()
-            if not completed_futures.cancel() and \
-                    completed_futures.done():
+            if not completed_futures.cancel() and completed_futures.done():
                 self.completed += 1
                 if completed_futures in self._parent.futures:
                     self._parent.futures.remove(completed_futures)
@@ -434,22 +432,18 @@ class JobProcessor:
     def report_results_from_future(futures):
         """Get the results from the futures."""
         for i, (future, reported) in enumerate(futures):
-
             if not reported and future.done():
                 yield future.result()
                 futures[i] = future, True
 
 
 class ToolJobManager(AbsToolJobManager):
-
     def abort(self) -> None:
         pass
 
     def get_results(
-            self,
-            timeout_callback: Optional[
-                typing.Callable[[int, int], None]
-            ] = None
+        self,
+        timeout_callback: Optional[typing.Callable[[int, int], None]] = None,
     ) -> typing.Generator[typing.Any, None, None]:
         processor = JobProcessor(self)
         processor.timeout_callback = timeout_callback

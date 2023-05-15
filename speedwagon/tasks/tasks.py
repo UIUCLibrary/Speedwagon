@@ -44,7 +44,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
         """Log a message to the console on the main window."""
 
     @property
-    def task_result(self) -> Optional['Result']:
+    def task_result(self) -> Optional["Result"]:
         """Get the results of the subtask."""
         return None
 
@@ -182,8 +182,9 @@ class Subtask(AbsSubtask):
         """Execute subtask."""
         self.status = TaskStatus.WORKING
 
-        self.status = \
+        self.status = (
             TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
+        )
 
 
 class PreTask(AbsSubtask):
@@ -210,8 +211,9 @@ class PreTask(AbsSubtask):
         self._parent_task_log_q = value
 
     def exec(self) -> None:
-        self._status = \
+        self._status = (
             TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
+        )
 
     def log(self, message: str) -> None:
         if self._parent_task_log_q is not None:
@@ -232,7 +234,6 @@ class PreTask(AbsSubtask):
 
 
 class AbsTask(metaclass=abc.ABCMeta):
-
     @abc.abstractmethod
     def on_completion(self, *args, **kwargs) -> None:
         """Call when task is finished."""
@@ -248,7 +249,6 @@ class AbsTask(metaclass=abc.ABCMeta):
 
 
 class AbsTaskComponents(metaclass=abc.ABCMeta):
-
     @property  # type: ignore
     @abc.abstractmethod
     def pretask(self) -> Optional[AbsSubtask]:
@@ -378,15 +378,17 @@ class MultiStageTask(Task):
     @property
     def progress(self) -> float:
         amount_completed = len(
-            [task for task in self.main_subtasks
-             if task.status > TaskStatus.WORKING])
+            [
+                task
+                for task in self.main_subtasks
+                if task.status > TaskStatus.WORKING
+            ]
+        )
         return amount_completed / len(self.main_subtasks)
 
     def exec(self, *args, **kwargs) -> None:
-
         subtask_results = []
         try:
-
             if self.pretask:
                 self.pretask.exec()
                 if self.pretask.results:
@@ -505,12 +507,13 @@ class TaskBuilder:
         task_id = str(self.task_id).zfill(3)
         subtask_id = str(self._subtask_counter).zfill(3)
 
-        task_working_dir = self._build_task_working_path(self._working_dir,
-                                                         task_id)
+        task_working_dir = self._build_task_working_path(
+            self._working_dir, task_id
+        )
 
-        subtask_working_dir = self._build_working_path2(task_working_dir,
-                                                        task_type,
-                                                        subtask_id)
+        subtask_working_dir = self._build_working_path2(
+            task_working_dir, task_type, subtask_id
+        )
 
         subtask.subtask_working_dir = subtask_working_dir
         subtask.task_working_dir = task_working_dir
@@ -518,14 +521,9 @@ class TaskBuilder:
 
     @staticmethod
     def _build_working_path2(
-            task_working_path: str,
-            task_type: str,
-            subtask_id: str
+        task_working_path: str, task_type: str, subtask_id: str
     ) -> str:
-
-        return os.path.join(task_working_path,
-                            task_type,
-                            str(subtask_id))
+        return os.path.join(task_working_path, task_type, str(subtask_id))
 
     @staticmethod
     def _build_task_working_path(temp_path: str, task_id: str) -> str:
@@ -543,12 +541,13 @@ class TaskBuilder:
         task_id = str(self.task_id).zfill(3)
         subtask_id = str(self._subtask_counter).zfill(3)
 
-        task_working_dir = self._build_task_working_path(self._working_dir,
-                                                         task_id)
+        task_working_dir = self._build_task_working_path(
+            self._working_dir, task_id
+        )
 
-        subtask_working_dir = self._build_working_path2(task_working_dir,
-                                                        task_type,
-                                                        subtask_id)
+        subtask_working_dir = self._build_working_path2(
+            task_working_dir, task_type, subtask_id
+        )
 
         subtask.subtask_working_dir = subtask_working_dir
         subtask.task_working_dir = task_working_dir
@@ -566,12 +565,13 @@ class TaskBuilder:
         task_id = str(self.task_id).zfill(3)
         subtask_id = str(self._subtask_counter).zfill(3)
 
-        task_working_dir = self._build_task_working_path(self._working_dir,
-                                                         task_id)
+        task_working_dir = self._build_task_working_path(
+            self._working_dir, task_id
+        )
 
-        subtask_working_dir = self._build_working_path2(task_working_dir,
-                                                        task_type,
-                                                        subtask_id)
+        subtask_working_dir = self._build_working_path2(
+            task_working_dir, task_type, subtask_id
+        )
 
         subtask.subtask_working_dir = subtask_working_dir
         subtask.task_working_dir = task_working_dir
@@ -592,14 +592,14 @@ class TaskBuilder:
 
     @staticmethod
     def _serialize_task(
-            task_obj: AbsTaskBuilder
+        task_obj: AbsTaskBuilder,
     ) -> typing.Tuple[typing.Type, typing.Dict[str, Any]]:
         return task_obj.__class__, task_obj.__dict__
 
     @staticmethod
     def _deserialize_task(
-            task_cls: typing.Type[AbsTaskBuilder],
-            attributes: typing.Dict[str, Any]
+        task_cls: typing.Type[AbsTaskBuilder],
+        attributes: typing.Dict[str, Any],
     ) -> AbsTaskBuilder:
         obj = task_cls.__new__(task_cls)
         obj.__dict__.update(attributes)
