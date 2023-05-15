@@ -5,14 +5,7 @@ import json
 import os.path
 import typing
 from collections import defaultdict
-from typing import \
-    Union, \
-    Optional, \
-    Dict, \
-    Any, \
-    TypedDict, \
-    List, \
-    Iterable
+from typing import Union, Optional, Dict, Any, TypedDict, List, Iterable
 
 
 try:  # pragma: no cover
@@ -39,7 +32,7 @@ except ImportError:  # pragma: no cover
     from importlib_resources import as_file
 
 
-__all__ = ['Workspace']
+__all__ = ["Workspace"]
 
 
 class WidgetMetadata(TypedDict):
@@ -63,9 +56,9 @@ class EditDelegateWidget(QtWidgets.QWidget):
     dataChanged = QtCore.Signal()
 
     def __init__(
-            self,
-            widget_metadata: WidgetMetadata,
-            parent: Optional[QtWidgets.QWidget] = None
+        self,
+        widget_metadata: WidgetMetadata,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(parent=parent)
         self._data: Optional[Any] = None
@@ -86,11 +79,10 @@ class EditDelegateWidget(QtWidgets.QWidget):
 
 
 class LineEditWidget(EditDelegateWidget):
-
     def __init__(
-            self,
-            widget_metadata: WidgetMetadata,
-            parent: Optional[QtWidgets.QWidget] = None,
+        self,
+        widget_metadata: WidgetMetadata,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.text_box = QtWidgets.QLineEdit(self)
@@ -120,17 +112,16 @@ class LineEditWidget(EditDelegateWidget):
 
 
 class CheckBoxWidget(EditDelegateWidget):
-
     def __init__(
-            self,
-            widget_metadata: WidgetMetadata,
-            parent: Optional[QtWidgets.QWidget] = None,
+        self,
+        widget_metadata: WidgetMetadata,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.check_box = QtWidgets.QCheckBox(self)
         self.setFocusProxy(self.check_box)
         if widget_metadata:
-            self.check_box.setText(widget_metadata['label'])
+            self.check_box.setText(widget_metadata["label"])
         self._make_connections()
         layout = self.layout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -160,9 +151,9 @@ class CheckBoxWidget(EditDelegateWidget):
 
 class ComboWidget(EditDelegateWidget):
     def __init__(
-            self,
-            widget_metadata: WidgetMetadata,
-            parent: Optional[QtWidgets.QWidget] = None,
+        self,
+        widget_metadata: WidgetMetadata,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.combo_box = QtWidgets.QComboBox(self)
@@ -171,7 +162,7 @@ class ComboWidget(EditDelegateWidget):
         if place_holder_text is not None:
             self.combo_box.setPlaceholderText(place_holder_text)
 
-        model = QtCore.QStringListModel(widget_metadata.get('selections', []))
+        model = QtCore.QStringListModel(widget_metadata.get("selections", []))
         self.combo_box.setModel(model)
         self.combo_box.setCurrentIndex(-1)
 
@@ -201,8 +192,7 @@ class ComboWidget(EditDelegateWidget):
 
     @staticmethod
     def _update_combo_box_selected(
-            expected_value: Optional[str],
-            combo_box: QtWidgets.QComboBox
+        expected_value: Optional[str], combo_box: QtWidgets.QComboBox
     ) -> None:
         model = combo_box.model()
         for i in range(model.rowCount()):
@@ -221,11 +211,10 @@ class ComboWidget(EditDelegateWidget):
 
 
 class FileSystemItemSelectWidget(EditDelegateWidget):
-
     def __init__(
-            self,
-            widget_metadata: WidgetMetadata,
-            parent: Optional[QtWidgets.QWidget] = None,
+        self,
+        widget_metadata: WidgetMetadata,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.edit = QtWidgets.QLineEdit(self)
@@ -233,7 +222,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
 
         self.edit.addAction(
             self.get_browse_action(),
-            QtWidgets.QLineEdit.ActionPosition.TrailingPosition
+            QtWidgets.QLineEdit.ActionPosition.TrailingPosition,
         )
         self.setFocusProxy(self.edit)
         self.edit.installEventFilter(self)
@@ -263,9 +252,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         self.edit.setText(value)
 
     def eventFilter(
-            self,
-            watched: QtCore.QObject,
-            event: QtCore.QEvent
+        self, watched: QtCore.QObject, event: QtCore.QEvent
     ) -> bool:
         if event.type() == event.Type.DragEnter:
             event = typing.cast(QtGui.QDragEnterEvent, event)
@@ -306,25 +293,23 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
 
     def get_browse_action(self) -> QtGui.QAction:
         icon = QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton)
-        browse_dir_action = QtGui.QAction(
-            icon, "Browse", parent=self
+            QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton
         )
+        browse_dir_action = QtGui.QAction(icon, "Browse", parent=self)
         # pylint: disable=no-member
         browse_dir_action.triggered.connect(self.browse_dir)  # type: ignore
         return browse_dir_action
 
     def browse_dir(
-            self,
-            get_file_callback: Optional[
-                typing.Callable[[], Optional[str]]
-            ] = None
+        self,
+        get_file_callback: Optional[typing.Callable[[], Optional[str]]] = None,
     ) -> None:
         def default_use_qt_dialog() -> Optional[str]:
             return QtWidgets.QFileDialog.getExistingDirectory(parent=self)
 
-        selection: Optional[str] = \
-            (get_file_callback or default_use_qt_dialog)()
+        selection: Optional[str] = (
+            get_file_callback or default_use_qt_dialog
+        )()
 
         if selection:
             data = selection
@@ -344,35 +329,31 @@ class FileSelectWidget(FileSystemItemSelectWidget):
 
     def get_browse_action(self) -> QtGui.QAction:
         icon = QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton)
-        browse_file_action = QtGui.QAction(
-            icon, "Browse", parent=self
+            QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton
         )
+        browse_file_action = QtGui.QAction(icon, "Browse", parent=self)
         # pylint: disable=no-member
         browse_file_action.triggered.connect(self.browse_file)  # type: ignore
         return browse_file_action
 
     def __init__(
-            self,
-            widget_metadata: WidgetMetadata,
-            parent: Optional[QtWidgets.QWidget] = None,
+        self,
+        widget_metadata: WidgetMetadata,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(widget_metadata=widget_metadata, parent=parent)
-        self.filter = widget_metadata.get('filter')
+        self.filter = widget_metadata.get("filter")
 
     def browse_file(
-            self,
-            get_file_callback: Optional[
-                typing.Callable[[], Optional[str]]
-            ] = None
+        self,
+        get_file_callback: Optional[typing.Callable[[], Optional[str]]] = None,
     ) -> None:
         def use_qt_file_dialog() -> Optional[str]:
             if self.filter is None:
                 result = QtWidgets.QFileDialog.getOpenFileName(parent=self)
             else:
                 result = QtWidgets.QFileDialog.getOpenFileName(
-                    parent=self,
-                    filter=self.filter
+                    parent=self, filter=self.filter
                 )
             return result[0] if result else None
 
@@ -387,8 +368,8 @@ class InnerForm(QtWidgets.QWidget):
     modelChanged = QtCore.Signal()
 
     def __init__(
-            self,
-            parent: Optional[QtWidgets.QWidget] = None,
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(parent)
         layout = QtWidgets.QFormLayout(self)
@@ -402,9 +383,7 @@ class InnerForm(QtWidgets.QWidget):
         self.widgets: Dict[str, EditDelegateWidget] = {}
 
     def create_editor(
-            self,
-            widget_name: str,
-            data: WidgetMetadata
+        self, widget_name: str, data: WidgetMetadata
     ) -> EditDelegateWidget:
         widget_types: typing.Dict[str, typing.Type[EditDelegateWidget]] = {
             "FileSelect": FileSelectWidget,
@@ -413,10 +392,7 @@ class InnerForm(QtWidgets.QWidget):
             "BooleanSelect": CheckBoxWidget,
             "TextInput": LineEditWidget,
         }
-        return widget_types[widget_name](
-            widget_metadata=data,
-            parent=self
-        )
+        return widget_types[widget_name](widget_metadata=data, parent=self)
 
     def update_widget(self) -> None:
         self.widgets = {}
@@ -429,26 +405,23 @@ class InnerForm(QtWidgets.QWidget):
             index = self.model.index(i)
             if not index.isValid():
                 return
-            serialized_json_data: str = \
-                typing.cast(
-                    str,
-                    index.data(
-                        role=models.ToolOptionsModel4.JsonDataRole
-                    )
-                )
-            json_data = \
-                typing.cast(WidgetMetadata, json.loads(serialized_json_data))
+            serialized_json_data: str = typing.cast(
+                str, index.data(role=models.ToolOptionsModel4.JsonDataRole)
+            )
+            json_data = typing.cast(
+                WidgetMetadata, json.loads(serialized_json_data)
+            )
             widget = self.create_editor(
-                widget_name=json_data['widget_type'],
-                data=json_data
+                widget_name=json_data["widget_type"], data=json_data
             )
             widget.data = json_data.get("value")
-            self.widgets[json_data['label']] = widget
+            self.widgets[json_data["label"]] = widget
 
             # Checkboxes/BooleanSelect already have a label built into them
             label = QtWidgets.QLabel(
-                "" if json_data['widget_type'] == 'BooleanSelect'
-                else json_data['label']
+                ""
+                if json_data["widget_type"] == "BooleanSelect"
+                else json_data["label"]
             )
             label.setFixedWidth(150)
             label.setWordWrap(True)
@@ -463,22 +436,23 @@ class InnerForm(QtWidgets.QWidget):
                 return
             model_data = typing.cast(
                 AbsOutputOptionDataType,
-                self.model.data(index, models.ToolOptionsModel4.DataRole)
+                self.model.data(index, models.ToolOptionsModel4.DataRole),
             )
 
             self.model.setData(index, self.widgets[model_data.label].data)
 
     @staticmethod
     def iter_row_rect(
-            layout: QtWidgets.QFormLayout,
-            device: InnerForm
+        layout: QtWidgets.QFormLayout, device: InnerForm
     ) -> Iterable[QtCore.QRect]:
         last_height = 0
         for row in range(layout.rowCount()):
-            label = \
-                layout.itemAt(row, QtWidgets.QFormLayout.ItemRole.LabelRole)
-            widget = \
-                layout.itemAt(row, QtWidgets.QFormLayout.ItemRole.FieldRole)
+            label = layout.itemAt(
+                row, QtWidgets.QFormLayout.ItemRole.LabelRole
+            )
+            widget = layout.itemAt(
+                row, QtWidgets.QFormLayout.ItemRole.FieldRole
+            )
 
             y_axis = label.geometry().y()
             bottom_point = widget.geometry().y() + widget.geometry().height()
@@ -495,10 +469,10 @@ class InnerForm(QtWidgets.QWidget):
         options = QtWidgets.QStyleOptionViewItem()
         painter = QtWidgets.QStylePainter(self)
         for i, rect in enumerate(
-                self.iter_row_rect(
-                    typing.cast(QtWidgets.QFormLayout, self.layout()),
-                    typing.cast(InnerForm, painter.device())
-                )
+            self.iter_row_rect(
+                typing.cast(QtWidgets.QFormLayout, self.layout()),
+                typing.cast(InnerForm, painter.device()),
+            )
         ):
             if i % 2 == 0:
                 options.features = options.ViewItemFeature.Alternate  # type: ignore  # noqa:E501
@@ -514,8 +488,7 @@ class InnerForm(QtWidgets.QWidget):
                 )
             options.rect = rect  # type: ignore
             painter.drawPrimitive(
-                QtWidgets.QStyle.PrimitiveElement.PE_PanelItemViewRow,
-                options
+                QtWidgets.QStyle.PrimitiveElement.PE_PanelItemViewRow, options
             )
         painter.end()
 
@@ -523,10 +496,7 @@ class InnerForm(QtWidgets.QWidget):
 class DynamicForm(QtWidgets.QScrollArea):
     modelChanged = QtCore.Signal()
 
-    def __init__(
-            self,
-            parent: Optional[QtWidgets.QWidget] = None
-    ) -> None:
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         self.setVerticalScrollBarPolicy(
             QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
@@ -559,23 +529,18 @@ class DynamicForm(QtWidgets.QScrollArea):
             data = typing.cast(
                 AbsOutputOptionDataType,
                 self._background.model.data(
-                    index,
-                    self._background.model.DataRole
-                )
+                    index, self._background.model.DataRole
+                ),
             )
             if data.required and (data.value is None or data.value == ""):
-                self.issues.append(
-                    f" Required value {data.label} is missing."
-                )
+                self.issues.append(f" Required value {data.label} is missing.")
 
     def is_valid(self) -> bool:
         self.update_issues()
         return len(self.issues) == 0
 
     def create_editor(
-            self,
-            widget_name: str,
-            data: WidgetMetadata
+        self, widget_name: str, data: WidgetMetadata
     ) -> EditDelegateWidget:
         return self._background.create_editor(widget_name, data)
 
@@ -615,9 +580,7 @@ class Workspace(QtWidgets.QWidget):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         """Create Workspace widget."""
         super().__init__(parent)
-        with as_file(
-                resources.files(ui).joinpath("workspace.ui")
-        ) as ui_file:
+        with as_file(resources.files(ui).joinpath("workspace.ui")) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
         self.app_settings_lookup_strategy = config.StandardConfig()
 
@@ -627,8 +590,9 @@ class Workspace(QtWidgets.QWidget):
             self.workflow_name_value.setText(workflow_klass.name)
         try:
             settings = self.app_settings_lookup_strategy.settings()
-            new_workflow = \
-                workflow_klass(global_settings=settings.get("GLOBAL", {}))
+            new_workflow = workflow_klass(
+                global_settings=settings.get("GLOBAL", {})
+            )
             config_backend = config.get_config_backend()
             config_backend.workflow = new_workflow
             new_workflow.set_options_backend(config_backend)
@@ -637,16 +601,13 @@ class Workspace(QtWidgets.QWidget):
                     new_workflow.description
                 )
             self.settings_form.set_model(
-                models.ToolOptionsModel4(
-                    new_workflow.job_options()
-                )
+                models.ToolOptionsModel4(new_workflow.job_options())
             )
         except exceptions.MissingConfiguration as exc:
             self.workflow_description_value.setHtml(
                 f"<b>Workflow unavailable.</b><p><b>Reason: </b>{exc}</p>"
             )
-            self.settings_form.set_model(
-                models.ToolOptionsModel4())
+            self.settings_form.set_model(models.ToolOptionsModel4())
 
     def is_valid(self) -> bool:
         """Check if the workflow configured is valid."""
@@ -684,9 +645,9 @@ class SelectWorkflow(QtWidgets.QWidget):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         with as_file(
-                resources.files(
-                    "speedwagon.frontend.qtwidgets.ui"
-                ).joinpath("select_workflow_widget.ui")
+            resources.files("speedwagon.frontend.qtwidgets.ui").joinpath(
+                "select_workflow_widget.ui"
+            )
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
         self.workflowSelectionView.setModel(models.WorkflowList())
@@ -705,16 +666,13 @@ class SelectWorkflow(QtWidgets.QWidget):
         )
 
     def _update_tool_selected(
-            self,
-            current: QtCore.QModelIndex,
-            previous: QtCore.QModelIndex
+        self, current: QtCore.QModelIndex, previous: QtCore.QModelIndex
     ) -> None:
         item = typing.cast(
             typing.Type[Workflow],
             self.model.data(
-                current,
-                role=typing.cast(int, models.WorkflowClassRole)
-            )
+                current, role=typing.cast(int, models.WorkflowClassRole)
+            ),
         )
         self.selected_index_changed.emit(current)
         self.workflow_selected.emit(item)
@@ -743,8 +701,8 @@ class SelectWorkflow(QtWidgets.QWidget):
             typing.Type[Workflow],
             self.model.data(
                 self.workflowSelectionView.currentIndex(),
-                role=typing.cast(int, models.WorkflowClassRole)
-            )
+                role=typing.cast(int, models.WorkflowClassRole),
+            ),
         )
 
     @property
@@ -753,13 +711,12 @@ class SelectWorkflow(QtWidgets.QWidget):
         for row_id in range(self.model.rowCount()):
             index = self.model.index(row_id, 0)
             workflow_name = typing.cast(
-                str,
-                self.model.data(index, QtCore.Qt.ItemDataRole.DisplayRole)
+                str, self.model.data(index, QtCore.Qt.ItemDataRole.DisplayRole)
             )
 
             loaded_workflows[workflow_name] = typing.cast(
                 typing.Type[Workflow],
-                self.model.data(index, QtCore.Qt.ItemDataRole.UserRole)
+                self.model.data(index, QtCore.Qt.ItemDataRole.UserRole),
             )
 
         return loaded_workflows
@@ -775,7 +732,7 @@ class PluginConfig(QtWidgets.QWidget):
     ) -> None:
         super().__init__(parent)
         with as_file(
-                resources.files(ui).joinpath("plugin_settings.ui")
+            resources.files(ui).joinpath("plugin_settings.ui")
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
 
@@ -788,29 +745,28 @@ class PluginConfig(QtWidgets.QWidget):
         return self.model.data_modified
 
     def enabled_plugins(self) -> Dict[str, List[str]]:
-
         active_plugins: Dict[str, List[str]] = defaultdict(list)
         for i in range(self.model.rowCount()):
             checked = typing.cast(
                 QtCore.Qt.ItemDataRole,
                 self.model.data(
                     self.model.index(i), QtCore.Qt.ItemDataRole.CheckStateRole
-                )
+                ),
             )
 
             if checked == QtCore.Qt.CheckState.Checked:
                 source = typing.cast(
                     str,
-                    self.model.data(self.model.index(i), self.model.ModuleRole)
+                    self.model.data(
+                        self.model.index(i), self.model.ModuleRole
+                    ),
                 )
-                plugin_name = \
-                    typing.cast(
-                        str,
-                        self.model.data(
-                            self.model.index(i),
-                            QtCore.Qt.ItemDataRole.DisplayRole
-                        )
-                    )
+                plugin_name = typing.cast(
+                    str,
+                    self.model.data(
+                        self.model.index(i), QtCore.Qt.ItemDataRole.DisplayRole
+                    ),
+                )
                 active_plugins[source].append(plugin_name)
         return dict(active_plugins)
 
@@ -821,7 +777,7 @@ class WorkflowSettingsEditorUI(QtWidgets.QWidget):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         with as_file(
-                resources.files(ui).joinpath("tab_workflow_options.ui")
+            resources.files(ui).joinpath("tab_workflow_options.ui")
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
 

@@ -13,13 +13,14 @@ from typing import (
     cast,
     Iterator,
     Any,
-    TYPE_CHECKING
+    TYPE_CHECKING,
 )
 
 from PySide6 import QtCore, QtGui
 
 import speedwagon
 from .common import WorkflowItem, WorkflowClassRole
+
 if TYPE_CHECKING:
     from speedwagon.config import AbsTabsConfigDataManagement
 
@@ -40,9 +41,9 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         self._starting_rows = self.rowCount()
 
     def append_workflow_tab(
-            self,
-            name: str,
-            workflows: Optional[List[Type[speedwagon.Workflow]]] = None
+        self,
+        name: str,
+        workflows: Optional[List[Type[speedwagon.Workflow]]] = None,
     ) -> None:
         """Add a new tab."""
         new_tab = TabStandardItem(name, workflows or [])
@@ -63,21 +64,19 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
             yield cast(TabStandardItem, self.get_item(self.index(row_id, 0)))
 
     def columnCount(  # pylint: disable=invalid-name
-            self,
-            parent: Union[  # pylint: disable=unused-argument
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ] = QtCore.QModelIndex()
+        self,
+        parent: Union[  # pylint: disable=unused-argument
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ] = QtCore.QModelIndex(),
     ) -> int:
         """Get column count."""
         return 2
 
     def rowCount(  # pylint: disable=invalid-name
-            self,
-            parent: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ] = QtCore.QModelIndex()
+        self,
+        parent: Union[
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ] = QtCore.QModelIndex(),
     ) -> int:
         """Get the number of tabs in the model."""
         if parent.isValid() and parent.column() > 2:
@@ -86,13 +85,12 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         return parent_item.rowCount() if parent_item else 0
 
     def index(
-            self,
-            row: int,
-            column: int = 0,
-            parent: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ] = QtCore.QModelIndex()
+        self,
+        row: int,
+        column: int = 0,
+        parent: Union[
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ] = QtCore.QModelIndex(),
     ) -> QtCore.QModelIndex:
         """Get index."""
         if not self.hasIndex(row, column, parent):
@@ -108,17 +106,16 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
 
     @overload
     def parent(
-            self,
-            child: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        self, child: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> QtCore.QModelIndex:
         ...
 
     def parent(
-            self,
-            child: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex,
-            ] = QtCore.QModelIndex()
+        self,
+        child: Union[
+            QtCore.QModelIndex,
+            QtCore.QPersistentModelIndex,
+        ] = QtCore.QModelIndex(),
     ) -> Union[QtCore.QModelIndex, QtCore.QObject]:
         """Get the parent object or object."""
         if not child.isValid():
@@ -131,26 +128,24 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
 
     @staticmethod
     def get_workflow_item_data(
-            item: WorkflowItem,
-            column: int,
-            role: int
+        item: WorkflowItem, column: int, role: int
     ) -> Any:
         """Get the right data for the data model for a given role."""
         if role == QtGui.Qt.ItemDataRole.DisplayRole:
             if column == 0:
                 return str(item.name or "")
             if column == 1:
-                return "" if item.workflow is None \
+                return (
+                    ""
+                    if item.workflow is None
                     else str(item.workflow.description or "")
-        return (
-            item.workflow if role == WorkflowClassRole
-            else None
-        )
+                )
+        return item.workflow if role == WorkflowClassRole else None
 
     def data(
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            role: int = QtCore.Qt.ItemDataRole.DisplayRole
+        self,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         """Get data."""
         if not index.isValid():
@@ -163,11 +158,10 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         return None
 
     def get_item(
-            self,
-            index: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ] = QtCore.QModelIndex()
+        self,
+        index: Union[
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ] = QtCore.QModelIndex(),
     ) -> Union[QtGui.QStandardItem, TabStandardItem, WorkflowItem]:
         """Get item at a given index."""
         if index.isValid():
@@ -177,14 +171,15 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         return self.root_item
 
     def headerData(  # pylint: disable=invalid-name
-            self,
-            section: int,
-            orientation: QtCore.Qt.Orientation,
-            role: int = QtGui.Qt.ItemDataRole.DisplayRole) -> Any:
+        self,
+        section: int,
+        orientation: QtCore.Qt.Orientation,
+        role: int = QtGui.Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
         """Get header data."""
         if (
-                orientation == QtCore.Qt.Orientation.Horizontal
-                and role == QtGui.Qt.ItemDataRole.DisplayRole
+            orientation == QtCore.Qt.Orientation.Horizontal
+            and role == QtGui.Qt.ItemDataRole.DisplayRole
         ):
             if section == 0:
                 return "Name"
@@ -201,9 +196,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         return None
 
     def append_workflow_to_tab(
-            self,
-            tab_name: str,
-            workflow: Type[speedwagon.Workflow]
+        self, tab_name: str, workflow: Type[speedwagon.Workflow]
     ) -> None:
         """Append a workflow to a tab with a given name."""
         tab = self.get_tab(tab_name)
@@ -214,17 +207,15 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
     @property
     def tab_names(self) -> List[str]:
         """Get the tabs of the tabs in the model."""
-        return [
-            self.data(self.index(i, 0)) for i in range(self.rowCount())
-        ]
+        return [self.data(self.index(i, 0)) for i in range(self.rowCount())]
 
     def removeRow(  # pylint: disable=invalid-name
-            self,
-            row: int,
-            parent: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ] = QtCore.QModelIndex()) -> bool:
+        self,
+        row: int,
+        parent: Union[
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ] = QtCore.QModelIndex(),
+    ) -> bool:
         """Remove row from model."""
         if parent.isValid():
             item = self.get_item(parent)
@@ -248,9 +239,9 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         """Get the custom tab data for all the tabs in the model."""
         return [
             speedwagon.config.CustomTabData(
-                tab.name,
-                [work.name or "" for work in tab.workflows]
-            ) for tab in self.tabs
+                tab.name, [work.name or "" for work in tab.workflows]
+            )
+            for tab in self.tabs
         ]
 
     def __len__(self) -> int:
@@ -262,7 +253,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         for i, tab in enumerate(self.tabs):
             if i == item:
                 return tab
-        raise IndexError(f'{item} not found in model.')
+        raise IndexError(f"{item} not found in model.")
 
     def clear(self) -> None:
         """Clear all the data in the model."""
@@ -270,17 +261,14 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
             self.removeRow(row_id)
 
     def setData(  # pylint: disable=invalid-name
-            self,
-            index: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ],
-            value: Any,
-            role: int = QtGui.Qt.ItemDataRole.DisplayRole
+        self,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+        value: Any,
+        role: int = QtGui.Qt.ItemDataRole.DisplayRole,
     ) -> bool:
         """Set data."""
         if role == WorkflowClassRole:
-            cast(WorkflowItem,  self.get_item(index)).workflow = value
+            cast(WorkflowItem, self.get_item(index)).workflow = value
             return True
         return super().setData(index, value, role)
 
@@ -323,20 +311,23 @@ class TabProxyModel(QtCore.QAbstractProxyModel):
         self.beginResetModel()
         base_index = self.get_source_tab_index(self.source_tab)
         for row_id in reversed(
-                range(source_model.rowCount(parent=base_index))
+            range(source_model.rowCount(parent=base_index))
         ):
-            if source_model.data(
+            if (
+                source_model.data(
                     source_model.index(row_id, 0, parent=base_index),
-                    role=WorkflowClassRole
-            ) == workflow:
+                    role=WorkflowClassRole,
+                )
+                == workflow
+            ):
                 self.beginRemoveRows(base_index, row_id, row_id + 1)
                 source_model.removeRow(row_id, parent=base_index)
                 self.endRemoveRows()
 
     def sort(
-            self,
-            column: int,
-            order: QtCore.Qt.SortOrder = QtCore.Qt.SortOrder.AscendingOrder
+        self,
+        column: int,
+        order: QtCore.Qt.SortOrder = QtCore.Qt.SortOrder.AscendingOrder,
     ) -> None:
         """Sort data."""
         if self.source_tab is None:
@@ -363,19 +354,19 @@ class TabProxyModel(QtCore.QAbstractProxyModel):
 
         for row_id in range(source_model.rowCount()):
             index = source_model.index(row_id, 0)
-            if source_model.data(
-                    index,
-                    QtCore.Qt.ItemDataRole.DisplayRole
-            ) == tab_name:
+            if (
+                source_model.data(index, QtCore.Qt.ItemDataRole.DisplayRole)
+                == tab_name
+            ):
                 return index
         return QtCore.QModelIndex()
 
     def rowCount(  # pylint: disable=invalid-name
-            self,
-            parent: Union[  # pylint: disable=unused-argument
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ] = QtCore.QModelIndex()) -> int:
+        self,
+        parent: Union[  # pylint: disable=unused-argument
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ] = QtCore.QModelIndex(),
+    ) -> int:
         """Get the number of workflows in the list."""
         if self.source_tab is None:
             return 0
@@ -386,11 +377,8 @@ class TabProxyModel(QtCore.QAbstractProxyModel):
         return source_model.rowCount(index) if index.isValid() else 0
 
     def mapFromSource(  # pylint: disable=invalid-name
-            self,
-            sourceIndex: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ]
+        self,
+        sourceIndex: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
     ) -> QtCore.QModelIndex:
         """Map from source index."""
         return (
@@ -400,22 +388,21 @@ class TabProxyModel(QtCore.QAbstractProxyModel):
         )
 
     def columnCount(  # pylint: disable=invalid-name
-            self,
-            parent: Optional[  # pylint: disable=unused-argument
-                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
-            ] = None
+        self,
+        parent: Optional[  # pylint: disable=unused-argument
+            Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        ] = None,
     ) -> int:
         """Get column count."""
         return 1
 
     def index(
-            self,
-            row: int,
-            column: int = 0,
-            parent: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ] = QtCore.QModelIndex()
+        self,
+        row: int,
+        column: int = 0,
+        parent: Union[
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ] = QtCore.QModelIndex(),
     ) -> QtCore.QModelIndex:
         """Get index."""
         if parent.isValid():
@@ -423,11 +410,10 @@ class TabProxyModel(QtCore.QAbstractProxyModel):
         return self.createIndex(row, column)
 
     def mapToSource(  # pylint: disable=invalid-name
-            self,
-            proxyIndex: Union[  # pylint: disable=invalid-name
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex
-            ]
+        self,
+        proxyIndex: Union[  # pylint: disable=invalid-name
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ],
     ) -> QtCore.QModelIndex:
         """Map to source index."""
         if self.source_tab is None:
@@ -439,10 +425,10 @@ class TabProxyModel(QtCore.QAbstractProxyModel):
         source_model = self.sourceModel()
         proxy_index = proxyIndex
         return source_model.index(
-                row=proxy_index.row(),
-                column=proxy_index.column(),
-                parent=base_index
-            )
+            row=proxy_index.row(),
+            column=proxy_index.column(),
+            parent=base_index,
+        )
 
     @overload
     def parent(self) -> QtCore.QObject:
@@ -450,18 +436,15 @@ class TabProxyModel(QtCore.QAbstractProxyModel):
 
     @overload
     def parent(
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        self, index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> QtCore.QModelIndex:
         ...
 
     def parent(
-            self,
-            index: Union[
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex,
-                None
-            ] = None
+        self,
+        index: Union[
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex, None
+        ] = None,
     ) -> Union[QtCore.QModelIndex, QtCore.QObject]:
         """Get the parent object or object."""
         return QtCore.QObject() if index is None else QtCore.QModelIndex()
@@ -469,7 +452,7 @@ class TabProxyModel(QtCore.QAbstractProxyModel):
     def get_tab_index(self) -> QtCore.QModelIndex:
         """Get cyrrent tab index."""
         if self.source_tab is None:
-            raise RuntimeError('source model not set')
+            raise RuntimeError("source model not set")
         return self.get_source_tab_index(self.source_tab)
 
 
@@ -480,19 +463,19 @@ class AbsLoadTabDataModelStrategy(abc.ABC):  # pylint: disable=R0903
 
 
 class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
-
     def __init__(self) -> None:
         super().__init__()
         self.yml_file: Optional[str] = None
 
     @staticmethod
     def prep_data(
-            data_load_strategy: AbsTabsConfigDataManagement
+        data_load_strategy: AbsTabsConfigDataManagement,
     ) -> Dict[str, List[Type[speedwagon.Workflow]]]:
         all_workflows = speedwagon.job.available_workflows()
 
-        sorted_workflows = \
-            sorted(list(all_workflows.values()), key=lambda item: item.name)
+        sorted_workflows = sorted(
+            list(all_workflows.values()), key=lambda item: item.name
+        )
 
         workflow_tabs_data: Dict[str, List[Type[speedwagon.Workflow]]] = {
             "All": sorted_workflows
@@ -532,9 +515,9 @@ class TabStandardItem(QtGui.QStandardItem):
     """QStandardItem that contains tab workflows data."""
 
     def __init__(
-            self,
-            name: Optional[str] = None,
-            workflows: Optional[List[Type[speedwagon.Workflow]]] = None
+        self,
+        name: Optional[str] = None,
+        workflows: Optional[List[Type[speedwagon.Workflow]]] = None,
     ) -> None:
         """Create a new TabStandardItem."""
         super().__init__()
@@ -542,7 +525,7 @@ class TabStandardItem(QtGui.QStandardItem):
             self.setText(name)
         self._unmodified_workflows: List[WorkflowItem] = []
         self.reset_modified()
-        for workflow in (workflows or []):
+        for workflow in workflows or []:
             self.append_workflow(workflow)
 
     @property
@@ -591,12 +574,14 @@ class TabStandardItem(QtGui.QStandardItem):
 
     def remove_workflow(self, workflow: Type[speedwagon.Workflow]) -> None:
         """Remove workflow from list."""
+
         def _find_row_with_matching_workflow() -> Optional[int]:
             for row_id in range(self.rowCount()):
                 item = cast(WorkflowItem, self.child(row_id, 0))
                 if item.workflow == workflow:
                     return row_id
             return None
+
         while True:
             row_id_to_delete = _find_row_with_matching_workflow()
             if row_id_to_delete is None:

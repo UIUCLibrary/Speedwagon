@@ -50,28 +50,23 @@ class PluginActivationModel(QtCore.QAbstractListModel):
         self.data_modified = False
 
     def rowCount(  # pylint: disable=invalid-name
-            self,
-            parent: Union[  # pylint: disable=unused-argument
-                QtCore.QModelIndex,
-                QtCore.QPersistentModelIndex,
-                None
-            ] = None
+        self,
+        parent: Union[  # pylint: disable=unused-argument
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex, None
+        ] = None,
     ) -> int:
         """Get the number of plugins available."""
         return len(self._data)
 
     def add_entry_point(
-            self,
-            entry_point: metadata.EntryPoint,
-            enabled: bool = False
+        self, entry_point: metadata.EntryPoint, enabled: bool = False
     ) -> None:
         """Add an entry point to the model."""
         self._starting_data.append(PluginModelItem(entry_point, enabled))
         self._data.append(PluginModelItem(entry_point, enabled))
 
     def flags(
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        self, index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> QtCore.Qt.ItemFlag:
         """Item flags.
 
@@ -92,7 +87,6 @@ class PluginActivationModel(QtCore.QAbstractListModel):
     ) -> Any:
         """Get the data from the model."""
         if role == QtCore.Qt.ItemDataRole.CheckStateRole:
-
             return (
                 QtCore.Qt.CheckState.Checked
                 if self._data[index.row()].enabled

@@ -7,23 +7,27 @@ import traceback
 
 
 def add_report_borders(
-        func: typing.Callable[..., Optional[str]]
+    func: typing.Callable[..., Optional[str]]
 ) -> typing.Callable[..., Optional[str]]:
     """Create a star character border around text report."""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> Optional[str]:
         report = func(*args, **kwargs)
         if report:
             line_sep = "\n" + "*" * 60
 
-            return f"{line_sep}" \
-                f"\n   Report" \
-                f"{line_sep}" \
-                f"\n" \
-                f"\n{report}" \
-                f"\n" \
+            return (
                 f"{line_sep}"
+                f"\n   Report"
+                f"{line_sep}"
+                f"\n"
+                f"\n{report}"
+                f"\n"
+                f"{line_sep}"
+            )
         return report
+
     return wrapper
 
 

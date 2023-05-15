@@ -6,9 +6,7 @@ import warnings
 from typing import Type, Union, List, Optional
 from PySide6 import QtWidgets, QtCore, QtGui
 
-__all__ = [
-    'CustomItemWidget'
-]
+__all__ = ["CustomItemWidget"]
 
 
 class AbsCustomData2(metaclass=abc.ABCMeta):
@@ -35,22 +33,19 @@ class CustomItemWidget(QtWidgets.QWidget):
     editingFinished = QtCore.Signal()
 
     def __init__(
-            self,
-            *args,
-            parent: Optional[QtWidgets.QWidget] = None,
-            **kwargs
+        self, *args, parent: Optional[QtWidgets.QWidget] = None, **kwargs
     ) -> None:
         """Create a custom item widget."""
         warnings.warn(
-            "Use workflow.AbsOutputOptionDataType instead",
-            DeprecationWarning
+            "Use workflow.AbsOutputOptionDataType instead", DeprecationWarning
         )
         super().__init__(parent, *args, **kwargs)
         self._data = ""
-        self.inner_layout = \
-            QtWidgets.QHBoxLayout(parent) \
-            if parent is not None \
+        self.inner_layout = (
+            QtWidgets.QHBoxLayout(parent)
+            if parent is not None
             else QtWidgets.QHBoxLayout()
+        )
         self.inner_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.inner_layout)
         self.setAutoFillBackground(True)
@@ -72,16 +67,14 @@ class AbsBrowseableWidget(CustomItemWidget):
     def __init__(self, *args, **kwargs) -> None:
         """Create the base structure for a browseable widget."""
         warnings.warn(
-            "Use workflow.AbsOutputOptionDataType instead",
-            DeprecationWarning
+            "Use workflow.AbsOutputOptionDataType instead", DeprecationWarning
         )
         super().__init__()
         self.text_line = QtWidgets.QLineEdit(self)
-        self.action = \
-            self.text_line.addAction(
-                self.get_browse_icon(),
-                QtWidgets.QLineEdit.ActionPosition.TrailingPosition
-            )
+        self.action = self.text_line.addAction(
+            self.get_browse_icon(),
+            QtWidgets.QLineEdit.ActionPosition.TrailingPosition,
+        )
 
         self.action.triggered.connect(self.browse_clicked)  # type: ignore
 
@@ -93,7 +86,8 @@ class AbsBrowseableWidget(CustomItemWidget):
     def get_browse_icon(self) -> QtGui.QIcon:
         """Get the icon for the right type of browsing."""
         return QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon)
+            QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon
+        )
 
     @abc.abstractmethod
     def browse_clicked(self) -> None:
@@ -133,13 +127,13 @@ class ChecksumFile(AbsBrowseableWidget):
     def get_browse_icon(self) -> QtGui.QIcon:
         """Get the os-specific browse icon for files."""
         return QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.StandardPixmap.SP_FileIcon)
+            QtWidgets.QStyle.StandardPixmap.SP_FileIcon
+        )
 
     def browse_clicked(self) -> None:
         """Launch file browser to locate an .md5 file."""
         selection = QtWidgets.QFileDialog.getOpenFileName(
-            self,
-            filter="Checksum files (*.md5)"
+            self, filter="Checksum files (*.md5)"
         )
 
         if selection[0]:
@@ -172,7 +166,8 @@ class FolderBrowseWidget(AbsBrowseableWidget):
     def get_browse_icon(self) -> QtGui.QIcon:
         """Get the os-specific browse icon for folders."""
         return QtWidgets.QApplication.style().standardIcon(
-            QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon)
+            QtWidgets.QStyle.StandardPixmap.SP_DirOpenIcon
+        )
 
     def browse_clicked(self) -> None:
         """Browse hard drive to select an existing directory."""
@@ -218,9 +213,9 @@ class UserOption3(metaclass=abc.ABCMeta):
 class UserOptionPythonDataType2(UserOption3):
     """User option Python data type."""
 
-    def __init__(self,
-                 label_text: str,
-                 data_type: Type[Union[str, int, bool]] = str) -> None:
+    def __init__(
+        self, label_text: str, data_type: Type[Union[str, int, bool]] = str
+    ) -> None:
         """Create a user options data type."""
         super().__init__(label_text)
         self.data_type = data_type
@@ -249,8 +244,7 @@ class ListSelectionWidget(CustomItemWidget):
             self._update
         )
         self.inner_layout.addWidget(
-            self._combobox,
-            alignment=QtCore.Qt.AlignmentFlag.AlignBaseline
+            self._combobox, alignment=QtCore.Qt.AlignmentFlag.AlignBaseline
         )
 
     def _update(self) -> None:

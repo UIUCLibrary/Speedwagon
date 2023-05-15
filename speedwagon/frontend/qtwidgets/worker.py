@@ -51,12 +51,12 @@ class ToolJobManager(speedwagon.worker.AbsToolJobManager):
         # TODO: set cancel dialog to force the cancellation of the future
 
         while True:
-
             try:
                 QtWidgets.QApplication.processEvents()
 
-                futures = concurrent.futures.as_completed(still_running,
-                                                          timeout=.1)
+                futures = concurrent.futures.as_completed(
+                    still_running, timeout=0.1
+                )
 
                 for i, _ in enumerate(futures):
                     dialog_box.setValue(i + 1)
@@ -70,10 +70,8 @@ class ToolJobManager(speedwagon.worker.AbsToolJobManager):
         dialog_box.accept()
 
     def get_results(
-            self,
-            timeout_callback: typing.Optional[
-                Callable[[int, int], None]
-            ] = None
+        self,
+        timeout_callback: typing.Optional[Callable[[int, int], None]] = None,
     ) -> typing.Generator[typing.Any, None, None]:
         """Process jobs and return results."""
         processor = QtJobProcessor(
@@ -140,9 +138,7 @@ class ProcessWorker(UIWorker):
         return fut
 
     def add_job(
-            self,
-            job: speedwagon.worker.ProcessJobWorker,
-            **job_args
+        self, job: speedwagon.worker.ProcessJobWorker, **job_args
     ) -> None:
         """Add job to job queue."""
         new_job = speedwagon.worker.JobPair(job, args=job_args)

@@ -24,5 +24,5 @@ def main(argv: Optional[List[str]] = None) -> None:
     speedwagon.startup.main(argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

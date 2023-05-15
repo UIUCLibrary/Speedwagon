@@ -5,6 +5,7 @@ import argparse
 import collections.abc
 import configparser
 import contextlib
+
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
@@ -17,8 +18,19 @@ import platform
 import subprocess
 import sys
 import typing
-from typing import Optional, Dict, Type, Set, Iterator, Iterable, Union, \
-    List, Callable, NamedTuple
+from typing import (
+    Optional,
+    Dict,
+    Type,
+    Set,
+    Iterator,
+    Iterable,
+    Union,
+    List,
+    Callable,
+    NamedTuple,
+)
+
 try:  # pragma: no cover
     from typing import TypedDict
 except ImportError:  # pragma: no cover
@@ -98,7 +110,6 @@ class AbsConfig(collections.abc.Mapping):
 
 
 class NixConfig(AbsConfig):
-
     def get_user_data_directory(self) -> str:
         return os.path.join(self._get_app_dir(), "data")
 
@@ -140,7 +151,7 @@ class ConfigManager(contextlib.AbstractContextManager):
     def __init__(self, config_file: str):
         """Set up configuration manager."""
         self._config_file = config_file
-        self.cfg_parser: Optional['configparser.ConfigParser'] = None
+        self.cfg_parser: Optional["configparser.ConfigParser"] = None
 
     def __enter__(self) -> "ConfigManager":
         """Open file with parser."""
@@ -148,10 +159,12 @@ class ConfigManager(contextlib.AbstractContextManager):
         self.cfg_parser.read(self._config_file)
         return self
 
-    def __exit__(self,
-                 exctype: Optional[Type[BaseException]],
-                 excinst: Optional[BaseException],
-                 exctb: Optional[TracebackType]) -> Optional[bool]:
+    def __exit__(
+        self,
+        exctype: Optional[Type[BaseException]],
+        excinst: Optional[BaseException],
+        exctb: Optional[TracebackType],
+    ) -> Optional[bool]:
         """Clean up."""
         return None
 
@@ -165,8 +178,9 @@ class ConfigManager(contextlib.AbstractContextManager):
             global_section = self.cfg_parser["GLOBAL"]
             for setting in ConfigManager.BOOLEAN_SETTINGS:
                 if setting in global_section:
-                    global_settings[setting] = \
-                        global_section.getboolean(setting)
+                    global_settings[setting] = global_section.getboolean(
+                        setting
+                    )
             for key, value in global_section.items():
                 if key not in ConfigManager.BOOLEAN_SETTINGS:
                     global_settings[key] = value
@@ -181,11 +195,11 @@ class ConfigManager(contextlib.AbstractContextManager):
             return {}
         plugins = {}
 
-        plugin_prefix = 'PLUGINS.'
+        plugin_prefix = "PLUGINS."
         for section in self.cfg_parser.sections():
             if not section.startswith(plugin_prefix):
                 continue
-            plugins[section.replace(plugin_prefix, '')] = {
+            plugins[section.replace(plugin_prefix, "")] = {
                 entry: self.cfg_parser[section].getboolean(entry)
                 for entry in self.cfg_parser[section].keys()
             }
@@ -203,18 +217,19 @@ def generate_default(config_file: str) -> None:
         raise FileNotFoundError("Unable to locate user data directory")
     config = configparser.ConfigParser(allow_no_value=True)
     config.add_section("GLOBAL")
-    config['GLOBAL'] = {
+    config["GLOBAL"] = {
         "tessdata": os.path.join(data_dir, "tessdata"),
         "starting-tab": "Tools",
-        "debug": "False"
+        "debug": "False",
     }
     with open(config_file, "w", encoding="utf-8") as file:
         config.write(file)
     ensure_keys(config_file, speedwagon.job.all_required_workflow_keys())
 
 
-def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
-        AbsConfig:
+def get_platform_settings(
+    configuration: Optional[AbsConfig] = None,
+) -> AbsConfig:
     """Load a configuration of config.AbsConfig.
 
     If no argument is included, it will try to guess the best one.
@@ -233,8 +248,8 @@ def get_platform_settings(configuration: Optional[AbsConfig] = None) -> \
 
 
 def find_missing_global_entries(
-        config_file: str,
-        expected_keys: Iterable[str]) -> Optional[Set[str]]:
+    config_file: str, expected_keys: Iterable[str]
+) -> Optional[Set[str]]:
     """Locate any missing entries from a config file.
 
     Notes:
@@ -250,7 +265,7 @@ def find_missing_global_entries(
     """
     config_data = configparser.ConfigParser()
     config_data.read(config_file)
-    global_settings = config_data['GLOBAL']
+    global_settings = config_data["GLOBAL"]
     return {k for k in expected_keys if k not in global_settings} or None
 
 
@@ -270,11 +285,11 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
     """
     config_data = configparser.ConfigParser()
     config_data.read(config_file)
-    global_settings = config_data['GLOBAL']
+    global_settings = config_data["GLOBAL"]
     added = set()
     for k in keys:
         if k not in global_settings:
-            config_data['GLOBAL'][k] = ""
+            config_data["GLOBAL"][k] = ""
             added.add(k)
     with open(config_file, "w", encoding="utf-8") as file_pointer:
         config_data.write(file_pointer)
@@ -282,18 +297,15 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
 
 
 class AbsSetting(metaclass=abc.ABCMeta):  # pylint: disable=R0903
-
     def update(
-            self,
-            settings: Optional[FullSettingsData] = None
+        self, settings: Optional[FullSettingsData] = None
     ) -> FullSettingsData:
         return {} if settings is None else settings
 
 
 class DefaultsSetter(AbsSetting):  # pylint: disable=R0903
     def update(
-            self,
-            settings: Optional[FullSettingsData] = None
+        self, settings: Optional[FullSettingsData] = None
     ) -> FullSettingsData:
         new_settings = super().update(settings)
         if "GLOBAL" not in new_settings:
@@ -318,8 +330,7 @@ class ConfigFileSetter(AbsSetting):  # pylint: disable=R0903
             return file_handle.read()
 
     def update(
-            self,
-            settings: Optional[FullSettingsData] = None
+        self, settings: Optional[FullSettingsData] = None
     ) -> FullSettingsData:
         """Update setting configuration."""
         new_settings = super().update(settings)
@@ -333,8 +344,7 @@ class ConfigFileSetter(AbsSetting):  # pylint: disable=R0903
         return new_settings
 
     def process_section(
-            self,
-            section: configparser.SectionProxy
+        self, section: configparser.SectionProxy
     ) -> SettingsData:
         processed_section: SettingsData = {}
 
@@ -349,19 +359,17 @@ class ConfigFileSetter(AbsSetting):  # pylint: disable=R0903
 
 
 class CliArgsSetter(AbsSetting):
-
     def __init__(self, args: Optional[typing.List[str]] = None) -> None:
         super().__init__()
         self.args = args if args is not None else sys.argv[1:]
 
     def update(
-            self,
-            settings: Optional[FullSettingsData] = None
+        self, settings: Optional[FullSettingsData] = None
     ) -> FullSettingsData:
         new_settings = super().update(settings)
         if "GLOBAL" not in new_settings:
             new_settings["GLOBAL"] = {}
-        global_settings = new_settings['GLOBAL']
+        global_settings = new_settings["GLOBAL"]
         args = self._parse_args(self.args)
 
         starting_tab: Optional[str] = args.start_tab
@@ -382,35 +390,32 @@ class CliArgsSetter(AbsSetting):
         except metadata.PackageNotFoundError:
             current_version = "dev"
         parser.add_argument(
-            '--version',
-            action='version',
-            version=current_version
+            "--version", action="version", version=current_version
         )
 
         parser.add_argument(
             "--starting-tab",
             dest="start_tab",
-            help="Which tab to have open on start"
+            help="Which tab to have open on start",
         )
 
         parser.add_argument(
             "--debug",
             dest="debug",
-            action='store_true',
-            help="Run with debug mode"
+            action="store_true",
+            help="Run with debug mode",
         )
 
         subparsers = parser.add_subparsers(
-            dest='command',
-            help='sub-command help'
+            dest="command", help="sub-command help"
         )
 
-        run_parser = subparsers.add_parser('run', help='run help')
+        run_parser = subparsers.add_parser("run", help="run help")
 
         run_parser.add_argument(
-            '--json',
+            "--json",
             type=argparse.FileType("r", encoding="utf-8"),
-            help='Run job from json file'
+            help="Run job from json file",
         )
 
         return parser
@@ -427,7 +432,6 @@ def read_settings_file_plugins(settings_file: str) -> PluginDataType:
 
 
 class AbsEnsureConfigFile(abc.ABC):
-
     def __init__(self, logger: Optional[logging.Logger] = None) -> None:
         super().__init__()
         self.logger = logger or logging.getLogger(__package__)
@@ -452,15 +456,11 @@ class AbsEnsureConfigFile(abc.ABC):
 class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
     """Create a missing config file if not already exists."""
 
-    def __init__(
-            self,
-            logger: Optional[logging.Logger] = None
-    ) -> None:
+    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
         super().__init__(logger)
         self.config_strategy = StandardConfigFileLocator()
 
     def ensure_config_file(self, file_path: Optional[str] = None) -> None:
-
         file_path = file_path or self.config_strategy.get_config_file()
         if not os.path.exists(file_path):
             generate_default(file_path)
@@ -470,7 +470,6 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
             self.logger.debug("Found existing config file %s", file_path)
 
     def ensure_tabs_file(self, file_path: Optional[str] = None) -> None:
-
         file_path = file_path or self.config_strategy.get_tabs_file()
         if not os.path.exists(file_path):
             pathlib.Path(file_path).touch()
@@ -479,8 +478,7 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
                 "No tabs.yml file found. Generated %s", file_path
             )
         else:
-            self.logger.debug(
-                "Found existing tabs file %s", file_path)
+            self.logger.debug("Found existing tabs file %s", file_path)
 
     def ensure_user_data_dir(self, directory: Optional[str] = None) -> None:
         directory = directory or self.config_strategy.get_user_data_dir()
@@ -490,34 +488,26 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
 
         else:
             self.logger.debug(
-                "Found existing user data directory %s",
-                directory
+                "Found existing user data directory %s", directory
             )
 
     def ensure_app_data_dir(self, directory: Optional[str] = None) -> None:
         directory = directory or self.config_strategy.get_app_data_dir()
-        if directory is not None and \
-                not os.path.exists(directory):
-
+        if directory is not None and not os.path.exists(directory):
             os.makedirs(directory)
             self.logger.debug("Created %s", directory)
         else:
             self.logger.debug(
-                "Found existing app data "
-                "directory %s",
-                directory
+                "Found existing app data directory %s", directory
             )
 
 
 def ensure_settings_files(
-        logger: Optional[logging.Logger] = None,
-        strategy: Optional[AbsEnsureConfigFile] = None
+    logger: Optional[logging.Logger] = None,
+    strategy: Optional[AbsEnsureConfigFile] = None,
 ) -> None:
-
     logger = logger or logging.getLogger(__package__)
-    strategy = strategy or CreateBasicMissingConfigFile(
-        logger=logger
-    )
+    strategy = strategy or CreateBasicMissingConfigFile(logger=logger)
     strategy.ensure_config_file()
     strategy.ensure_tabs_file()
     strategy.ensure_user_data_dir()
@@ -525,7 +515,6 @@ def ensure_settings_files(
 
 
 class AbsOpenSettings(abc.ABC):
-
     def __init__(self, settings_directory: str) -> None:
         super().__init__()
         self.settings_dir = settings_directory
@@ -549,14 +538,12 @@ class DarwinOpenSettings(AbsOpenSettings):
 
 
 class WindowsOpenSettings(AbsOpenSettings):
-
     def system_open_directory(self, settings_directory: str) -> None:
         # pylint: disable=no-member
         os.startfile(settings_directory)  # type: ignore[attr-defined]
 
 
 class OpenSettingsDirectory:
-
     def __init__(self, strategy: AbsOpenSettings) -> None:
         self.strategy = strategy
 
@@ -569,8 +556,9 @@ class OpenSettingsDirectory:
 
 def get_whitelisted_plugins() -> Set[typing.Tuple[str, str]]:
     config_strategy = speedwagon.config.StandardConfigFileLocator()
-    plugin_settings = \
-        read_settings_file_plugins(config_strategy.get_config_file())
+    plugin_settings = read_settings_file_plugins(
+        config_strategy.get_config_file()
+    )
 
     white_listed_plugins = set()
     for module, entry_points in plugin_settings.items():
@@ -603,14 +591,13 @@ class StandardConfigFileLocator(AbsSettingLocator):
 
     def get_user_data_dir(self) -> str:
         return typing.cast(
-            str,
-            self._platform_settings.get("user_data_directory")
+            str, self._platform_settings.get("user_data_directory")
         )
 
     def get_config_file(self) -> str:
         return os.path.join(
             self._platform_settings.get_app_data_directory(),
-            speedwagon.startup.CONFIG_INI_FILE_NAME
+            speedwagon.startup.CONFIG_INI_FILE_NAME,
         )
 
     def get_app_data_dir(self) -> str:
@@ -619,7 +606,7 @@ class StandardConfigFileLocator(AbsSettingLocator):
     def get_tabs_file(self) -> str:
         return os.path.join(
             self._platform_settings.get_app_data_directory(),
-            speedwagon.startup.TABS_YML_FILE_NAME
+            speedwagon.startup.TABS_YML_FILE_NAME,
         )
 
 
@@ -675,7 +662,7 @@ class AbsTabsYamlFileReader(abc.ABC):
         """Read file and return a string."""
 
     @abc.abstractmethod
-    def decode_tab_settings_yml_data(self, data: str) -> Dict[str,  List[str]]:
+    def decode_tab_settings_yml_data(self, data: str) -> Dict[str, List[str]]:
         """Decode data."""
 
 
@@ -685,7 +672,7 @@ class TabsYamlFileReader(AbsTabsYamlFileReader):
         with open(yaml_file, encoding="utf-8") as file_handler:
             return file_handler.read()
 
-    def decode_tab_settings_yml_data(self, data: str) -> Dict[str,  List[str]]:
+    def decode_tab_settings_yml_data(self, data: str) -> Dict[str, List[str]]:
         tabs_config_data = yaml.load(data, Loader=yaml.SafeLoader)
         if not isinstance(tabs_config_data, dict):
             raise speedwagon.exceptions.FileFormatError("Failed to parse file")
@@ -707,7 +694,7 @@ class CustomTabsYamlConfig(AbsTabsConfigDataManagement):
         self.file_writer_strategy: AbsTabWriter = TabsYamlWriter()
         self.data_reader: Optional[Callable[[], str]] = None
 
-    def decode_data(self, data: str) -> Dict[str,  List[str]]:
+    def decode_data(self, data: str) -> Dict[str, List[str]]:
         """Decode a YAML string to a dictionary."""
         return self.file_reader_strategy.decode_tab_settings_yml_data(data)
 
@@ -718,8 +705,9 @@ class CustomTabsYamlConfig(AbsTabsConfigDataManagement):
                 data = self.data_reader()
             else:
                 data = self.file_reader_strategy.read_file(self.yaml_file)
-            yml_data = \
-                self.file_reader_strategy.decode_tab_settings_yml_data(data)
+            yml_data = self.file_reader_strategy.decode_tab_settings_yml_data(
+                data
+            )
         except yaml.YAMLError as error:
             raise TabLoadFailure(
                 f"{self.yaml_file} file failed to load."
@@ -782,7 +770,6 @@ class AbsConfigSaver(abc.ABC):  # pylint: disable=R0903
 
 
 class IniConfigManager(AbsGlobalConfigDataManagement):
-
     def __init__(self, ini_file: Optional[str] = None) -> None:
         self.config_file: Optional[str] = ini_file
         self.loader: Optional[AbsConfigLoader] = None
@@ -792,9 +779,9 @@ class IniConfigManager(AbsGlobalConfigDataManagement):
     def get_resolution_order(self) -> List[AbsSetting]:
         if self.config_resolution_order is not None:
             return self.config_resolution_order
-        config_file = \
-            self.config_file or \
-            StandardConfigFileLocator().get_config_file()
+        config_file = (
+            self.config_file or StandardConfigFileLocator().get_config_file()
+        )
         resolution_order: List[AbsSetting] = [DefaultsSetter()]
         if self.config_file:
             resolution_order.append(ConfigFileSetter(config_file))
@@ -821,19 +808,16 @@ class IniConfigManager(AbsGlobalConfigDataManagement):
 
 
 class IniConfigSaver(AbsConfigSaver):
-
     def save(self, file_name: str, data: FullSettingsData):
         self.write_data_to_file(
-            file_name,
-            serialized_data=self.serialize(data)
+            file_name, serialized_data=self.serialize(data)
         )
 
     def serialize(self, data: FullSettingsData) -> str:
         config_data = configparser.ConfigParser()
         for heading, item_data in data.items():
             config_data[heading] = {
-                key: str(value)
-                for key, value in item_data.items()
+                key: str(value) for key, value in item_data.items()
             }
         with io.StringIO() as string_writer:
             config_data.write(string_writer)
@@ -845,14 +829,12 @@ class IniConfigSaver(AbsConfigSaver):
 
 
 class AbsConfigLoader(abc.ABC):  # pylint: disable=R0903
-
     @abc.abstractmethod
     def get_settings(self) -> FullSettingsData:
         """Get the settings data."""
 
 
 class MixedConfigLoader(AbsConfigLoader):  # pylint: disable=R0903
-
     def __init__(self) -> None:
         super().__init__()
         self.resolution_strategy_order: List[AbsSetting] = [
@@ -862,7 +844,7 @@ class MixedConfigLoader(AbsConfigLoader):  # pylint: disable=R0903
 
     @staticmethod
     def _resolve(
-            resolution_strategy_order: Iterable[AbsSetting]
+        resolution_strategy_order: Iterable[AbsSetting],
     ) -> FullSettingsData:
         settings: FullSettingsData = {}
         for settings_strategy in resolution_strategy_order:
@@ -874,19 +856,15 @@ class MixedConfigLoader(AbsConfigLoader):  # pylint: disable=R0903
 
 
 class AbsWorkflowSettingsManager(abc.ABC):
-
     @abc.abstractmethod
     def get_workflow_settings(
-            self,
-            workflow: speedwagon.Workflow
+        self, workflow: speedwagon.Workflow
     ) -> SettingsData:
         """Get settings for a workflow configured through the application."""
 
     @abc.abstractmethod
     def save_workflow_settings(
-            self,
-            workflow: speedwagon.Workflow,
-            settings: SettingsData
+        self, workflow: speedwagon.Workflow, settings: SettingsData
     ) -> None:
         """Save workflow settings."""
 
@@ -898,7 +876,6 @@ class IndentingEmitter(yaml.emitter.Emitter):  # pylint: disable=R0903
 
 
 class IndentedYAMLDumper(yaml.Dumper):  # pylint: disable=R0903
-
     def increase_indent(self, flow=False, indentless=False):
         return super().increase_indent(flow, False)
 
@@ -906,10 +883,7 @@ class IndentedYAMLDumper(yaml.Dumper):  # pylint: disable=R0903
 class AbsWorkflowSettingsExporter(abc.ABC):  # pylint: disable=R0903
     @abc.abstractmethod
     def save(
-            self,
-            workflow:
-            speedwagon.Workflow,
-            settings: SettingsData
+        self, workflow: speedwagon.Workflow, settings: SettingsData
     ) -> None:
         """Save settings."""
 
@@ -921,21 +895,16 @@ class AbsYamlConfigFileManager(abc.ABC):  # pylint: disable=R0903
 
 
 class AbsSettingsSerializer(abc.ABC):  # pylint: disable=R0903
-
     @abc.abstractmethod
     def serialize(
-            self,
-            workflow: speedwagon.Workflow,
-            settings: SettingsData
+        self, workflow: speedwagon.Workflow, settings: SettingsData
     ) -> str:
         """Serialize workflow settings."""
 
 
 class SettingsYamlSerializer(AbsSettingsSerializer):
-
     def __init__(
-            self,
-            existing_data: Optional[StructuredWorkflowSettings] = None
+        self, existing_data: Optional[StructuredWorkflowSettings] = None
     ) -> None:
         super().__init__()
         self.starting_data = existing_data or {}
@@ -946,26 +915,23 @@ class SettingsYamlSerializer(AbsSettingsSerializer):
             yaml.dump(
                 dict(sorted(data.items())),
                 file_handle,
-                Dumper=IndentedYAMLDumper
+                Dumper=IndentedYAMLDumper,
             )
             return file_handle.getvalue()
 
     @staticmethod
     def structure_workflow_data(
-            settings: SettingsData
+        settings: SettingsData,
     ) -> List[WorkflowSettingsNameValuePair]:
         return [
-            {"name": key, "value": value}
-            for key, value in settings.items()
+            {"name": key, "value": value} for key, value in settings.items()
         ]
 
     def serialize(
-            self,
-            workflow: speedwagon.Workflow,
-            settings: SettingsData
+        self, workflow: speedwagon.Workflow, settings: SettingsData
     ) -> str:
         data: StructuredWorkflowSettings = self.starting_data.copy()
-        workflow_name = workflow.name if workflow.name is not None else ''
+        workflow_name = workflow.name if workflow.name is not None else ""
         if workflow_name in data:
             del data[workflow_name]
         data[workflow_name] = self.structure_workflow_data(settings)
@@ -973,13 +939,12 @@ class SettingsYamlSerializer(AbsSettingsSerializer):
 
 
 class WorkflowSettingsYamlExporter(
-    AbsYamlConfigFileManager,
-    AbsWorkflowSettingsExporter
+    AbsYamlConfigFileManager, AbsWorkflowSettingsExporter
 ):
     def __init__(
-            self,
-            yaml_file: str,
-            yaml_serialization_strategy: Optional[AbsSettingsSerializer] = None
+        self,
+        yaml_file: str,
+        yaml_serialization_strategy: Optional[AbsSettingsSerializer] = None,
     ) -> None:
         super().__init__(yaml_file)
         self.yaml_serialization_strategy = yaml_serialization_strategy
@@ -1001,20 +966,16 @@ class WorkflowSettingsYamlExporter(
         return SettingsYamlSerializer(self.get_existing_data())
 
     def serialize_settings_data(
-            self,
-            workflow: speedwagon.Workflow,
-            settings: SettingsData
+        self, workflow: speedwagon.Workflow, settings: SettingsData
     ) -> str:
         return self._get_serializer().serialize(workflow, settings)
 
     def save(
-            self,
-            workflow: speedwagon.Workflow,
-            settings: SettingsData
+        self, workflow: speedwagon.Workflow, settings: SettingsData
     ) -> None:
         self.write_data_to_file(
             data=self.serialize_settings_data(workflow, settings),
-            file_name=self.yaml_file
+            file_name=self.yaml_file,
         )
 
 
@@ -1025,10 +986,8 @@ class AbsWorkflowSettingsResolver(abc.ABC):  # pylint: disable=R0903
 
 
 class WorkflowSettingsYAMLResolver(
-    AbsYamlConfigFileManager,
-    AbsWorkflowSettingsResolver
+    AbsYamlConfigFileManager, AbsWorkflowSettingsResolver
 ):
-
     @staticmethod
     def read_file(file_name: str) -> str:
         with open(file_name, "r", encoding="utf-8") as file_handle:
@@ -1051,43 +1010,42 @@ class WorkflowSettingsYAMLResolver(
             for i in workflow.workflow_options()
         ]
         return {
-            item['name']: item['value']
+            item["name"]: item["value"]
             for item in config_data[workflow.name]
-            if item['name'] in valid_options
+            if item["name"] in valid_options
         }
 
 
 class WorkflowSettingsManager(AbsWorkflowSettingsManager):
     def __init__(
-            self,
-            getter_strategy: Optional[AbsWorkflowSettingsResolver] = None,
-            setter_strategy: Optional[AbsWorkflowSettingsExporter] = None
+        self,
+        getter_strategy: Optional[AbsWorkflowSettingsResolver] = None,
+        setter_strategy: Optional[AbsWorkflowSettingsExporter] = None,
     ) -> None:
         super().__init__()
-        self.settings_getter_strategy: AbsWorkflowSettingsResolver = \
-            getter_strategy or \
-            WorkflowSettingsYAMLResolver(self._get_yaml_file())
-        self.settings_saver_strategy: AbsWorkflowSettingsExporter = \
-            setter_strategy or \
-            WorkflowSettingsYamlExporter(self._get_yaml_file())
+        self.settings_getter_strategy: AbsWorkflowSettingsResolver = (
+            getter_strategy
+            or WorkflowSettingsYAMLResolver(self._get_yaml_file())
+        )
+        self.settings_saver_strategy: AbsWorkflowSettingsExporter = (
+            setter_strategy
+            or WorkflowSettingsYamlExporter(self._get_yaml_file())
+        )
 
     @staticmethod
     def _get_yaml_file() -> str:
         return os.path.join(
             StandardConfigFileLocator().get_app_data_dir(),
-            WORKFLOWS_SETTINGS_YML_FILE_NAME
+            WORKFLOWS_SETTINGS_YML_FILE_NAME,
         )
 
     def get_workflow_settings(
-            self,
-            workflow: speedwagon.Workflow
+        self, workflow: speedwagon.Workflow
     ) -> SettingsData:
         return self.settings_getter_strategy.get_response(workflow)
 
     def save_workflow_settings(
-            self,
-            workflow: speedwagon.Workflow,
-            settings: SettingsData
+        self, workflow: speedwagon.Workflow, settings: SettingsData
     ) -> None:
         self.settings_saver_strategy.save(workflow, settings)
 
@@ -1099,7 +1057,6 @@ class AbsWorkflowBackend(abc.ABC):  # pylint: disable=R0903
 
 
 class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
-
     def __init__(self) -> None:
         super().__init__()
         self.yaml_file: Optional[str] = None
@@ -1114,12 +1071,7 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
         return speedwagon.config.WorkflowSettingsYAMLResolver(self.yaml_file)
 
     def get(self, key: str) -> Optional[SettingsDataType]:
-        if any(
-                [
-                    self.yaml_file is None,
-                    self.workflow is None
-                ]
-        ):
+        if any([self.yaml_file is None, self.workflow is None]):
             return None
         return self.get_yaml_strategy().get_response(self.workflow).get(key)
 
@@ -1128,8 +1080,7 @@ def get_config_backend():
     config_backend = YAMLWorkflowConfigBackend()
     config_strategy = StandardConfigFileLocator()
     backend_yaml = os.path.join(
-        config_strategy.get_app_data_dir(),
-        WORKFLOWS_SETTINGS_YML_FILE_NAME
+        config_strategy.get_app_data_dir(), WORKFLOWS_SETTINGS_YML_FILE_NAME
     )
     config_backend.yaml_file = backend_yaml
     return config_backend

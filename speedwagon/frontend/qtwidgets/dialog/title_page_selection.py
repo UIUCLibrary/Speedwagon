@@ -21,26 +21,28 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
     """File selection delegate widget."""
 
     def createEditor(  # pylint: disable=C0103,W0613
-            self,
-            parent: QtWidgets.QWidget,
-            item: QtWidgets.QStyleOptionViewItem,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        self,
+        parent: QtWidgets.QWidget,
+        item: QtWidgets.QStyleOptionViewItem,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
     ) -> QtWidgets.QWidget:
         """Create editor widget."""
         return QtWidgets.QComboBox(parent)
 
     def setEditorData(  # pylint: disable=C0103,W0613
-            self,
-            editor: QtCore.QObject,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        self,
+        editor: QtCore.QObject,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
     ) -> None:
         """Set editor data."""
-        object_record: collection.PackageObject = \
-            index.data(role=typing.cast(int, Qt.ItemDataRole.UserRole))
+        object_record: collection.PackageObject = index.data(
+            role=typing.cast(int, Qt.ItemDataRole.UserRole)
+        )
 
         try:
             title_page = object_record.component_metadata[
-                collection.Metadata.TITLE_PAGE]
+                collection.Metadata.TITLE_PAGE
+            ]
         except KeyError:
             title_page = ""
 
@@ -56,22 +58,22 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
                 editor.setCurrentIndex(i)
 
     def setModelData(  # pylint: disable=C0103
-            self,
-            widget: QtWidgets.QWidget,
-            model: QtCore.QAbstractItemModel,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        self,
+        widget: QtWidgets.QWidget,
+        model: QtCore.QAbstractItemModel,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
     ) -> None:
         """Set model data."""
-        record: collection.PackageObject = \
-            model.data(index, role=typing.cast(int, Qt.ItemDataRole.UserRole))
+        record: collection.PackageObject = model.data(
+            index, role=typing.cast(int, Qt.ItemDataRole.UserRole)
+        )
         widget = typing.cast(QtWidgets.QComboBox, widget)
         record.component_metadata[
-            collection.Metadata.TITLE_PAGE] = widget.currentText()
+            collection.Metadata.TITLE_PAGE
+        ] = widget.currentText()
 
         model.setData(
-            index,
-            record,
-            role=typing.cast(int, Qt.ItemDataRole.UserRole)
+            index, record, role=typing.cast(int, Qt.ItemDataRole.UserRole)
         )
 
 
@@ -79,60 +81,65 @@ class PackagesModel(QtCore.QAbstractTableModel):
     """Model for holding title page information."""
 
     fields = [
-
-        ModelField(column_header="Object",
-                   data_entry=collection.Metadata.ID,
-                   editable=False),
-
-        ModelField(column_header="Title Page",
-                   data_entry=collection.Metadata.TITLE_PAGE,
-                   editable=True),
-        ModelField(column_header="Location",
-                   data_entry=collection.Metadata.PATH,
-                   editable=False),
-
+        ModelField(
+            column_header="Object",
+            data_entry=collection.Metadata.ID,
+            editable=False,
+        ),
+        ModelField(
+            column_header="Title Page",
+            data_entry=collection.Metadata.TITLE_PAGE,
+            editable=True,
+        ),
+        ModelField(
+            column_header="Location",
+            data_entry=collection.Metadata.PATH,
+            editable=False,
+        ),
     ]
 
     def __init__(
-            self,
-            packages: typing.List[collection.Package],
-            parent: typing.Optional[QtWidgets.QWidget] = None
+        self,
+        packages: typing.List[collection.Package],
+        parent: typing.Optional[QtWidgets.QWidget] = None,
     ) -> None:
         """Create a new package model."""
         super().__init__(parent)
         self._packages = packages
 
     def columnCount(  # pylint: disable=C0103,W0613
-            self,
-            *args,
-            parent: typing.Optional[
-                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
-            ] = None,
-            **kwargs,
+        self,
+        *args,
+        parent: typing.Optional[
+            Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        ] = None,
+        **kwargs,
     ) -> int:
         """Get the number of fields in model."""
         return len(self.fields)
 
     def rowCount(  # pylint: disable=C0103,W0613
-            self,
-            *args,
-            parent: typing.Optional[
-                Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
-            ] = None,
-            **kwargs
+        self,
+        *args,
+        parent: typing.Optional[
+            Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        ] = None,
+        **kwargs,
     ) -> int:
         """Get the number of packages in model."""
         return len(self._packages)
 
     def headerData(  # pylint: disable=C0103
-            self,
-            index: int,
-            orientation: Qt.Orientation,
-            role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole)
+        self,
+        index: int,
+        orientation: Qt.Orientation,
+        role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole),
     ) -> Union[str, QtCore.QObject]:
         """Get model header information."""
-        if role == QtCore.Qt.ItemDataRole.DisplayRole and \
-                orientation == QtCore.Qt.Orientation.Horizontal:
+        if (
+            role == QtCore.Qt.ItemDataRole.DisplayRole
+            and orientation == QtCore.Qt.Orientation.Horizontal
+        ):
             try:
                 return self.fields[index].column_header
             except IndexError:
@@ -141,9 +148,9 @@ class PackagesModel(QtCore.QAbstractTableModel):
             return super().headerData(index, orientation, role)
 
     def data(
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-            role=QtCore.Qt.ItemDataRole.DisplayRole
+        self,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+        role=QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         """Get data at index."""
         row = index.row()
@@ -166,15 +173,14 @@ class PackagesModel(QtCore.QAbstractTableModel):
         return self._packages
 
     def flags(
-            self,
-            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        self, index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> Qt.ItemFlag:
         """Set flags for index."""
         column = index.column()
         if self.fields[column].editable:
             return typing.cast(
                 Qt.ItemFlag,
-                Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled
+                Qt.ItemFlag.ItemIsEditable | Qt.ItemFlag.ItemIsEnabled,
             )
         return super().flags(index)
 
@@ -183,10 +189,10 @@ class PackageBrowser(QtWidgets.QDialog):
     """Browser dialog for selecting title page."""
 
     def __init__(
-            self,
-            packages: typing.List[collection.Package],
-            parent: typing.Optional[QtWidgets.QWidget],
-            flags: Qt.WindowType = Qt.WindowType(0),
+        self,
+        packages: typing.List[collection.Package],
+        parent: typing.Optional[QtWidgets.QWidget],
+        flags: Qt.WindowType = Qt.WindowType(0),
     ) -> None:
         """Create a package browser dialog window."""
         super().__init__(parent, flags)

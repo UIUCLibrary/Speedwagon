@@ -5,7 +5,14 @@ import os
 import platform
 import typing
 from typing import (
-    Optional, Dict, cast, List, Tuple, Callable, Iterable, TYPE_CHECKING
+    Optional,
+    Dict,
+    cast,
+    List,
+    Tuple,
+    Callable,
+    Iterable,
+    TYPE_CHECKING,
 )
 import sys
 
@@ -24,13 +31,15 @@ from speedwagon import config
 from speedwagon.frontend import qtwidgets
 from speedwagon.frontend.qtwidgets.widgets import (
     PluginConfig,
-    WorkflowSettingsEditor
+    WorkflowSettingsEditor,
 )
 from speedwagon.frontend.qtwidgets.models import tabs as tab_models
-from speedwagon.frontend.qtwidgets.models.settings import\
-    unpack_global_settings_model,\
-    build_setting_qt_model
+from speedwagon.frontend.qtwidgets.models.settings import (
+    unpack_global_settings_model,
+    build_setting_qt_model,
+)
 from speedwagon.frontend.qtwidgets import models
+
 if TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets.models import plugins as plugin_models
 
@@ -39,26 +48,24 @@ if sys.version_info < (3, 10):  # pragma: no cover
 else:
     from importlib import metadata
 
-__all__ = ['GlobalSettingsTab', 'TabsConfigurationTab', 'TabEditor']
+__all__ = ["GlobalSettingsTab", "TabsConfigurationTab", "TabEditor"]
 
 SaveCallback = Callable[["SettingsTab"], Dict[str, typing.Any]]
 
 
 class UnsupportedOpenSettings(config.AbsOpenSettings):
-
-    def __init__(self,
-                 settings_directory: str,
-                 parent: Optional[QtWidgets.QWidget] = None
-                 ) -> None:
+    def __init__(
+        self,
+        settings_directory: str,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ) -> None:
         super().__init__(settings_directory)
         self.parent = parent
 
     def system_open_directory(self, settings_directory: str) -> None:
         msg = QtWidgets.QMessageBox(parent=self.parent)
         msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-        msg.setText(
-            f"Don't know how to do that on {platform.system()}"
-        )
+        msg.setText(f"Don't know how to do that on {platform.system()}")
 
         msg.show()
 
@@ -80,9 +87,9 @@ class SettingsDialog(QtWidgets.QDialog):
     changes_made = QtCore.Signal()
 
     def __init__(
-            self,
-            parent: Optional[QtWidgets.QWidget] = None,
-            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
+        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
     ) -> None:
         super().__init__(parent, flags)
         self.settings_location: Optional[str] = None
@@ -106,26 +113,21 @@ class SettingsDialog(QtWidgets.QDialog):
 
         layout.addWidget(self.open_settings_path_button)
 
-        self.button_box = \
-            QtWidgets.QDialogButtonBox(
-                cast(
-                    QtWidgets.QDialogButtonBox.StandardButton,
-                    QtWidgets.QDialogButtonBox.StandardButton.Cancel |
-                    QtWidgets.QDialogButtonBox.StandardButton.Ok
-                )
+        self.button_box = QtWidgets.QDialogButtonBox(
+            cast(
+                QtWidgets.QDialogButtonBox.StandardButton,
+                QtWidgets.QDialogButtonBox.StandardButton.Cancel
+                | QtWidgets.QDialogButtonBox.StandardButton.Ok,
             )
+        )
 
         # Okay button will start out disabled because no changes have been made
         self.button_box.button(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
         ).setEnabled(False)
 
-        self.button_box.accepted.connect(  # type: ignore
-            self.accept
-        )
-        self.button_box.rejected.connect(  # type: ignore
-            self.reject
-        )
+        self.button_box.accepted.connect(self.accept)  # type: ignore
+        self.button_box.rejected.connect(self.reject)  # type: ignore
         layout.addWidget(self.button_box)
 
         self.setLayout(layout)
@@ -137,11 +139,9 @@ class SettingsDialog(QtWidgets.QDialog):
     def settings_tabs(self) -> Dict[str, SettingsTab]:
         settings: Dict[str, SettingsTab] = {}
         for index in range(self.tabs_widget.count()):
-            settings[self.tabs_widget.tabText(index)] = \
-                typing.cast(
-                    SettingsTab,
-                    self.tabs_widget.widget(index)
-                )
+            settings[self.tabs_widget.tabText(index)] = typing.cast(
+                SettingsTab, self.tabs_widget.widget(index)
+            )
 
             self.tabs_widget.widget(index)
         return settings
@@ -158,8 +158,8 @@ class SettingsDialog(QtWidgets.QDialog):
         # completely assigned  new buttons with updated attributes to see any
         # changes.
         self.button_box.setStandardButtons(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel |
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            | QtWidgets.QDialogButtonBox.StandardButton.Ok
         )
         ok_button = self.button_box.button(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
@@ -171,22 +171,24 @@ class SettingsDialog(QtWidgets.QDialog):
         self.tabs_widget.addTab(tab, tab_name)
 
     def open_settings_dir(
-            self,
-            strategy: Optional[config.AbsOpenSettings] = None
+        self, strategy: Optional[config.AbsOpenSettings] = None
     ) -> None:
         if self.settings_location is None:
             return
 
         strategies: Dict[str, config.AbsOpenSettings] = {
             "Darwin": config.DarwinOpenSettings(self.settings_location),
-            "Windows": config.WindowsOpenSettings(self.settings_location)
+            "Windows": config.WindowsOpenSettings(self.settings_location),
         }
 
         folder_opener = config.OpenSettingsDirectory(
-            strategy if strategy is not None else strategies.get(
+            strategy
+            if strategy is not None
+            else strategies.get(
                 platform.system(),
                 UnsupportedOpenSettings(
-                    settings_directory=self.settings_location, parent=self)
+                    settings_directory=self.settings_location, parent=self
+                ),
             )
         )
         folder_opener.open()
@@ -195,14 +197,13 @@ class SettingsDialog(QtWidgets.QDialog):
 class PluginModelLoader(abc.ABC):  # pylint: disable=too-few-public-methods
     @abc.abstractmethod
     def load_plugins_into_model(
-            self,
-            model: plugin_models.PluginActivationModel
+        self, model: plugin_models.PluginActivationModel
     ) -> None:
         """Load plugins into the model."""
 
 
 class EntrypointsPluginModelLoader(PluginModelLoader):
-    entrypoint_group_name = 'speedwagon.plugins'
+    entrypoint_group_name = "speedwagon.plugins"
 
     def __init__(self, config_file: str) -> None:
         super().__init__()
@@ -210,9 +211,7 @@ class EntrypointsPluginModelLoader(PluginModelLoader):
 
     @classmethod
     def plugin_entry_points(cls) -> metadata.EntryPoints:
-        return metadata.entry_points(
-            group=cls.entrypoint_group_name
-        )
+        return metadata.entry_points(group=cls.entrypoint_group_name)
 
     def is_entry_point_active(self, entry_point: metadata.EntryPoint) -> bool:
         settings = config.read_settings_file_plugins(self.config_file)
@@ -223,8 +222,7 @@ class EntrypointsPluginModelLoader(PluginModelLoader):
         )
 
     def load_plugins_into_model(
-            self,
-            model: plugin_models.PluginActivationModel
+        self, model: plugin_models.PluginActivationModel
     ) -> None:
         for entry_point in self.plugin_entry_points():
             model.add_entry_point(
@@ -234,8 +232,8 @@ class EntrypointsPluginModelLoader(PluginModelLoader):
 
 class PluginsTab(SettingsTab):
     def __init__(
-            self,
-            parent: Optional[QtWidgets.QWidget] = None,
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout()
@@ -248,13 +246,11 @@ class PluginsTab(SettingsTab):
         return self.plugins_activation.model.data_modified
 
     def get_data(self) -> Dict[str, typing.Any]:
-        return {
-            "enabled_plugins": self.plugins_activation.enabled_plugins()
-        }
+        return {"enabled_plugins": self.plugins_activation.enabled_plugins()}
 
     def load(self, settings_ini: str) -> None:
         settings = config.read_settings_file_plugins(settings_ini)
-        for entry_point in metadata.entry_points(group='speedwagon.plugins'):
+        for entry_point in metadata.entry_points(group="speedwagon.plugins"):
             active = False
             if (
                 entry_point.module in settings
@@ -270,9 +266,9 @@ class GlobalSettingsTab(SettingsTab):
     """Widget for editing global settings."""
 
     def __init__(
-            self,
-            parent: Optional[QtWidgets.QWidget] = None,
-            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
+        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
     ) -> None:
         """Create a global settings tab widget."""
         super().__init__(parent, flags)
@@ -280,8 +276,8 @@ class GlobalSettingsTab(SettingsTab):
         self._modified = False
 
         self._table_model: Optional[
-            models.SettingsModel] = \
-            models.SettingsModel()
+            models.SettingsModel
+        ] = models.SettingsModel()
         self._table_model.dataChanged.connect(self.changes_made)
         self.changes_made.connect(self.on_modified)
         layout = QtWidgets.QVBoxLayout(self)
@@ -289,7 +285,8 @@ class GlobalSettingsTab(SettingsTab):
         self.settings_table = QtWidgets.QTableView(self)
 
         self.settings_table.setSelectionMode(
-            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
+            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection
+        )
 
         self.settings_table.horizontalHeader().setStretchLastSection(True)
 
@@ -299,8 +296,7 @@ class GlobalSettingsTab(SettingsTab):
     def get_data(self) -> config.SettingsData:
         """Get the global settings data."""
         if self._table_model:
-            return \
-                unpack_global_settings_model(self._table_model)
+            return unpack_global_settings_model(self._table_model)
         return {}
 
     def data_is_modified(self) -> bool:
@@ -323,8 +319,7 @@ class GlobalSettingsTab(SettingsTab):
             raise FileNotFoundError("No Configuration file set")
         if not os.path.exists(self.config_file):
             raise FileNotFoundError("Invalid Configuration file set")
-        self._table_model = \
-            build_setting_qt_model(self.config_file)
+        self._table_model = build_setting_qt_model(self.config_file)
 
         self.settings_table.setModel(self._table_model)
 
@@ -347,9 +342,9 @@ class TabsConfigurationTab(SettingsTab):
     """Tabs configuration widget."""
 
     def __init__(
-            self,
-            parent: Optional[QtWidgets.QWidget] = None,
-            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
+        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
     ) -> None:
         """Create a tab configuration widget."""
         super().__init__(parent, flags)
@@ -371,7 +366,7 @@ class TabsConfigurationTab(SettingsTab):
         return {"tab_information": self.editor.model.tab_information()}
 
     def tab_config_management_strategy(
-            self
+        self,
     ) -> config.AbsTabsConfigDataManagement:
         """Get the default strategy for working with custom tab YAML files."""
         if self.settings_location is None:
@@ -402,17 +397,13 @@ class TabsConfigurationTab(SettingsTab):
         msg_box.setText("Please restart changes to take effect")
         msg_box.exec()
 
-    def load(
-            self,
-            strategy: tab_models.AbsLoadTabDataModelStrategy
-    ) -> None:
+    def load(self, strategy: tab_models.AbsLoadTabDataModelStrategy) -> None:
         """Load configuration settings."""
         strategy.load(self.editor.model)
         self.editor.selected_tab_combo_box.setCurrentIndex(0)
 
 
 class ConfigWorkflowSettingsTab(SettingsTab):
-
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
@@ -449,7 +440,6 @@ class AbsConfigSaver2(abc.ABC):  # pylint: disable=too-few-public-methods
 
 
 class AbsSaveStrategy(abc.ABC):
-
     @abc.abstractmethod
     def write_file(self, data: str, file: str) -> None:
         """Write data to a file."""
@@ -467,8 +457,7 @@ class AbsConfigSaverCallbacks(AbsConfigSaver2, abc.ABC):
         ] = []
 
     def add_success_call_back(
-            self,
-            callback: typing.Callable[[Optional[QtWidgets.QWidget]], None]
+        self, callback: typing.Callable[[Optional[QtWidgets.QWidget]], None]
     ) -> None:
         self._success_callbacks.append(callback)
 
@@ -479,9 +468,9 @@ class AbsConfigSaverCallbacks(AbsConfigSaver2, abc.ABC):
 
 class MultiSaver(AbsConfigSaverCallbacks):
     def __init__(
-            self,
-            config_savers: Optional[List[AbsConfigSaver2]] = None,
-            parent: Optional[QtWidgets.QWidget] = None
+        self,
+        config_savers: Optional[List[AbsConfigSaver2]] = None,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(parent)
         self.config_savers: list[AbsConfigSaver2] = config_savers or []
@@ -503,12 +492,11 @@ class AbsConfigSaver(abc.ABC):  # pylint: disable=too-few-public-methods
 
 
 class ConfigFileSaver(AbsConfigSaverCallbacks):
-
     def __init__(
-            self,
-            save_strategy: AbsSaveStrategy,
-            file_path: str,
-            parent: Optional[QtWidgets.QWidget] = None
+        self,
+        save_strategy: AbsSaveStrategy,
+        file_path: str,
+        parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(parent)
         self.save_strategy = save_strategy
@@ -521,15 +509,16 @@ class ConfigFileSaver(AbsConfigSaverCallbacks):
 
 class SaveStrategy(AbsSaveStrategy, abc.ABC):
     def write_file(self, data: str, file: str) -> None:
-        with open(file, 'w', encoding="utf8") as file_handel:
+        with open(file, "w", encoding="utf8") as file_handel:
             file_handel.write(data)
 
 
 class SettingsTabSaveStrategy(SaveStrategy):
     def __init__(
-            self,
-            settings_tab_widget: SettingsTab,
-            serialization_function: Callable[[SettingsTab], str]) -> None:
+        self,
+        settings_tab_widget: SettingsTab,
+        serialization_function: Callable[[SettingsTab], str],
+    ) -> None:
         self.widget = settings_tab_widget
         self.serialization_function = serialization_function
 
@@ -538,7 +527,6 @@ class SettingsTabSaveStrategy(SaveStrategy):
 
 
 class ConfigSaver(AbsConfigSaver):
-
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         self.tabs_yaml_path: Optional[str] = None
@@ -550,7 +538,8 @@ class ConfigSaver(AbsConfigSaver):
     @property
     def config_file_path(self) -> Optional[str]:
         return (
-            None if self.file_manager is None
+            None
+            if self.file_manager is None
             else self.file_manager.config_file
         )
 
@@ -559,42 +548,42 @@ class ConfigSaver(AbsConfigSaver):
         self.file_manager = config.IniConfigManager(value)
 
     def add_success_call_back(
-            self,
-            callback: typing.Callable[[Optional[QtWidgets.QWidget]], None]
+        self, callback: typing.Callable[[Optional[QtWidgets.QWidget]], None]
     ) -> None:
         self._success_callbacks.append(callback)
 
     @staticmethod
     def _get_global_data(
-            tab_widgets: Dict[str, SettingsTab]
+        tab_widgets: Dict[str, SettingsTab]
     ) -> config.SettingsData:
         global_data: config.SettingsData = {}
 
-        global_settings_tab: Optional[SettingsTab] = \
-            tab_widgets.get("Global Settings")
+        global_settings_tab: Optional[SettingsTab] = tab_widgets.get(
+            "Global Settings"
+        )
 
         if global_settings_tab:
             global_data = {
                 **global_data,
-                **(global_settings_tab.get_data() or {})
+                **(global_settings_tab.get_data() or {}),
             }
         return global_data
 
-    def get_tab_config_strategy(
-            self
-    ) -> config.AbsTabsConfigDataManagement:
+    def get_tab_config_strategy(self) -> config.AbsTabsConfigDataManagement:
         if not self.tabs_yaml_path:
             raise RuntimeError("ConfigSaver.tabs_yaml_path not set")
         return config.CustomTabsYamlConfig(self.tabs_yaml_path)
 
     def _save_tabs(self, editor: TabEditor) -> None:
         yaml_config = self.get_tab_config_strategy()
-        yaml_config.save(list(
-            filter(
-                lambda tab: tab.tab_name != "All",
-                editor.model.tab_information(),
+        yaml_config.save(
+            list(
+                filter(
+                    lambda tab: tab.tab_name != "All",
+                    editor.model.tab_information(),
+                )
             )
-        ))
+        )
 
     def _save_config(self, tab_widgets: Dict[str, SettingsTab]) -> None:
         if self.file_manager is None:
@@ -618,12 +607,9 @@ class ConfigSaver(AbsConfigSaver):
 
     @staticmethod
     def _make_config_parsable(
-            source_data: typing.Union[Dict[str, bool], config.SettingsData]
+        source_data: typing.Union[Dict[str, bool], config.SettingsData]
     ) -> config.SettingsData:
-        return {
-            key: str(value)
-            for key, value in source_data.items()
-        }
+        return {key: str(value) for key, value in source_data.items()}
 
 
 class SettingsBuilder2:
@@ -653,16 +639,15 @@ class SettingsBuilder2:
         if self._on_save_callback is not None:
             config_dialog.accepted.connect(
                 lambda callback=self._on_save_callback: callback(
-                    config_dialog,
-                    config_dialog.settings_tabs
+                    config_dialog, config_dialog.settings_tabs
                 )
             )
         return config_dialog
 
     def add_tab(
-            self,
-            name: str,
-            widget: SettingsTab,
+        self,
+        name: str,
+        widget: SettingsTab,
     ) -> None:
         self._tabs.append((name, widget))
 
@@ -670,10 +655,10 @@ class SettingsBuilder2:
         self._save_strategy = value
 
     def add_on_save_callback(
-            self,
-            on_save_callback: Callable[
-                [SettingsDialog, Dict[str, SettingsTab]], None
-            ]
+        self,
+        on_save_callback: Callable[
+            [SettingsDialog, Dict[str, SettingsTab]], None
+        ],
     ) -> None:
         self._on_save_callback = on_save_callback
 
@@ -688,20 +673,19 @@ class TabEditorWidgetUI(QtWidgets.QWidget):  # pylint: disable=R0903
     splitter: QtWidgets.QSplitter
 
     def __init__(
-            self,
-            parent: Optional[QtWidgets.QWidget] = None,
-            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
+        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)
         self.load_ui_file()
 
     def load_ui_file(self) -> None:
-
         with as_file(
-                resources.files(
-                    "speedwagon.frontend.qtwidgets.ui"
-                ).joinpath("tab_editor.ui")
+            resources.files("speedwagon.frontend.qtwidgets.ui").joinpath(
+                "tab_editor.ui"
+            )
         ) as ui_file:
             qtwidgets.ui_loader.load_ui(str(ui_file), self)
 
@@ -716,9 +700,9 @@ class TabEditor(TabEditorWidgetUI):
     changes_made = QtCore.Signal()
 
     def __init__(
-            self,
-            parent: Optional[QtWidgets.QWidget] = None,
-            flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0)
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
+        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)
@@ -734,9 +718,7 @@ class TabEditor(TabEditorWidgetUI):
         self._user_tabs_model.setFilterRegularExpression("^((?!All).)*$")
         self._user_tabs_model.setSourceModel(self._tabs_model)
 
-        self._tabs_model.dataChanged.connect(  # type: ignore
-            self.changes_made
-        )
+        self._tabs_model.dataChanged.connect(self.changes_made)  # type: ignore
         self.selected_tab_combo_box.setModel(self._user_tabs_model)
 
         self._tabs_file: Optional[str] = None
@@ -749,9 +731,7 @@ class TabEditor(TabEditorWidgetUI):
         self._active_tab_workflows_model = tab_models.TabProxyModel()
         self._active_tab_workflows_model.setSourceModel(self._tabs_model)
 
-        self.tab_workflows_list_view.setModel(
-            self._active_tab_workflows_model
-        )
+        self.tab_workflows_list_view.setModel(self._active_tab_workflows_model)
         self.tab_workflows_list_view.setAlternatingRowColors(True)
         self.selected_tab_combo_box.currentIndexChanged.connect(
             self._handle_current_tab_index_changed
@@ -803,9 +783,7 @@ class TabEditor(TabEditorWidgetUI):
                 self.changes_made
             )
         self._tabs_model = value
-        self._tabs_model.dataChanged.connect(  # type: ignore
-            self.changes_made
-        )
+        self._tabs_model.dataChanged.connect(self.changes_made)  # type: ignore
         self.selected_tab_combo_box.setModel(self._tabs_model)
 
     def load_data(self) -> None:
@@ -826,14 +804,15 @@ class TabEditor(TabEditorWidgetUI):
             new_tab_name: str
             accepted: bool
             new_tab_name, accepted = QtWidgets.QInputDialog.getText(
-                self.parentWidget(), "Create New Tab", "Tab name")
+                self.parentWidget(), "Create New Tab", "Tab name"
+            )
 
             # The user cancelled
             if not accepted:
                 return
 
             if self._tabs_model.get_tab(new_tab_name):
-                message = f"Tab named \"{new_tab_name}\" already exists."
+                message = f'Tab named "{new_tab_name}" already exists.'
                 error = QtWidgets.QMessageBox(self)
                 error.setText(message)
                 error.setWindowTitle("Unable to Create New Tab")
@@ -852,9 +831,7 @@ class TabEditor(TabEditorWidgetUI):
         source_index = self._user_tabs_model.mapToSource(index)
 
         self.model.beginRemoveRows(
-            source_index,
-            source_index.row(),
-            source_index.row()
+            source_index, source_index.row(), source_index.row()
         )
 
         self.selected_tab_combo_box.model().beginRemoveRows(
@@ -868,29 +845,25 @@ class TabEditor(TabEditorWidgetUI):
 
     def _add_items_to_tab(self) -> None:
         model = cast(
-            tab_models.TabProxyModel,
-            self.tab_workflows_list_view.model()
+            tab_models.TabProxyModel, self.tab_workflows_list_view.model()
         )
         for selected_index in self.all_workflows_list_view.selectedIndexes():
-            new_workflow = \
-                self._all_workflows_model.data(
-                    selected_index,
-                    role=models.WorkflowClassRole
-                )
+            new_workflow = self._all_workflows_model.data(
+                selected_index, role=models.WorkflowClassRole
+            )
             active_tab_index = self._active_tab_workflows_model.get_tab_index()
             starting_row_count = model.rowCount()
 
             model.add_workflow(new_workflow)
             self.model.dataChanged.emit(
                 self.model.index(starting_row_count, parent=active_tab_index),
-                self.model.index(model.rowCount(), parent=active_tab_index)
+                self.model.index(model.rowCount(), parent=active_tab_index),
             )
         model.sort(0)
 
     def _remove_items(self) -> None:
         model = cast(
-            models.WorkflowListProxyModel,
-            self.tab_workflows_list_view.model()
+            models.WorkflowListProxyModel, self.tab_workflows_list_view.model()
         )
         items_to_remove = [
             i.data(role=models.WorkflowClassRole)

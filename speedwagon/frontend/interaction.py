@@ -26,9 +26,7 @@ class AbsUserWidget(abc.ABC):
 
     @abc.abstractmethod
     def get_user_response(
-            self,
-            options: dict,
-            pretask_results: list
+        self, options: dict, pretask_results: list
     ) -> Dict[str, Any]:
         """Get response from the user."""
 
@@ -44,17 +42,13 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
 
     @abc.abstractmethod
     def get_user_response(
-            self,
-            options: dict,
-            pretask_results: list
+        self, options: dict, pretask_results: list
     ) -> Dict[str, Any]:
         """Get a response from the user."""
 
     @classmethod
     def get_packages(
-            cls,
-            root_dir: str,
-            image_type: SupportedImagePackageFormats
+        cls, root_dir: str, image_type: SupportedImagePackageFormats
     ) -> List[collection.Package]:
         """Locate packages at a given directory."""
         image_types = {
@@ -63,9 +57,7 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
             SupportedImagePackageFormats.JP2:
                 uiucprescon.packager.packages.HathiJp2()
         }
-        package_factory = PackageFactory(
-            image_types[image_type]
-        )
+        package_factory = PackageFactory(image_types[image_type])
         return [
             cls.sort_package(package)
             for package in package_factory.locate_packages(root_dir)
@@ -76,14 +68,11 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
         """Convert an image string to an enum value."""
         image_type: Optional[SupportedImagePackageFormats] = {
             "TIFF": SupportedImagePackageFormats.TIFF,
-            'JPEG 2000': SupportedImagePackageFormats.JP2
+            "JPEG 2000": SupportedImagePackageFormats.JP2,
         }.get(value)
 
         if image_type is None:
-            raise KeyError(
-                f'Unknown value for '
-                f'"Image File Type": {value}'
-            )
+            raise KeyError(f"Unknown value for " f'"Image File Type": {value}')
         return image_type
 
     @staticmethod
@@ -91,8 +80,7 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
         sorted_package = copy.copy(package)
         item_name = uiucprescon.packager.Metadata.ITEM_NAME
         sorted_package.items = sorted(
-            package.items,
-            key=lambda pack: pack.metadata[item_name]
+            package.items, key=lambda pack: pack.metadata[item_name]
         )
         return sorted_package
 
@@ -113,6 +101,6 @@ class UserRequestFactory(abc.ABC):
         """Get the correct type of removal dialog."""
 
     def package_title_page_selection(
-            self
+        self,
     ) -> AbstractPackageTitlePageSelection:
         """Get the title page for the packages."""

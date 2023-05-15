@@ -25,5 +25,5 @@ __all__ = [
     "shared_custom_widgets",
     "gui",
     "gui_startup",
-    "worker"
+    "worker",
 ]

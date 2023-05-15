@@ -35,3 +35,5 @@ line-length = 79
 convention = "google"
 
 #match = "((?!test).*)(^(?!.*(ui)).*)\\.py"
+[tool.black]
+line-length = 79
