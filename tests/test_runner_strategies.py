@@ -1,13 +1,15 @@
+from __future__ import annotations
 import logging
 import os
 
 import pytest
 from unittest.mock import Mock, MagicMock
-from typing import List, Any, Dict
+from typing import List, Any, Dict, TYPE_CHECKING
 
 import speedwagon.exceptions
 from speedwagon import runner_strategies, tasks
 import speedwagon
+# from tasks import TaskBuilder
 
 
 # @pytest.mark.filterwarnings(
@@ -545,14 +547,18 @@ class TestBackgroundJobManager:
         with runner_strategies.BackgroundJobManager() as manager:
             assert manager is not None
 
-    def test_job_finished_called(self):
+    def test_job_finished_called(self, monkeypatch):
         callbacks = Mock(name="callbacks")
 
         liaison = runner_strategies.JobManagerLiaison(
             callbacks=callbacks,
             events=Mock()
         )
-
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            "get_app_data_dir",
+            lambda *_: "."
+        )
         with runner_strategies.BackgroundJobManager() as manager:
             manager.valid_workflows = {"spam": SpamWorkflow}
             manager.submit_job(

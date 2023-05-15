@@ -2,11 +2,10 @@ import warnings
 from unittest.mock import MagicMock, Mock
 
 import pytest
+
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 QtCore = pytest.importorskip("PySide6.QtCore")
 from uiucprescon.packager.common import Metadata as PackageMetadata
-# from PySide6 import QtWidgets, QtCore
-
 import speedwagon
 import speedwagon.exceptions
 from speedwagon.frontend import qtwidgets, interaction

@@ -12,6 +12,7 @@ import logging.handlers
 import typing
 from typing import List, Optional, Dict
 
+
 try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
@@ -31,6 +32,8 @@ from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 import speedwagon
 from speedwagon.frontend import qtwidgets
 from speedwagon.frontend.qtwidgets import widgets, models, logging_helpers
+from speedwagon.frontend.qtwidgets.models import tabs as tab_models
+from speedwagon.frontend.qtwidgets.models import options as option_models
 import speedwagon.runner_strategies
 from speedwagon.job import Workflow
 from speedwagon.workflow import AbsOutputOptionDataType
@@ -149,11 +152,11 @@ class ItemTabsWidget(ItemTabsUI):
             for workflow_row_id in range(self._model.rowCount(tab_index)):
                 workflow = self._model.data(
                     self._model.index(workflow_row_id, parent=tab_index),
-                    role=models.TabsTreeModel.WorkflowClassRole
+                    role=models.WorkflowClassRole
                 )
 
                 workflow_klasses[workflow.name] = workflow
-            tab_model = models.TabProxyModel()
+            tab_model = tab_models.TabProxyModel()
             tab_model.setSourceModel(self._model)
             tab_model.set_source_tab(tab_name)
             workflows_tab.set_model(tab_model)
@@ -329,13 +332,13 @@ def load_job_settings_model(
         settings_widget: widgets.DynamicForm,
         workflow_options: List[AbsOutputOptionDataType]
 ) -> None:
-    model = models.ToolOptionsModel4(workflow_options)
+    model = option_models.ToolOptionsModel4(workflow_options)
     for key, value in data.items():
         for i in range(model.rowCount()):
             index = model.index(i)
             option_data = typing.cast(
                 AbsOutputOptionDataType,
-                model.data(index, models.ToolOptionsModel4.DataRole)
+                model.data(index, option_models.ToolOptionsModel4.DataRole)
             )
 
             if option_data.label == key:

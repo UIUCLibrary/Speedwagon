@@ -14,3 +14,4 @@ def test_AbsOutputOptionDataType_needs_widget_name():
         class BadClass(speedwagon.workflow.AbsOutputOptionDataType):
             pass
         BadClass(label="Dummy")
+

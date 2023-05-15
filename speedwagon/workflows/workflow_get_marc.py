@@ -1,9 +1,10 @@
 """Generating MARC XML files by retrieving from a server."""
-
+from __future__ import annotations
 import abc
 import functools
 import os
 import re
+import typing
 from copy import deepcopy
 
 try:  # pragma: no cover
@@ -13,7 +14,7 @@ except ImportError:  # pragma: no cover
 
 
 from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple, \
-    Iterator, Collection
+    Iterator, Collection, TYPE_CHECKING
 
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
@@ -24,9 +25,9 @@ import requests
 import speedwagon
 from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from speedwagon import reports, validators, workflow
-from speedwagon.job import Workflow
 
-from speedwagon.config import SettingsData
+if TYPE_CHECKING:
+    from speedwagon.workflow import AbsOutputOptionDataType
 
 __all__ = ['GenerateMarcXMLFilesWorkflow']
 
@@ -44,7 +45,7 @@ MMSID_PATTERN = \
 BIBID_PATTERN = re.compile(r"^(?P<identifier>[0-9]*)")
 
 
-class GenerateMarcXMLFilesWorkflow(Workflow):
+class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
     """Generate Marc XML files.
 
     .. versionchanged:: 0.1.5
@@ -69,26 +70,7 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
                   "files from the Library."
     required_settings_keys: Set[str] = {"getmarc_server_url"}
 
-    def __init__(
-            self,
-            global_settings: Optional[SettingsData] = None
-    ) -> None:
-        """Generate Marc XML files.
-
-        Args:
-            global_settings:
-                Settings that could affect the way the workflow runs.
-        """
-        super().__init__()
-
-        if global_settings is not None:
-            self.global_settings = global_settings
-        for k in GenerateMarcXMLFilesWorkflow.required_settings_keys:
-            value = self.global_settings.get(k)
-            if value is None:
-                raise MissingConfiguration(f"Missing value for {k}")
-
-    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+    def get_user_options(self) -> List[AbsOutputOptionDataType]:
         """Request user options.
 
         User Options include:
@@ -136,6 +118,12 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
 
         return True
 
+    def get_marc_server(self) -> Optional[str]:
+        return typing.cast(
+            Optional[str],
+            self.get_workflow_configuration_value('Getmarc server url')
+        )
+
     def discover_task_metadata(
             self,
             initial_results: Sequence[Any],
@@ -153,9 +141,9 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
             list of dictionaries of job metadata
 
         """
-        server_url = self.global_settings.get("getmarc_server_url")
+        server_url = self.get_marc_server()
         if server_url is None:
-            raise MissingConfiguration("getmarc_server_url")
+            raise MissingConfiguration("Getmarc server url is not set")
 
         return [{
             "directory": {
@@ -320,6 +308,18 @@ class GenerateMarcXMLFilesWorkflow(Workflow):
             )
         results = match.groupdict()
         return results['identifier'], results.get('volume')
+
+    def configuration_options(self) -> List[AbsOutputOptionDataType]:
+        """Set the settings for get marc workflow.
+
+        This needs the getmarc server url.
+        """
+        return [
+            speedwagon.workflow.TextLineEditData(
+                'Getmarc server url',
+                required=True
+            ),
+        ]
 
 
 class AbsMarcFileStrategy(abc.ABC):

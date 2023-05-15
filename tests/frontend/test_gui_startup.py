@@ -13,8 +13,9 @@ gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor
-from speedwagon.frontend.qtwidgets.models import AbsLoadTabDataModelStrategy
+from speedwagon.frontend.qtwidgets.models.tabs import AbsLoadTabDataModelStrategy
 from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp
+from speedwagon.frontend.qtwidgets.models import tabs as tab_models
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
@@ -262,7 +263,7 @@ class TestStartQtThreaded:
         )
 
         monkeypatch.setattr(
-            speedwagon.config.Path,
+            speedwagon.config.pathlib.Path,
             "home",
             lambda *_: "/usr/home"
         )
@@ -431,13 +432,13 @@ class TestStartQtThreaded:
             for tab_name, workflows in data.items():
                 model.append_workflow_tab(tab_name, workflows)
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.models.TabDataModelConfigLoader,
+            tab_models.TabDataModelConfigLoader,
             "load",
             load
         )
 
         monkeypatch.setattr(
-            speedwagon.config.Path,
+            speedwagon.config.pathlib.Path,
             "home",
             lambda *_: "/usr/home"
         )
@@ -451,55 +452,6 @@ class TestStartQtThreaded:
         start = gui_startup.StartQtThreaded(Mock())
         start.request_settings()
         assert exec_.called is True
-
-    def test_request_settings_success_loads_workflows(self,  qtbot, monkeypatch, starter):
-        load_ini_file = Mock()
-        monkeypatch.setattr(
-            gui_startup.dialog.settings.GlobalSettingsTab,
-            "load_ini_file",
-            load_ini_file
-        )
-
-        monkeypatch.setattr(
-            gui_startup.dialog.settings.TabsConfigurationTab,
-            "load",
-            Mock(name="load")
-        )
-
-        monkeypatch.setattr(
-            gui_startup.config.StandardConfigFileLocator,
-            "get_config_file",
-            lambda *_, **__: ""
-        )
-
-        monkeypatch.setattr(speedwagon.config.TabsYamlWriter,
-            "save",
-            Mock()
-        )
-
-        monkeypatch.setattr(
-            SettingsDialog, "exec", lambda _self: _self.accept()
-
-        )
-        def load(_, model):
-            data = {"All": []}
-            for tab_name, workflows in data.items():
-                model.append_workflow_tab(tab_name, workflows)
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.models.TabDataModelConfigLoader,
-            "load",
-            load
-        )
-        monkeypatch.setattr(
-            speedwagon.config.IniConfigSaver,
-            "write_data_to_file",
-            Mock()
-        )
-
-        monkeypatch.setattr(starter, "load_workflows", Mock())
-        starter.windows = Mock()
-        starter.request_settings()
-        assert starter.load_workflows.called is True
 
     def test_run_opens_window(self, qtbot, monkeypatch, starter):
 
@@ -720,7 +672,7 @@ class TestStartQtThreaded:
             starter
     ):
         monkeypatch.setattr(
-            speedwagon.config.Path, "home", lambda: "my_home"
+            speedwagon.config.pathlib.Path, "home", lambda: "my_home"
         )
         monkeypatch.setattr(
             speedwagon.config.WindowsConfig,
@@ -751,10 +703,15 @@ class TestStartQtThreaded:
         )
         assert job_manager.submit_job.called is True
 
-    def test_initialize(self, qtbot):
+    def test_initialize(self, qtbot, monkeypatch):
         start = gui_startup.StartQtThreaded(Mock())
-        start.ensure_settings_files = Mock(name="ensure_settings_files")
+        speedwagon.config.ensure_settings_files = Mock(name="ensure_settings_files")
         start.resolve_settings = Mock(name="resolve_settings")
+        monkeypatch.setattr(
+            speedwagon.config.WorkflowSettingsYamlExporter,
+            "write_data_to_file",
+            Mock()
+        )
         start.initialize()
 
         expected = {
@@ -763,7 +720,7 @@ class TestStartQtThreaded:
         }
         actual = {
             "ensure_settings_files was called":
-                start.ensure_settings_files.called,
+                speedwagon.config.ensure_settings_files.called,
             "resolve_settings was called": start.resolve_settings.called,
         }
         assert actual == expected

@@ -2,7 +2,11 @@
 
 import abc
 import json
+import os
 from typing import Any, Dict, List, Optional, Union
+
+import speedwagon.config
+import speedwagon.job
 
 UserDataType = Union[str, bool, int, None]
 UserData = Dict[str, UserDataType]
@@ -13,6 +17,7 @@ class AbsOutputOptionDataType(abc.ABC):
 
     label: str
     widget_name: str
+    setting_name: str
     required: bool
 
     def __init_subclass__(cls) -> None:
@@ -29,13 +34,16 @@ class AbsOutputOptionDataType(abc.ABC):
         self.value: Optional[Union[str, int, bool]] = None
         self.placeholder_text: Optional[str] = None
         self.required = required
+        self.setting_name: Optional[str] = None
+        self.default_value: Optional[Union[str, int, bool]] = None
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the data."""
         data = {
             "widget_type": self.widget_name,
             "label": self.label,
-            "required": self.required
+            "required": self.required,
+            "setting_name": self.setting_name or self.label.replace(" ", "_")
         }
         if self.value is not None:
             data['value'] = self.value
@@ -128,3 +136,24 @@ class BooleanSelect(AbsOutputOptionDataType):
         if self.value is None:
             data['value'] = False
         return data
+
+
+def initialize_workflows() -> List[speedwagon.job.Workflow]:
+    """Initialize workflow for use."""
+    config_strategy = speedwagon.config.StandardConfigFileLocator()
+    workflows = []
+    backend_yaml = os.path.join(
+        config_strategy.get_app_data_dir(),
+        speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME
+    )
+    for workflow_klass in sorted(
+            speedwagon.job.available_workflows().values(),
+            key=lambda workflow: workflow.name
+    ):
+        config_backend = speedwagon.config.YAMLWorkflowConfigBackend()
+        workflow = workflow_klass()
+        config_backend.workflow = workflow
+        config_backend.yaml_file = backend_yaml
+        workflow.set_options_backend(config_backend)
+        workflows.append(workflow)
+    return workflows

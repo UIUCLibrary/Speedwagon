@@ -1,12 +1,11 @@
 import os
-from typing import Union, Optional, Any, List
 from unittest.mock import Mock
 
 import pytest
 
 
 QtCore = pytest.importorskip("PySide6.QtCore")
-from PySide6 import QtWidgets, QtGui
+from PySide6 import QtWidgets, QtGui, QtCore
 import sys
 if sys.version_info < (3, 10):
     import importlib_metadata as metadata
@@ -15,7 +14,8 @@ else:
 
 import speedwagon.workflow
 import speedwagon.frontend.qtwidgets.widgets
-import speedwagon.frontend.qtwidgets.models
+from speedwagon.frontend.qtwidgets.models import options as option_models
+from speedwagon.frontend.qtwidgets import models
 from speedwagon import Workflow
 
 class TestDropDownWidget:
@@ -368,7 +368,7 @@ class TestDynamicForm:
             speedwagon.workflow.BooleanSelect("spam"),
             speedwagon.workflow.BooleanSelect("bacon")
         ]
-        model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+        model = option_models.ToolOptionsModel4(data)
         form.set_model(model)
         checkbox: speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget = form._background.widgets['spam']
         assert form._background.widgets['spam'].data is False
@@ -384,7 +384,7 @@ class TestDynamicForm:
             speedwagon.workflow.FileSelectData("input"),
             speedwagon.workflow.FileSelectData("output")
         ]
-        model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+        model = option_models.ToolOptionsModel4(data)
 
         form.set_model(model)
         qtbot.keyClicks(form._background.widgets['input'].edit, "/someinput/file.txt")
@@ -402,7 +402,7 @@ class TestDynamicForm:
         data = [
             option
         ]
-        model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+        model = option_models.ToolOptionsModel4(data)
 
         form.set_model(model)
         combobox: speedwagon.frontend.qtwidgets.widgets.ComboWidget = form._background.widgets['choice 1']
@@ -528,3 +528,47 @@ class TestWorkspace:
         workspace.set_workflow(sample_workflow_klass)
         assert workspace.workflow_description == \
                sample_workflow_klass.description
+#
+class TestWorkflowSettingsEditor:
+    class GenWorkflow(speedwagon.Workflow):
+        name = "Generate OCR Files!"
+        def discover_task_metadata(
+                self,
+                initial_results,
+                additional_data,
+                **user_args):
+            return []
+        def configuration_options(self):
+            return [
+                speedwagon.workflow.TextLineEditData("Dummy config 1", required=True),
+                speedwagon.workflow.TextLineEditData("Other config 2", required=True)
+            ]
+
+#     # def test_s(self, qtbot):
+    def test_editor_data_changed(self, qtbot):
+        editor = speedwagon.frontend.qtwidgets.widgets.WorkflowSettingsEditor()
+        model = models.WorkflowSettingsModel()
+        model.add_workflow(self.GenWorkflow())
+        model.reset_modified()
+
+        editor.model = model
+
+        qtbot.addWidget(editor)
+
+        with qtbot.wait_signal(editor.workflow_settings_view.expanded):
+            editor.workflow_settings_view.expandAll()
+
+        index = model.index(0, 1, parent=model.index(0, 0))
+        with qtbot.waitSignal(editor.data_changed):
+            # without editor.show() focusWidget doesn't return the delegate
+            editor.show()
+
+            qtbot.mouseClick(
+                editor.workflow_settings_view.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=editor.workflow_settings_view.visualRect(index).center()
+            )
+            delegate_widget = editor.workflow_settings_view.focusWidget()
+            qtbot.keyClicks(delegate_widget, "some data")
+            qtbot.keyClick(delegate_widget, QtCore.Qt.Key.Key_Enter)
+        assert model.modified() is True

@@ -1,12 +1,16 @@
-from typing import Optional
-from unittest.mock import Mock, patch, mock_open
+from __future__ import annotations
+from typing import Optional, List, TYPE_CHECKING, Any, Dict
+from unittest.mock import Mock, patch, mock_open, ANY, call
 
 import pytest
 
 import speedwagon.config
 from yaml import YAMLError
 
-from speedwagon.config import FullSettingsData
+
+if TYPE_CHECKING:
+    from speedwagon.workflow import AbsOutputOptionDataType
+    from speedwagon.config import FullSettingsData, SettingsData
 
 
 class TestCustomTabsYamlConfig:
@@ -297,11 +301,12 @@ class TestCliArgsSetter:
 class TestCreateBasicMissingConfigFile:
     def test_ensure_config_file_calls_generate_default(self, monkeypatch):
         generate_default = Mock()
-        monkeypatch.setattr(
-            speedwagon.config,
+        monkeypatch.setattr(speedwagon.config.os.path, "exists", lambda path: False)
+        monkeypatch.setattr(speedwagon.config,
             "generate_default",
             generate_default
         )
+
         ensure_file = speedwagon.config.CreateBasicMissingConfigFile()
         ensure_file.ensure_config_file("dummy.ini")
         assert generate_default.called is True
@@ -374,3 +379,234 @@ class TestTabsYamlFileReader:
                 "Generate MARC.XML Files"
             ]
         }
+
+
+class TestAbsWorkflowSettingsManager:
+    class DummyWorkflow(speedwagon.Workflow):
+        name = "Dummy"
+
+        def discover_task_metadata(self, initial_results: List[Any],
+                                   additional_data: Dict[str, Any],
+                                   **user_args) -> List[dict]:
+            return []
+
+        def configuration_options(self) -> List[AbsOutputOptionDataType]:
+            input_path = speedwagon.workflow.DirectorySelect(
+                "Some input path"
+            )
+            return [input_path]
+
+    def test_get_workflow_settings(self, monkeypatch):
+        class DummyResolver(speedwagon.config.AbsWorkflowSettingsResolver):
+            def get_response(
+                    self,
+                    options: List[AbsOutputOptionDataType]
+            ) -> SettingsData:
+                return {
+                    "Some input path": "some path"
+                }
+
+        workflow = self.DummyWorkflow()
+
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            "get_app_data_dir",
+            lambda *_: "."
+        )
+        settings_manager = speedwagon.config.WorkflowSettingsManager()
+        settings_manager.settings_getter_strategy = DummyResolver()
+        results = settings_manager.get_workflow_settings(workflow)
+        assert "Some input path" in results
+
+
+class TestWorkflowSettingsYAMLResolver:
+    class BaconWorkflow(speedwagon.Workflow):
+        name = "Bacon"
+
+        def discover_task_metadata(self, initial_results: List[Any],
+                                   additional_data: Dict[str, Any],
+                                   **user_args) -> List[dict]:
+            return []
+
+        def configuration_options(self) -> List[AbsOutputOptionDataType]:
+            input_path = speedwagon.workflow.DirectorySelect(
+                "Some input path"
+            )
+            return [input_path]
+
+    def test_get_config_data(self, monkeypatch):
+        resolver = speedwagon.config.WorkflowSettingsYAMLResolver("workflows.yml")
+        text = """
+Bacon:
+  - name: Some input path
+    value: /home/dummy/spam
+    
+"""
+        monkeypatch.setattr(resolver, 'read_file', lambda _: text)
+        monkeypatch.setattr(speedwagon.config.os.path, "exists", lambda _: True)
+        assert "Bacon" in resolver.get_config_data()
+
+    def test_get_response(self, monkeypatch):
+
+        workflow = TestWorkflowSettingsYAMLResolver.BaconWorkflow()
+        resolver = \
+            speedwagon.config.WorkflowSettingsYAMLResolver("workflows.yml")
+
+        config_data = {
+            "Bacon": [
+                {
+                    "name": "Some input path",
+                    "value": "/home/dummy/spam"
+                }
+            ]
+        }
+        monkeypatch.setattr(resolver, "get_config_data", lambda: config_data)
+        response = resolver.get_response(workflow)
+        assert "Some input path" in response
+
+
+class TestSettingsYamlSerializer:
+    @pytest.fixture()
+    def serializer(self):
+        return speedwagon.config.SettingsYamlSerializer()
+
+    def test_structure_workflow_data(self, serializer):
+        assert serializer.structure_workflow_data(
+            {'Some input path': '/home/dummy/spam'}
+        ) == [
+            {'name': 'Some input path', 'value': '/home/dummy/spam'}
+        ]
+
+    def test_serialize_structure_to_yaml(self, serializer):
+        data = {
+            'Dummy': [{'name': 'Some input path', 'value': '/home/dummy/spam'}]
+        }
+        assert serializer.serialize_structure_to_yaml(data) == """Dummy:
+  - name: Some input path
+    value: /home/dummy/spam
+"""
+class TestWorkflowSettingsYamlExporter:
+    class DummyWorkflow(speedwagon.Workflow):
+        name = "Dummy"
+
+        def discover_task_metadata(self, initial_results: List[Any],
+                                   additional_data: Dict[str, Any],
+                                   **user_args) -> List[dict]:
+            return []
+
+        def configuration_options(self) -> List[AbsOutputOptionDataType]:
+            input_path = speedwagon.workflow.DirectorySelect(
+                "Some input path"
+            )
+            return [input_path]
+
+    # class SpamWorkflow(speedwagon.Workflow):
+    #     name = "Spam"
+    #
+    #     def discover_task_metadata(self, initial_results: List[Any],
+    #                                additional_data: Dict[str, Any],
+    #                                **user_args) -> List[dict]:
+    #         return []
+    #
+    #     def configuration_options(self) -> List[AbsOutputOptionDataType]:
+    #         input_path = speedwagon.workflow.DirectorySelect(
+    #             "Some other path"
+    #         )
+    #         return [input_path]
+
+    def test_save_calls_write_data_to_file(self):
+        exporter = speedwagon.config.WorkflowSettingsYamlExporter("dummy.yml")
+        def write_data_to_file(data: str, file_name: str): pass
+
+        exporter.write_data_to_file = Mock(spec=write_data_to_file)
+        workflow = TestWorkflowSettingsYamlExporter.DummyWorkflow()
+        args: SettingsData = {
+            "Some input path": "/home/dummy/spam"
+        }
+        exporter.save(workflow, args)
+        assert exporter.write_data_to_file.called is True
+        exporter.write_data_to_file.assert_called_once_with(ANY, "dummy.yml")
+
+    def test_save_appending(self, monkeypatch):
+        def load(file_name, Loader):
+            return {
+                "Spam": [
+                    {"name": "Some other path", "value": "/home/dummy/spam"}
+                ]
+            }
+        # monkeypatch.setattr(speedwagon.config.yaml, "load", load)
+        exporter = speedwagon.config.WorkflowSettingsYamlExporter("dummy.yml")
+        def write_data_to_file(data: str, file_name: str): pass
+
+        exporter.write_data_to_file = Mock(spec=write_data_to_file)
+
+        workflow = TestWorkflowSettingsYamlExporter.DummyWorkflow()
+        args: SettingsData = {
+            "Some input path": "/home/dummy/Bacon"
+        }
+        exporter.get_existing_data = Mock(return_value={
+            "Spam": [
+                {"name": "Some other path", "value": "/home/dummy/spam"}
+            ]
+        })
+        exporter.save(workflow, args)
+        expected_text = """Dummy:
+  - name: Some input path
+    value: /home/dummy/Bacon
+Spam:
+  - name: Some other path
+    value: /home/dummy/spam
+"""
+        exporter.write_data_to_file.assert_any_call(expected_text, ANY)
+
+    def test_serialize_settings_data(self):
+        exporter = speedwagon.config.WorkflowSettingsYamlExporter("dummy.yml")
+        expected_text = """Dummy:
+  - name: Some input path
+    value: /home/dummy/spam
+"""
+        result = exporter.serialize_settings_data(
+            workflow=TestWorkflowSettingsYamlExporter.DummyWorkflow(),
+            settings={
+                "Some input path": "/home/dummy/spam"
+            }
+        )
+        assert result == expected_text
+
+    def test_write_data_to_file(self):
+        mocked_open = mock_open()
+        with patch('speedwagon.config.open', mocked_open) as mocked_file:
+            speedwagon.config.WorkflowSettingsYamlExporter.write_data_to_file("dummy data", "workflows.yml")
+            handle = mocked_file()
+        handle.write.assert_called_once_with("dummy data")
+
+class TestYAMLWorkflowConfigBackend:
+    class SpamWorkflow(speedwagon.Workflow):
+        name = "Spam"
+
+        def configuration_options(self) -> List[AbsOutputOptionDataType]:
+            tesseract_path = speedwagon.workflow.DirectorySelect(label="Tesseract data file location")
+            tesseract_path.required = True
+            return [tesseract_path]
+
+
+        def discover_task_metadata(self, initial_results, additional_data, **user_args):
+            return []
+
+    def test_get(self):
+        config = speedwagon.config.YAMLWorkflowConfigBackend()
+        config.workflow = TestYAMLWorkflowConfigBackend.SpamWorkflow()
+        config.yaml_file = "dummy.yml"
+        config.settings_resolver = \
+            Mock(
+                name='settings_resolver',
+                get_response=Mock(
+                    name='get_response',
+                    return_value=Mock(
+                        name="get",
+                        get=lambda key: {"Tesseract data file location": "/some/path"}.get(key)
+                    )
+                )
+            )
+
+        assert config.get("Tesseract data file location") == "/some/path"

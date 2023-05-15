@@ -26,6 +26,7 @@ if __name__ == "__main__":
             "speedwagon.frontend.cli",
             "speedwagon.frontend.qtwidgets",
             "speedwagon.frontend.qtwidgets.dialog",
+            "speedwagon.frontend.qtwidgets.models",
             "speedwagon.frontend.qtwidgets.ui",
             "speedwagon.tasks",
             "speedwagon.workflows",

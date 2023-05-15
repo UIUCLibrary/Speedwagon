@@ -1,6 +1,6 @@
 import platform
 import logging
-from unittest.mock import Mock, patch, mock_open, MagicMock
+from unittest.mock import Mock, patch, mock_open, MagicMock, ANY
 import pytest
 
 import speedwagon
@@ -10,7 +10,11 @@ import typing
 QtCore = pytest.importorskip("PySide6.QtCore")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from speedwagon.frontend.qtwidgets.dialog import settings, dialogs
-from speedwagon.frontend.qtwidgets import models, tabs
+from speedwagon.frontend.qtwidgets import models
+from speedwagon.frontend.qtwidgets.models.tabs import (
+    AbsLoadTabDataModelStrategy,
+    TabDataModelYAMLLoader
+)
 if sys.version_info < (3, 10):
     import importlib_metadata as metadata
 else:
@@ -96,7 +100,7 @@ class TestGlobalSettingsTab:
         )
         settings_model = models.SettingsModel()
         monkeypatch.setattr(
-            settings.models,
+            settings,
             "build_setting_qt_model",
             lambda config_file: settings_model
         )
@@ -216,7 +220,7 @@ class TestTabsConfigurationTab:
         assert "tab_information" in config_tab.get_data()
 
     def test_load(self, qtbot):
-        strategy = Mock(models.AbsLoadTabDataModelStrategy)
+        strategy = Mock(AbsLoadTabDataModelStrategy)
         config_tab = settings.TabsConfigurationTab()
 
         config_tab.load(strategy)
@@ -398,7 +402,7 @@ class TestTabEditor:
         dialog_box = QtWidgets.QDialog()
         editor = settings.TabEditor(dialog_box)
 
-        class DummyLoader(models.AbsLoadTabDataModelStrategy):
+        class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
                 class Spam1(speedwagon.Workflow):
                     name = "spam 1"
@@ -425,7 +429,7 @@ class TestTabEditor:
 
     def test_add_workflow(self, qtbot):
         editor = settings.TabEditor()
-        class DummyLoader(models.AbsLoadTabDataModelStrategy):
+        class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
                 class Spam1(speedwagon.Workflow):
                     name = "spam 1"
@@ -447,8 +451,6 @@ class TestTabEditor:
         loader.load(editor.model)
         assert editor.model.rowCount() == 3
         assert editor.model.rowCount(parent=editor.model.index(0)) == 4
-        # editor.set_tab_visibility("Bacon", True)
-        # editor.set_tab_visibility("Eggs", True)
         editor.set_current_tab("Eggs")
 
         mo = editor.all_workflows_list_view.model()
@@ -468,7 +470,7 @@ class TestTabEditor:
     def test_workflow_emits_changes(self, qtbot):
         editor = settings.TabEditor()
 
-        class DummyLoader(models.AbsLoadTabDataModelStrategy):
+        class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
                 class Spam1(speedwagon.Workflow):
                     name = "spam 1"
@@ -527,7 +529,7 @@ class TestTabEditor:
         dialog = QtWidgets.QDialog()
         editor = settings.TabEditor()
         editor.setParent(dialog)
-        class DummyLoader(models.AbsLoadTabDataModelStrategy):
+        class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
                 class Spam1(speedwagon.Workflow):
                     name = "spam 1"
@@ -911,15 +913,51 @@ class TestConfigSaver:
     #     )
     #
 
+class TestConfigFileSave:
+    def test_uses_AbsSaveStrategy(self, qtbot):
+        save_strategy = Mock(
+            settings.AbsSaveStrategy,
+            serialize_data=Mock(return_value="some data")
+        )
+        save_strategy.write_file = Mock()
+        saver = settings.ConfigFileSaver(save_strategy, "some_file.txt")
+        saver.save()
+        save_strategy.write_file.assert_called_once_with(
+            "some data",
+            "some_file.txt"
+        )
+
+
+def test_multisaver_child_save_methods_called():
+    saver = settings.MultiSaver()
+    dummy_saver = Mock(settings.AbsConfigSaver2)
+    saver.config_savers.append(dummy_saver)
+    saver.save()
+    dummy_saver.save.assert_called_once()
+
+
+class TestSettingsTabSaveStrategy:
+
+    def test_serialize_data(self, qtbot):
+        global_settings_tab = Mock(settings.SettingsTab)
+        def serialization_function(_):
+            return 'my serialized data'
+        save_strategy = settings.SettingsTabSaveStrategy(
+            global_settings_tab,
+            serialization_function
+        )
+        assert save_strategy.serialize_data() == 'my serialized data'
+
+
 class TestSettingsTab:
     def test_data_is_modified_raises_not_implemented(self, qtbot):
         new_tab = settings.SettingsTab()
         with pytest.raises(NotImplementedError):
             new_tab.data_is_modified()
 
-    def test_get_data_defaults_to_none(self, qtbot):
+    def test_get_data_defaults_to_empty_dict(self, qtbot):
         new_tab = settings.SettingsTab()
-        assert new_tab.get_data() is None
+        assert new_tab.get_data() == {}
 class TestPluginsTab:
     def test_not_modified_from_init(self, qtbot):
         tab = settings.PluginsTab()
@@ -1095,7 +1133,7 @@ class TestSettingsDialog:
 
 class TestTabDataModelYAMLLoader:
     def test_prep_data(self):
-        loader = models.TabDataModelYAMLLoader()
+        loader = TabDataModelYAMLLoader()
         class DummyStrategy(speedwagon.config.AbsTabsConfigDataManagement):
             def data(self):
                 return [
@@ -1107,7 +1145,7 @@ class TestTabDataModelYAMLLoader:
         assert "All" in loader.prep_data(DummyStrategy())
 
     def test_with_no_file_is_no_op(self, qtbot):
-        loader = models.TabDataModelYAMLLoader()
+        loader = TabDataModelYAMLLoader()
         tab_widget = settings.TabEditor()
         loader.load(tab_widget)
         loader.yml_file = None
@@ -1128,7 +1166,7 @@ class TestTabDataModelYAMLLoader:
     def test_load(self, qtbot):
         class BaconWorkflow(speedwagon.Workflow):
             name = "Bacon"
-        loader = models.TabDataModelYAMLLoader()
+        loader = TabDataModelYAMLLoader()
         loader.prep_data = Mock(return_value={'Spam': [BaconWorkflow]})
         model = models.TabsTreeModel()
         loader.yml_file = "dummy.yml"

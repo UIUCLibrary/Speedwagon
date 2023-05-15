@@ -10,10 +10,6 @@ from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
 from uiucprescon.ocr import reader, tesseractwrap
 
 
-def test_no_config():
-    with pytest.raises(MissingConfiguration):
-        workflow_ocr.OCRWorkflow()
-
 
 def test_discover_task_metadata_raises_with_no_tessdata(monkeypatch):
     user_options = {"tessdata": "/some/path"}
@@ -27,9 +23,9 @@ def test_discover_task_metadata_raises_with_no_tessdata(monkeypatch):
 
 
 def test_discover_task_metadata(monkeypatch, tmpdir):
-    user_options = {"tessdata": "/some/path"}
-    monkeypatch.setattr(os.path, "exists", lambda args: True)
-    workflow = workflow_ocr.OCRWorkflow(global_settings=user_options)
+    # user_options = {"tessdata": "/some/path"}
+    # monkeypatch.setattr(os.path, "exists", lambda args: True)
+    workflow = workflow_ocr.OCRWorkflow()
     tessdata_dir = tmpdir / "tessdata"
     image_dir = tmpdir / "images"
     tessdata_dir.ensure_dir()
@@ -45,10 +41,13 @@ def test_discover_task_metadata(monkeypatch, tmpdir):
             data=[(image_dir / "dummy.jp2").strpath]
         )
     ]
-
-    new_tasks = workflow.discover_task_metadata(
-        initial_results, None, **user_options
-    )
+    options_backend = Mock(get=lambda key: {"Tesseract data file location": "/some/file/path"}.get(key))
+    workflow.set_options_backend(options_backend)
+    with monkeypatch.context() as ctx:
+        ctx.setattr(os.path, "exists", lambda path: path == "/some/file/path")
+        new_tasks = workflow.discover_task_metadata(
+            initial_results, None, **user_options
+        )
 
     assert len(new_tasks) == 1
     new_task = new_tasks[0]
@@ -166,7 +165,7 @@ class TestOCRWorkflow:
         with pytest.raises(ValueError):
             workflow.validate_user_options(**user_options)
 
-    def test_discover_task_metadata(self, workflow, default_options):
+    def test_discover_task_metadata(self, workflow, default_options, monkeypatch):
         user_options = default_options.copy()
         user_options["Language"] = "English"
         user_options["Path"] = os.path.join("some", "path")
@@ -177,11 +176,19 @@ class TestOCRWorkflow:
             ])
         ]
         additional_data = {}
-        tasks_generated = workflow.discover_task_metadata(
-            initial_results=initial_results,
-            additional_data=additional_data,
-            **user_options
-        )
+        options_backend = Mock(get=lambda key: {"Tesseract data file location": "/some/file/path"}.get(key))
+        workflow.set_options_backend(options_backend)
+        with monkeypatch.context() as ctx:
+            def exists(path):
+                result = path == "/some/file/path"
+                return result
+            ctx.setattr(os.path, "exists", exists)
+            # ctx.setattr(os.path, "exists", lambda path: path == "/some/file/path")
+            tasks_generated = workflow.discover_task_metadata(
+                initial_results=initial_results,
+                additional_data=additional_data,
+                **user_options
+            )
         assert len(tasks_generated) == 1
         task = tasks_generated[0]
         assert task['lang_code'] == "eng" and \
@@ -198,7 +205,7 @@ class TestOCRWorkflow:
                 os.path.join(
                     "some",
                     "path",
-                )
+                ),
         }
         task_builder = Mock()
         GenerateOCRFileTask = Mock()
@@ -206,6 +213,8 @@ class TestOCRWorkflow:
         monkeypatch.setattr(workflow_ocr, "GenerateOCRFileTask",
                             GenerateOCRFileTask)
         #
+        options_backend = Mock(get=lambda key: {"Tesseract data file location": "/some/file/path"}.get(key))
+        workflow.set_options_backend(options_backend)
         workflow.create_new_task(task_builder, **job_args)
         assert task_builder.add_subtask.called is True
         GenerateOCRFileTask.assert_called_with(
