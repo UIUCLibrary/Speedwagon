@@ -538,7 +538,7 @@ class TestWorkflowSettingsEditor:
                 additional_data,
                 **user_args):
             return []
-        def configuration_options(self):
+        def workflow_options(self):
             return [
                 speedwagon.workflow.TextLineEditData("Dummy config 1", required=True),
                 speedwagon.workflow.TextLineEditData("Other config 2", required=True)

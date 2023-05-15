@@ -1048,7 +1048,7 @@ class WorkflowSettingsYAMLResolver(
             return {}
         valid_options = [
             i.setting_name if i.setting_name is not None else i.label
-            for i in workflow.configuration_options()
+            for i in workflow.workflow_options()
         ]
         return {
             item['name']: item['value']

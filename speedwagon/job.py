@@ -201,14 +201,14 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         """
         return {}
 
-    def get_user_options(self) -> List[AbsOutputOptionDataType]:
+    def job_options(self) -> List[AbsOutputOptionDataType]:
         """Get user options.
 
         Defaults to no args.
         """
         return []
 
-    def configuration_options(self) -> List[AbsOutputOptionDataType]:
+    def workflow_options(self) -> List[AbsOutputOptionDataType]:
         """Get options configured at the application level.
 
         Defaults to no args.

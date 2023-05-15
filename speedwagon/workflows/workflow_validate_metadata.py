@@ -65,7 +65,7 @@ class ValidateMetadataWorkflow(Workflow):
             )
         )
 
-    def get_user_options(
+    def job_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Request user options.

@@ -16,7 +16,7 @@ def unconfigured_workflow():
     workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow()
     options_backend = Mock(get=lambda key: {"Getmarc server url": "http://fake.com"}.get(key))
     workflow.set_options_backend(options_backend)
-    user_options = {i.label: i.value for i in workflow.get_user_options()}
+    user_options = {i.label: i.value for i in workflow.job_options()}
     user_options['Identifier type'] = "Bibid"
     return workflow, user_options
 

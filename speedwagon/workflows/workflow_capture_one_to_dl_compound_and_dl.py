@@ -102,7 +102,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
                   "HathiTrust."
     active = True
 
-    def get_user_options(
+    def job_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Request user options.

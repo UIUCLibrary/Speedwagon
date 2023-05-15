@@ -92,7 +92,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                 )
         return tasks_metadata
 
-    def get_user_options(self) -> List[AbsOutputOptionDataType]:
+    def job_options(self) -> List[AbsOutputOptionDataType]:
         """Request identifier type, source, and destination."""
         supported_identifier_types: List[str] = [
             "Bibid",

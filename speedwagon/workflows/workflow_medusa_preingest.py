@@ -117,7 +117,7 @@ class MedusaPreingestCuration(speedwagon.Workflow):
             "directories": dirs,
         }
 
-    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+    def job_options(self) -> List[workflow.AbsOutputOptionDataType]:
         """Get which types of files to search for."""
         root_directory = speedwagon.workflow.DirectorySelect("Path")
 

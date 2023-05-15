@@ -126,7 +126,7 @@ class EnsureWorkflowConfigFiles(AbsStartupTask):
             try:
                 workflow = workflow_klass()
                 self.ensure_workflow_config(
-                    workflow, workflow.configuration_options()
+                    workflow, workflow.workflow_options()
                 )
             except speedwagon.exceptions.MissingConfiguration:
                 print(f"[{name}] has missing config")
@@ -226,7 +226,7 @@ def _setup_workflow_settings_tab(
     # configure. Otherwise, this gets overly cluttered.
     workflow_settings_tab.set_workflows(
         filter(
-            lambda workflow: len(workflow.configuration_options()) != 0,
+            lambda workflow: len(workflow.workflow_options()) != 0,
             initialize_workflows()
         )
     )

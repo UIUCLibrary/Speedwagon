@@ -89,7 +89,7 @@ class ChecksumWorkflow(Workflow):
                 jobs.append(new_job)
         return jobs
 
-    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+    def job_options(self) -> List[workflow.AbsOutputOptionDataType]:
         """Request user options.
 
         User Options include:
@@ -372,7 +372,7 @@ class VerifyChecksumBatchSingleWorkflow(Workflow):
             jobs.append(new_job)
         return jobs
 
-    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+    def job_options(self) -> List[workflow.AbsOutputOptionDataType]:
         """Request user options.
 
         User Options include:

@@ -132,7 +132,7 @@ class MakeChecksumBatchSingleWorkflow(CreateChecksumWorkflow):
 
         return "\n".join(report_lines)
 
-    def get_user_options(
+    def job_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Request directory input setting from user."""
@@ -186,7 +186,7 @@ class MakeChecksumBatchMultipleWorkflow(CreateChecksumWorkflow):
                     jobs.append(job)
         return jobs
 
-    def get_user_options(
+    def job_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Request input directory value from the user."""

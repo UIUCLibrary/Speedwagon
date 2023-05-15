@@ -239,7 +239,7 @@ class WorkflowSettingsItemWorkflow(AbsWorkflowSettingItem):
     @workflow.setter
     def workflow(self, value: speedwagon.Workflow) -> None:
         self._workflow = value
-        options = value.configuration_options()
+        options = value.workflow_options()
         for option in options:
             item = WorkflowSettingsMetadata(option, self)
             item.value = value.get_workflow_configuration_value(option.label)

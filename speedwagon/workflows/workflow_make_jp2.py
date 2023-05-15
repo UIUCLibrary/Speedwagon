@@ -110,7 +110,7 @@ class MakeJp2Workflow(job.Workflow):
 
     active = True
 
-    def get_user_options(
+    def job_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Get user options.

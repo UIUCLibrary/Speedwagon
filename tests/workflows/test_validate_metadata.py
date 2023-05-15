@@ -17,7 +17,7 @@ options = [
 @pytest.mark.parametrize("index,label", options)
 def test_validate_metadata_workflow_has_options(index, label):
     workflow = workflow_validate_metadata.ValidateMetadataWorkflow()
-    user_options = workflow.get_user_options()
+    user_options = workflow.job_options()
     assert len(user_options) > 0
     assert user_options[index].label == label
 
@@ -30,7 +30,7 @@ class TestValidateMetadataWorkflow:
     @pytest.fixture
     def default_options(self, workflow):
         return {
-            data.label: data.value for data in workflow.get_user_options()
+            data.label: data.value for data in workflow.job_options()
         }
 
 

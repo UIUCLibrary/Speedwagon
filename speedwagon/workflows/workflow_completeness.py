@@ -40,7 +40,7 @@ class CompletenessWorkflow(speedwagon.job.Workflow):
                   "valid. (This workflow provides console feedback, but " \
                   "doesn’t write new files as output)."
 
-    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+    def job_options(self) -> List[workflow.AbsOutputOptionDataType]:
         """Request user settings for which checks to be performed."""
         source = workflow.DirectorySelect("Source")
 

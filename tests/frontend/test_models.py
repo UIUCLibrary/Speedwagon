@@ -1039,7 +1039,7 @@ class TestWorkflowSettingsModel:
     class SpamWorkflow(speedwagon.Workflow):
         name = "Spam"
 
-        def configuration_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        def workflow_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
 
             return [
                 speedwagon.workflow.TextLineEditData("Dummy config", required=True)
@@ -1055,7 +1055,7 @@ class TestWorkflowSettingsModel:
     class BaconWorkflow(speedwagon.Workflow):
         name = "Bacon"
 
-        def configuration_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        def workflow_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
 
             return [
                 speedwagon.workflow.TextLineEditData("Bacon config 1", required=True),

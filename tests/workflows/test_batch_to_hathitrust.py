@@ -23,7 +23,7 @@ def test_hathi_limited_to_dl_compound_has_options(index, label):
         workflow = \
             workflow_hathi_limited_to_dl_compound.HathiLimitedToDLWorkflow()
 
-    user_options = workflow.get_user_options()
+    user_options = workflow.job_options()
     assert len(user_options) > 0
     assert user_options[index].label == label
 
@@ -90,7 +90,7 @@ def unconfigured_workflow():
                 "getmarc_server_url": "http://fake.com"
             }
         )
-    user_options = {i.label: i.value for i in workflow.get_user_options()}
+    user_options = {i.label: i.value for i in workflow.job_options()}
     user_options['Identifier type'] = None
     return workflow, user_options
 

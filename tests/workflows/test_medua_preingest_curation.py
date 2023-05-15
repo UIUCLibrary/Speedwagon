@@ -14,7 +14,7 @@ class TestMedusaPreingestCuration:
     @pytest.fixture
     def default_args(self, workflow):
         return {
-            data.label: data.value for data in workflow.get_user_options()
+            data.label: data.value for data in workflow.job_options()
         }
 
     @pytest.fixture
@@ -157,7 +157,7 @@ class TestMedusaPreingestCuration:
 def default_user_args():
     workflow = workflow_medusa_preingest.MedusaPreingestCuration()
     return {
-        data.label: data.value for data in workflow.get_user_options()
+        data.label: data.value for data in workflow.job_options()
     }
 
 

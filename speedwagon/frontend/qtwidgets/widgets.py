@@ -638,7 +638,7 @@ class Workspace(QtWidgets.QWidget):
                 )
             self.settings_form.set_model(
                 models.ToolOptionsModel4(
-                    new_workflow.get_user_options()
+                    new_workflow.job_options()
                 )
             )
         except exceptions.MissingConfiguration as exc:

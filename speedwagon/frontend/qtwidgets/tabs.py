@@ -109,7 +109,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
         qtwidgets.gui.load_job_settings_model(
             data,
             self.workspace.settings_form,
-            workflow_inst.get_user_options()
+            workflow_inst.job_options()
         )
 
     def _handle_workflow_changed(

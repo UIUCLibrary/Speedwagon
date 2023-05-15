@@ -70,7 +70,7 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
                   "files from the Library."
     required_settings_keys: Set[str] = {"getmarc_server_url"}
 
-    def get_user_options(self) -> List[AbsOutputOptionDataType]:
+    def job_options(self) -> List[AbsOutputOptionDataType]:
         """Request user options.
 
         User Options include:
@@ -309,7 +309,7 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         results = match.groupdict()
         return results['identifier'], results.get('volume')
 
-    def configuration_options(self) -> List[AbsOutputOptionDataType]:
+    def workflow_options(self) -> List[AbsOutputOptionDataType]:
         """Set the settings for get marc workflow.
 
         This needs the getmarc server url.

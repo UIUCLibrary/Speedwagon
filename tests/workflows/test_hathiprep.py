@@ -14,7 +14,7 @@ from speedwagon.workflows import workflow_hathiprep
 ])
 def test_workflow_options(index, label):
     workflow = workflow_hathiprep.HathiPrepWorkflow()
-    user_options = workflow.get_user_options()
+    user_options = workflow.job_options()
     assert len(user_options) > 0
     assert user_options[index].label == label
 
@@ -86,7 +86,7 @@ def test_get_additional_info_opens_dialog_box(monkeypatch):
 @pytest.fixture
 def unconfigured_workflow():
     workflow = workflow_hathiprep.HathiPrepWorkflow()
-    user_options = {i.label: i.value for i in workflow.get_user_options()}
+    user_options = {i.label: i.value for i in workflow.job_options()}
 
     return workflow, user_options
 

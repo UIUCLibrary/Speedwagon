@@ -464,7 +464,7 @@ class TaskGeneratorStrategy(AbsTaskGeneratorStrategy):
             options: typing.Mapping[str, Any],
             task_scheduler: TaskScheduler
     ):
-        workflow.configuration_options()
+        workflow.workflow_options()
         task_generator = TaskGenerator(
             workflow,
             working_directory=task_scheduler.working_directory,

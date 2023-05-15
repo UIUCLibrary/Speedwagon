@@ -390,7 +390,7 @@ class TestAbsWorkflowSettingsManager:
                                    **user_args) -> List[dict]:
             return []
 
-        def configuration_options(self) -> List[AbsOutputOptionDataType]:
+        def workflow_options(self) -> List[AbsOutputOptionDataType]:
             input_path = speedwagon.workflow.DirectorySelect(
                 "Some input path"
             )
@@ -428,7 +428,7 @@ class TestWorkflowSettingsYAMLResolver:
                                    **user_args) -> List[dict]:
             return []
 
-        def configuration_options(self) -> List[AbsOutputOptionDataType]:
+        def workflow_options(self) -> List[AbsOutputOptionDataType]:
             input_path = speedwagon.workflow.DirectorySelect(
                 "Some input path"
             )
@@ -494,7 +494,7 @@ class TestWorkflowSettingsYamlExporter:
                                    **user_args) -> List[dict]:
             return []
 
-        def configuration_options(self) -> List[AbsOutputOptionDataType]:
+        def workflow_options(self) -> List[AbsOutputOptionDataType]:
             input_path = speedwagon.workflow.DirectorySelect(
                 "Some input path"
             )
@@ -584,7 +584,7 @@ class TestYAMLWorkflowConfigBackend:
     class SpamWorkflow(speedwagon.Workflow):
         name = "Spam"
 
-        def configuration_options(self) -> List[AbsOutputOptionDataType]:
+        def workflow_options(self) -> List[AbsOutputOptionDataType]:
             tesseract_path = speedwagon.workflow.DirectorySelect(label="Tesseract data file location")
             tesseract_path.required = True
             return [tesseract_path]

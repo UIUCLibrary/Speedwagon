@@ -186,7 +186,7 @@ class OCRWorkflow(speedwagon.Workflow):
         """Identify file type extension."""
         return cls.SUPPORTED_IMAGE_TYPES[file_type]
 
-    def get_user_options(
+    def job_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Request use settings for OCR job."""
@@ -301,7 +301,7 @@ class OCRWorkflow(speedwagon.Workflow):
             "tessdata"
         )
 
-    def configuration_options(
+    def workflow_options(
         self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Set the settings for get marc workflow.
