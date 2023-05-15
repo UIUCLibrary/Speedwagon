@@ -29,7 +29,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
                   "viewer." \
 
 
-    def get_user_options(
+    def job_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Get user options.

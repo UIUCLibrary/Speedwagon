@@ -53,7 +53,11 @@ class AutoWorkflowDirective(Directive):
         section = nodes.section(names=[targetname], ids=[targetid])
 
         if "notitle" not in self.options:
-            new_title = nodes.title(workflow.name, text=workflow.name, ids=[targetid])
+            new_title = nodes.title(
+                workflow.name,
+                text=workflow.name,
+                ids=[targetid]
+            )
             section.append(new_title)
 
         if "description" in self.options and workflow.description:

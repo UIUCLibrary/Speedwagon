@@ -13,7 +13,7 @@ class TestValidateImageMetadataWorkflow:
     @pytest.fixture
     def default_options(self, workflow):
         return {
-            data.label: data.value for data in workflow.get_user_options()
+            data.label: data.value for data in workflow.job_options()
         }
 
         # models = pytest.importorskip('speedwagon.frontend.qtwidgets.models')

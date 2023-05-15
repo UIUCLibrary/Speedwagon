@@ -49,7 +49,7 @@ class HathiLimitedToDLWorkflow(Workflow):
                              dst=job_args['destination'])
         )
 
-    def get_user_options(
+    def job_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Get user options for input and output directories."""

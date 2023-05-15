@@ -5,11 +5,18 @@ import pytest
 
 
 QtCore = pytest.importorskip("PySide6.QtCore")
-from PySide6 import QtWidgets, QtGui
+from PySide6 import QtWidgets, QtGui, QtCore
+import sys
+if sys.version_info < (3, 10):
+    import importlib_metadata as metadata
+else:
+    from importlib import metadata
 
 import speedwagon.workflow
 import speedwagon.frontend.qtwidgets.widgets
-import speedwagon.frontend.qtwidgets.models
+from speedwagon.frontend.qtwidgets.models import options as option_models
+from speedwagon.frontend.qtwidgets import models
+from speedwagon import Workflow
 
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
@@ -364,7 +371,7 @@ class TestDynamicForm:
             speedwagon.workflow.BooleanSelect("spam"),
             speedwagon.workflow.BooleanSelect("bacon")
         ]
-        model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+        model = option_models.ToolOptionsModel4(data)
         form.set_model(model)
         checkbox: speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget = \
             form._background.widgets['spam']
@@ -381,7 +388,7 @@ class TestDynamicForm:
             speedwagon.workflow.FileSelectData("input"),
             speedwagon.workflow.FileSelectData("output")
         ]
-        model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+        model = option_models.ToolOptionsModel4(data)
 
         form.set_model(model)
         qtbot.keyClicks(form._background.widgets['input'].edit, "/someinput/file.txt")
@@ -399,7 +406,7 @@ class TestDynamicForm:
         data = [
             option
         ]
-        model = speedwagon.frontend.qtwidgets.models.ToolOptionsModel4(data)
+        model = option_models.ToolOptionsModel4(data)
 
         form.set_model(model)
         combobox: speedwagon.frontend.qtwidgets.widgets.ComboWidget = \
@@ -433,5 +440,140 @@ class TestDynamicForm:
             drawPrimitive
         )
 
+
         form.paintEvent(event)
         assert drawPrimitive.called is True
+
+    def test_is_valid(self, qtbot):
+        form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
+        form.is_valid()
+
+class TestPluginConfig:
+    def test_no_plugins_by_default(self, qtbot):
+        plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
+        qtbot.addWidget(plugin_widget)
+        assert plugin_widget.enabled_plugins() == {}
+
+    def test_checkbox_selection(self, qtbot):
+        plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
+        entry_point = Mock(metadata.EntryPoint)
+        entry_point.name = "Spam"
+        entry_point.module = "SpamPlugins"
+
+        plugin_widget.model.add_entry_point(entry_point)
+        qtbot.addWidget(plugin_widget)
+
+        plugin_widget.model.setData(
+            plugin_widget.model.index(0, 0),
+            QtCore.Qt.CheckState.Checked.value,
+            QtCore.Qt.ItemDataRole.CheckStateRole
+        )
+
+        assert plugin_widget.enabled_plugins() == {"SpamPlugins": ["Spam"]}
+
+    @pytest.fixture()
+    def plugin_with_spam(self, qtbot):
+        plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
+        entry_point = Mock(metadata.EntryPoint)
+        entry_point.name = "Spam"
+
+        plugin_widget.model.add_entry_point(entry_point)
+        qtbot.addWidget(plugin_widget)
+        return plugin_widget
+
+    def test_changes_made_signal(self, qtbot, plugin_with_spam):
+
+        with qtbot.wait_signal(plugin_with_spam.changes_made):
+            plugin_with_spam.model.setData(
+                plugin_with_spam.model.index(0, 0),
+                QtCore.Qt.CheckState.Checked.value,
+                QtCore.Qt.ItemDataRole.CheckStateRole
+            )
+        assert plugin_with_spam.modified is True
+
+    def test_changes_made_signal_reverting_makes_arg_false(self, qtbot, plugin_with_spam):
+
+        with qtbot.wait_signal(plugin_with_spam.changes_made):
+            plugin_with_spam.model.setData(
+                plugin_with_spam.model.index(0, 0),
+                QtCore.Qt.CheckState.Checked.value,
+                QtCore.Qt.ItemDataRole.CheckStateRole
+            )
+        with qtbot.wait_signal(plugin_with_spam.changes_made) as signal:
+            plugin_with_spam.model.setData(
+                plugin_with_spam.model.index(0, 0),
+                QtCore.Qt.CheckState.Unchecked.value,
+                QtCore.Qt.ItemDataRole.CheckStateRole
+            )
+        assert plugin_with_spam.modified is False
+
+class TestWorkspace:
+    @pytest.fixture()
+    def sample_workflow_klass(self, qtbot):
+        class Spam(Workflow):
+            name = "Spam bacon eggs"
+            description = "some description"
+            def discover_task_metadata(
+                    self,
+                    initial_results,
+                    additional_data, **user_args):
+                return []
+        return Spam
+
+    def test_show_workflow_name(self, qtbot, sample_workflow_klass):
+        workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
+        workspace.app_settings_lookup_strategy = Mock()
+        workspace.set_workflow(sample_workflow_klass)
+        assert workspace.workflow_name == \
+               sample_workflow_klass.name
+
+    def test_show_workflow_description(self, qtbot, sample_workflow_klass):
+        workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
+        workspace.app_settings_lookup_strategy = Mock()
+        workspace.set_workflow(sample_workflow_klass)
+        assert workspace.workflow_description == \
+               sample_workflow_klass.description
+#
+class TestWorkflowSettingsEditor:
+    class GenWorkflow(speedwagon.Workflow):
+        name = "Generate OCR Files!"
+        def discover_task_metadata(
+                self,
+                initial_results,
+                additional_data,
+                **user_args):
+            return []
+        def workflow_options(self):
+            return [
+                speedwagon.workflow.TextLineEditData("Dummy config 1", required=True),
+                speedwagon.workflow.TextLineEditData("Other config 2", required=True)
+            ]
+
+#     # def test_s(self, qtbot):
+    def test_editor_data_changed(self, qtbot):
+        editor = speedwagon.frontend.qtwidgets.widgets.WorkflowSettingsEditor()
+        model = models.WorkflowSettingsModel()
+        model.add_workflow(self.GenWorkflow())
+        model.reset_modified()
+
+        editor.model = model
+
+        qtbot.addWidget(editor)
+
+        with qtbot.wait_signal(editor.workflow_settings_view.expanded):
+            editor.workflow_settings_view.expandAll()
+
+        index = model.index(0, 1, parent=model.index(0, 0))
+        with qtbot.waitSignal(editor.data_changed):
+            # without editor.show() focusWidget doesn't return the delegate
+            editor.show()
+
+            qtbot.mouseClick(
+                editor.workflow_settings_view.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=editor.workflow_settings_view.visualRect(index).center()
+            )
+            delegate_widget = editor.workflow_settings_view.focusWidget()
+            qtbot.keyClicks(delegate_widget, "some data")
+            qtbot.keyClick(delegate_widget, QtCore.Qt.Key.Key_Enter)
+        assert model.modified() is True

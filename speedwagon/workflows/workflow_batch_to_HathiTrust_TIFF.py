@@ -19,6 +19,7 @@ from speedwagon.frontend import interaction
 from speedwagon.workflows import workflow_get_marc
 if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
+    from speedwagon.config import SettingsData
 
 __all__ = ['CaptureOneBatchToHathiComplete']
 
@@ -41,9 +42,10 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                   "new files will be written."
     active = False
 
-    def __init__(self,
-                 global_settings: Optional[Dict[str, str]] = None
-                 ) -> None:
+    def __init__(
+            self,
+            global_settings: Optional[SettingsData] = None
+    ) -> None:
         """Convert CaptureOne Batch to HathiTrust TIFF Complete Package.
 
         Args:
@@ -90,7 +92,7 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
                 )
         return tasks_metadata
 
-    def get_user_options(self) -> List[AbsOutputOptionDataType]:
+    def job_options(self) -> List[AbsOutputOptionDataType]:
         """Request identifier type, source, and destination."""
         supported_identifier_types: List[str] = [
             "Bibid",

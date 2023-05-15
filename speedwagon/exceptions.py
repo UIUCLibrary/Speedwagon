@@ -34,3 +34,28 @@ class JobCancelled(Exception):
         """
         super().__init__(*args)
         self.expected = expected
+
+
+class PluginImportError(Exception):
+    """Plugin(s) import failed."""
+
+
+class InvalidPlugin(Exception):
+    """Invalid plugin has been attempted to be instantiated."""
+
+    def __init__(self, *args: object, entry_point) -> None:
+        """Create a new InvalidPlugin exception."""
+        super().__init__(*args)
+        self.entry_point = entry_point
+
+
+class FileFormatError(SpeedwagonException):
+    """Exception is thrown when Something wrong with the contents of a file."""
+
+
+class TabLoadFailure(SpeedwagonException):
+    """Exception is thrown when a tab fails to load."""
+
+
+class WorkflowLoadFailure(SpeedwagonException):
+    """Exception is thrown when a Workflow fails to load."""

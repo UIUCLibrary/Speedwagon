@@ -6,12 +6,13 @@ import io
 import json
 import logging
 import os
-import queue
 import sys
 import threading
 import time
+import types
 import typing
-from typing import Dict, Union, Optional, cast, List, Type
+from typing import Dict, Optional, cast, List, Type, Callable
+import traceback as tb
 import webbrowser
 try:  # pragma: no cover
     from importlib import metadata
@@ -20,20 +21,22 @@ except ImportError:  # pragma: no cover
 from PySide6 import QtWidgets
 
 import speedwagon
+from speedwagon.workflow import initialize_workflows
 from speedwagon import config
 from . import user_interaction
 from . import dialog
+from .dialog.settings import EntrypointsPluginModelLoader
 from . import runners
 
 if typing.TYPE_CHECKING:
-    from typing import Tuple
     from speedwagon import runner_strategies
     from speedwagon.frontend.qtwidgets import gui
     from speedwagon.frontend.qtwidgets.dialog import dialogs
     from speedwagon.job import AbsWorkflow, AbsJobConfigSerializationStrategy
+    from speedwagon.config import FullSettingsData
 
 
-class AbsGuiStarter(speedwagon.startup.AbsStarter):
+class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
 
     def __init__(self, app) -> None:
         super().__init__()
@@ -47,19 +50,244 @@ class AbsGuiStarter(speedwagon.startup.AbsStarter):
         """Run the gui application."""
 
 
+def save_workflow_config(
+        workflow_name,
+        data,
+        parent: QtWidgets.QWidget,
+        dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
+        serialization_strategy: typing.Optional[
+            speedwagon.job.AbsJobConfigSerializationStrategy
+        ] = None
+) -> None:
+    serialization_strategy = \
+        serialization_strategy or speedwagon.job.ConfigJSONSerialize()
+
+    dialog_box = dialog_box or QtWidgets.QFileDialog()
+    export_file_name, _ = dialog_box.getSaveFileName(
+        parent,
+        "Export Job Configuration",
+        f"{workflow_name}.json",
+        "Job Configuration JSON (*.json)"
+    )
+
+    if export_file_name:
+        serialization_strategy.file_name = export_file_name
+        serialization_strategy.save(workflow_name, data)
+
+
+class AbsResolveSettingsStrategy(abc.ABC):  # pylint: disable=R0903
+
+    @abc.abstractmethod
+    def get_settings(self) -> FullSettingsData:
+        """Get full settings"""
+
+
+class ResolveSettings(AbsResolveSettingsStrategy):  # pylint: disable=R0903
+    def get_settings(self) -> FullSettingsData:
+        config_strategy = config.StandardConfigFileLocator()
+        manager = config.IniConfigManager(config_strategy.get_config_file())
+        return manager.data()
+
+
+class AbsStartupTask(abc.ABC):
+    @abc.abstractmethod
+    def run(self) -> None:
+        """Run a startup task."""
+
+    @abc.abstractmethod
+    def description(self) -> str:
+        """Get human-readable information about current task."""
+
+
+class EnsureGlobalConfigFiles(AbsStartupTask):
+
+    def __init__(self, logger) -> None:
+        super().__init__()
+        self.logger = logger
+
+    def run(self) -> None:
+        config.ensure_settings_files(logger=self.logger)
+
+    def description(self) -> str:
+        return "Ensuring global settings files are available and creating " \
+               "defaults where missing."
+
+
+class EnsureWorkflowConfigFiles(AbsStartupTask):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.config_file_location_strategy = \
+            speedwagon.config.StandardConfigFileLocator()
+
+    def run(self) -> None:
+        for name, workflow_klass in \
+                speedwagon.job.available_workflows().items():
+            try:
+                workflow = workflow_klass()
+                self.ensure_workflow_config(
+                    workflow, workflow.workflow_options()
+                )
+            except speedwagon.exceptions.MissingConfiguration:
+                print(f"[{name}] has missing config")
+
+    def get_config_file(self):
+        return os.path.join(
+            self.config_file_location_strategy.get_app_data_dir(),
+            speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME
+        )
+
+    def ensure_workflow_config(
+            self,
+            workflow: speedwagon.Workflow,
+            config_options: List[speedwagon.workflow.AbsOutputOptionDataType]
+    ):
+        yaml_file = self.get_config_file()
+
+        getter_strategy = \
+            speedwagon.config.WorkflowSettingsYAMLResolver(yaml_file)
+
+        setter_strategy = \
+            speedwagon.config.WorkflowSettingsYamlExporter(yaml_file)
+
+        manager = speedwagon.config.WorkflowSettingsManager(
+            getter_strategy=getter_strategy,
+            setter_strategy=setter_strategy
+        )
+        workflow_settings: speedwagon.config.SettingsData = {}
+        existing_options = manager.get_workflow_settings(workflow)
+        for option in config_options:
+            name = option.setting_name or option.label
+            workflow_settings[name] = existing_options.get(name)
+            if (
+                    workflow_settings[name] is None and
+                    option.default_value is not None
+            ):
+                workflow_settings[name] = option.default_value
+
+        if workflow_settings:
+            manager.save_workflow_settings(workflow, workflow_settings)
+
+    def description(self) -> str:
+        return "Ensuring workflow settings file are available and creating " \
+               "defaults where missing."
+
+
+def _setup_config_tab(
+        saver: dialog.settings.MultiSaver
+) -> dialog.settings.TabsConfigurationTab:
+    config_strategy = config.StandardConfigFileLocator()
+    tabs_config = dialog.settings.TabsConfigurationTab()
+    tabs_config.editor.load_data()
+    saver.config_savers.append(
+        dialog.settings.ConfigFileSaver(
+            dialog.settings.SettingsTabSaveStrategy(
+                tabs_config,
+                lambda widget: config.TabsYamlWriter().serialize(
+                    filter(
+                        lambda tab: tab.tab_name != "All",
+                        widget.get_data().get('tab_information', []),
+                    )
+                )
+            ),
+            config_strategy.get_tabs_file()
+        )
+    )
+    return tabs_config
+
+
+def _setup_workflow_settings_tab(
+        saver: dialog.settings.MultiSaver
+) -> dialog.settings.ConfigWorkflowSettingsTab:
+    workflow_settings_tab = dialog.settings.ConfigWorkflowSettingsTab()
+    config_strategy = config.StandardConfigFileLocator()
+    saver.config_savers.append(
+        dialog.settings.ConfigFileSaver(
+            dialog.settings.SettingsTabSaveStrategy(
+                workflow_settings_tab,
+                lambda widget: speedwagon.config.SettingsYamlSerializer
+                .serialize_structure_to_yaml(
+                    {
+                        workflow_name:
+                            speedwagon.config.SettingsYamlSerializer
+                            .structure_workflow_data(value)
+                        for (workflow_name, value) in
+                        widget.get_data()['workflow settings'].items()
+                    }
+                )
+            ),
+            os.path.join(
+                config_strategy.get_app_data_dir(),
+                speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME
+            )
+        )
+    )
+    # Only add workflows to the configuration if it has something to
+    # configure. Otherwise, this gets overly cluttered.
+    workflow_settings_tab.set_workflows(
+        filter(
+            lambda workflow: len(workflow.workflow_options()) != 0,
+            initialize_workflows()
+        )
+    )
+    return workflow_settings_tab
+
+
+def _setup_global_settings_tab(
+        saver: dialog.settings.MultiSaver
+) -> dialog.settings.GlobalSettingsTab:
+    config_strategy = config.StandardConfigFileLocator()
+    global_settings_tab = dialog.settings.GlobalSettingsTab()
+    saver.config_savers.append(
+        dialog.settings.ConfigFileSaver(
+            dialog.settings.SettingsTabSaveStrategy(
+                global_settings_tab,
+                lambda widget: config.IniConfigSaver().serialize(
+                    {
+                        'GLOBAL': typing.cast(
+                            speedwagon.config.SettingsData, widget.get_data()
+                        )
+                    }
+                )
+            ),
+            config_strategy.get_config_file()
+        )
+    )
+    global_settings_tab.load_ini_file(config_strategy.get_config_file())
+    return global_settings_tab
+
+
+def _setup_plugins_tab(
+        _: dialog.settings.MultiSaver
+) -> dialog.settings.PluginsTab:
+    config_strategy = config.StandardConfigFileLocator()
+    plugins_tab = dialog.settings.PluginsTab()
+    plugins_tab.load(config_strategy.get_config_file())
+    return plugins_tab
+
+
 class StartQtThreaded(AbsGuiStarter):
 
     def __init__(self, app: Optional[QtWidgets.QApplication] = None) -> None:
-        self.startup_settings: Dict[str, Union[str, bool]] = {'debug': False}
+        super().__init__(app)
+        self.settings_resolver: AbsResolveSettingsStrategy = ResolveSettings()
+        self.startup_settings: FullSettingsData = {
+            "GLOBAL": {
+                'debug': False
+            }
+        }
 
-        self.windows: Optional[gui.MainWindow2] = None
+        self.windows: Optional[gui.MainWindow3] = None
         self.logger = logging.getLogger()
 
         formatter = \
             logging.Formatter('%(asctime)-15s %(threadName)s %(message)s')
 
         self.platform_settings = config.get_platform_settings()
-        self.app = app or QtWidgets.QApplication(sys.argv)
+        self.app: QtWidgets.QApplication = (
+            app
+            or QtWidgets.QApplication(sys.argv)
+        )
         self._log_data = io.StringIO()
 
         log_data_handler = logging.StreamHandler(self._log_data)
@@ -69,13 +297,12 @@ class StartQtThreaded(AbsGuiStarter):
         self.logger.addHandler(log_data_handler)
         self.logger.setLevel(logging.DEBUG)
 
-        self.load_settings()
         speedwagon.frontend.qtwidgets.gui.set_app_display_metadata(self.app)
         self._request_window = user_interaction.QtRequestMoreInfo(self.windows)
 
     @staticmethod
     def import_workflow_config(
-            parent: gui.MainWindow2,
+            parent: gui.MainWindow3,
             dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
             serialization_strategy: typing.Optional[
                 AbsJobConfigSerializationStrategy] = None
@@ -98,53 +325,8 @@ class StartQtThreaded(AbsGuiStarter):
         serialization_strategy.file_name = load_file
         workflow_name, data = serialization_strategy.load()
         parent.logger.debug(f"Loading {workflow_name}")
-        parent.set_current_tab("All")
         parent.set_active_workflow(workflow_name)
         parent.set_current_workflow_settings(data)
-
-    @staticmethod
-    def save_workflow_config(
-            workflow_name,
-            data,
-            parent: QtWidgets.QWidget,
-            dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
-            serialization_strategy: typing.Optional[
-                speedwagon.job.AbsJobConfigSerializationStrategy
-            ] = None
-    ) -> None:
-        serialization_strategy = \
-            serialization_strategy or speedwagon.job.ConfigJSONSerialize()
-
-        dialog_box = dialog_box or QtWidgets.QFileDialog()
-        export_file_name, _ = dialog_box.getSaveFileName(
-                parent,
-                "Export Job Configuration",
-                f"{workflow_name}.json",
-                "Job Configuration JSON (*.json)"
-        )
-
-        if export_file_name:
-            serialization_strategy.file_name = export_file_name
-            serialization_strategy.save(workflow_name, data)
-
-    def load_settings(self) -> None:
-        self.user_data_dir = typing.cast(
-            str, self.platform_settings.get("user_data_directory")
-        )
-
-        self.config_file = os.path.join(
-            self.platform_settings.get_app_data_directory(),
-            speedwagon.startup.CONFIG_INI_FILE_NAME
-        )
-
-        self.app_data_dir = typing.cast(
-            str, self.platform_settings["app_data_directory"]
-        )
-
-        self.tabs_file = os.path.join(
-            self.platform_settings.get_app_data_directory(),
-            speedwagon.startup.TABS_YML_FILE_NAME
-        )
 
     def _load_help(self) -> None:
         try:
@@ -156,52 +338,35 @@ class StartQtThreaded(AbsGuiStarter):
                 "No help link available. Reason: %s", error)
 
     def ensure_settings_files(self) -> None:
-        config.ensure_settings_files(self, logger=self.logger)
+        config.ensure_settings_files(logger=self.logger)
 
-    @staticmethod
-    def read_settings_file(settings_file: str) -> Dict[str, Union[str, bool]]:
-
-        with config.ConfigManager(settings_file) as current_config:
-            return current_config.global_settings
-
-    def resolve_settings(
-            self,
-            resolution_order: Optional[
-                List[config.AbsSetting]
-            ] = None,
-            loader: Optional[config.ConfigLoader] = None
-    ) -> Dict[str, Union[str, bool]]:
-
-        loader = loader or config.ConfigLoader(self.config_file)
-
+    def resolve_settings(self) -> FullSettingsData:
+        settings = self.settings_resolver.get_settings()
         self.platform_settings._data.update(
-            loader.read_settings_file(self.config_file)
+            settings.get("GLOBAL", {})
         )
-
-        loader.logger = self.logger
-        if resolution_order:
-            loader.resolution_strategy_order = resolution_order
-
-        results = loader.get_settings()
-
-        self.startup_settings = results
+        self.startup_settings = settings
         return self.startup_settings
 
     def initialize(self) -> None:
-        self.ensure_settings_files()
+        startup_tasks: List[AbsStartupTask] = [
+            EnsureGlobalConfigFiles(self.logger),
+            EnsureWorkflowConfigFiles()
+        ]
+        for task in startup_tasks:
+            task.run()
+
+        # self.ensure_settings_files()
         self.startup_settings = self.resolve_settings()
 
-    def _load_workflows(
-            self,
-            application: gui.MainWindow2
-    ) -> None:
-        tabs_file = os.path.join(
-            self.platform_settings.get_app_data_directory(),
-            speedwagon.startup.TABS_YML_FILE_NAME
-        )
+    def load_workflows(self) -> None:
+        if self.windows is None:
+            return
+        config_strategy = config.StandardConfigFileLocator()
 
         self.logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
+        self.windows.clear_tabs()
         with contextlib.redirect_stderr(loading_workflows_stream):
             all_workflows = speedwagon.job.available_workflows()
 
@@ -211,14 +376,18 @@ class StartQtThreaded(AbsGuiStarter):
                 f"Unable to load workflow '{workflow_name}'. Reason: {error}"
 
             self.logger.error(error_message)
-            application.console.add_message(error_message)
+            self.windows.console.add_message(error_message)
             del all_workflows[workflow_name]
 
         # Load every user configured tab
-        self.load_custom_tabs(application, tabs_file, all_workflows)
+        self.load_custom_tabs(
+            self.windows,
+            config_strategy.get_tabs_file(),
+            all_workflows
+        )
 
         # All Workflows tab
-        self.load_all_workflows_tab(application, all_workflows)
+        self.load_all_workflows_tab(self.windows, all_workflows)
 
         workflow_errors_msg = loading_workflows_stream.getvalue().strip()
         if workflow_errors_msg:
@@ -227,9 +396,10 @@ class StartQtThreaded(AbsGuiStarter):
 
     def load_all_workflows_tab(
             self,
-            application: gui.MainWindow2,
+            application: gui.MainWindow3,
             loaded_workflows: typing.Dict[str, Type[speedwagon.job.Workflow]]
     ) -> None:
+        print("Loading Tab All")
         self.logger.debug("Loading Tab All")
         application.add_tab(
             "All",
@@ -240,10 +410,11 @@ class StartQtThreaded(AbsGuiStarter):
 
     def load_custom_tabs(
             self,
-            main_window: gui.MainWindow2,
+            main_window: gui.MainWindow3,
             tabs_file: str,
             loaded_workflows: typing.Dict[str, Type[speedwagon.job.Workflow]]
     ) -> None:
+
         tabs_file_size = os.path.getsize(tabs_file)
         if tabs_file_size > 0:
             try:
@@ -254,7 +425,7 @@ class StartQtThreaded(AbsGuiStarter):
                         ):
                     main_window.add_tab(tab_name, collections.OrderedDict(
                         sorted(extra_tab.items())))
-            except speedwagon.startup.FileFormatError as error:
+            except speedwagon.exceptions.FileFormatError as error:
                 self.logger.warning(
                     "Unable to load custom tabs from %s. Reason: %s",
                     tabs_file,
@@ -293,76 +464,121 @@ class StartQtThreaded(AbsGuiStarter):
     ) -> None:
         dialog.dialogs.SystemInfoDialog(parent).exec()
 
-    @staticmethod
-    def request_settings(parent: Optional[QtWidgets.QWidget] = None) -> None:
-        platform_settings = config.get_platform_settings()
-        settings_path = platform_settings.get_app_data_directory()
+    def request_settings(
+            self,
+            parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
 
-        dialog_builder = dialog.settings.SettingsBuilder(parent=parent)
+        class TabData(typing.NamedTuple):
+            name: str
+            setup_function: Callable[
+                [dialog.settings.MultiSaver], dialog.settings.SettingsTab
+            ]
+            active: bool
 
-        dialog_builder.add_open_settings(
-            platform_settings.get_app_data_directory()
-        )
+        def are_there_any_plugins() -> bool:
+            return len(EntrypointsPluginModelLoader.plugin_entry_points()) > 0
 
-        dialog_builder.add_global_settings(
-            os.path.join(
-                settings_path,
-                speedwagon.startup.CONFIG_INI_FILE_NAME
-            )
-        )
+        tabs: List[TabData] = [
+            TabData("Workflow Settings", _setup_workflow_settings_tab, True),
+            TabData("Global Settings", _setup_global_settings_tab, True),
+            TabData("Tabs", _setup_config_tab, True),
+            TabData("Plugins", _setup_plugins_tab, are_there_any_plugins()),
+        ]
+        config_strategy = config.StandardConfigFileLocator()
 
-        dialog_builder.add_tabs_setting(
-            os.path.join(settings_path, speedwagon.startup.TABS_YML_FILE_NAME)
-        )
+        dialog_builder = dialog.settings.SettingsBuilder2(parent=parent)
+        dialog_builder.app_data_dir = config_strategy.get_app_data_dir()
 
-        config_dialog = dialog_builder.build()
-        config_dialog.exec_()
+        saver = dialog.settings.MultiSaver(parent=parent)
+
+        for tab in tabs:
+            if tab.active is True:
+                dialog_builder.add_tab(tab.name, tab.setup_function(saver))
+
+        def success(_) -> None:
+            if self.windows:
+                self.windows.clear_tabs()
+                self.windows.update_settings()
+            self.load_workflows()
+
+        saver.add_success_call_back(success)
+        dialog_builder.set_saver_strategy(saver)
+        config_dialog: dialog.settings.SettingsDialog = dialog_builder.build()
+
+        config_dialog.exec()
 
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
 
-        with speedwagon.runner_strategies.BackgroundJobManager() \
-                as job_manager:
-            job_manager.global_settings = self.startup_settings
-            self.windows = speedwagon.frontend.qtwidgets.gui.MainWindow2(
-                job_manager=job_manager,
-                settings=self.startup_settings
-            )
+        original_hook = sys.excepthook
 
-            if self.windows is None:
-                return 1
-
-            self.windows.console.attach_logger(self.logger)
-            self.windows.configuration_requested.connect(
-                self.request_settings
-            )
-
-            self.windows.save_logs_requested.connect(self.save_log)
-
-            self.windows.export_job_config.connect(
-                self.save_workflow_config
-            )
-
-            self.windows.import_job_config.connect(
-                self.import_workflow_config
-            )
-
-            self.windows.system_info_requested.connect(
-                self.request_system_info
-            )
-            self.windows.help_requested.connect(self._load_help)
-            self.windows.submit_job.connect(
-                lambda workflow_name, options:
-                self.submit_job(
-                    job_manager,
-                    workflow_name,
-                    options,
-                    main_app=self.windows,
+        # without this, unhandled exceptions won't close the application
+        # because QT/PySide keeps the GUI open.
+        try:
+            sys.excepthook = \
+                lambda cls, exception, traceback: gui_exceptions_hook(
+                    cls,
+                    exception,
+                    traceback,
+                    self.app,
+                    self.windows
                 )
-            )
+            with speedwagon.runner_strategies.BackgroundJobManager() \
+                    as job_manager:
+                job_manager.global_settings = \
+                    self.startup_settings.get("GLOBAL", {})
 
-            self._load_workflows(self.windows)
-            self.windows.show()
-            return self.app.exec_()
+                self.windows = self.build_main_window(job_manager)
+                self._request_window = \
+                    user_interaction.QtRequestMoreInfo(self.windows)
+                self.load_workflows()
+                self.windows.update_settings()
+                self.windows.show()
+                return self.app.exec()
+        finally:
+            sys.excepthook = original_hook
+
+    def build_main_window(
+            self,
+            job_manager
+    ) -> speedwagon.frontend.qtwidgets.gui.MainWindow3:
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        window.console.attach_logger(self.logger)
+
+        window.action_export_logs.triggered.connect(
+            lambda: self.save_log(window)
+        )
+
+        window.export_job_config.connect(save_workflow_config)
+
+        window.action_import_job.triggered.connect(
+            lambda: self.import_workflow_config(window)
+        )
+
+        window.action_system_info_requested.triggered.connect(
+            lambda: self.request_system_info(window)
+        )
+
+        window.action_open_application_preferences.triggered.connect(
+            lambda: self.request_settings(window)
+        )
+
+        window.action_help_requested.triggered.connect(self._load_help)
+
+        window.action_about.triggered.connect(
+            lambda: dialog.about_dialog_box(window)
+        )
+
+        window.submit_job.connect(
+            lambda workflow_name, options:
+            self.submit_job(
+                job_manager,
+                workflow_name,
+                options,
+                main_app=self.windows,
+            )
+        )
+        return window
 
     @staticmethod
     def abort_job(
@@ -399,7 +615,7 @@ class StartQtThreaded(AbsGuiStarter):
             workflow_name: str,
             options: Dict[str, typing.Any],
             main_app: typing.Optional[
-                gui.MainWindow2
+                gui.MainWindow3
             ] = None,
     ) -> None:
 
@@ -410,10 +626,11 @@ class StartQtThreaded(AbsGuiStarter):
                 raise ValueError(f"Unknown workflow: '{workflow_name}'")
             workflow_class.validate_user_options(**options)
         except ValueError as user_option_error:
-            self.report_exception(
-                parent=main_app,
+            report_exception_dialog(
                 exc=user_option_error,
-                dialog_box_title="Invalid User Options"
+                parent=main_app,
+                dialog_box_title="Invalid User Options",
+                is_fatal=False,
             )
             return
 
@@ -450,15 +667,6 @@ class StartQtThreaded(AbsGuiStarter):
         )
         threaded_events.started.set()
 
-    def report_exception(
-            self,
-            exc: BaseException,
-            parent: typing.Optional[QtWidgets.QWidget] = None,
-            dialog_box_title: Optional[str] = None,
-    ) -> None:
-        self.logger.error(str(exc))
-        report_exception_dialog(exc, dialog_box_title, parent)
-
     def _find_invalid(
             self,
             workflows: typing.Dict[str, typing.Type[speedwagon.job.Workflow]]
@@ -467,12 +675,51 @@ class StartQtThreaded(AbsGuiStarter):
     ]:
         for title, workflow in workflows.copy().items():
             try:
-                workflow(global_settings=self.startup_settings)
+                workflow(
+                    global_settings=self.startup_settings.get('GLOBAL', {})
+                )
             except (
                     speedwagon.exceptions.SpeedwagonException,
                     AttributeError
             ) as error:
                 yield title, str(error)
+
+
+def report_exception_dialog(
+        exc: BaseException,
+        parent: typing.Optional[QtWidgets.QWidget] = None,
+        dialog_box_title: Optional[str] = None,
+        is_fatal=True,
+) -> None:
+    error_dialog = \
+        dialog.dialogs.SpeedwagonExceptionDialog(parent)
+    if dialog_box_title:
+        error_dialog.setWindowTitle(dialog_box_title)
+    if is_fatal is True:
+        error_dialog.setText(
+            "Speedwagon has exited due to an unhandled exception"
+        )
+    error_dialog.exception = exc
+    error_dialog.exec()
+
+
+def gui_exceptions_hook(
+        cls: Type[BaseException],
+        exception: BaseException,
+        traceback: Optional[types.TracebackType],
+        app: Optional[QtWidgets.QApplication] = None,
+        window: Optional[QtWidgets.QMainWindow] = None,
+) -> None:
+    if window:
+        window.hide()
+    tb.print_tb(traceback)
+    report_exception_dialog(exception, window)
+    if window:
+        window.close()
+    print(f"Unhandled exception: {cls.__name__}")
+    print("Speedwagon exited prematurely")
+    if app is not None:
+        app.exit(1)
 
 
 class TabsEditorApp(QtWidgets.QDialog):
@@ -484,7 +731,9 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.setWindowTitle("Speedwagon Tabs Editor")
         layout = QtWidgets.QVBoxLayout()
         self.editor = speedwagon.frontend.qtwidgets.dialog.settings.TabEditor()
+        # self.editor.tabs_model.
         layout.addWidget(self.editor)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.dialog_button_box = QtWidgets.QDialogButtonBox(self)
         layout.addWidget(self.dialog_button_box)
 
@@ -504,138 +753,58 @@ class TabsEditorApp(QtWidgets.QDialog):
         self.rejected.connect(self.on_cancel)  # type: ignore
 
     def load_all_workflows(self) -> None:
-        workflows = speedwagon.job.available_workflows()
-        self.editor.set_all_workflows(workflows)
+        self.editor.set_all_workflows()
+
+    def get_tab_config_strategy(self) -> config.AbsTabsConfigDataManagement:
+        config_strategy = config.StandardConfigFileLocator()
+        return config.CustomTabsYamlConfig(config_strategy.get_tabs_file())
 
     def on_okay(self) -> None:
+        config_strategy = config.StandardConfigFileLocator()
+        tabs_file = config_strategy.get_tabs_file()
         if self.editor.modified is True:
-            if self.tabs_file is None:
+            if tabs_file is None:
                 return
-            speedwagon.frontend.qtwidgets.tabs.write_tabs_yaml(
-                self.tabs_file,
-                speedwagon.frontend.qtwidgets.tabs.extract_tab_information(
-                    cast(
-                        speedwagon.frontend.qtwidgets.models.TabsModel,
-                        self.editor.selected_tab_combo_box.model()
+            strategy = self.get_tab_config_strategy()
+            strategy.save(
+                list(
+                    filter(
+                        lambda tab: tab.tab_name != "All",
+                        self.editor.model.tab_information(),
                     )
                 )
             )
-
         self.close()
 
     def on_cancel(self) -> None:
         self.close()
-
-    def load_tab_file(self, filename: str) -> None:
-        """Load tab file."""
-        self.editor.tabs_file = filename
-
-    @property
-    def tabs_file(self) -> Optional[str]:
-        return self.editor.tabs_file
-
-    @tabs_file.setter
-    def tabs_file(self, value: str) -> None:
-        self.editor.tabs_file = value
 
 
 def standalone_tab_editor(
         app: Optional[QtWidgets.QApplication] = None
 ) -> None:
     """Launch standalone tab editor app."""
+
     print("Loading settings")
-    settings = config.get_platform_settings()
-
     app = app or QtWidgets.QApplication(sys.argv)
+
+    def exception_hook(
+            cls: Type[BaseException],
+            exception: BaseException,
+            traceback: Optional[types.TracebackType]
+    ) -> None:
+        gui_exceptions_hook(cls, exception, traceback, app=app)
+
+    sys.excepthook = exception_hook
+
     print("Loading tab editor")
-    editor = TabsEditorApp()
-    editor.load_all_workflows()
+    dialog_box = TabsEditorApp()
 
-    tabs_file = \
-        os.path.join(
-            settings.get_app_data_directory(),
-            speedwagon.startup.TABS_YML_FILE_NAME
-        )
-
-    editor.load_tab_file(tabs_file)
+    dialog_box.editor.load_data()
 
     print("displaying tab editor")
-    editor.show()
-    app.exec()
-
-
-class SingleWorkflowLauncher(AbsGuiStarter):
-    """Single workflow launcher.
-
-    .. versionadded:: 0.2.0
-       Added SingleWorkflowLauncher class for running a single workflow \
-            without user interaction. Useful for building new workflows.
-
-    """
-
-    def __init__(
-            self,
-            app,
-            logger: typing.Optional[logging.Logger] = None
-    ) -> None:
-        """Set up window for running a single workflow."""
-        super().__init__(app)
-        self.window: Optional[
-            speedwagon.frontend.qtwidgets.gui.MainWindow1
-        ] = None
-        self._active_workflow: Optional[AbsWorkflow] = None
-        self.options: Dict[str, Union[str, bool]] = {}
-        self.logger = logger or logging.getLogger(__name__)
-
-    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-        """Run the workflow configured with the options given."""
-        if self._active_workflow is None:
-            raise AttributeError("Workflow has not been set")
-
-        with speedwagon.frontend.qtwidgets.worker.ToolJobManager() \
-                as work_manager:
-            work_manager.logger = self.logger
-            self._run(work_manager)
-        return 0
-
-    def _run(
-            self,
-            work_manager: speedwagon.frontend.qtwidgets.worker.ToolJobManager
-    ) -> None:
-        if self._active_workflow is None:
-            raise ValueError("No active workflow set")
-
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow1(
-            work_manager=work_manager,
-            debug=False)
-
-        window.show()
-        if self._active_workflow.name is not None:
-            window.setWindowTitle(self._active_workflow.name)
-        runner_strategy = \
-            speedwagon.frontend.qtwidgets.runners.QtRunner(window)
-
-        self._active_workflow.validate_user_options(**self.options)
-        # runner_strategy.additional_info_callback
-
-        runner_strategy.run(self._active_workflow,
-                            self.options,
-                            window.log_manager)
-        window.log_manager.handlers.clear()
-        window.close()
-
-    def set_workflow(self, workflow: AbsWorkflow) -> None:
-        """Set the current workflow."""
-        self._active_workflow = workflow
-
-
-def report_exception_dialog(exc, dialog_box_title, parent):
-    text = str(exc)
-    dialog_box = QtWidgets.QMessageBox(parent)
-    if dialog_box_title is not None:
-        dialog_box.setWindowTitle(dialog_box_title)
-    dialog_box.setText(text)
-    dialog_box.exec_()
+    dialog_box.show()
+    sys.exit(app.exec())
 
 
 class SingleWorkflowJSON(AbsGuiStarter):
@@ -656,7 +825,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
         self.global_settings = None
         self.on_exit: typing.Optional[
             typing.Callable[
-                [speedwagon.frontend.qtwidgets.gui.MainWindow2], None]
+                [speedwagon.frontend.qtwidgets.gui.MainWindow3], None]
         ] = None
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
         self.workflow: typing.Optional[AbsWorkflow] = None
@@ -703,19 +872,6 @@ class SingleWorkflowJSON(AbsGuiStarter):
                 app.quit()
         return 0
 
-    def report_exception(
-            self,
-            exc: BaseException,
-            parent: typing.Optional[QtWidgets.QWidget] = None,
-            dialog_box_title: Optional[str] = None,
-    ) -> None:
-        self.logger.error(str(exc))
-        report_exception_dialog(
-            exc=exc,
-            dialog_box_title=dialog_box_title,
-            parent=parent
-        )
-
     def _run_workflow(
             self,
             job_manager: runner_strategies.BackgroundJobManager,
@@ -728,10 +884,10 @@ class SingleWorkflowJSON(AbsGuiStarter):
                 raise ValueError(f"Unknown workflow: '{workflow}'")
             workflow.validate_user_options(**options)
         except ValueError as user_option_error:
-            self.report_exception(
+            report_exception_dialog(
                 parent=None,
                 exc=user_option_error,
-                dialog_box_title="Invalid User Options"
+                dialog_box_title="Invalid User Options",
             )
             return
 
@@ -765,64 +921,10 @@ class SingleWorkflowJSON(AbsGuiStarter):
     def _load_main_window(
             job_manager: runner_strategies.BackgroundJobManager,
             title: Optional[str]
-    ) -> gui.MainWindow2:
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow2(job_manager)
+    ) -> gui.MainWindow3:
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        window.job_manager = job_manager
         if title is not None:
             window.setWindowTitle(title)
 
         return window
-
-
-class MultiWorkflowLauncher(AbsGuiStarter):
-
-    def __init__(self, app, logger:  Optional[logging.Logger] = None) -> None:
-        super().__init__(app)
-        self.logger = logger or logging.getLogger(__name__)
-        self._pending_tasks: \
-            "queue.Queue[Tuple[AbsWorkflow, Dict[str, typing.Any]]]" \
-            = queue.Queue()
-
-    def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
-
-        with speedwagon.frontend.qtwidgets.worker.ToolJobManager() as \
-                work_manager:
-            work_manager.logger = self.logger
-            self._run(work_manager)
-        return 0
-
-    def _run(
-            self,
-            work_manager: speedwagon.worker.AbsToolJobManager
-    ) -> None:
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow1(
-            work_manager=work_manager,
-            debug=False)
-
-        window.show()
-        try:
-            while not self._pending_tasks.empty():
-                active_workflow, options = self._pending_tasks.get()
-                if active_workflow.name is not None:
-                    window.setWindowTitle(active_workflow.name)
-                runner_strategy = \
-                    speedwagon.frontend.qtwidgets.runners.QtRunner(window)
-
-                active_workflow.validate_user_options(**options)
-
-                runner_strategy.run(
-                    active_workflow,
-                    options,
-                    window.log_manager
-                )
-
-                self._pending_tasks.task_done()
-        except speedwagon.frontend.qtwidgets.runners.TaskFailed as task_error:
-            raise \
-                speedwagon.exceptions.JobCancelled(task_error) from task_error
-
-        finally:
-            window.log_manager.handlers.clear()
-            window.close()
-
-    def add_job(self, workflow, args):
-        self._pending_tasks.put((workflow, args))

@@ -60,7 +60,7 @@ class ZipPackagesWorkflow(Workflow):
 
         return True
 
-    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+    def job_options(self) -> List[workflow.AbsOutputOptionDataType]:
         """Request user settings for source and output paths."""
         source = workflow.DirectorySelect("Source")
         output = workflow.DirectorySelect("Output")

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import abc
-import importlib
+import importlib.util
 import inspect
 import json
 import logging
@@ -19,10 +19,19 @@ from typing import \
     Tuple, \
     Type
 
+import speedwagon
+import speedwagon.config
+if sys.version_info < (3, 10):  # pragma: no cover
+    import importlib_metadata as metadata
+else:  # pragma: no cover
+    from importlib import metadata
+
 if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
     from speedwagon.frontend.interaction import UserRequestFactory
     from speedwagon.tasks import TaskBuilder, Result
+    from speedwagon.config import SettingsData, SettingsDataType
+
 
 __all__ = [
     "AbsWorkflow",
@@ -40,7 +49,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     active = True
     description: Optional[str] = None
     name: Optional[str] = None
-    global_settings: Dict[str, str] = {}
+    global_settings: SettingsData = {}
     required_settings_keys: Set[str] = set()
 
     # pylint: disable=unused-argument
@@ -161,6 +170,15 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         You need to implement the discover_task_metadata() method.
     """
 
+    def __init__(self, *args, **kwargs) -> None:
+        """Create a new workflow object."""
+        super().__init__(*args, **kwargs)
+        self._options_backends = None
+
+    def set_options_backend(self, value) -> None:
+        """Set the option backend."""
+        self._options_backends = value
+
     def get_additional_info(
             self,
             user_request_factory:  # pylint: disable=unused-argument
@@ -183,12 +201,28 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
         """
         return {}
 
-    def get_user_options(self) -> List[AbsOutputOptionDataType]:
+    def job_options(self) -> List[AbsOutputOptionDataType]:
         """Get user options.
 
         Defaults to no args.
         """
         return []
+
+    def workflow_options(self) -> List[AbsOutputOptionDataType]:
+        """Get options configured at the application level.
+
+        Defaults to no args.
+        """
+        return []
+
+    def get_workflow_configuration_value(
+            self,
+            key: str
+    ) -> Optional[SettingsDataType]:
+        """Get a value from the workflow configuration."""
+        if self._options_backends is None:
+            return None
+        return self._options_backends.get(key)
 
 
 class NullWorkflow(Workflow):
@@ -197,6 +231,8 @@ class NullWorkflow(Workflow):
     Does nothing.
     """
 
+    name = ''
+    description = ''
     def discover_task_metadata(self, initial_results: List[Any],
                                additional_data, **user_args) -> List[dict]:
         """Discover task metadata."""
@@ -216,7 +252,7 @@ class AbsDynamicFinder(metaclass=abc.ABCMeta):
     def py_module_filter(item: "os.DirEntry[str]") -> bool:
         pass
 
-    def locate(self) -> Dict["str", AbsWorkflow]:
+    def locate(self) -> Dict["str", Type[Workflow]]:
         """Locate workflows."""
         located_class = {}
         tree = os.scandir(self.path)
@@ -272,12 +308,34 @@ class WorkflowFinder(AbsDynamicFinder):
         return f"{__package__}.workflows"
 
     @property
-    def base_class(self) -> typing.Type[AbsWorkflow]:
+    def base_class(self) -> Type[AbsWorkflow]:
         """Get base class."""
         return AbsWorkflow
 
 
-def available_workflows() -> dict:
+class AbsWorkflowFinder(abc.ABC):  # pylint: disable=too-few-public-methods
+    @abc.abstractmethod
+    def locate(self) -> Dict[str, Type[Workflow]]:
+        """Locate workflows from everywhere."""
+
+
+class FindAllWorkflowsStrategy(AbsWorkflowFinder):
+
+    @staticmethod
+    def get_plugin_strategy() -> speedwagon.job.LoadWhiteListedPluginsOnly:
+        plugin_strategy = speedwagon.job.LoadWhiteListedPluginsOnly()
+        plugin_strategy.whitelisted_entry_points = \
+            speedwagon.config.get_whitelisted_plugins()
+        return plugin_strategy
+
+    def locate(self) -> Dict[str, Type[Workflow]]:
+        return {
+            **speedwagon.job.find_builtin_workflows(),
+            **speedwagon.job.find_plugin_workflows(self.get_plugin_strategy()),
+        }
+
+
+def available_workflows(strategy: Optional[AbsWorkflowFinder] = None) -> dict:
     """Locate all workflow class in workflows subpackage.
 
     This looks for a workflow prefix in the naming.
@@ -286,13 +344,12 @@ def available_workflows() -> dict:
         Dictionary of all workflow
 
     """
-    root = os.path.join(os.path.dirname(__file__), "workflows")
-    finder = WorkflowFinder(root)
-    return finder.locate()
+    strategy = strategy or FindAllWorkflowsStrategy()
+    return strategy.locate()
 
 
 def all_required_workflow_keys(
-        workflows: Optional[Dict[str, Type[AbsWorkflow]]] = None
+        workflows: Optional[Dict[str, Type[Workflow]]] = None
 ) -> Set[str]:
     """Get all the keys required by the workflows.
 
@@ -304,7 +361,7 @@ def all_required_workflow_keys(
         Set of Keys that workflows are expecting
 
     """
-    workflows = workflows or available_workflows()
+    workflows = workflows or find_builtin_workflows()
     keys: Set[str] = set()
     for speedwagon_workflow in workflows.values():
         keys = keys.union(set(speedwagon_workflow.required_settings_keys))
@@ -376,3 +433,105 @@ class ConfigJSONSerialize(AbsJobConfigSerializationStrategy):
 
         with open(self.file_name, "r", encoding="utf-8") as file_reader:
             return self.deserialize_data(json.load(file_reader))
+
+
+class AbsPluginFinder(abc.ABC):  # pylint: disable=too-few-public-methods
+    @abc.abstractmethod
+    def locate(self) -> Dict[str, Type[Workflow]]:
+        """Locate plugin workflows."""
+
+
+class EntrypointPluginSearch(AbsPluginFinder, abc.ABC):
+    entrypoint_group = 'speedwagon.plugins'
+
+    def get_entry_points(self) -> metadata.EntryPoints:
+        return metadata.entry_points(group=self.entrypoint_group)
+
+    def load_workflow_from_entry_point(
+            self,
+            entry_point: metadata.EntryPoint
+    ) -> Optional[Tuple[str, Type[speedwagon.Workflow]]]:
+        entry_point_workflow = \
+            typing.cast(Type[speedwagon.Workflow], entry_point.load())
+
+        if not issubclass(entry_point_workflow, speedwagon.Workflow):
+            raise speedwagon.exceptions.InvalidPlugin(
+                f"{entry_point.value} is not a Speedwagon Workflow",
+                entry_point=entry_point
+            )
+        workflow_name: str = entry_point_workflow.name or entry_point.name
+        return workflow_name, entry_point_workflow
+
+    @abc.abstractmethod
+    def should_entrypoint_load(self, entrypoint: metadata.EntryPoint) -> bool:
+        """Get if an entrypoint attempt to be loaded."""
+
+    def locate(self) -> Dict[str, Type[Workflow]]:
+        failed_plugins = []
+        discovered_plugins = {}
+        for entrypoint in self.get_entry_points():
+            if not self.should_entrypoint_load(entrypoint):
+                continue
+            try:
+                result = self.load_workflow_from_entry_point(entrypoint)
+                if result:
+                    workflow_name, entry_point_workflow = result
+                    discovered_plugins[workflow_name] = entry_point_workflow
+            except speedwagon.exceptions.InvalidPlugin as error:
+                failed_plugins.append(error.entry_point.name)
+        if failed_plugins:
+            failed_plugins_string = ",".join(failed_plugins)
+            message = f"{failed_plugins_string} failed to load"
+            raise speedwagon.exceptions.PluginImportError(message)
+        return discovered_plugins
+
+
+class LoadAllPluginSearch(EntrypointPluginSearch):
+    def should_entrypoint_load(self, entrypoint: metadata.EntryPoint) -> bool:
+        return True
+
+
+class LoadWhiteListedPluginsOnly(EntrypointPluginSearch):
+
+    def __init__(self) -> None:
+        self._whitelisted_entry_points: Set[Tuple[str, str]] = set()
+
+    @property
+    def whitelisted_entry_points(self) -> Set[Tuple[str, str]]:
+        return self._whitelisted_entry_points
+
+    @whitelisted_entry_points.setter
+    def whitelisted_entry_points(
+            self,
+            value: Iterable[Tuple[str, str]]
+    ) -> None:
+        for item in value:
+            if len(item) != 2:
+                raise TypeError(
+                    "whitelisted_entry_points include 2 parts: module & name"
+                )
+        self._whitelisted_entry_points = set(value)
+
+    def should_entrypoint_load(self, entrypoint: metadata.EntryPoint) -> bool:
+        return (entrypoint.module, entrypoint.name) in \
+            self.whitelisted_entry_points
+
+
+def find_plugin_workflows(
+        strategy: AbsPluginFinder = LoadAllPluginSearch()
+) -> Dict[str, Type[speedwagon.Workflow]]:
+    return strategy.locate()
+
+
+def find_builtin_workflows() -> Dict[str, Type[Workflow]]:
+    """Locate all workflow class in workflows subpackage.
+
+    This looks for a workflow prefix in the naming.
+
+    Returns:
+        Dictionary of all workflow
+
+    """
+    root = os.path.join(os.path.dirname(__file__), "workflows")
+    finder = WorkflowFinder(root)
+    return finder.locate()

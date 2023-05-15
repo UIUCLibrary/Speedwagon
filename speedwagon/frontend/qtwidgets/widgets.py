@@ -1,30 +1,36 @@
 """Specialize widgets."""
+from __future__ import annotations
 import abc
 import json
 import os.path
 import typing
+from collections import defaultdict
 from typing import \
     Union, \
     Optional, \
     Dict, \
     Any, \
     TypedDict, \
-    List
+    List, \
+    Iterable
 
-try:
-    from typing import TypeAlias
-except ImportError:
-    from typing_extensions import TypeAlias
 
-try:
+try:  # pragma: no cover
     from typing import NotRequired
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import NotRequired
 
 
 from PySide6 import QtWidgets, QtCore, QtGui
-from speedwagon.frontend.qtwidgets import models, ui_loader, ui
-from speedwagon.workflow import AbsOutputOptionDataType
+from speedwagon.frontend.qtwidgets import ui_loader, ui
+from speedwagon.workflow import AbsOutputOptionDataType, UserDataType
+from speedwagon import Workflow, exceptions, config
+
+from speedwagon.frontend.qtwidgets.models.workflows import AbsWorkflowList
+
+from speedwagon.frontend.qtwidgets import models
+
+
 try:  # pragma: no cover
     from importlib.resources import as_file
     from importlib import resources
@@ -33,12 +39,7 @@ except ImportError:  # pragma: no cover
     from importlib_resources import as_file
 
 
-__all__ = [
-    'get_workspace'
-]
-
-
-UseDataType: TypeAlias = Union[str, bool, None]
+__all__ = ['Workspace']
 
 
 class WidgetMetadata(TypedDict):
@@ -47,7 +48,7 @@ class WidgetMetadata(TypedDict):
     filter: NotRequired[str]
     selections: NotRequired[List[str]]
     placeholder_text: NotRequired[str]
-    value: NotRequired[UseDataType]
+    value: NotRequired[UserDataType]
 
 
 class EditDelegateWidget(QtWidgets.QWidget):
@@ -57,6 +58,7 @@ class EditDelegateWidget(QtWidgets.QWidget):
         When https://bugreports.qt.io/browse/PYSIDE-1434 is resolved, this
         should be made into an abstract base class.
     """
+
     editingFinished = QtCore.Signal()
     dataChanged = QtCore.Signal()
 
@@ -71,15 +73,15 @@ class EditDelegateWidget(QtWidgets.QWidget):
         inner_layout = QtWidgets.QHBoxLayout()
         inner_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(inner_layout)
-        self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
 
     @property
-    def data(self) -> UseDataType:
+    def data(self) -> UserDataType:
         return self._data
 
     @data.setter
     @abc.abstractmethod
-    def data(self, value: UseDataType) -> None:
+    def data(self, value: UserDataType) -> None:
         """Set the value based on the widget used."""
 
 
@@ -213,7 +215,7 @@ class ComboWidget(EditDelegateWidget):
         model = self.combo_box.model()
         selections = []
         for i in range(model.rowCount()):
-            index = model.index(i)
+            index = model.index(i, column=0)
             selections.append(model.data(index))
         return selections
 
@@ -289,7 +291,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
 
     @abc.abstractmethod
     def drop_acceptable_data(self, param) -> bool:
-        """check if dropped item is accessible"""
+        """Check if dropped item is accessible."""
 
 
 class DirectorySelectWidget(FileSystemItemSelectWidget):
@@ -372,9 +374,7 @@ class FileSelectWidget(FileSystemItemSelectWidget):
                     parent=self,
                     filter=self.filter
                 )
-            if result:
-                return result[0]
-            return None
+            return result[0] if result else None
 
         selection = (get_file_callback or use_qt_file_dialog)()
         if selection:
@@ -432,7 +432,9 @@ class InnerForm(QtWidgets.QWidget):
             serialized_json_data: str = \
                 typing.cast(
                     str,
-                    index.data(role=models.ToolOptionsModel4.JsonDataRole)
+                    index.data(
+                        role=models.ToolOptionsModel4.JsonDataRole
+                    )
                 )
             json_data = \
                 typing.cast(WidgetMetadata, json.loads(serialized_json_data))
@@ -461,16 +463,16 @@ class InnerForm(QtWidgets.QWidget):
                 return
             model_data = typing.cast(
                 AbsOutputOptionDataType,
-                self.model.data(
-                    index,
-                    models.ToolOptionsModel4.DataRole
-                )
+                self.model.data(index, models.ToolOptionsModel4.DataRole)
             )
 
             self.model.setData(index, self.widgets[model_data.label].data)
 
     @staticmethod
-    def iter_row_rect(layout: QtWidgets.QFormLayout, device):
+    def iter_row_rect(
+            layout: QtWidgets.QFormLayout,
+            device: InnerForm
+    ) -> Iterable[QtCore.QRect]:
         last_height = 0
         for row in range(layout.rowCount()):
             label = \
@@ -495,7 +497,7 @@ class InnerForm(QtWidgets.QWidget):
         for i, rect in enumerate(
                 self.iter_row_rect(
                     typing.cast(QtWidgets.QFormLayout, self.layout()),
-                    painter.device()
+                    typing.cast(InnerForm, painter.device())
                 )
         ):
             if i % 2 == 0:
@@ -546,6 +548,29 @@ class DynamicForm(QtWidgets.QScrollArea):
         self.modelChanged.connect(self._background.modelChanged)
         self.setWidget(self._background)
         self.ensurePolished()
+        self.issues: List[str] = []
+
+    def update_issues(self) -> None:
+        self.issues.clear()
+        self.update_model()
+        rows = self._background.model.rowCount()
+        for row in range(rows):
+            index = self._background.model.index(row)
+            data = typing.cast(
+                AbsOutputOptionDataType,
+                self._background.model.data(
+                    index,
+                    self._background.model.DataRole
+                )
+            )
+            if data.required and (data.value is None or data.value == ""):
+                self.issues.append(
+                    f" Required value {data.label} is missing."
+                )
+
+    def is_valid(self) -> bool:
+        self.update_issues()
+        return len(self.issues) == 0
 
     def create_editor(
             self,
@@ -562,54 +587,259 @@ class DynamicForm(QtWidgets.QScrollArea):
     def update_model(self) -> None:
         self._background.update_model()
 
-    def update_widget(self):
+    def update_widget(self) -> None:
         self._background.update_widget()
 
     @property
-    def model(self):
+    def model(self) -> models.ToolOptionsModel4:
         return self._background.model
+
+    def get_configuration(self) -> Dict[str, UserDataType]:
+        self.update_model()
+        return self._background.model.get()
 
 
 class Workspace(QtWidgets.QWidget):
+    """Workspace widget.
+
+    This widget contains the controls for a user to set up a new job.
+    """
+
     settingsWidget: QtWidgets.QWidget
-    selectedWorkflowView: QtWidgets.QLineEdit
+    workflow_name_value: QtWidgets.QLineEdit
     descriptionView: QtWidgets.QTextBrowser
+    selectedWorkflowNameLabel: QtWidgets.QLabel
+    workflow_description_value: QtWidgets.QTextBrowser
     settings_form: DynamicForm
 
-    def __init__(
-            self,
-            model: models.WorkflowListModel,
-            parent: Optional[QtWidgets.QWidget] = None
-    ) -> None:
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Create Workspace widget."""
         super().__init__(parent)
-        self.tool_mapper = QtWidgets.QDataWidgetMapper(self)
-        self.model = model
-        self.tool_mapper.setModel(self.model)
+        with as_file(
+                resources.files(ui).joinpath("workspace.ui")
+        ) as ui_file:
+            ui_loader.load_ui(str(ui_file), self)
+        self.app_settings_lookup_strategy = config.StandardConfig()
+
+    def set_workflow(self, workflow_klass: typing.Type[Workflow]) -> None:
+        """Set current workflow."""
+        if workflow_klass.name:
+            self.workflow_name_value.setText(workflow_klass.name)
+        try:
+            settings = self.app_settings_lookup_strategy.settings()
+            new_workflow = \
+                workflow_klass(global_settings=settings.get("GLOBAL", {}))
+            config_backend = config.get_config_backend()
+            config_backend.workflow = new_workflow
+            new_workflow.set_options_backend(config_backend)
+            if new_workflow.description:
+                self.workflow_description_value.setText(
+                    new_workflow.description
+                )
+            self.settings_form.set_model(
+                models.ToolOptionsModel4(
+                    new_workflow.job_options()
+                )
+            )
+        except exceptions.MissingConfiguration as exc:
+            self.workflow_description_value.setHtml(
+                f"<b>Workflow unavailable.</b><p><b>Reason: </b>{exc}</p>"
+            )
+            self.settings_form.set_model(
+                models.ToolOptionsModel4())
+
+    def is_valid(self) -> bool:
+        """Check if the workflow configured is valid."""
+        return self.settings_form.is_valid()
+
+    def _get_configuration(self) -> Dict[str, UserDataType]:
+        return self.settings_form.get_configuration()
+
+    @property
+    def workflow_name(self) -> str:
+        """Get workflow name."""
+        return self._get_workflow_name()
+
+    def _get_workflow_name(self) -> str:
+        return self.workflow_name_value.text()
+
+    @property
+    def workflow_description(self) -> str:
+        """Get workflow description."""
+        return self._get_workflow_description()
+
+    def _get_workflow_description(self) -> str:
+        return self.workflow_description_value.toPlainText()
+
+    name = QtCore.Property(str, _get_workflow_name)
+    description = QtCore.Property(str, _get_workflow_description)
+    configuration = QtCore.Property(object, _get_configuration)
 
 
-def get_workspace(
-        workflow_model: models.WorkflowListModel,
-        parent: Optional[QtWidgets.QWidget] = None
-) -> Workspace:
-    """Get Workspace widget."""
-    with as_file(
-            resources.files(ui).joinpath("workspace.ui")
-    ) as ui_file:
-        widget = \
-            typing.cast(
-                Workspace,
-                ui_loader.load_ui(
-                    str(ui_file),
-                    Workspace(workflow_model, parent)
-                ),
+class SelectWorkflow(QtWidgets.QWidget):
+    workflowSelectionView: QtWidgets.QListView
+    workflow_selected = QtCore.Signal(object)
+    selected_index_changed = QtCore.Signal(QtCore.QModelIndex)
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        with as_file(
+                resources.files(
+                    "speedwagon.frontend.qtwidgets.ui"
+                ).joinpath("select_workflow_widget.ui")
+        ) as ui_file:
+            ui_loader.load_ui(str(ui_file), self)
+        self.workflowSelectionView.setModel(models.WorkflowList())
+
+    @property
+    def model(self) -> QtCore.QAbstractItemModel:
+        return self.workflowSelectionView.model()
+
+    @model.setter
+    def model(self, value: AbsWorkflowList) -> None:
+        # pass
+        self.workflowSelectionView.setModel(value)
+        selection_model = self.workflowSelectionView.selectionModel()
+        selection_model.currentChanged.connect(  # type: ignore
+            self._update_tool_selected
+        )
+
+    def _update_tool_selected(
+            self,
+            current: QtCore.QModelIndex,
+            previous: QtCore.QModelIndex
+    ) -> None:
+        item = typing.cast(
+            typing.Type[Workflow],
+            self.model.data(
+                current,
+                role=typing.cast(int, models.WorkflowClassRole)
+            )
+        )
+        self.selected_index_changed.emit(current)
+        self.workflow_selected.emit(item)
+
+    def add_workflow(self, workflow_klass: typing.Type[Workflow]) -> None:
+        new_row = self.model.rowCount()
+        self.model.insertRow(new_row)
+        self.model.setData(self.model.index(new_row, 0), workflow_klass)
+
+    def set_current_by_name(self, workflow_name: str) -> None:
+        rows = self.model.rowCount()
+        for row_id in range(rows):
+            workflow_index = self.model.index(row_id, 0)
+            name = workflow_index.data()
+            if name == workflow_name:
+                self.workflowSelectionView.setCurrentIndex(workflow_index)
+                self.workflow_selected.emit(
+                    self.model.data(workflow_index, models.WorkflowClassRole)
+                )
+                break
+        else:
+            raise ValueError(f"{workflow_name} not loaded in model")
+
+    def get_current_workflow_type(self) -> Optional[typing.Type[Workflow]]:
+        return typing.cast(
+            typing.Type[Workflow],
+            self.model.data(
+                self.workflowSelectionView.currentIndex(),
+                role=typing.cast(int, models.WorkflowClassRole)
+            )
+        )
+
+    @property
+    def workflows(self) -> Dict[str, typing.Type[Workflow]]:
+        loaded_workflows = {}
+        for row_id in range(self.model.rowCount()):
+            index = self.model.index(row_id, 0)
+            workflow_name = typing.cast(
+                str,
+                self.model.data(index, QtCore.Qt.ItemDataRole.DisplayRole)
             )
 
-    widget.tool_mapper.addMapping(widget.selectedWorkflowView, 0)
-    widget.tool_mapper.addMapping(widget.descriptionView, 1, b"plainText")
-    widget.settings_form = DynamicForm(widget)
-    widget.layout().replaceWidget(
-        widget.settingsWidget,
-        widget.settings_form
-    )
-    widget.settings_form.setMinimumHeight(100)
-    return widget
+            loaded_workflows[workflow_name] = typing.cast(
+                typing.Type[Workflow],
+                self.model.data(index, QtCore.Qt.ItemDataRole.UserRole)
+            )
+
+        return loaded_workflows
+
+
+class PluginConfig(QtWidgets.QWidget):
+    changes_made = QtCore.Signal()
+    plugin_list_view: QtWidgets.QListView
+
+    def __init__(
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ) -> None:
+        super().__init__(parent)
+        with as_file(
+                resources.files(ui).joinpath("plugin_settings.ui")
+        ) as ui_file:
+            ui_loader.load_ui(str(ui_file), self)
+
+        self.model = models.PluginActivationModel()
+        self.model.dataChanged.connect(self.changes_made)
+        self.plugin_list_view.setModel(self.model)
+
+    @property
+    def modified(self) -> bool:
+        return self.model.data_modified
+
+    def enabled_plugins(self) -> Dict[str, List[str]]:
+
+        active_plugins: Dict[str, List[str]] = defaultdict(list)
+        for i in range(self.model.rowCount()):
+            checked = typing.cast(
+                QtCore.Qt.ItemDataRole,
+                self.model.data(
+                    self.model.index(i), QtCore.Qt.ItemDataRole.CheckStateRole
+                )
+            )
+
+            if checked == QtCore.Qt.CheckState.Checked:
+                source = typing.cast(
+                    str,
+                    self.model.data(self.model.index(i), self.model.ModuleRole)
+                )
+                plugin_name = \
+                    typing.cast(
+                        str,
+                        self.model.data(
+                            self.model.index(i),
+                            QtCore.Qt.ItemDataRole.DisplayRole
+                        )
+                    )
+                active_plugins[source].append(plugin_name)
+        return dict(active_plugins)
+
+
+class WorkflowSettingsEditorUI(QtWidgets.QWidget):
+    workflow_settings_view: QtWidgets.QTreeView
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        with as_file(
+                resources.files(ui).joinpath("tab_workflow_options.ui")
+        ) as ui_file:
+            ui_loader.load_ui(str(ui_file), self)
+
+
+class WorkflowSettingsEditor(WorkflowSettingsEditorUI):
+    _model: QtCore.QAbstractItemModel
+    data_changed = QtCore.Signal()
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        self.model = models.WorkflowSettingsModel()
+
+    @property
+    def model(self) -> QtCore.QAbstractItemModel:
+        return self._model
+
+    @model.setter
+    def model(self, value: QtCore.QAbstractItemModel) -> None:
+        self._model = value
+        self.workflow_settings_view.setModel(self._model)
+        self.model.dataChanged.connect(self.data_changed)

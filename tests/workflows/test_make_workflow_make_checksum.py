@@ -17,7 +17,7 @@ class TestZipPackagesWorkflow:
     @pytest.fixture
     def default_options(self, workflow):
         return {
-            data.label: data.value for data in workflow.get_user_options()
+            data.label: data.value for data in workflow.job_options()
         }
 
     def test_discover_task_metadata(
@@ -139,7 +139,7 @@ class TestRegenerateChecksumBatchSingleWorkflow:
     @pytest.fixture
     def default_options(self, workflow):
         return {
-            data.label: data.value for data in workflow.get_user_options()
+            data.label: data.value for data in workflow.job_options()
         }
 
     def test_discover_task_metadata(
@@ -276,7 +276,7 @@ class TestRegenerateChecksumBatchMultipleWorkflow:
     @pytest.fixture
     def default_options(self, workflow):
         return {
-            data.label: data.value for data in workflow.get_user_options()
+            data.label: data.value for data in workflow.job_options()
         }
 
     def test_discover_task_metadata(

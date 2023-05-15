@@ -14,7 +14,7 @@ if __name__ == "__main__":
             "uiucprescon.images",
             "pykdu-compress>=0.1.8",
             'importlib_resources;python_version<"3.9"',
-            'importlib-metadata;python_version<"3.8"',
+            'importlib-metadata;python_version<"3.10"',
             'typing-extensions;python_version<"3.11"',
             'lxml',
             "requests",
@@ -26,6 +26,7 @@ if __name__ == "__main__":
             "speedwagon.frontend.cli",
             "speedwagon.frontend.qtwidgets",
             "speedwagon.frontend.qtwidgets.dialog",
+            "speedwagon.frontend.qtwidgets.models",
             "speedwagon.frontend.qtwidgets.ui",
             "speedwagon.tasks",
             "speedwagon.workflows",
@@ -35,7 +36,7 @@ if __name__ == "__main__":
             'pytest',
             'pytest-mock'
         ],
-        python_requires=">=3.6",
+        python_requires=">=3.7",
         extras_require={
           "QT": ["PySide6==6.4.*"]
         },
@@ -49,11 +50,15 @@ if __name__ == "__main__":
         package_data={
             'speedwagon': ["favicon.ico", "logo.png"],
             'speedwagon.frontend.qtwidgets.ui': [
-                "tab_editor.ui",
-                "main_window_shell.ui",
-                "main_window2.ui",
                 "console.ui",
-                'setup_job.ui'
+                "main_window3.ui",
+                "main_window_shell.ui",
+                "plugin_settings.ui",
+                "select_workflow_widget.ui",
+                'setup_job.ui',
+                "tab_editor.ui",
+                "workflow_progress.ui",
+                "workspace.ui",
             ],
         },
     )

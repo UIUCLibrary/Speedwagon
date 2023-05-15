@@ -7,6 +7,7 @@ import dataclasses
 import enum
 
 import logging
+import os
 import queue
 import sys
 import tempfile
@@ -18,9 +19,13 @@ from types import TracebackType
 from typing import List, Any, Dict, Optional, Type
 
 import speedwagon
+import speedwagon.config
 import speedwagon.exceptions
 from speedwagon import runner
-from speedwagon.job import AbsWorkflow, Workflow
+
+if typing.TYPE_CHECKING:
+    from speedwagon.job import AbsWorkflow, Workflow
+    from speedwagon.config import SettingsData
 
 __all__ = [
     "RunRunner",
@@ -408,11 +413,80 @@ class TaskDispatcher:
         self.current_state.start()
 
 
+class AbsTaskGeneratorStrategy(abc.ABC):
+    @abc.abstractmethod
+    def results(self) -> List[Any]:
+        """Results of the job."""
+    @abc.abstractmethod
+    def clear_results(self) -> None:
+        """Clear results."""
+
+    @abc.abstractmethod
+    def iterate_tasks(
+            self,
+            workflow: Workflow,
+            options: typing.Mapping[str, Any],
+            task_scheduler: TaskScheduler
+    ):
+        """Generate and iterate tasks."""
+
+    @abc.abstractmethod
+    def generate_report(
+            self,
+            workflow: Workflow,
+            options: typing.Mapping[str, Any],
+            results: List[Any],
+    ) -> Optional[str]:
+        """Generate Text Report."""
+
+
+class TaskGeneratorStrategy(AbsTaskGeneratorStrategy):
+    def __init__(self):
+        self._results: List[Any] = []
+
+    def results(self) -> List[Any]:
+        return self._results
+
+    def clear_results(self) -> None:
+        self._results.clear()
+
+    def generate_report(
+            self,
+            workflow: Workflow,
+            options: typing.Mapping[str, Any],
+            results: List[Any],
+    ) -> Optional[str]:
+        return workflow.generate_report(results, **options)
+
+    def iterate_tasks(
+            self,
+            workflow: Workflow,
+            options: typing.Mapping[str, Any],
+            task_scheduler: TaskScheduler
+    ):
+        workflow.workflow_options()
+        task_generator = TaskGenerator(
+            workflow,
+            working_directory=task_scheduler.working_directory,
+            options=options,
+            caller=task_scheduler
+        )
+        for task in task_generator.tasks():
+            task_scheduler.total_tasks = task_generator.total_task
+            yield task
+            if task.task_result:
+                self._results.append(task.task_result)
+            task_scheduler.current_task_progress = task_generator.current_task
+
+
 class TaskScheduler:
     """Task scheduler."""
 
     def __init__(self, working_directory: str) -> None:
         """Create a new task scheduler."""
+        self.task_generator_strategy: AbsTaskGeneratorStrategy = \
+            TaskGeneratorStrategy()
+
         self.logger = logging.getLogger(__name__)
         self.working_directory = working_directory
         self.reporter: Optional[
@@ -447,7 +521,7 @@ class TaskScheduler:
                    workflow: Workflow,
                    options: Dict[str, Any]
                    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
-        """Get sub tasks for a workflow.
+        """Get sub-tasks for a workflow.
 
         Args:
             workflow: Workflow to run
@@ -457,24 +531,18 @@ class TaskScheduler:
             Yields subtasks for a workflow.
 
         """
-        results: List[Any] = []
+        self.task_generator_strategy.clear_results()
+        yield from \
+            self.task_generator_strategy.iterate_tasks(workflow, options, self)
 
-        task_generator = TaskGenerator(
-            workflow,
-            working_directory=self.working_directory,
-            options=options,
-            caller=self
-        )
-
-        for task in task_generator.tasks():
-            self.total_tasks = task_generator.total_task
-            yield task
-            if task.task_result:
-                results.append(task.task_result)
-            self.current_task_progress = task_generator.current_task
-        report = task_generator.generate_report(results)
-        if report is not None:
-            self.logger.info(task_generator.generate_report(results))
+        report = \
+            self.task_generator_strategy.generate_report(
+                workflow,
+                options,
+                self.task_generator_strategy.results()
+            )
+        if report:
+            self.logger.info(report)
 
     def run_workflow_jobs(
             self,
@@ -573,15 +641,15 @@ class Run(TaskScheduler):
         self.valid_workflows = None
 
     def get_workflow(self, workflow_name: str) -> typing.Type[Workflow]:
-        if self.valid_workflows is not None:
-            if workflow_name is None:
-                raise AssertionError("workflow_name is not set")
+        if self.valid_workflows is None:
             workflow_class = \
-                self.valid_workflows.get(workflow_name)
-
+                    speedwagon.job.available_workflows().get(workflow_name)
+        elif workflow_name is None:
+            raise AssertionError("workflow_name is not set")
         else:
             workflow_class = \
-                speedwagon.job.available_workflows().get(workflow_name)
+                    self.valid_workflows.get(workflow_name)
+
         if workflow_class is None:
             raise AssertionError(f"Workflow not found: {workflow_name}")
         return workflow_class
@@ -596,7 +664,7 @@ class BackgroundJobManager(AbsJobManager2):
         self._background_thread: Optional[threading.Thread] = None
         self.request_more_info = lambda *args, **kwargs: None
         self.global_settings: \
-            Optional[Dict[str, typing.Union[str, bool]]] = None
+            Optional[SettingsData] = None
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
@@ -621,6 +689,15 @@ class BackgroundJobManager(AbsJobManager2):
                 workflow = task_scheduler.get_workflow(workflow_name)(
                     global_settings=options.get("global_settings")
                 )
+                options_backend = speedwagon.config.YAMLWorkflowConfigBackend()
+                strategy = speedwagon.config.StandardConfigFileLocator()
+                backend_yaml = os.path.join(
+                    strategy.get_app_data_dir(),
+                    speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME
+                )
+                options_backend.workflow = workflow
+                options_backend.yaml_file = backend_yaml
+                workflow.set_options_backend(options_backend)
                 liaison.events.started.wait()
 
                 for task in task_scheduler.iter_tasks(

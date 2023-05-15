@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>workspace</class>
- <widget class="Workspace" name="workspace">
+ <widget class="Form" name="workspace">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>361</width>
-    <height>283</height>
+    <height>209</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="QLineEdit" name="selectedWorkflowView">
+    <widget class="QLineEdit" name="workflow_name_value">
      <property name="text">
       <string/>
      </property>
@@ -42,17 +42,23 @@
     </widget>
    </item>
    <item row="2" column="1">
-    <widget class="QTextBrowser" name="descriptionView">
+    <widget class="QTextBrowser" name="workflow_description_value">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>50</height>
+      </size>
+     </property>
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>100</height>
+       <height>75</height>
       </size>
      </property>
     </widget>
@@ -65,16 +71,28 @@
     </widget>
    </item>
    <item row="3" column="1">
-    <widget class="QWidget" name="settingsWidget" native="true"/>
+    <widget class="DynamicForm" name="settings_form" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>100</height>
+      </size>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Workspace</class>
+   <class>Form</class>
    <extends>QWidget</extends>
-   <header>workspace.h</header>
+   <header>form.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>DynamicForm</class>
+   <extends>QWidget</extends>
+   <header>dynamicform.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

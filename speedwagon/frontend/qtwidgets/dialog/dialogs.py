@@ -5,6 +5,7 @@ import logging.handlers
 import sys
 import typing
 import warnings
+import time
 from typing import Optional, Sequence
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
@@ -22,6 +23,7 @@ except ImportError:  # pragma: no cover
     from importlib_resources import as_file  # type: ignore
 
 import speedwagon
+from speedwagon.reports import ExceptionReport
 from speedwagon.frontend.qtwidgets import logging_helpers, ui_loader
 import speedwagon.frontend.qtwidgets.ui
 
@@ -399,23 +401,10 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
 
 
 class WorkflowProgressGui(QtWidgets.QDialog):
-    class DialogLogHandler(logging.handlers.BufferingHandler):
-        class LogSignals(QtCore.QObject):
-            message = QtCore.Signal(str)
-
-        def __init__(self, dialog: "WorkflowProgressGui") -> None:
-            super().__init__(capacity=100)
-            self.signals = WorkflowProgress.DialogLogHandler.LogSignals()
-            self._dialog = dialog
-            self.signals.message.connect(
-                self._dialog.write_html_block_to_console
-            )
-
-        def flush(self) -> None:
-            results = [self.format(log).strip() for log in self.buffer]
-            if results:
-                self.signals.message.emit("".join(results))
-            super().flush()
+    button_box: QtWidgets.QDialogButtonBox
+    banner: QtWidgets.QLabel
+    progress_bar: QtWidgets.QProgressBar
+    console: QtWidgets.QTextBrowser
 
     def __init__(
             self,
@@ -445,7 +434,11 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         self._parent_logger: typing.Optional[logging.Logger] = None
 
         self._console_data = QtGui.QTextDocument(parent=self)
+
+        # The extra typehint is to fix typehints due to the way
+        # QtGui.QTextCursor is reporting it as Callable[[QWidget], QCursor]
         self.cursor: QtGui.QTextCursor = QtGui.QTextCursor(self._console_data)
+
         self.cursor.movePosition(self.cursor.MoveOperation.End)
 
     def write_html_block_to_console(self, html: str) -> None:
@@ -459,7 +452,10 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
     def attach_logger(self, logger: logging.Logger) -> None:
         self._parent_logger = logger
-        self._log_handler = WorkflowProgressGui.DialogLogHandler(self)
+        self._log_handler = logging_helpers.QtSignalLogHandler(self)
+        self._log_handler.signals.messageSent.connect(
+            self.write_html_block_to_console
+        )
         formatter = logging_helpers.ConsoleFormatter()
         self._log_handler.setFormatter(formatter)
         self._parent_logger.addHandler(self._log_handler)
@@ -514,18 +510,7 @@ class WorkflowProgress(WorkflowProgressGui):
         self.state: AbsWorkflowProgressState = WorkflowProgressStateIdle(self)
         # =====================================================================
 
-        # Seems to be causing the segfault
-        # self.finished.connect(self.clean_local_console)
-
         self.finished.connect(self.remove_log_handles)  # type: ignore
-
-        self._refresh_timer = QtCore.QTimer(self)
-        self._refresh_timer.timeout.connect(self.flush)  # type: ignore
-        self.finished.connect(self.stop_timer)  # type: ignore
-        self._refresh_timer.start(100)
-
-    def stop_timer(self) -> None:
-        self._refresh_timer.stop()
 
     def clean_local_console(self) -> None:
         # CRITICAL: Running self.console.clear() seems to cause A SEGFAULT when
@@ -598,3 +583,87 @@ class WorkflowProgress(WorkflowProgressGui):
 
         cursor.insertText("\n")
         cursor.endEditBlock()
+
+
+class AbsSaveReport(abc.ABC):  # pylint: disable=R0903
+    qt_parent: QtWidgets.QWidget
+    default_name: str
+
+    @abc.abstractmethod
+    def save(self, data: str) -> None:
+        """Save data to a file."""
+
+
+class SaveReportDialogBox(AbsSaveReport):
+    def __init__(self) -> None:
+        self.default_name = "report.txt"
+        self.qt_parent: QtWidgets.QWidget = QtWidgets.QWidget()
+
+    def save(self, data: str) -> None:
+        while True:
+            log_file_name: Optional[str]
+            log_file_name, _ = \
+                QtWidgets.QFileDialog.getSaveFileName(
+                    self.qt_parent,
+                    "Export crash data",
+                    self.default_name,
+                    "Text Files (*.txt)")
+            if not log_file_name:
+                return
+            if self.write_data(log_file_name, data) is False:
+                continue
+            print(f"Save crash info to {log_file_name}")
+            break
+
+    def write_data(self, file_name: str, data: str) -> bool:
+        """Write data to a file.
+
+        Returns True on success and False on failure.
+        """
+        try:
+            with open(file_name, "w", encoding="utf-8") as file_handle:
+                file_handle.write(data)
+            return True
+        except OSError as error:
+            message_box = QtWidgets.QMessageBox(self.qt_parent)
+            message_box.setText("Saving data failed")
+            message_box.setDetailedText(str(error))
+            message_box.exec()
+            return False
+
+
+class SpeedwagonExceptionDialog(QtWidgets.QMessageBox):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setIcon(self.Icon.Critical)
+        self.report_strategy = ExceptionReport()
+        self.save_report_strategy: AbsSaveReport = SaveReportDialogBox()
+
+        self.setText("Speedwagon has hit an exception")
+        self.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Close)
+
+        self.export_button = \
+            self.addButton(
+                "Export Details",
+                QtWidgets.QMessageBox.ButtonRole.ActionRole
+            )
+        self.export_button.clicked.disconnect()
+        self.export_button.clicked.connect(self.export_information)
+
+    def export_information(self) -> None:
+        epoch_in_minutes = int(time.time() / 60)
+        file_name = f"speedwagon_crash_{epoch_in_minutes}.txt"
+        self.save_report_strategy.default_name = file_name
+        self.save_report_strategy.qt_parent = self
+        self.save_report_strategy.save(self.report_strategy.report())
+
+    @property
+    def exception(self) -> Optional[BaseException]:
+        return self.report_strategy.exception
+
+    @exception.setter
+    def exception(self, value: BaseException) -> None:
+        self.report_strategy.exception = value
+        self.setWindowTitle(self.report_strategy.title())
+        self.setInformativeText(self.report_strategy.summary())
+        self.setDetailedText(self.report_strategy.report())

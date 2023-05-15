@@ -5,22 +5,6 @@ import pytest
 worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
 dialog = pytest.importorskip("speedwagon.frontend.qtwidgets.dialog")
 
-# from speedwagon.frontend.qtwidgets import worker
-# from speedwagon.frontend.qtwidgets import dialog
-
-
-class TestToolJobManager:
-    def test_abort_calls_show(self, qtbot, monkeypatch):
-        work_progress_bar = Mock(spec=dialog.WorkProgressBar)
-        manager = worker.ToolJobManager()
-        monkeypatch.setattr(
-            dialog,
-            "WorkProgressBar",
-            Mock(return_value=work_progress_bar)
-        )
-        manager.abort()
-        assert work_progress_bar.show.called is True
-
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestProcessWorker:

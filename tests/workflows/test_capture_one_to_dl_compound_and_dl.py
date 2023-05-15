@@ -201,7 +201,7 @@ class TestWorkflow:
 def user_options():
     workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
     return {
-        data.label: data.value for data in workflow.get_user_options()
+        data.label: data.value for data in workflow.job_options()
     }
 
 

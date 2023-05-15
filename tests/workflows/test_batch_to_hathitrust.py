@@ -23,7 +23,7 @@ def test_hathi_limited_to_dl_compound_has_options(index, label):
         workflow = \
             workflow_hathi_limited_to_dl_compound.HathiLimitedToDLWorkflow()
 
-    user_options = workflow.get_user_options()
+    user_options = workflow.job_options()
     assert len(user_options) > 0
     assert user_options[index].label == label
 
@@ -81,60 +81,6 @@ def test_initial_task(monkeypatch):
            len(created_task.results[0].items) == number_of_fake_files
 
 
-
-# def test_get_additional_info(qtbot, monkeypatch):
-#     with warnings.catch_warnings():
-#         warnings.simplefilter("ignore")
-#         workflow = wf.CaptureOneBatchToHathiComplete()
-#     mock_package = MagicMock()
-#     mock_data = {
-#             "ID": "99423682912205899",
-#             "ITEM_NAME": "",
-#             "TITLE_PAGE": "99423682912205899_0001.tif",
-#             "PATH": "/some/random/path/"
-#             }
-#
-#     def mock_get_item(obj, key):
-#         return mock_data.get(key.name, str(key))
-#
-#     mock_package.metadata.__getitem__ = mock_get_item
-#     mock_package.__len__ = lambda x: 1
-#
-#     pretask_result = speedwagon.tasks.Result(
-#         source=wf.FindCaptureOnePackageTask,
-#         data=[mock_package]
-#     )
-#
-#     def patched_package_browser(packages, parent):
-#         patched_browser = \
-#             title_page_selection.PackageBrowser(packages, parent)
-#
-#         patched_browser.exec = Mock()
-#         patched_browser.result = Mock(return_value=patched_browser.Accepted)
-#         data = MagicMock()
-#         data.metadata = MagicMock()
-#
-#         data.metadata.__getitem__ = \
-#             lambda _, k: mock_data.get(k.name, str(k))
-#
-#         patched_browser.data = Mock(return_value=[data])
-#         return patched_browser
-#
-#     with monkeypatch.context() as mp:
-#         mp.setattr(wf, "PackageBrowser", patched_package_browser)
-#
-#         extra_data = workflow.get_additional_info(
-#             parent=None,
-#             options={},
-#             pretask_results=[pretask_result]
-#         )
-#
-#     assert extra_data['title_pages']['99423682912205899'] == \
-#            "99423682912205899_0001.tif"
-#
-#     assert isinstance(extra_data, dict)
-
-
 @pytest.fixture
 def unconfigured_workflow():
     with warnings.catch_warnings():
@@ -144,7 +90,7 @@ def unconfigured_workflow():
                 "getmarc_server_url": "http://fake.com"
             }
         )
-    user_options = {i.label: i.value for i in workflow.get_user_options()}
+    user_options = {i.label: i.value for i in workflow.job_options()}
     user_options['Identifier type'] = None
     return workflow, user_options
 

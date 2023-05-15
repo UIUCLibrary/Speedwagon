@@ -13,12 +13,10 @@ from speedwagon.workflows import workflow_get_marc
 
 @pytest.fixture
 def unconfigured_workflow():
-    workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow(
-        global_settings={
-            "getmarc_server_url": "http://fake.com"
-        }
-    )
-    user_options = {i.label: i.value for i in workflow.get_user_options()}
+    workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow()
+    options_backend = Mock(get=lambda key: {"Getmarc server url": "http://fake.com"}.get(key))
+    workflow.set_options_backend(options_backend)
+    user_options = {i.label: i.value for i in workflow.job_options()}
     user_options['Identifier type'] = "Bibid"
     return workflow, user_options
 
@@ -166,16 +164,6 @@ def test_identifier_splits(identifier_type, subdirectory, expected_identifier,
     assert expected_volume == actual_volume
 
 
-def test_missing_server_url_fails(unconfigured_workflow):
-    workflow, user_options = unconfigured_workflow
-
-    if "getmarc_server_url" in workflow.global_settings:
-        del workflow.global_settings["getmarc_server_url"]
-
-    with pytest.raises(speedwagon.exceptions.MissingConfiguration):
-        workflow.discover_task_metadata([], None, **user_options)
-
-
 def test_generate_report_success(unconfigured_workflow):
     workflow, user_options = unconfigured_workflow
     report = workflow.generate_report(
@@ -271,13 +259,6 @@ def test_create_new_task(unconfigured_workflow, identifier_type,
 
     assert task_generated.identifier_type == identifier_type and \
            task_generated.identifier == identifier
-
-
-def test_missing_server_url_init_raises():
-    with pytest.raises(speedwagon.exceptions.MissingConfiguration):
-        workflow_get_marc.GenerateMarcXMLFilesWorkflow(
-            global_settings={}
-        )
 
 
 def test_955_field_defaults_to_true(unconfigured_workflow):

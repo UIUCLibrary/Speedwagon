@@ -51,25 +51,3 @@ class SpyWorkRunner(contextlib.AbstractContextManager):
 
     def progress_dialog_box_handler(self, *args, **kwargs):
         pass
-
-
-@pytest.fixture()
-def tool_job_manager_spy():
-    worker = pytest.importorskip("speedwagon.frontend.qtwidgets.worker")
-
-    class SpyToolJobManager(worker.ToolJobManager):
-        def open(self, parent, runner, *args, **kwargs):
-            return SpyWorkRunner(*args, **kwargs, parent=parent)
-
-        def flush_message_buffer(self):
-            pass
-
-    from speedwagon import runner_strategies
-    import speedwagon.frontend.qtwidgets
-    with SpyToolJobManager() as e:
-        manager_strat = \
-            speedwagon.frontend.qtwidgets.runners.QtRunner(parent=None)
-
-        runner = runner_strategies.RunRunner(manager_strat)
-
-        yield runner

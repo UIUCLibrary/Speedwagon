@@ -114,7 +114,7 @@ class ConvertTiffPreservationToDLJp2Workflow(Workflow):
 
         return jobs
 
-    def get_user_options(
+    def job_options(
             self
     ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
         """Request use settings for source path."""

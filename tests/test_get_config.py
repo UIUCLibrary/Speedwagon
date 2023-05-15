@@ -87,7 +87,7 @@ def test_nix_get_app_data_directory(monkeypatch, tmpdir):
     speedwagon_config = speedwagon.config.NixConfig()
     user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
-        speedwagon.config.Path,
+        speedwagon.config.pathlib.Path,
         "home",
         lambda *args, **kwargs: pathlib.Path(user_path)
     )
@@ -101,7 +101,7 @@ def test_nix_get_user_data_directory(monkeypatch):
     speedwagon_config = speedwagon.config.NixConfig()
     user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
-        speedwagon.config.Path,
+        speedwagon.config.pathlib.Path,
         "home",
         lambda *args, **kwargs: pathlib.Path(user_path)
     )
@@ -252,7 +252,13 @@ def test_add_empty_keys_if_missing(tmpdir, monkeypatch):
     assert missing_keys is None
 
 
-def test_config_manager_empty_settings():
-    config_manager = speedwagon.config.ConfigManager("config.ini")
-    config_manager.cfg_parser = None
-    assert config_manager.global_settings == {}
+class TestConfigManager:
+    def test_config_manager_empty_settings(self):
+        config_manager = speedwagon.config.ConfigManager("config.ini")
+        config_manager.cfg_parser = None
+        assert config_manager.global_settings == {}
+
+    def test_config_manager_empty_plugins(self):
+        config_manager = speedwagon.config.ConfigManager("config.ini")
+        config_manager.cfg_parser = None
+        assert config_manager.plugins == {}

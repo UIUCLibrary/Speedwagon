@@ -40,7 +40,7 @@ class ValidateImageMetadataWorkflow(Workflow):
         })
         return jobs
 
-    def get_user_options(self) -> List[workflow.AbsOutputOptionDataType]:
+    def job_options(self) -> List[workflow.AbsOutputOptionDataType]:
         """Request input setting from user."""
         return [
             workflow.DirectorySelect("Input")
