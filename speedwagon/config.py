@@ -1122,3 +1122,14 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
         ):
             return None
         return self.get_yaml_strategy().get_response(self.workflow).get(key)
+
+
+def get_config_backend():
+    config_backend = YAMLWorkflowConfigBackend()
+    config_strategy = StandardConfigFileLocator()
+    backend_yaml = os.path.join(
+        config_strategy.get_app_data_dir(),
+        WORKFLOWS_SETTINGS_YML_FILE_NAME
+    )
+    config_backend.yaml_file = backend_yaml
+    return config_backend

@@ -57,7 +57,7 @@ class OCRWorkflow(speedwagon.Workflow):
         super().__init__(*args, **kwargs)
         self.global_settings = kwargs.get('global_settings', {})
         try:
-            tessdata_path = self.tessdata_path
+            tessdata_path = self.get_tesseract_path()
         except AttributeError:
             tessdata_path = ""
 
@@ -110,8 +110,7 @@ class OCRWorkflow(speedwagon.Workflow):
                                additional_data: Dict[str, Any],
                                **user_args: str) -> List[dict]:
         """Create OCR task metadata for each file located."""
-        tessdata_path = \
-            self.get_workflow_configuration_value(TESSERACT_PATH_LABEL)
+        tessdata_path = self.get_tesseract_path()
         if tessdata_path is None:
             raise InvalidConfiguration("Tesseract data file location not set")
 
@@ -125,9 +124,6 @@ class OCRWorkflow(speedwagon.Workflow):
 
         for result in initial_results:
             for image_file in result.data:
-                image_path = os.path.dirname(image_file)
-                base_name = os.path.splitext(os.path.basename(image_file))[0]
-                ocr_file_name = f"{base_name}.txt"
                 for key, value in ocr.LANGUAGE_CODES.items():
                     if value == user_args["Language"]:
                         language_code = key
@@ -138,10 +134,11 @@ class OCRWorkflow(speedwagon.Workflow):
                         f"Unable to look up language code for {language}"
                     )
 
+                base_name = os.path.splitext(os.path.basename(image_file))[0]
                 new_task = {
                     "source_file_path": image_file,
-                    "destination_path": image_path,
-                    "output_file_name": ocr_file_name,
+                    "destination_path": os.path.dirname(image_file),
+                    "output_file_name": f"{base_name}.txt",
                     "lang_code": language_code
                 }
                 new_tasks.append(new_task)
@@ -155,8 +152,7 @@ class OCRWorkflow(speedwagon.Workflow):
         destination_path = job_args["destination_path"]
         ocr_file_name = job_args["output_file_name"]
         lang_code = job_args["lang_code"]
-        tessdata_path: Optional[str] = \
-            self.get_workflow_configuration_value(TESSERACT_PATH_LABEL)
+        tessdata_path = self.get_tesseract_path()
         if tessdata_path is None:
             raise MissingConfiguration(
                 "Tesseract data file location is not set"
@@ -204,8 +200,15 @@ class OCRWorkflow(speedwagon.Workflow):
         language_type.placeholder_text = "Select Language"
         tessdata_path = self.get_tesseract_path()
 
-        for lang in self.get_available_languages(
-                path=typing.cast(str, tessdata_path)
+        def full_name(code: str) -> str:
+            language_name = ocr.LANGUAGE_CODES.get(code)
+            return '' if language_name is None else language_name
+
+        for lang in sorted(
+                self.get_available_languages(
+                    path=typing.cast(str, tessdata_path)
+                ),
+                key=full_name
         ):
             fullname = ocr.LANGUAGE_CODES.get(lang)
             if fullname is None:
@@ -222,11 +225,10 @@ class OCRWorkflow(speedwagon.Workflow):
 
     def get_tesseract_path(self) -> Optional[str]:
         """Get the path to the tesseract data files."""
-        self.tessdata_path = typing.cast(
+        return typing.cast(
             Optional[str],
-            self.global_settings.get("tessdata")
+            self.get_workflow_configuration_value(TESSERACT_PATH_LABEL)
         )
-        return self.tessdata_path
 
     @staticmethod
     def get_available_languages(path: str) -> Iterator[str]:
@@ -292,7 +294,8 @@ class OCRWorkflow(speedwagon.Workflow):
         return list(filter(filter_ocr_gen_tasks, results))
 
     @staticmethod
-    def default_tesseract_data_path():
+    def default_tesseract_data_path() -> str:
+        """Get the default path to tessdata files."""
         return os.path.join(
             speedwagon.config.StandardConfigFileLocator().get_user_data_dir(),
             "tessdata"

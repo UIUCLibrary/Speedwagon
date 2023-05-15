@@ -629,6 +629,9 @@ class Workspace(QtWidgets.QWidget):
             settings = self.app_settings_lookup_strategy.settings()
             new_workflow = \
                 workflow_klass(global_settings=settings.get("GLOBAL", {}))
+            config_backend = config.get_config_backend()
+            config_backend.workflow = new_workflow
+            new_workflow.set_options_backend(config_backend)
             if new_workflow.description:
                 self.workflow_description_value.setText(
                     new_workflow.description

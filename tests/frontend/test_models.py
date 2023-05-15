@@ -804,11 +804,14 @@ class TestWorkflowListProxyModel:
 
 
 class TestTabProxyModel:
+
     class DummyWorkflow(speedwagon.Workflow):
         name = "Dummy 1"
 
+
     class SpamWorkflow(speedwagon.Workflow):
         name = "Spam"
+
 
     @pytest.fixture()
     def base_model(self):

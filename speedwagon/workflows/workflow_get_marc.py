@@ -4,6 +4,7 @@ import abc
 import functools
 import os
 import re
+import typing
 from copy import deepcopy
 
 try:  # pragma: no cover
@@ -117,6 +118,12 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
 
         return True
 
+    def get_marc_server(self) -> Optional[str]:
+        return typing.cast(
+            Optional[str],
+            self.get_workflow_configuration_value('Getmarc server url')
+        )
+
     def discover_task_metadata(
             self,
             initial_results: Sequence[Any],
@@ -134,8 +141,7 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
             list of dictionaries of job metadata
 
         """
-        server_url = \
-            self.get_workflow_configuration_value('Getmarc server url')
+        server_url = self.get_marc_server()
         if server_url is None:
             raise MissingConfiguration("Getmarc server url is not set")
 
