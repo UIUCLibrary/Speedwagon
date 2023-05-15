@@ -97,12 +97,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         """Get index."""
         if not self.hasIndex(row, column, parent):
             return QtCore.QModelIndex()
-        if parent.isValid() and parent.column() != 0:
-            return QtCore.QModelIndex()
-        parent_item = self.get_item(parent)
-        if not parent_item:
-            return QtCore.QModelIndex()
-        child_item = parent_item.child(row)
+        child_item = self.get_item(parent).child(row)
         if child_item:
             return self.createIndex(row, column, child_item)
         return QtCore.QModelIndex()

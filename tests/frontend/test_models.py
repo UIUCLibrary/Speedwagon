@@ -286,8 +286,12 @@ class TestTabsTreeModel:
         name = "bacon"
         description = "bacon description"
 
-    def test_add_empty_tab(self, qtbot):
-        model = models.TabsTreeModel()
+
+    @pytest.fixture()
+    def model(self):
+        return models.TabsTreeModel()
+
+    def test_add_empty_tab(self, qtbot, model):
         starting_amount = model.rowCount()
         model.append_workflow_tab("tab_name")
         ending_amount = model.rowCount()
@@ -299,8 +303,7 @@ class TestTabsTreeModel:
         ), f"Should start with 0, got {starting_amount}. " \
            f"Should end with 1, got {ending_amount}"
 
-    def test_add_workflow_tab_with_list_workflows(self, qtbot):
-        model = models.TabsTreeModel()
+    def test_add_workflow_tab_with_list_workflows(self, qtbot, model):
         starting_workflow_row_count = model.rowCount(model.index(0, 0))
         model.append_workflow_tab(
             "Dummy tab",
@@ -322,9 +325,7 @@ class TestTabsTreeModel:
         model = models.TabsTreeModel()
         assert model.get_tab(tab_name="Not valid") is None
 
-    def test_get_tab(self, qtbot):
-        model = models.TabsTreeModel()
-
+    def test_get_tab(self, qtbot, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -333,8 +334,7 @@ class TestTabsTreeModel:
         )
         assert model.get_tab("Dummy tab").name == "Dummy tab"
 
-    def test_add_workflow(self, qtbot):
-        model = models.TabsTreeModel()
+    def test_add_workflow(self, qtbot, model):
         model.append_workflow_tab("Dummy tab")
         assert model.rowCount(model.index(0, 0)) == 0
         model.append_workflow_to_tab(
@@ -361,8 +361,7 @@ class TestTabsTreeModel:
         model.removeRow(0)
         assert model.rowCount() == 0
 
-    def test_get_item(self, qtbot):
-        model = models.TabsTreeModel()
+    def test_get_item(self, qtbot, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -379,8 +378,7 @@ class TestTabsTreeModel:
         ), f'Expected child 0 to be "spam", got "{tab_item.child(0).name}". ' \
            f'Expected child 1 to be "bacon", got "{tab_item.child(1).name}".'
 
-    def test_modified(self):
-        model = models.TabsTreeModel()
+    def test_modified(self, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -390,8 +388,7 @@ class TestTabsTreeModel:
         )
         assert model.data_modified is True
 
-    def test_reset_modified(self):
-        model = models.TabsTreeModel()
+    def test_reset_modified(self, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -402,8 +399,7 @@ class TestTabsTreeModel:
         model.reset_modified()
         assert model.data_modified is False
 
-    def test_len_tabs(self):
-        model = models.TabsTreeModel()
+    def test_len_tabs(self, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -413,9 +409,7 @@ class TestTabsTreeModel:
         )
         assert len(model) == 1
 
-    def test_index(self):
-
-        model = models.TabsTreeModel()
+    def test_index(self, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -430,8 +424,7 @@ class TestTabsTreeModel:
         with pytest.raises(IndexError):
             model[0]
 
-    def test_modified_children(self):
-        model = models.TabsTreeModel()
+    def test_modified_children(self, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -443,8 +436,7 @@ class TestTabsTreeModel:
         dummy_tab.append_workflow(TestTabsTreeModel.BaconWorkflow)
         assert model.data_modified is True
 
-    def test_tab_information(self):
-        model = models.TabsTreeModel()
+    def test_tab_information(self, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -461,8 +453,7 @@ class TestTabsTreeModel:
             (0, 1, 1, "bacon description"),
         ]
     )
-    def test_data(self, top_row, sub_row, sub_column, expected_value):
-        model = models.TabsTreeModel()
+    def test_data(self, top_row, sub_row, sub_column, expected_value, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -474,12 +465,10 @@ class TestTabsTreeModel:
             model.index(sub_row, sub_column, parent=model.index(top_row, 0)),
         ) == expected_value
 
-    def test_data_with_invalid_index_get_none(self):
-        model = models.TabsTreeModel()
+    def test_data_with_invalid_index_get_none(self, model):
         assert model.data(model.index(-1)) is None
 
-    def test_data_with_WorkflowClassRole(self):
-        model = models.TabsTreeModel()
+    def test_data_with_WorkflowClassRole(self, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -499,9 +488,7 @@ class TestTabsTreeModel:
             (1, "Description"),
         ]
     )
-    def test_header_data(self, section, expected_value):
-
-        model = models.TabsTreeModel()
+    def test_header_data(self, section, expected_value, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -515,8 +502,7 @@ class TestTabsTreeModel:
                 QtCore.Qt.ItemDataRole.DisplayRole
             ) == expected_value
 
-    def test_parent_no_child(self):
-        model = models.TabsTreeModel()
+    def test_parent_no_child(self, model):
         assert model.parent().isValid() is False
 
     def test_parent_child_not_valid(self):
@@ -524,14 +510,12 @@ class TestTabsTreeModel:
         child = Mock(isValid=Mock(return_value=False))
         assert isinstance(model.parent(child), QtCore.QModelIndex)
 
-    def test_parent_child_valid_child(self):
-        model = models.TabsTreeModel()
+    def test_parent_child_valid_child(self, model):
         model.get_item = Mock(return_value=models.TabStandardItem())
         child = Mock(isValid=Mock(return_value=True))
         assert isinstance(model.parent(child), QtCore.QModelIndex)
 
-    def test_clear(self):
-        model = models.TabsTreeModel()
+    def test_clear(self, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
@@ -542,6 +526,30 @@ class TestTabsTreeModel:
         model.clear()
         assert model.rowCount() == 0
 
+    def test_parent_not_valid_child(self, model):
+        assert model.parent(model.index(-1,-1)).isValid() is False
+
+    def test_set_data(self, model):
+        index = model.index(0)
+        assert model.setData(
+            index,
+            value=self.SpamWorkflow,
+            role=models.common.WorkflowClassRole
+        ) is True
+
+    def test_set_data_text(self, model):
+        index = model.index(0)
+        assert model.setData(
+            index,
+            value="Invalid data for this role",
+            role=QtGui.Qt.ItemDataRole.CheckStateRole
+        ) is False
+
+    def test_row_count_higher_column_parent(self, model):
+        index = Mock(
+            isValid=Mock(return_value=True), column=Mock(return_value=3)
+        )
+        assert model.rowCount(index) == 0
 
 class TestTabStandardItem:
     class SpamWorkflow(speedwagon.Workflow):
@@ -578,10 +586,13 @@ class TestTabStandardItem:
 
 
 class TestWorkflowListProxyModel:
+
     class DummyWorkflow(speedwagon.Workflow):
         name = "dummy 1"
+
     class SpamWorkflow(speedwagon.Workflow):
         name = "Span"
+
 
     def test_name_no_model(self, qtbot):
         proxy_model = models.WorkflowListProxyModel()
@@ -700,6 +711,10 @@ class TestWorkflowListProxyModel:
         proxy_model.add_workflow(TestTabProxyModel.SpamWorkflow)
         assert proxy_model.rowCount() == 2
 
+    def test_row_count_no_source_model(self):
+        proxy_model = models.WorkflowListProxyModel()
+        assert proxy_model.rowCount() == 0
+
     def test_add_workflow_affects_source(self):
         base_model = models.TabsTreeModel()
         base_model.append_workflow_tab(
@@ -790,7 +805,7 @@ class TestWorkflowListProxyModel:
 
 class TestTabProxyModel:
     class DummyWorkflow(speedwagon.Workflow):
-        name = "dummy 1"
+        name = "Dummy 1"
 
     class SpamWorkflow(speedwagon.Workflow):
         name = "Spam"
@@ -931,10 +946,48 @@ class TestTabProxyModel:
             tab_model.get_source_tab_index("Dummy tab")
         ) == "Dummy tab"
 
+    def test_get_source_tab_index_invalid_index(self, base_model):
+        tab_model = models.TabProxyModel()
+        tab_model.setSourceModel(base_model)
+        assert tab_model.get_source_tab_index("Dummy tab").isValid() is False
+
     def test_add_workflow_without_source_model_raises(self):
         tab_model = models.TabProxyModel()
         with pytest.raises(RuntimeError):
             tab_model.add_workflow(TestTabProxyModel.DummyWorkflow)
+
+    def test_sort(self, base_model):
+        base_model.append_workflow_tab(
+            "Dummy tab",
+            [
+                self.SpamWorkflow,
+                self.DummyWorkflow,
+            ]
+        )
+        tab_model = models.TabProxyModel()
+        tab_model.setSourceModel(base_model)
+        tab_model.set_source_tab("Dummy tab")
+        assert tab_model.data(tab_model.index(0)) == "Spam"
+        tab_model.sort(0, QtCore.Qt.SortOrder.AscendingOrder)
+        assert tab_model.data(tab_model.index(0)) == "Dummy 1"
+
+    def test_sort_noop_on_no_source_tab(self, base_model):
+        base_model.append_workflow_tab(
+            "Dummy tab",
+            [
+                self.SpamWorkflow,
+                self.DummyWorkflow,
+            ]
+        )
+        tab_model = models.TabProxyModel()
+        tab_model.setSourceModel(base_model)
+        tab_model.source_tab = None
+        tab_model.sort(0)
+
+    def test_sort_no_base_model(self):
+        tab_model = models.TabProxyModel()
+        tab_model.set_source_tab('invalid tab')
+        tab_model.sort(0)
 
 
 class TestWorkflowList:
