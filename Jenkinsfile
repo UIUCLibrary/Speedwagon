@@ -153,7 +153,7 @@ def runTox(){
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                             dockerRunArgs: '-v pipcache_speedwagon:/.cache/pip',
-                            retry: 3
+                            retry: 2
                         )
                 },
                 'Windows':{
@@ -163,7 +163,7 @@ def runTox(){
                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
                             dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
                             dockerRunArgs: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip',
-                            retry: 3
+                            retry: 2
                      )
                 },
                 failFast: true
@@ -177,6 +177,23 @@ def testSpeedwagonChocolateyPkg(version){
     script{
         def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
         chocolatey.install_chocolatey_package(
+            name: 'speedwagon',
+            version: chocolatey.sanitize_chocolatey_version(version),
+            source: './packages/;CHOCOLATEY_SOURCE;chocolatey',
+            retries: 3
+        )
+    }
+    powershell(
+            label: 'Checking for Start Menu shortcut',
+            script: 'Get-ChildItem "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs" -Recurse -Include *.lnk'
+        )
+    bat 'speedwagon --help'
+}
+
+def testReinstallSpeedwagonChocolateyPkg(version){
+    script{
+        def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
+        chocolatey.reinstall_chocolatey_package(
             name: 'speedwagon',
             version: chocolatey.sanitize_chocolatey_version(version),
             source: './packages/;CHOCOLATEY_SOURCE;chocolatey',
@@ -1039,9 +1056,23 @@ pipeline {
                                         equals expected: true, actual: params.TEST_STANDALONE_PACKAGE_DEPLOYMENT
                                         beforeAgent true
                                     }
-                                    steps{
-                                        unstash 'CHOCOLATEY_PACKAGE'
-                                        testSpeedwagonChocolateyPkg(props.Version)
+                                    stages{
+                                        stage('Install'){
+                                            steps{
+                                                unstash 'CHOCOLATEY_PACKAGE'
+                                                testSpeedwagonChocolateyPkg(props.Version)
+                                            }
+                                        }
+                                        stage('Reinstall/Upgrade'){
+                                            steps{
+                                                testReinstallSpeedwagonChocolateyPkg(props.Version)
+                                            }
+                                        }
+                                        stage('Uninstall'){
+                                            steps{
+                                                bat 'choco uninstall speedwagon --confirm'
+                                            }
+                                        }
                                     }
                                     post{
                                         failure{

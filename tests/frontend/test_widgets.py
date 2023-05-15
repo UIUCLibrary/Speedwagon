@@ -198,9 +198,12 @@ class TestFileSelectWidget:
                 return_value=Mock(
                     urls=Mock(
                         return_value=[
-                            Mock(path=Mock(return_value="fakepath"))
+                            Mock(
+                                path=Mock(return_value="fakepath"),
+                                toLocalFile=Mock(return_value="fakepath")
+                            )
                         ]
-                    )
+                    ),
                 )
             )
         )
@@ -370,7 +373,8 @@ class TestDynamicForm:
         ]
         model = option_models.ToolOptionsModel4(data)
         form.set_model(model)
-        checkbox: speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget = form._background.widgets['spam']
+        checkbox: speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget = \
+            form._background.widgets['spam']
         assert form._background.widgets['spam'].data is False
         checkbox.check_box.setChecked(True)
         qtbot.wait_until(lambda : form._background.widgets['spam'].data is True)
@@ -405,7 +409,8 @@ class TestDynamicForm:
         model = option_models.ToolOptionsModel4(data)
 
         form.set_model(model)
-        combobox: speedwagon.frontend.qtwidgets.widgets.ComboWidget = form._background.widgets['choice 1']
+        combobox: speedwagon.frontend.qtwidgets.widgets.ComboWidget = \
+            form._background.widgets['choice 1']
         combobox.combo_box.setCurrentIndex(1)
         form.update_model()
 

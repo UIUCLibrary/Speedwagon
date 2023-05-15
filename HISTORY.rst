@@ -3,11 +3,12 @@
 Release History
 ---------------
 
-Dev
-+++
+Version 0.2.2
++++++++++++++
 
 * New Feature
-    Import and export job configuration settings as a json file.
+    * Import and export job configuration settings as a json file.
+    * Job options using files & folders can be dragged & dropped from system file browser
 
 Version 0.1.5
 +++++++++++++

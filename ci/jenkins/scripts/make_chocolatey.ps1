@@ -13,7 +13,7 @@ function SanitizeVersion {
     param (
         $Version
     )
-    if (-Not $Version -match '(a|b|dev|post|rc[0-9]+)$'){
+    if ($Version -notmatch '((a|b|dev|post|rc)[0-9]+)$'){
         return $Version
     }
     $REGEX = '(?:((\.)?))((?<postfix>b|a|dev|rc|post)(?<postVersionNumber>[0-9]+))$'
