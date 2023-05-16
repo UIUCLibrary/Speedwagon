@@ -1,9 +1,14 @@
+"""Workflow configurations."""
+
 from __future__ import annotations
 import abc
 import os
 import io
-from typing import Optional, TypedDict, Dict, List, TYPE_CHECKING
-
+from typing import Optional, Dict, List, TYPE_CHECKING
+try:  # pragma: no cover
+    from typing import TypedDict
+except ImportError:  # pragma: no cover
+    from typing_extensions import TypedDict
 import yaml
 import yaml.emitter
 
@@ -13,6 +18,15 @@ from .config import StandardConfigFileLocator
 if TYPE_CHECKING:
     from .common import SettingsData, SettingsDataType
     from speedwagon.job import Workflow
+
+__all__ = [
+    "WORKFLOWS_SETTINGS_YML_FILE_NAME",
+    "get_config_backend",
+    "WorkflowSettingsManager",
+    "WorkflowSettingsYamlExporter",
+    "WorkflowSettingsYAMLResolver",
+    "YAMLWorkflowConfigBackend",
+]
 
 
 class AbsSettingsSerializer(abc.ABC):  # pylint: disable=R0903
@@ -82,12 +96,16 @@ class AbsWorkflowSettingsExporter(abc.ABC):  # pylint: disable=R0903
 class WorkflowSettingsYAMLResolver(
     AbsYamlConfigFileManager, AbsWorkflowSettingsResolver
 ):
+    """Workflow settings YAML resolver."""
+
     @staticmethod
     def read_file(file_name: str) -> str:
+        """Read file."""
         with open(file_name, "r", encoding="utf-8") as file_handle:
             return file_handle.read()
 
     def get_config_data(self):
+        """Get config data."""
         config_file = self.yaml_file
         return (
             yaml.load(self.read_file(config_file), Loader=yaml.SafeLoader)
@@ -96,6 +114,7 @@ class WorkflowSettingsYAMLResolver(
         )
 
     def get_response(self, workflow: Workflow) -> SettingsData:
+        """Get response."""
         config_data = self.get_config_data()
         if workflow.name not in config_data:
             return {}
@@ -147,20 +166,25 @@ class SettingsYamlSerializer(AbsSettingsSerializer):
 class WorkflowSettingsYamlExporter(
     AbsYamlConfigFileManager, AbsWorkflowSettingsExporter
 ):
+    """Workflow settings yaml exporter."""
+
     def __init__(
         self,
         yaml_file: str,
         yaml_serialization_strategy: Optional[AbsSettingsSerializer] = None,
     ) -> None:
+        """Create a new WorkflowSettingsYamlExporter object."""
         super().__init__(yaml_file)
         self.yaml_serialization_strategy = yaml_serialization_strategy
 
     @staticmethod
     def write_data_to_file(data: str, file_name: str) -> None:
+        """Write data to file."""
         with open(file_name, "w", encoding="utf-8") as file_handle:
             file_handle.write(data)
 
     def get_existing_data(self):
+        """Get existing data."""
         if os.path.exists(self.yaml_file):
             with open(self.yaml_file, "r", encoding="utf-8") as handle:
                 return yaml.load(handle, Loader=yaml.SafeLoader)
@@ -174,9 +198,11 @@ class WorkflowSettingsYamlExporter(
     def serialize_settings_data(
         self, workflow: Workflow, settings: SettingsData
     ) -> str:
+        """Serialize settings data."""
         return self._get_serializer().serialize(workflow, settings)
 
     def save(self, workflow: Workflow, settings: SettingsData) -> None:
+        """Save file."""
         self.write_data_to_file(
             data=self.serialize_settings_data(workflow, settings),
             file_name=self.yaml_file,
@@ -184,11 +210,14 @@ class WorkflowSettingsYamlExporter(
 
 
 class WorkflowSettingsManager(AbsWorkflowSettingsManager):
+    """Workflow Settings Manager."""
+
     def __init__(
         self,
         getter_strategy: Optional[AbsWorkflowSettingsResolver] = None,
         setter_strategy: Optional[AbsWorkflowSettingsExporter] = None,
     ) -> None:
+        """Create a new WorkflowSettingsManager object."""
         super().__init__()
         self.settings_getter_strategy: AbsWorkflowSettingsResolver = (
             getter_strategy
@@ -207,22 +236,28 @@ class WorkflowSettingsManager(AbsWorkflowSettingsManager):
         )
 
     def get_workflow_settings(self, workflow: Workflow) -> SettingsData:
+        """Get workflow settings for the workflow."""
         return self.settings_getter_strategy.get_response(workflow)
 
     def save_workflow_settings(
         self, workflow: Workflow, settings: SettingsData
     ) -> None:
+        """Save workflow settings."""
         self.settings_saver_strategy.save(workflow, settings)
 
 
 class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
+    """Yaml based config backend."""
+
     def __init__(self) -> None:
+        """Create a new object."""
         super().__init__()
         self.yaml_file: Optional[str] = None
         self.workflow: Optional[Workflow] = None
         self.settings_resolver: Optional[AbsWorkflowSettingsResolver] = None
 
     def get_yaml_strategy(self):
+        """Get current yaml strategy."""
         if self.settings_resolver is not None:
             return self.settings_resolver
         if self.yaml_file is None:
@@ -230,12 +265,14 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
         return speedwagon.config.WorkflowSettingsYAMLResolver(self.yaml_file)
 
     def get(self, key: str) -> Optional[SettingsDataType]:
+        """Get value for key."""
         if any([self.yaml_file is None, self.workflow is None]):
             return None
         return self.get_yaml_strategy().get_response(self.workflow).get(key)
 
 
 def get_config_backend():
+    """Get config backend."""
     config_backend = YAMLWorkflowConfigBackend()
     config_strategy = StandardConfigFileLocator()
     backend_yaml = os.path.join(

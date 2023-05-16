@@ -88,10 +88,14 @@ class AbsConfig(collections.abc.Mapping):
 
 
 class NixConfig(AbsConfig):
+    """Unix configuration."""
+
     def get_user_data_directory(self) -> str:
+        """Get path the app data for the current system."""
         return os.path.join(self._get_app_dir(), "data")
 
     def get_app_data_directory(self) -> str:
+        """Get path the app data for the current system."""
         return self._get_app_dir()
 
     @staticmethod
@@ -111,6 +115,7 @@ class WindowsConfig(AbsConfig):
     """
 
     def get_user_data_directory(self) -> str:
+        """Get user data directory."""
         return os.path.join(str(pathlib.Path.home()), "Speedwagon", "data")
 
     def get_app_data_directory(self) -> str:
@@ -505,24 +510,31 @@ class AbsSettingLocator(abc.ABC):
 
 
 class StandardConfigFileLocator(AbsSettingLocator):
+    """Standard config file locator."""
+
     def __init__(self) -> None:
+        """Create a new StandardConfigFileLocator object."""
         self._platform_settings = get_platform_settings()
 
     def get_user_data_dir(self) -> str:
+        """Get user data directory."""
         return typing.cast(
             str, self._platform_settings.get("user_data_directory")
         )
 
     def get_config_file(self) -> str:
+        """Get config file."""
         return os.path.join(
             self._platform_settings.get_app_data_directory(),
             speedwagon.startup.CONFIG_INI_FILE_NAME,
         )
 
     def get_app_data_dir(self) -> str:
+        """Get app data dir."""
         return typing.cast(str, self._platform_settings["app_data_directory"])
 
     def get_tabs_file(self) -> str:
+        """Get tabs file path."""
         return os.path.join(
             self._platform_settings.get_app_data_directory(),
             speedwagon.startup.TABS_YML_FILE_NAME,
@@ -538,14 +550,19 @@ class AbsConfigSettings(abc.ABC):  # pylint: disable=R0903
 
 
 class StandardConfig(AbsConfigSettings):
+    """Standard config."""
+
     def __init__(self) -> None:
+        """Create new standard config object."""
         super().__init__()
         self.config_loader_strategy: Optional[AbsConfigLoader] = None
 
     def settings(self) -> FullSettingsData:
+        """Get settings."""
         return self.resolve_settings()
 
     def resolve_settings(self) -> FullSettingsData:
+        """Resolve settings data."""
         if self.config_loader_strategy is not None:
             return self.config_loader_strategy.get_settings()
         loader = MixedConfigLoader()
@@ -574,13 +591,17 @@ class AbsConfigSaver(abc.ABC):  # pylint: disable=R0903
 
 
 class IniConfigManager(AbsGlobalConfigDataManagement):
+    """Ini config manager."""
+
     def __init__(self, ini_file: Optional[str] = None) -> None:
+        """Create a new config manager."""
         self.config_file: Optional[str] = ini_file
         self.loader: Optional[AbsConfigLoader] = None
         self.saver: Optional[AbsConfigSaver] = None
         self.config_resolution_order: Optional[List[AbsSetting]] = None
 
     def get_resolution_order(self) -> List[AbsSetting]:
+        """Get resolution order."""
         if self.config_resolution_order is not None:
             return self.config_resolution_order
         config_file = (
@@ -593,6 +614,7 @@ class IniConfigManager(AbsGlobalConfigDataManagement):
         return resolution_order
 
     def loader_strategy(self) -> AbsConfigLoader:
+        """Get current loader strategy."""
         if self.loader:
             return self.loader
         strategy = MixedConfigLoader()
@@ -600,31 +622,37 @@ class IniConfigManager(AbsGlobalConfigDataManagement):
         return strategy
 
     def save_strategy(self) -> AbsConfigSaver:
+        """Get current save strategy."""
         return self.saver or IniConfigSaver()
 
     def data(self) -> FullSettingsData:
+        """Get data."""
         return self.loader_strategy().get_settings()
 
     def save(self, data: FullSettingsData) -> None:
+        """Save data as a file."""
         if self.config_file is None:
             return
         self.save_strategy().save(self.config_file, data)
 
 
 class IniConfigSaver(AbsConfigSaver):
+    def __init__(self) -> None:
+        self.parser = configparser.ConfigParser()
+
     def save(self, file_name: str, data: FullSettingsData):
         self.write_data_to_file(
             file_name, serialized_data=self.serialize(data)
         )
 
     def serialize(self, data: FullSettingsData) -> str:
-        config_data = configparser.ConfigParser()
+        self.parser = configparser.ConfigParser()
         for heading, item_data in data.items():
-            config_data[heading] = {
+            self.parser[heading] = {
                 key: str(value) for key, value in item_data.items()
             }
         with io.StringIO() as string_writer:
-            config_data.write(string_writer)
+            self.parser.write(string_writer)
             return string_writer.getvalue()
 
     def write_data_to_file(self, file_name: str, serialized_data: str) -> None:

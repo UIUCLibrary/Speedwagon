@@ -1,3 +1,5 @@
+"""Configuration."""
+
 from .config import (
     AbsConfig,
     AbsConfigSettings,

@@ -246,17 +246,23 @@ def _setup_global_settings_tab(
 ) -> dialog.settings.GlobalSettingsTab:
     config_strategy = config.StandardConfigFileLocator()
     global_settings_tab = dialog.settings.GlobalSettingsTab()
+
+    def serialize(widget):
+        ini_serializer = config.config.IniConfigSaver()
+        ini_serializer.parser.read(config_strategy.get_config_file())
+        return ini_serializer.serialize(
+            {
+                "GLOBAL": typing.cast(
+                    speedwagon.config.SettingsData, widget.get_data()
+                )
+            }
+        )
+
     saver.config_savers.append(
         dialog.settings.ConfigFileSaver(
             dialog.settings.SettingsTabSaveStrategy(
                 global_settings_tab,
-                lambda widget: config.config.IniConfigSaver().serialize(
-                    {
-                        "GLOBAL": typing.cast(
-                            speedwagon.config.SettingsData, widget.get_data()
-                        )
-                    }
-                ),
+                serialize
             ),
             config_strategy.get_config_file(),
         )
@@ -275,10 +281,10 @@ def _setup_plugins_tab(
     config_file = config_strategy.get_config_file()
 
     def serializer(widget) -> str:
-        with open(config_file, 'r', encoding='utf-8') as file_handel:
-            existing_data = file_handel.read()
+        ini_serializer = config.plugins.IniSerializer()
+        ini_serializer.parser.read(config_file)
+        return ini_serializer.serialize(widget.get_data())
 
-        return existing_data
     saver.config_savers.append(
         dialog.settings.ConfigFileSaver(
             dialog.settings.SettingsTabSaveStrategy(plugins_tab, serializer),

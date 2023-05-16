@@ -418,7 +418,6 @@ class TestDynamicForm:
 
     def test_paint_event_calls_draw_primitive(self, qtbot, monkeypatch):
         form = speedwagon.frontend.qtwidgets.widgets.InnerForm()
-        event = Mock(height=Mock(return_value=10))
 
         device = Mock(
             name="device",
@@ -439,8 +438,7 @@ class TestDynamicForm:
             "drawPrimitive",
             drawPrimitive
         )
-
-
+        event = QtGui.QPaintEvent(QtCore.QRect(0,0,0,0))
         form.paintEvent(event)
         assert drawPrimitive.called is True
 

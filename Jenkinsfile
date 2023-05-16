@@ -658,8 +658,8 @@ pipeline {
                                             }
                                             post {
                                                 always {
-                                                    junit 'reports/tests/pytest/pytest-junit.xml'
-                                                    stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
+                                                    junit(allowEmptyResults: true, testResults: 'reports/tests/pytest/pytest-junit.xml')
+                                                    stash(allowEmpty: true, includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS')
                                                 }
                                             }
                                         }
@@ -1136,6 +1136,7 @@ pipeline {
                                         }
                                         failure {
                                             archiveArtifacts allowEmptyArchive: true, artifacts: 'dist/**/wix.log,dist/**/*.wxs'
+                                            archiveArtifacts allowEmptyArchive: true, artifacts: 'logs/**'
                                         }
                                         cleanup{
                                             cleanWs(

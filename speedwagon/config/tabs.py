@@ -1,3 +1,5 @@
+"""Configuration of tabs."""
+
 from __future__ import annotations
 
 import abc
@@ -23,11 +25,15 @@ class AbsTabsConfigDataManagement(abc.ABC):
 
 
 class CustomTabData(NamedTuple):
+    """Custom tab data."""
+
     tab_name: str
     workflow_names: List[str]
 
 
 class AbsTabsYamlFileReader(abc.ABC):
+    """Abstract base class for tabs yaml file reader."""
+
     @staticmethod
     @abc.abstractmethod
     def read_file(yaml_file: str) -> str:
@@ -39,12 +45,16 @@ class AbsTabsYamlFileReader(abc.ABC):
 
 
 class TabsYamlFileReader(AbsTabsYamlFileReader):
+    """Tabs yaml file reader."""
+
     @staticmethod
     def read_file(yaml_file: str) -> str:
+        """Read file."""
         with open(yaml_file, encoding="utf-8") as file_handler:
             return file_handler.read()
 
     def decode_tab_settings_yml_data(self, data: str) -> Dict[str, List[str]]:
+        """Decode tab settings yml data."""
         tabs_config_data = yaml.load(data, Loader=yaml.SafeLoader)
         if not isinstance(tabs_config_data, dict):
             raise speedwagon.exceptions.FileFormatError("Failed to parse file")
@@ -101,21 +111,28 @@ class CustomTabsYamlConfig(AbsTabsConfigDataManagement):
 
 
 class AbsTabWriter(abc.ABC):  # pylint: disable=R0903
+    """Abstract base class for writing tab data."""
+
     def save(self, file_name: str, tabs: List[CustomTabData]) -> None:
         """Save tabs data to a file format."""
 
 
 class TabsYamlWriter(AbsTabWriter):
+    """Tabs Yaml Writer."""
+
     def save(self, file_name: str, tabs: List[CustomTabData]) -> None:
+        """Save to file."""
         self.write_data(file_name, self.serialize(tabs))
 
     @staticmethod
     def write_data(file_name: str, data: str) -> None:
+        """Write data."""
         with open(file_name, "w", encoding="utf-8") as file_handle:
             file_handle.write(data)
 
     @staticmethod
     def serialize(tabs: Iterable[CustomTabData]) -> str:
+        """Serialize tab info."""
         tabs_data = {
             tab_name: list(tab_workflows) for tab_name, tab_workflows in tabs
         }

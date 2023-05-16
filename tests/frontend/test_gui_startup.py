@@ -191,6 +191,8 @@ class TestSingleWorkflowJSON:
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
                 app=None
             )
+        exit_calls = []
+        monkeypatch.setattr(QtWidgets.QApplication, 'exit', lambda: exit_calls.append(1))
 
         startup.options = {}
         workflow = Mock()
@@ -199,9 +201,9 @@ class TestSingleWorkflowJSON:
         startup.on_exit = Mock()
 
         MainWindow3 = QtWidgets.QMainWindow()
-        MainWindow3.logger = Mock()
-        MainWindow3.console = Mock()
-        MainWindow3.show = Mock()
+        # MainWindow3.logger = Mock()
+        # MainWindow3.console = Mock()
+        # MainWindow3.show = Mock()
         qtbot.addWidget(MainWindow3)
         monkeypatch.setattr(
             dialogs.WorkflowProgress,
@@ -224,7 +226,11 @@ class TestSingleWorkflowJSON:
             "show",
             lambda *args, **kwargs: None
         )
-
+        monkeypatch.setattr(
+            dialogs.WorkflowProgress,
+            "exec",
+            lambda *args, **kwargs: None
+        )
         startup.run()
         assert startup.on_exit.called is True
 

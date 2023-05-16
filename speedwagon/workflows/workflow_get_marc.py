@@ -13,7 +13,7 @@ except ImportError:  # pragma: no cover
     from typing_extensions import Final  # type: ignore
 
 
-from typing import List, Any, Optional, Union, Sequence, Dict, Set, Tuple, \
+from typing import List, Any, Optional, Union, Sequence, Dict, Tuple, \
     Iterator, Collection, TYPE_CHECKING
 
 from xml.dom import minidom
@@ -68,7 +68,6 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
                   "the folder for each corresponding bibid or mmsid. It " \
                   "uses the GetMARC service to retrieve these MARC.XML " \
                   "files from the Library."
-    required_settings_keys: Set[str] = {"getmarc_server_url"}
 
     def job_options(self) -> List[AbsOutputOptionDataType]:
         """Request user options.
