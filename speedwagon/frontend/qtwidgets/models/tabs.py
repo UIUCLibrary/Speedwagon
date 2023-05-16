@@ -22,7 +22,7 @@ import speedwagon
 from .common import WorkflowItem, WorkflowClassRole
 
 if TYPE_CHECKING:
-    from speedwagon.config import AbsTabsConfigDataManagement
+    from config import AbsTabsConfigDataManagement
 
 __all__ = ["TabsTreeModel", "TabStandardItem", "TabProxyModel"]
 
@@ -235,10 +235,10 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
             tab.reset_modified()
         self.dataChanged.emit(self.root_item.index(), [])
 
-    def tab_information(self) -> List[speedwagon.config.CustomTabData]:
+    def tab_information(self) -> List[speedwagon.config.tabs.CustomTabData]:
         """Get the custom tab data for all the tabs in the model."""
         return [
-            speedwagon.config.CustomTabData(
+            speedwagon.config.tabs.CustomTabData(
                 tab.name, [work.name or "" for work in tab.workflows]
             )
             for tab in self.tabs
@@ -494,7 +494,7 @@ class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
         if self.yml_file is None:
             return
         data = self.prep_data(
-            data_load_strategy=speedwagon.config.CustomTabsYamlConfig(
+            data_load_strategy=speedwagon.config.tabs.CustomTabsYamlConfig(
                 self.yml_file
             )
         )

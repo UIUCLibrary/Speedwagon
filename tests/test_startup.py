@@ -18,7 +18,7 @@ import speedwagon.runner_strategies
 
 def test_version_exits_after_being_called(monkeypatch):
 
-    parser = speedwagon.config.CliArgsSetter.get_arg_parser()
+    parser = speedwagon.config.config.CliArgsSetter.get_arg_parser()
     version_exit_mock = Mock()
 
     with monkeypatch.context() as m:
@@ -63,7 +63,7 @@ def test_get_custom_tabs_missing_file(capsys, monkeypatch):
     all_workflows = {
         "my workflow": Mock()
     }
-    monkeypatch.setattr(speedwagon.config.CustomTabsYamlConfig, "data", Mock(side_effect=FileNotFoundError))
+    monkeypatch.setattr(speedwagon.config.tabs.CustomTabsYamlConfig, "data", Mock(side_effect=FileNotFoundError))
     list(speedwagon.startup.get_custom_tabs(all_workflows, "not_a_real_file"))
     captured = capsys.readouterr()
     assert "file not found" in captured.err
@@ -86,7 +86,11 @@ def test_missing_workflow(monkeypatch, capsys):
     monkeypatch.setattr(yaml, "load", load)
     def read_file(*args, **kwargs):
         return ""
-    monkeypatch.setattr(speedwagon.config.TabsYamlFileReader, "read_file", read_file)
+    monkeypatch.setattr(
+        speedwagon.config.tabs.TabsYamlFileReader,
+        "read_file",
+        read_file
+    )
 
     list(
         speedwagon.startup.get_custom_tabs(
@@ -116,7 +120,11 @@ def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
     monkeypatch.setattr(yaml, "load", load)
     def read_file(*args, **kwargs):
         return ""
-    monkeypatch.setattr(speedwagon.config.TabsYamlFileReader, "read_file", read_file)
+    monkeypatch.setattr(
+        speedwagon.config.tabs.TabsYamlFileReader,
+        "read_file",
+        read_file
+    )
     with patch('speedwagon.config.open', mock_open()):
         tab_name, workflows = next(
             speedwagon.startup.get_custom_tabs(all_workflows, test_file)
@@ -133,7 +141,7 @@ class TestCustomTabsFileReader:
             raise FileNotFoundError("File not found")
 
         tabs_config_strategy = \
-            speedwagon.config.CustomTabsYamlConfig("fake_file.yml")
+            speedwagon.config.tabs.CustomTabsYamlConfig("fake_file.yml")
 
         tabs_config_strategy.data_reader = read_file
         all(reader.load_custom_tabs(strategy=tabs_config_strategy))
@@ -145,7 +153,7 @@ class TestCustomTabsFileReader:
         reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
 
         tabs_config_strategy = \
-            speedwagon.config.CustomTabsYamlConfig("fake_file")
+            speedwagon.config.tabs.CustomTabsYamlConfig("fake_file")
         def read_file():
             raise AttributeError()
         tabs_config_strategy.data_reader = read_file
@@ -158,12 +166,12 @@ class TestCustomTabsFileReader:
 
         all_workflows = Mock()
         reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
-        class YamlReader(speedwagon.config.AbsTabsYamlFileReader):
+        class YamlReader(speedwagon.config.tabs.AbsTabsYamlFileReader):
             def read_file(self, file_name) -> str:
                 return ""
             def decode_tab_settings_yml_data(self, data):
                 raise yaml.YAMLError()
-        strategy = speedwagon.config.CustomTabsYamlConfig("fake_file")
+        strategy = speedwagon.config.tabs.CustomTabsYamlConfig("fake_file")
         strategy.file_reader_strategy = YamlReader()
         all(reader.load_custom_tabs(strategy))
         captured = capsys.readouterr()
@@ -172,7 +180,7 @@ class TestCustomTabsFileReader:
     def test_load_custom_tabs_file_error_loading_tab(self, capsys):
         all_workflows = Mock()
         reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
-        strategy = speedwagon.config.CustomTabsYamlConfig("fake_file")
+        strategy = speedwagon.config.tabs.CustomTabsYamlConfig("fake_file")
         def read_file() -> str:
             raise TypeError()
         strategy.data_reader = read_file
@@ -191,13 +199,13 @@ def test_run_command_invalid():
 def test_run_command_valid(monkeypatch):
     good = Mock()
     command = Mock(return_value=good)
-    monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
-    monkeypatch.setattr(speedwagon.config.sys, "argv", ["speedwagon", "run"])
-    monkeypatch.setattr(speedwagon.config.pathlib.Path, "home", lambda: "/home/dummy")
+    monkeypatch.setattr(speedwagon.config.config.sys, "argv", ["speedwagon", "run"])
+    monkeypatch.setattr(speedwagon.config.config.sys, "argv", ["speedwagon", "run"])
+    monkeypatch.setattr(speedwagon.config.config.pathlib.Path, "home", lambda: "/home/dummy")
     monkeypatch.setattr(speedwagon.startup, "get_global_options", lambda: {})
 
     monkeypatch.setattr(
-        speedwagon.config.WindowsConfig,
+        speedwagon.config.config.WindowsConfig,
         "get_app_data_directory",
         lambda _: "c:\\Users\\dummy"
     )

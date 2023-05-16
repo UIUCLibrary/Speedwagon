@@ -22,7 +22,7 @@ class TestCustomTabsYamlConfig:
 - Generate OCR Files
 - Make JP2
 - Medusa Preingest Curation"""
-        config_loader = speedwagon.config.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
+        config_loader = speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
         config_loader.data_reader = data_reader
         assert len(config_loader.data()) == 1
 
@@ -31,9 +31,9 @@ class TestCustomTabsYamlConfig:
             return ""
 
         config_loader = \
-            speedwagon.config.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
+            speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
         config_loader.data_reader = data_reader
-        monkeypatch.setattr(speedwagon.config.yaml, "load", Mock(side_effect=YAMLError))
+        monkeypatch.setattr(speedwagon.config.tabs.yaml, "load", Mock(side_effect=YAMLError))
         with pytest.raises(speedwagon.exceptions.TabLoadFailure):
             config_loader.data()
 
@@ -42,7 +42,7 @@ class TestCustomTabsYamlConfig:
             return ""
 
         config_loader = \
-            speedwagon.config.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
+            speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
         config_loader.data_reader = data_reader
         monkeypatch.setattr(config_loader, "decode_data", Mock(side_effect=speedwagon.exceptions.FileFormatError("Failed to parse file")))
         with pytest.raises(speedwagon.exceptions.TabLoadFailure):
@@ -53,7 +53,7 @@ class TestCustomTabsYamlConfig:
             raise FileNotFoundError
 
         config_loader = \
-            speedwagon.config.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
+            speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
         config_loader.data_reader = data_reader
         with pytest.raises(speedwagon.exceptions.TabLoadFailure):
             config_loader.data()
@@ -63,10 +63,10 @@ class TestCustomTabsYamlConfig:
             return ""
 
         config_loader = \
-            speedwagon.config.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
+            speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
         config_loader.data_reader = data_reader
         monkeypatch.setattr(
-            speedwagon.config.yaml,
+            speedwagon.config.tabs.yaml,
             "load",
             Mock(return_value="dummy")
         )
@@ -78,10 +78,10 @@ class TestCustomTabsYamlConfig:
 
     def test_decode_data(self):
         config_loader = \
-            speedwagon.config.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
+            speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
         config_loader.file_reader_strategy = \
             Mock(
-                speedwagon.config.AbsTabsYamlFileReader,
+                speedwagon.config.tabs.AbsTabsYamlFileReader,
                 name="file_reader_strategy"
             )
         config_loader.decode_data("data")
@@ -89,23 +89,23 @@ class TestCustomTabsYamlConfig:
 
     def test_save(self):
         config_loader = \
-            speedwagon.config.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
+            speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
         config_loader.file_writer_strategy = \
-            Mock(speedwagon.config.AbsTabWriter, name="file_writer_strategy")
+            Mock(speedwagon.config.tabs.AbsTabWriter, name="file_writer_strategy")
         config_loader.save([])
         assert config_loader.file_writer_strategy.save.called is True
 
 
 class TestTabsWriteStrategy:
     def test_write_data_is_called(self, monkeypatch):
-        strategy = speedwagon.config.TabsYamlWriter()
+        strategy = speedwagon.config.tabs.TabsYamlWriter()
         write_data = Mock()
         monkeypatch.setattr(strategy, "write_data", write_data)
         strategy.save("fake_file.yml", [])
         assert write_data.called is True
 
     def test_write_data(self, monkeypatch):
-        strategy = speedwagon.config.TabsYamlWriter()
+        strategy = speedwagon.config.tabs.TabsYamlWriter()
         write_data = Mock()
         serialize_tabs_yaml = Mock()
         monkeypatch.setattr(strategy, "write_data", write_data)
@@ -114,10 +114,10 @@ class TestTabsWriteStrategy:
         assert write_data.called is True
 
     def test_serialize_tabs_yaml(self):
-        strategy = speedwagon.config.TabsYamlWriter()
+        strategy = speedwagon.config.tabs.TabsYamlWriter()
 
         tabs = [
-            speedwagon.config.CustomTabData(
+            speedwagon.config.tabs.CustomTabData(
                 "Spam",
                 [
                     "Convert HathiTrust limited view to Digital library",
@@ -149,12 +149,12 @@ class TestIniFileGlobalConfigManager:
 
     def test_save_without_config_file_is_noop(self):
         config_manager = speedwagon.config.IniConfigManager()
-        config_manager.saver = Mock(speedwagon.config.AbsConfigSaver)
+        config_manager.saver = Mock(speedwagon.config.config.AbsConfigSaver)
         config_manager.save(Mock())
         config_manager.saver.assert_not_called()
 
     def test_load(self):
-        class FakeLoader(speedwagon.config.AbsConfigLoader):
+        class FakeLoader(speedwagon.config.config.AbsConfigLoader):
             def get_settings(self):
                 return {
                     "GLOBAL": {
@@ -172,9 +172,9 @@ class TestIniFileGlobalConfigManager:
     @pytest.mark.parametrize(
         "index, setter_type",
         [
-            (0, speedwagon.config.DefaultsSetter),
-            (1, speedwagon.config.ConfigFileSetter),
-            (2, speedwagon.config.CliArgsSetter),
+            (0, speedwagon.config.config.DefaultsSetter),
+            (1, speedwagon.config.config.ConfigFileSetter),
+            (2, speedwagon.config.config.CliArgsSetter),
         ]
     )
     def test_default_get_resolution_order(self, monkeypatch, index, setter_type):
@@ -187,7 +187,7 @@ class TestIniFileGlobalConfigManager:
 
     def test_get_resolution_order_with_setting_value(self):
         config_manager = speedwagon.config.IniConfigManager()
-        custom_config_order = [speedwagon.config.DefaultsSetter()]
+        custom_config_order = [speedwagon.config.config.DefaultsSetter()]
         config_manager.config_resolution_order = custom_config_order
         assert config_manager.get_resolution_order() == custom_config_order
 
@@ -199,7 +199,7 @@ class TestIniFileGlobalConfigManager:
             Mock(return_value="sample.ini"))
         assert isinstance(
             config_manager.loader_strategy(),
-            speedwagon.config.MixedConfigLoader
+            speedwagon.config.config.MixedConfigLoader
         )
 
     def test_loader_strategy_set(self):
@@ -211,7 +211,7 @@ class TestIniFileGlobalConfigManager:
         config_manager = speedwagon.config.IniConfigManager()
         assert isinstance(
             config_manager.save_strategy(),
-            speedwagon.config.IniConfigSaver
+            speedwagon.config.config.IniConfigSaver
         )
 
     def test_save_strategy_set(self):
@@ -222,7 +222,7 @@ class TestIniFileGlobalConfigManager:
 
 class TestIniConfigSaver:
     def test_save(self, monkeypatch):
-        saver_strategy = speedwagon.config.IniConfigSaver()
+        saver_strategy = speedwagon.config.config.IniConfigSaver()
         saver_strategy.write_data_to_file = Mock()
         saver_strategy.save(
             "dummy.ini",
@@ -246,7 +246,7 @@ starting-tab = Dummy
 
 class TestConfigLoader:
     def test_load(self):
-        class MockConfigSetter(speedwagon.config.AbsSetting):
+        class MockConfigSetter(speedwagon.config.config.AbsSetting):
             def update(self, settings: Optional[FullSettingsData] = None):
                 return {
                     "GLOBAL": {
@@ -255,7 +255,7 @@ class TestConfigLoader:
                     }
                 }
 
-        saver_strategy = speedwagon.config.MixedConfigLoader()
+        saver_strategy = speedwagon.config.config.MixedConfigLoader()
         saver_strategy.resolution_strategy_order = [
             MockConfigSetter()
         ]
@@ -269,7 +269,7 @@ class TestConfigLoader:
 
 class TestConfigFileSetter:
     def test_update(self):
-        saver_strategy = speedwagon.config.ConfigFileSetter("config.ini")
+        saver_strategy = speedwagon.config.config.ConfigFileSetter("config.ini")
         fake_data = """[GLOBAL]
 starting-tab = Dummy
 debug = False
@@ -282,13 +282,13 @@ debug = False
             }
         }
     def test_read_config_data(self):
-        with patch('speedwagon.config.open', mock_open()) as mocked_file:
-            speedwagon.config.ConfigFileSetter.read_config_data("config.ini")
+        with patch('speedwagon.config.config.open', mock_open()) as mocked_file:
+            speedwagon.config.config.ConfigFileSetter.read_config_data("config.ini")
             mocked_file.assert_called_once()
 
 class TestCliArgsSetter:
     def test_update(self):
-        saver_strategy = speedwagon.config.CliArgsSetter()
+        saver_strategy = speedwagon.config.config.CliArgsSetter()
         saver_strategy.args = ['--debug']
         result = saver_strategy.update()
         assert result == {
@@ -301,31 +301,31 @@ class TestCliArgsSetter:
 class TestCreateBasicMissingConfigFile:
     def test_ensure_config_file_calls_generate_default(self, monkeypatch):
         generate_default = Mock()
-        monkeypatch.setattr(speedwagon.config.os.path, "exists", lambda path: False)
-        monkeypatch.setattr(speedwagon.config,
+        monkeypatch.setattr(speedwagon.config.config.os.path, "exists", lambda path: False)
+        monkeypatch.setattr(speedwagon.config.config,
             "generate_default",
             generate_default
         )
 
-        ensure_file = speedwagon.config.CreateBasicMissingConfigFile()
+        ensure_file = speedwagon.config.config.CreateBasicMissingConfigFile()
         ensure_file.ensure_config_file("dummy.ini")
         assert generate_default.called is True
 
     def test_ensure_tabs_file(self, monkeypatch):
         touch = Mock()
         monkeypatch.setattr(
-            speedwagon.config.pathlib.Path,
+            speedwagon.config.config.pathlib.Path,
             "touch",
             touch
         )
-        ensure_file = speedwagon.config.CreateBasicMissingConfigFile()
+        ensure_file = speedwagon.config.config.CreateBasicMissingConfigFile()
         ensure_file.ensure_tabs_file("dummy.yml")
         assert touch.called is True
 
 
 class TestDefaultsSetter:
     def test_update_has_globals(self):
-        setter = speedwagon.config.DefaultsSetter()
+        setter = speedwagon.config.config.DefaultsSetter()
         results = setter.update()
         assert "GLOBAL" in results
 
@@ -334,12 +334,12 @@ class TestStandardConfig:
     def test_resolve_settings(self, monkeypatch):
         config_settings = speedwagon.config.StandardConfig()
         monkeypatch.setattr(
-            speedwagon.config.CliArgsSetter,
+            speedwagon.config.config.CliArgsSetter,
             "update",
             Mock(name='CliArgsSetter.update', return_value={})
         )
         monkeypatch.setattr(
-            speedwagon.config.ConfigFileSetter,
+            speedwagon.config.config.ConfigFileSetter,
             "update",
             Mock(name='ConfigFileSetter.update', return_value={})
         )
@@ -354,7 +354,7 @@ class TestStandardConfig:
     def test_resolve_settings_with_config_loader_strategy_set(self):
         config_settings = speedwagon.config.StandardConfig()
         config_settings.config_loader_strategy = \
-            Mock(speedwagon.config.AbsConfigLoader)
+            Mock(speedwagon.config.config.AbsConfigLoader)
 
         config_settings.settings()
         assert \
@@ -363,12 +363,12 @@ class TestStandardConfig:
 
 class TestTabsYamlFileReader:
     def test_read_file(self):
-        with patch('speedwagon.config.open', mock_open()) as mocked_file:
-            speedwagon.config.TabsYamlFileReader.read_file("dummy.yml")
+        with patch('builtins.open', mock_open()) as mocked_file:
+            speedwagon.config.tabs.TabsYamlFileReader.read_file("dummy.yml")
             mocked_file.assert_called_once()
 
     def test_decode_tab_settings_yml_data(self):
-        reader = speedwagon.config.TabsYamlFileReader()
+        reader = speedwagon.config.tabs.TabsYamlFileReader()
         sample_data = """Spam:
 - Convert HathiTrust limited view to Digital library
 - Generate MARC.XML Files
@@ -397,7 +397,7 @@ class TestAbsWorkflowSettingsManager:
             return [input_path]
 
     def test_get_workflow_settings(self, monkeypatch):
-        class DummyResolver(speedwagon.config.AbsWorkflowSettingsResolver):
+        class DummyResolver(speedwagon.config.workflow.AbsWorkflowSettingsResolver):
             def get_response(
                     self,
                     options: List[AbsOutputOptionDataType]
@@ -443,7 +443,7 @@ Bacon:
     
 """
         monkeypatch.setattr(resolver, 'read_file', lambda _: text)
-        monkeypatch.setattr(speedwagon.config.os.path, "exists", lambda _: True)
+        monkeypatch.setattr(speedwagon.config.config.os.path, "exists", lambda _: True)
         assert "Bacon" in resolver.get_config_data()
 
     def test_get_response(self, monkeypatch):
@@ -468,7 +468,7 @@ Bacon:
 class TestSettingsYamlSerializer:
     @pytest.fixture()
     def serializer(self):
-        return speedwagon.config.SettingsYamlSerializer()
+        return speedwagon.config.workflow.SettingsYamlSerializer()
 
     def test_structure_workflow_data(self, serializer):
         assert serializer.structure_workflow_data(
@@ -575,7 +575,7 @@ Spam:
 
     def test_write_data_to_file(self):
         mocked_open = mock_open()
-        with patch('speedwagon.config.open', mocked_open) as mocked_file:
+        with patch('speedwagon.config.workflow.open', mocked_open) as mocked_file:
             speedwagon.config.WorkflowSettingsYamlExporter.write_data_to_file("dummy data", "workflows.yml")
             handle = mocked_file()
         handle.write.assert_called_once_with("dummy data")

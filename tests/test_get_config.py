@@ -84,10 +84,10 @@ def test_read_settings(tmpdir):
 @pytest.mark.skipif(platform.system() == "Windows",
                     reason="Test for unix file systems only")
 def test_nix_get_app_data_directory(monkeypatch, tmpdir):
-    speedwagon_config = speedwagon.config.NixConfig()
+    speedwagon_config = speedwagon.config.config.NixConfig()
     user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
-        speedwagon.config.pathlib.Path,
+        speedwagon.config.config.pathlib.Path,
         "home",
         lambda *args, **kwargs: pathlib.Path(user_path)
     )
@@ -98,10 +98,10 @@ def test_nix_get_app_data_directory(monkeypatch, tmpdir):
 @pytest.mark.skipif(platform.system() == "Windows",
                     reason="Test for unix file systems only")
 def test_nix_get_user_data_directory(monkeypatch):
-    speedwagon_config = speedwagon.config.NixConfig()
+    speedwagon_config = speedwagon.config.config.NixConfig()
     user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
-        speedwagon.config.pathlib.Path,
+        speedwagon.config.config.pathlib.Path,
         "home",
         lambda *args, **kwargs: pathlib.Path(user_path)
     )
@@ -109,7 +109,7 @@ def test_nix_get_user_data_directory(monkeypatch):
 
 
 def test_windows_get_app_data_directory(monkeypatch):
-    speedwagon_config = speedwagon.config.WindowsConfig()
+    speedwagon_config = speedwagon.config.config.WindowsConfig()
     user_path = os.path.join('C:', 'Users', 'someuser')
     monkeypatch.setattr(
         pathlib.Path,
@@ -126,7 +126,7 @@ def test_windows_get_app_data_directory(monkeypatch):
 
 
 def test_windows_get_app_data_directory_no_LocalAppData(monkeypatch):
-    speedwagon_config = speedwagon.config.WindowsConfig()
+    speedwagon_config = speedwagon.config.config.WindowsConfig()
     monkeypatch.setattr(
         os,
         "getenv",
@@ -137,7 +137,7 @@ def test_windows_get_app_data_directory_no_LocalAppData(monkeypatch):
 
 
 def test_windows_get_user_data_directory(monkeypatch):
-    speedwagon_config = speedwagon.config.WindowsConfig()
+    speedwagon_config = speedwagon.config.config.WindowsConfig()
     app_data_local = os.path.join('C:', 'Users', 'someuser', 'AppData', 'Local')
     monkeypatch.setattr(
         pathlib.Path,
@@ -159,13 +159,13 @@ def default_config_file(tmpdir, monkeypatch):
         return str(data_dir)
 
     monkeypatch.setattr(
-        speedwagon.config.NixConfig,
+        speedwagon.config.config.NixConfig,
         "get_user_data_directory",
         mocked_get_user_data_directory
     )
     # =========================================================================
     config_file = os.path.join(str(tmpdir), "config.ini")
-    speedwagon.config.generate_default(str(config_file))
+    speedwagon.config.config.generate_default(str(config_file))
     return config_file
 
 
@@ -194,10 +194,10 @@ def test_find_missing_configs(tmpdir, monkeypatch):
         mp.setattr(
             speedwagon.config, "get_platform_settings", lambda: {'user_data_directory': tmpdir.strpath}
         )
-        speedwagon.config.generate_default(config_file)
+        speedwagon.config.config.generate_default(config_file)
     keys_that_dont_exist = {"spam", "bacon", "eggs"}
 
-    missing_keys = speedwagon.config.find_missing_global_entries(
+    missing_keys = speedwagon.config.config.find_missing_global_entries(
         config_file=config_file,
         expected_keys=keys_that_dont_exist
     )
@@ -212,13 +212,13 @@ def test_find_no_missing_configs(tmpdir, monkeypatch):
             "get_platform_settings",
             lambda: {'user_data_directory': tmpdir.strpath}
         )
-        speedwagon.config.generate_default(config_file)
+        speedwagon.config.config.generate_default(config_file)
     keys_that_exist = {"spam", "bacon", "eggs"}
     with open(config_file, "a+") as wf:
         for k in keys_that_exist:
             wf.write(f"{k}=\n")
 
-    missing_keys = speedwagon.config.find_missing_global_entries(
+    missing_keys = speedwagon.config.config.find_missing_global_entries(
         config_file=config_file,
         expected_keys=keys_that_exist
     )
@@ -231,21 +231,21 @@ def test_add_empty_keys_if_missing(tmpdir, monkeypatch):
         mp.setattr(
             speedwagon.config, "get_platform_settings", lambda: {'user_data_directory': tmpdir.strpath}
         )
-        speedwagon.config.generate_default(config_file)
+        speedwagon.config.config.generate_default(config_file)
     keys_that_dont_exist = {"spam", "bacon"}
     keys_that_exist = {"eggs"}
     with open(config_file, "a+") as wf:
         for k in keys_that_exist:
             wf.write(f"{k}=somedata\n")
 
-    added_keys = speedwagon.config.ensure_keys(
+    added_keys = speedwagon.config.config.ensure_keys(
         config_file=config_file,
         keys=keys_that_exist.union(keys_that_dont_exist)
     )
 
     assert added_keys == keys_that_dont_exist
 
-    missing_keys = speedwagon.config.find_missing_global_entries(
+    missing_keys = speedwagon.config.config.find_missing_global_entries(
         config_file=config_file,
         expected_keys=keys_that_exist.union(keys_that_dont_exist)
     )

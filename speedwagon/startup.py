@@ -43,7 +43,7 @@ TABS_YML_FILE_NAME: Final[str] = "tabs.yml"
 
 def parse_args() -> argparse.ArgumentParser:
     """Parse command line arguments."""
-    return speedwagon.config.CliArgsSetter.get_arg_parser()
+    return speedwagon.config.config.CliArgsSetter.get_arg_parser()
 
 
 class CustomTabsFileReader:
@@ -87,7 +87,7 @@ class CustomTabsFileReader:
         return workflow
 
     def load_custom_tabs(
-        self, strategy: speedwagon.config.AbsTabsConfigDataManagement
+        self, strategy: speedwagon.config.tabs.AbsTabsConfigDataManagement
     ) -> Iterator[Tuple[str, dict]]:
         """Get custom tabs data from config yaml.
 
@@ -139,7 +139,7 @@ def get_custom_tabs(
     getter = CustomTabsFileReader(all_workflows)
     try:
         yield from getter.load_custom_tabs(
-            strategy=speedwagon.config.CustomTabsYamlConfig(yaml_file)
+            strategy=speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file)
         )
     except FileNotFoundError as error:
         print(f"Custom tabs file not found. Reason: {error}", file=sys.stderr)
@@ -235,11 +235,13 @@ class RunCommand(SubCommand):
 
 def get_global_options():
     config_locator = speedwagon.config.StandardConfigFileLocator()
-    loader = speedwagon.config.MixedConfigLoader()
+    loader = speedwagon.config.config.MixedConfigLoader()
     loader.resolution_strategy_order = [
-        speedwagon.config.DefaultsSetter(),
-        speedwagon.config.ConfigFileSetter(config_locator.get_config_file()),
-        speedwagon.config.CliArgsSetter(),
+        speedwagon.config.config.DefaultsSetter(),
+        speedwagon.config.config.ConfigFileSetter(
+            config_locator.get_config_file()
+        ),
+        speedwagon.config.config.CliArgsSetter(),
     ]
     return loader.get_settings().get("GLOBAL", {})
 
@@ -312,7 +314,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     if "tab-editor" in argv:
         speedwagon.frontend.qtwidgets.gui_startup.standalone_tab_editor()
         return
-    parser = speedwagon.config.CliArgsSetter.get_arg_parser()
+    parser = speedwagon.config.config.CliArgsSetter.get_arg_parser()
     args = parser.parse_args(argv[1:])
 
     if args.command is not None:
