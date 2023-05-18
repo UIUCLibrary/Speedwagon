@@ -22,6 +22,7 @@ if __name__ == "__main__":
         ],
         packages=[
             "speedwagon",
+            "speedwagon.config",
             "speedwagon.frontend",
             "speedwagon.frontend.cli",
             "speedwagon.frontend.qtwidgets",

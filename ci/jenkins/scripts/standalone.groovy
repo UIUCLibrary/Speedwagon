@@ -34,9 +34,10 @@ def build_standalone(args=[:]){
     def packaging_msi  = args.packageFormat['msi'] ? args.packageFormat['msi']: false
     def packaging_nsis = args.packageFormat['nsis'] ? args.packageFormat['nsis']: false
     def packaging_zip  = args.packageFormat['zipFile'] ? args.packageFormat['zipFile']: false
-    stage("Building Standalone"){
-//         bat "where cmake"
 
+    def speedwagon_venv_path = "${WORKSPACE}\\standalone_venv"
+    def ctest_logs_file = "${WORKSPACE}\\logs\\ctest.log"
+    stage("Building Standalone"){
         bat(label: "Creating expected directories",
             script: """if not exist "${buildDir}" mkdir ${buildDir}
                        if not exist "logs" mkdir logs
@@ -47,7 +48,7 @@ def build_standalone(args=[:]){
         script{
             try{
 
-                def cmakeArgs = "-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${WORKSPACE}/standalone_venv -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
+                def cmakeArgs = "-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${speedwagon_venv_path} -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
                 if(args['package']){
                     cmakeArgs = cmakeArgs + " -DSpeedwagon_VERSION:STRING=${args.package['version']}"
                     def packageVersion = args.package['version'] =~ /(?:a|b|rc|dev)?\d+/
@@ -86,11 +87,17 @@ def build_standalone(args=[:]){
             }
         }
     }
-    stage("Testing Standalone"){
-        dir(buildDir){
-            withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                bat "ctest --output-on-failure --no-compress-output -T test -C Release -j ${NUMBER_OF_PROCESSORS}"
+    stage('Testing Standalone'){
+        try{
+            dir(buildDir){
+                withEnv(['QT_QPA_PLATFORM=offscreen']) {
+                    bat "ctest --output-on-failure --no-compress-output -T test -C Release -j ${NUMBER_OF_PROCESSORS} --output-log ${ctest_logs_file}"
+                }
             }
+        }
+        catch(e){
+            bat "${speedwagon_venv_path}\\Scripts\\pip.exe list --verbose"
+            throw e
         }
     }
     stage("Packaging Standalone"){

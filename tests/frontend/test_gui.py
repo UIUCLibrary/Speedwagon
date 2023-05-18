@@ -25,12 +25,14 @@ class TestToolConsole:
 class TestMainWindow3:
     def test_updated_settings_uses_config_strategy(self, qtbot):
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        window.config_strategy = Mock(speedwagon.config.AbsConfigSettings)
+        window.config_strategy = \
+            Mock(speedwagon.config.config.AbsConfigSettings)
+
         window.update_settings()
         assert window.config_strategy.settings.called is True
 
     def test_debug_mode_reflected_in_window_title(self, qtbot):
-        class DummyConfigSettings(speedwagon.config.AbsConfigSettings):
+        class DummyConfigSettings(speedwagon.config.config.AbsConfigSettings):
             def settings(self):
                 return {"GLOBAL": {"debug": True}}
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
@@ -42,7 +44,7 @@ class TestMainWindow3:
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
         window.config_strategy = \
             Mock(
-                speedwagon.config.AbsConfigSettings,
+                speedwagon.config.config.AbsConfigSettings,
                 settings=Mock(return_value={"debug": False})
             )
         window.update_settings()

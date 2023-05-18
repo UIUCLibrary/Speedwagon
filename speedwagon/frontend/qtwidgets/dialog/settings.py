@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import os
 import platform
+import subprocess
 import typing
 from typing import (
     Optional,
@@ -42,6 +43,7 @@ from speedwagon.frontend.qtwidgets import models
 
 if TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets.models import plugins as plugin_models
+    from speedwagon.config.tabs import AbsTabsConfigDataManagement
 
 if sys.version_info < (3, 10):  # pragma: no cover
     import importlib_metadata as metadata
@@ -53,7 +55,25 @@ __all__ = ["GlobalSettingsTab", "TabsConfigurationTab", "TabEditor"]
 SaveCallback = Callable[["SettingsTab"], Dict[str, typing.Any]]
 
 
-class UnsupportedOpenSettings(config.AbsOpenSettings):
+class AbsOpenSettings(abc.ABC):
+    def __init__(self, settings_directory: str) -> None:
+        super().__init__()
+        self.settings_dir = settings_directory
+
+    @abc.abstractmethod
+    def system_open_directory(self, settings_directory: str) -> None:
+        """Open the directory in os's file browser.
+
+        Args:
+            settings_directory: Path to the directory
+
+        """
+
+    def open(self) -> None:
+        self.system_open_directory(self.settings_dir)
+
+
+class UnsupportedOpenSettings(AbsOpenSettings):
     def __init__(
         self,
         settings_directory: str,
@@ -171,17 +191,17 @@ class SettingsDialog(QtWidgets.QDialog):
         self.tabs_widget.addTab(tab, tab_name)
 
     def open_settings_dir(
-        self, strategy: Optional[config.AbsOpenSettings] = None
+        self, strategy: Optional[AbsOpenSettings] = None
     ) -> None:
         if self.settings_location is None:
             return
 
-        strategies: Dict[str, config.AbsOpenSettings] = {
-            "Darwin": config.DarwinOpenSettings(self.settings_location),
-            "Windows": config.WindowsOpenSettings(self.settings_location),
+        strategies: Dict[str, AbsOpenSettings] = {
+            "Darwin": DarwinOpenSettings(self.settings_location),
+            "Windows": WindowsOpenSettings(self.settings_location),
         }
 
-        folder_opener = config.OpenSettingsDirectory(
+        folder_opener = OpenSettingsDirectory(
             strategy
             if strategy is not None
             else strategies.get(
@@ -214,7 +234,7 @@ class EntrypointsPluginModelLoader(PluginModelLoader):
         return metadata.entry_points(group=cls.entrypoint_group_name)
 
     def is_entry_point_active(self, entry_point: metadata.EntryPoint) -> bool:
-        settings = config.read_settings_file_plugins(self.config_file)
+        settings = config.plugins.read_settings_file_plugins(self.config_file)
         return (
             entry_point.module in settings
             and entry_point.name in settings[entry_point.module]
@@ -249,7 +269,7 @@ class PluginsTab(SettingsTab):
         return {"enabled_plugins": self.plugins_activation.enabled_plugins()}
 
     def load(self, settings_ini: str) -> None:
-        settings = config.read_settings_file_plugins(settings_ini)
+        settings = config.plugins.read_settings_file_plugins(settings_ini)
         for entry_point in metadata.entry_points(group="speedwagon.plugins"):
             active = False
             if (
@@ -365,13 +385,11 @@ class TabsConfigurationTab(SettingsTab):
         """Get the data the user entered."""
         return {"tab_information": self.editor.model.tab_information()}
 
-    def tab_config_management_strategy(
-        self,
-    ) -> config.AbsTabsConfigDataManagement:
+    def tab_config_management_strategy(self) -> AbsTabsConfigDataManagement:
         """Get the default strategy for working with custom tab YAML files."""
         if self.settings_location is None:
             raise RuntimeError("settings_location not set")
-        return config.CustomTabsYamlConfig(self.settings_location)
+        return config.tabs.CustomTabsYamlConfig(self.settings_location)
 
     def on_okay(self) -> None:
         """Execute when a user selects okay."""
@@ -569,10 +587,10 @@ class ConfigSaver(AbsConfigSaver):
             }
         return global_data
 
-    def get_tab_config_strategy(self) -> config.AbsTabsConfigDataManagement:
+    def get_tab_config_strategy(self) -> AbsTabsConfigDataManagement:
         if not self.tabs_yaml_path:
             raise RuntimeError("ConfigSaver.tabs_yaml_path not set")
-        return config.CustomTabsYamlConfig(self.tabs_yaml_path)
+        return config.tabs.CustomTabsYamlConfig(self.tabs_yaml_path)
 
     def _save_tabs(self, editor: TabEditor) -> None:
         yaml_config = self.get_tab_config_strategy()
@@ -882,3 +900,25 @@ class TabEditor(TabEditorWidgetUI):
     def current_tab(self) -> QtWidgets.QWidget:
         """Get current tab widget."""
         return self.selected_tab_combo_box.currentData()
+
+
+class DarwinOpenSettings(AbsOpenSettings):
+    def system_open_directory(self, settings_directory: str) -> None:
+        subprocess.call(["/usr/bin/open", settings_directory])
+
+
+class WindowsOpenSettings(AbsOpenSettings):
+    def system_open_directory(self, settings_directory: str) -> None:
+        # pylint: disable=no-member
+        os.startfile(settings_directory)  # type: ignore[attr-defined]
+
+
+class OpenSettingsDirectory:
+    def __init__(self, strategy: AbsOpenSettings) -> None:
+        self.strategy = strategy
+
+    def system_open_directory(self, settings_directory: str) -> None:
+        self.strategy.system_open_directory(settings_directory)
+
+    def open(self) -> None:
+        self.strategy.open()

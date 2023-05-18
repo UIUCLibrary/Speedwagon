@@ -35,6 +35,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets.dialog import dialogs
     from speedwagon.job import AbsWorkflow, AbsJobConfigSerializationStrategy
     from speedwagon.config import FullSettingsData
+    from speedwagon.config.tabs import AbsTabsConfigDataManagement
 
 
 class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
@@ -105,7 +106,7 @@ class EnsureGlobalConfigFiles(AbsStartupTask):
         self.logger = logger
 
     def run(self) -> None:
-        config.ensure_settings_files(logger=self.logger)
+        config.config.ensure_settings_files(logger=self.logger)
 
     def description(self) -> str:
         return (
@@ -189,7 +190,7 @@ def _setup_config_tab(
         dialog.settings.ConfigFileSaver(
             dialog.settings.SettingsTabSaveStrategy(
                 tabs_config,
-                lambda widget: config.TabsYamlWriter().serialize(
+                lambda widget: config.tabs.TabsYamlWriter().serialize(
                     filter(
                         lambda tab: tab.tab_name != "All",
                         widget.get_data().get("tab_information", []),
@@ -211,11 +212,12 @@ def _setup_workflow_settings_tab(
         dialog.settings.ConfigFileSaver(
             dialog.settings.SettingsTabSaveStrategy(
                 workflow_settings_tab,
-                lambda widget: speedwagon.config.SettingsYamlSerializer
+                lambda widget: speedwagon.config.workflow
+                .SettingsYamlSerializer
                 .serialize_structure_to_yaml(
                     {
                         workflow_name:
-                            speedwagon.config.SettingsYamlSerializer
+                            speedwagon.config.workflow.SettingsYamlSerializer
                             .structure_workflow_data(value)
                         for (workflow_name, value) in
                         widget.get_data()['workflow settings'].items()
@@ -244,17 +246,23 @@ def _setup_global_settings_tab(
 ) -> dialog.settings.GlobalSettingsTab:
     config_strategy = config.StandardConfigFileLocator()
     global_settings_tab = dialog.settings.GlobalSettingsTab()
+
+    def serialize(widget):
+        ini_serializer = config.config.IniConfigSaver()
+        ini_serializer.parser.read(config_strategy.get_config_file())
+        return ini_serializer.serialize(
+            {
+                "GLOBAL": typing.cast(
+                    speedwagon.config.SettingsData, widget.get_data()
+                )
+            }
+        )
+
     saver.config_savers.append(
         dialog.settings.ConfigFileSaver(
             dialog.settings.SettingsTabSaveStrategy(
                 global_settings_tab,
-                lambda widget: config.IniConfigSaver().serialize(
-                    {
-                        "GLOBAL": typing.cast(
-                            speedwagon.config.SettingsData, widget.get_data()
-                        )
-                    }
-                ),
+                serialize
             ),
             config_strategy.get_config_file(),
         )
@@ -264,11 +272,25 @@ def _setup_global_settings_tab(
 
 
 def _setup_plugins_tab(
-    _: dialog.settings.MultiSaver,
+        saver: dialog.settings.MultiSaver,
 ) -> dialog.settings.PluginsTab:
     config_strategy = config.StandardConfigFileLocator()
     plugins_tab = dialog.settings.PluginsTab()
     plugins_tab.load(config_strategy.get_config_file())
+
+    config_file = config_strategy.get_config_file()
+
+    def serializer(widget) -> str:
+        ini_serializer = config.plugins.IniSerializer()
+        ini_serializer.parser.read(config_file)
+        return ini_serializer.serialize(widget.get_data())
+
+    saver.config_savers.append(
+        dialog.settings.ConfigFileSaver(
+            dialog.settings.SettingsTabSaveStrategy(plugins_tab, serializer),
+            config_file
+        )
+    )
     return plugins_tab
 
 
@@ -341,7 +363,7 @@ class StartQtThreaded(AbsGuiStarter):
             self.logger.warning("No help link available. Reason: %s", error)
 
     def ensure_settings_files(self) -> None:
-        config.ensure_settings_files(logger=self.logger)
+        config.config.ensure_settings_files(logger=self.logger)
 
     def resolve_settings(self) -> FullSettingsData:
         settings = self.settings_resolver.get_settings()
@@ -733,9 +755,11 @@ class TabsEditorApp(QtWidgets.QDialog):
     def load_all_workflows(self) -> None:
         self.editor.set_all_workflows()
 
-    def get_tab_config_strategy(self) -> config.AbsTabsConfigDataManagement:
+    def get_tab_config_strategy(self) -> AbsTabsConfigDataManagement:
         config_strategy = config.StandardConfigFileLocator()
-        return config.CustomTabsYamlConfig(config_strategy.get_tabs_file())
+        return config.tabs.CustomTabsYamlConfig(
+            config_strategy.get_tabs_file()
+        )
 
     def on_okay(self) -> None:
         config_strategy = config.StandardConfigFileLocator()

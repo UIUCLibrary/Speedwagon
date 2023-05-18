@@ -25,7 +25,7 @@ def test_settings_open_dir_if_location_is_set(qtbot, monkeypatch):
     qtbot.addWidget(settings_dialog)
     settings_dialog.settings_location = "some_file_path"
     mock_call = Mock()
-    monkeypatch.setattr(speedwagon.config.OpenSettingsDirectory, "open", mock_call)
+    monkeypatch.setattr(settings.OpenSettingsDirectory, "open", mock_call)
     settings_dialog.open_settings_path_button.click()
     assert mock_call.called is True
 
@@ -33,7 +33,7 @@ def test_settings_open_dir_if_location_is_set(qtbot, monkeypatch):
 class TestOpenSettings:
     def test_open_darwin_settings(self, monkeypatch):
         settings_directory = "some/settings/path"
-        opening_strategy = speedwagon.config.DarwinOpenSettings(settings_directory)
+        opening_strategy = settings.DarwinOpenSettings(settings_directory)
         import subprocess
         call = Mock()
         monkeypatch.setattr(subprocess, "call", call)
@@ -52,7 +52,7 @@ class TestOpenSettings:
 
     def test_open_windows_settings(self, monkeypatch):
         settings_directory = "some\\settings\\path"
-        opening_strategy = speedwagon.config.WindowsOpenSettings(settings_directory)
+        opening_strategy = settings.WindowsOpenSettings(settings_directory)
         import os
         startfile = Mock()
         if platform.system() != "Windows":
@@ -145,7 +145,8 @@ class TestTabsConfigurationTab:
         config_tab.settings_location = settings_location
         # from speedwagon.frontend.qtwidgets import tabs
         from speedwagon import config
-        config_management_strategy = Mock(config.AbsTabsConfigDataManagement, name="AbsTabsConfigDataManagement")
+        config_management_strategy = Mock(
+            config.tabs.AbsTabsConfigDataManagement, name="AbsTabsConfigDataManagement")
         # write_tabs_yaml = Mock()
         mock_exec = Mock(name="message box exec")
         with monkeypatch.context() as mp:
@@ -212,7 +213,7 @@ class TestTabsConfigurationTab:
         config_tab.settings_location = "dummy.yml"
         assert isinstance(
             config_tab.tab_config_management_strategy(),
-            speedwagon.config.AbsTabsConfigDataManagement
+            speedwagon.config.tabs.AbsTabsConfigDataManagement
         )
 
     def test_get_data(self, qtbot):
@@ -877,7 +878,7 @@ class TestConfigSaver:
         saver.tabs_yaml_path = "dummy.yml"
         assert isinstance(
             saver.get_tab_config_strategy(),
-            speedwagon.config.AbsTabsConfigDataManagement
+            speedwagon.config.tabs.AbsTabsConfigDataManagement
         )
 
     def test_foo(self):
@@ -1011,7 +1012,7 @@ class TestEntrypointsPluginModelLoader:
         )
         read_settings_file_plugins = MagicMock()
         monkeypatch.setattr(
-            speedwagon.config,
+            speedwagon.config.plugins,
             "read_settings_file_plugins",
             read_settings_file_plugins
         )
@@ -1134,7 +1135,7 @@ class TestSettingsDialog:
 class TestTabDataModelYAMLLoader:
     def test_prep_data(self):
         loader = TabDataModelYAMLLoader()
-        class DummyStrategy(speedwagon.config.AbsTabsConfigDataManagement):
+        class DummyStrategy(speedwagon.config.tabs.AbsTabsConfigDataManagement):
             def data(self):
                 return [
                     Mock(workflow_names=["spam"])

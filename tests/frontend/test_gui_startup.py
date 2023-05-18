@@ -109,7 +109,7 @@ class TestTabsEditorApp:
         )
         save.assert_called_with(
             [
-                speedwagon.config.CustomTabData(
+                speedwagon.config.tabs.CustomTabData(
                     tab_name='Eggs',
                     workflow_names=["spam 1", "spam 2"]
                 )
@@ -191,6 +191,8 @@ class TestSingleWorkflowJSON:
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
                 app=None
             )
+        exit_calls = []
+        monkeypatch.setattr(QtWidgets.QApplication, 'exit', lambda: exit_calls.append(1))
 
         startup.options = {}
         workflow = Mock()
@@ -199,9 +201,9 @@ class TestSingleWorkflowJSON:
         startup.on_exit = Mock()
 
         MainWindow3 = QtWidgets.QMainWindow()
-        MainWindow3.logger = Mock()
-        MainWindow3.console = Mock()
-        MainWindow3.show = Mock()
+        # MainWindow3.logger = Mock()
+        # MainWindow3.console = Mock()
+        # MainWindow3.show = Mock()
         qtbot.addWidget(MainWindow3)
         monkeypatch.setattr(
             dialogs.WorkflowProgress,
@@ -224,7 +226,11 @@ class TestSingleWorkflowJSON:
             "show",
             lambda *args, **kwargs: None
         )
-
+        monkeypatch.setattr(
+            dialogs.WorkflowProgress,
+            "exec",
+            lambda *args, **kwargs: None
+        )
         startup.run()
         assert startup.on_exit.called is True
 
@@ -257,20 +263,22 @@ class TestStartQtThreaded:
     @pytest.fixture(scope="function")
     def starter(self, monkeypatch, qtbot):
         monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
+            speedwagon.config.config.WindowsConfig,
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
 
         monkeypatch.setattr(
-            speedwagon.config.pathlib.Path,
+            speedwagon.config.config.pathlib.Path,
             "home",
             lambda *_: "/usr/home"
         )
 
         app = Mock()
         startup = gui_startup.StartQtThreaded(app)
-        class SettingsFileLocatorDummy(speedwagon.config.AbsSettingLocator):
+        class SettingsFileLocatorDummy(
+            speedwagon.config.config.AbsSettingLocator
+        ):
             def get_app_data_dir(self):
                 return ""
 
@@ -438,13 +446,13 @@ class TestStartQtThreaded:
         )
 
         monkeypatch.setattr(
-            speedwagon.config.pathlib.Path,
+            speedwagon.config.config.pathlib.Path,
             "home",
             lambda *_: "/usr/home"
         )
 
         monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
+            speedwagon.config.config.WindowsConfig,
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
@@ -469,7 +477,7 @@ class TestStartQtThreaded:
             MainWindow3
         )
         monkeypatch.setattr(
-            speedwagon.config.ConfigFileSetter,
+            speedwagon.config.config.ConfigFileSetter,
             "update", Mock()
         )
         starter.load_custom_tabs = Mock()
@@ -672,10 +680,10 @@ class TestStartQtThreaded:
             starter
     ):
         monkeypatch.setattr(
-            speedwagon.config.pathlib.Path, "home", lambda: "my_home"
+            speedwagon.config.config.pathlib.Path, "home", lambda: "my_home"
         )
         monkeypatch.setattr(
-            speedwagon.config.WindowsConfig,
+            speedwagon.config.config.WindowsConfig,
             "get_app_data_directory",
             lambda *_: "app_data_dir"
         )
@@ -705,7 +713,7 @@ class TestStartQtThreaded:
 
     def test_initialize(self, qtbot, monkeypatch):
         start = gui_startup.StartQtThreaded(Mock())
-        speedwagon.config.ensure_settings_files = Mock(name="ensure_settings_files")
+        speedwagon.config.config.ensure_settings_files = Mock(name="ensure_settings_files")
         start.resolve_settings = Mock(name="resolve_settings")
         monkeypatch.setattr(
             speedwagon.config.WorkflowSettingsYamlExporter,
@@ -720,7 +728,7 @@ class TestStartQtThreaded:
         }
         actual = {
             "ensure_settings_files was called":
-                speedwagon.config.ensure_settings_files.called,
+                speedwagon.config.config.ensure_settings_files.called,
             "resolve_settings was called": start.resolve_settings.called,
         }
         assert actual == expected
@@ -734,12 +742,12 @@ class TestStartQtThreaded:
     def test_ensure_settings_files(self, qtbot, monkeypatch):
         start = gui_startup.StartQtThreaded(Mock())
         monkeypatch.setattr(
-            gui_startup.config,
+            gui_startup.config.config,
             "ensure_settings_files",
             Mock(name="ensure_settings_files")
         )
         start.ensure_settings_files()
-        assert gui_startup.config.ensure_settings_files.called is True
+        assert gui_startup.config.config.ensure_settings_files.called is True
 class TestWorkflowProgressCallbacks:
 
     @pytest.fixture()
