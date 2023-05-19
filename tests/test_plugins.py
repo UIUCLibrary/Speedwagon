@@ -13,6 +13,7 @@ else:
 
 import pytest
 import speedwagon
+import speedwagon.plugins
 
 if typing.TYPE_CHECKING:
     from speedwagon import Workflow
@@ -66,8 +67,8 @@ class TestLoadAllPluginSearch:
 
         monkeypatch.setattr(
             finder,
-            "load_workflow_from_entry_point",
-            lambda *_: ("dummy", FakeWork),
+            "load_workflows_from_entry_point",
+            lambda *_: {"dummy": FakeWork},
         )
 
         assert finder.locate() == {"dummy": FakeWork}
@@ -90,7 +91,7 @@ class TestLoadAllPluginSearch:
 
         monkeypatch.setattr(
             finder,
-            "load_workflow_from_entry_point",
+            "load_workflows_from_entry_point",
             load_workflow_from_entry_point,
         )
 
@@ -103,11 +104,13 @@ class TestLoadAllPluginSearch:
         class FakeWorkflow(speedwagon.Workflow):
             name = "dummy"
 
+        plugin = speedwagon.plugins.Plugin()
+        plugin.register_workflow(FakeWorkflow)
         entry_point = Mock(
-            metadata.EntryPoint, load=Mock(return_value=FakeWorkflow)
+            metadata.EntryPoint, load=Mock(return_value=plugin)
         )
-        res = finder.load_workflow_from_entry_point(entry_point)
-        assert res[1] == FakeWorkflow
+        res = finder.load_workflows_from_entry_point(entry_point)
+        assert res['dummy'] == FakeWorkflow
 
     def test_load_workflow_from_entry_point_bad_data_raises_invalid_plugin_execption(
         self, monkeypatch
@@ -123,7 +126,7 @@ class TestLoadAllPluginSearch:
             load=Mock(return_value=InvalidWorkflow),
         )
         with pytest.raises(speedwagon.exceptions.InvalidPlugin):
-            finder.load_workflow_from_entry_point(entry_point)
+            finder.load_workflows_from_entry_point(entry_point)
 
 
 class TestLoadActivePluginsOnly:
@@ -135,17 +138,20 @@ class TestLoadActivePluginsOnly:
             name = "blacklisted"
 
         def get_entry_points(*_):
+            whitelisted_plugin_plugin = speedwagon.plugins.Plugin()
+            whitelisted_plugin_plugin.register_workflow(WhitelistedWorkflow)
             white_listed_plugin = Mock(
                 metadata.EntryPoint,
                 module="myplugins",
-                load=Mock(return_value=WhitelistedWorkflow),
+                load=Mock(return_value=whitelisted_plugin_plugin),
             )
             white_listed_plugin.name = "whitelisted_workflow"
-
+            blacklisted_plugin_plugin = speedwagon.plugins.Plugin()
+            blacklisted_plugin_plugin.register_workflow(BlacklistedWorkflow)
             black_listed_plugin = Mock(
                 metadata.EntryPoint,
                 module="myplugins",
-                load=Mock(return_value=BlacklistedWorkflow),
+                load=Mock(return_value=blacklisted_plugin_plugin),
             )
             black_listed_plugin.name = "backlisted"
 
