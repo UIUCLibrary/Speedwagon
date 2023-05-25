@@ -29,14 +29,90 @@ def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
 
 
 def build_standalone(args=[:]){
-    def buildDir =   args['buildDir'] ? args['buildDir']: "cmake_build"
-//     def pythonExec = args['pythonExec'] ? args['pythonExec']: powershell(script: '(Get-Command python).path', returnStdout: true).trim()
-    def packaging_msi  = args.packageFormat['msi'] ? args.packageFormat['msi']: false
-    def packaging_nsis = args.packageFormat['nsis'] ? args.packageFormat['nsis']: false
-    def packaging_zip  = args.packageFormat['zipFile'] ? args.packageFormat['zipFile']: false
+    // Parse packageFormat args
+    def cpack_generators_args = ''
+    if (args.containsKey('packageFormat')){
+        def packageFormat = args['packageFormat']
 
-    def speedwagon_venv_path = "${WORKSPACE}\\standalone_venv"
-    def ctest_logs_file = "${WORKSPACE}\\logs\\ctest.log"
+        def packaging_msi = false
+        if(packageFormat.containsKey('msi')){
+            packaging_msi = args.packageFormat['msi']
+            packageFormat.remove('msi')
+        }
+
+        def packaging_nsis = false
+        if(packageFormat.containsKey('nsis')){
+            packaging_nsis = packageFormat['nsis']
+            packageFormat.remove('nsis')
+        }
+
+        def packaging_zip = false
+        if(packageFormat.containsKey('zipFile')){
+            packaging_zip = packageFormat['zipFile']
+            packageFormat.remove('zipFile')
+        }
+        cpack_generators_args = "-G ${generate_cpack_arguments(packaging_msi, packaging_nsis, packaging_zip)}"
+
+        if(packageFormat.size() > 0){
+            error "invalid arguments in packageFormat ${packageFormat.keySet()}"
+        }
+        args.remove('packageFormat')
+    }
+
+    // Parse testing args
+    def ctestLogsFilePath = "${WORKSPACE}\\logs\\ctest.log"
+    if (args.containsKey('testing')){
+        def testingArgs = args['testing']
+        if(testingArgs.containsKey('ctestLogsFilePath')){
+            ctestLogsFilePath = testingArgs['ctestLogsFilePath']
+            testingArgs.remove('ctestLogsFilePath')
+        }
+        if(testingArgs.size() > 0){
+            error "invalid arguments in testing ${testingArgs.keySet()}"
+        }
+        args.remove('testing')
+    }
+
+    // Parse package args
+    def pythonPackageVersion
+    if (args.containsKey('package')){
+        def packageArgs = args['package']
+        if(packageArgs.containsKey('version')){
+            pythonPackageVersion = packageArgs['version']
+            packageArgs.remove('version')
+        } else {
+            error "Missing required argument in package: version"
+        }
+        if(packageArgs.size() > 0){
+            error "invalid arguments in package ${packageArgs.keySet()}"
+        }
+        args.remove('package')
+    } else {
+        error "Missing required argument: package"
+    }
+
+    // Parse top level args
+    def buildDir = "cmake_build"
+    if (args['buildDir']) {
+        buildDir = args['buildDir']
+        args.remove('buildDir')
+    }
+
+    def venvPath = "${WORKSPACE}\\standalone_venv"
+    if (args.containsKey('venvPath')){
+        venvPath = args['venvPath']
+        args.remove('venvPath')
+    }
+
+    def documentationPdf = "${WORKSPACE}/dist/docs/speedwagon.pdf"
+    if (args.containsKey('documentationPdf')){
+        documentationPdf = args['documentationPdf']
+        args.remove('documentationPdf')
+    }
+    if(args.size() > 0){
+        error "invalid arguments ${args.keySet()}"
+    }
+
     stage("Building Standalone"){
         bat(label: "Creating expected directories",
             script: """if not exist "${buildDir}" mkdir ${buildDir}
@@ -47,12 +123,11 @@ def build_standalone(args=[:]){
            )
         script{
             try{
-
-                def cmakeArgs = "-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${speedwagon_venv_path} -DSPEEDWAGON_DOC_PDF=${WORKSPACE}/dist/docs/speedwagon.pdf -Wdev"
+                def cmakeArgs = "-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${venvPath} -DSPEEDWAGON_DOC_PDF=${documentationPdf} -Wdev"
                 if(args['package']){
-                    cmakeArgs = cmakeArgs + " -DSpeedwagon_VERSION:STRING=${args.package['version']}"
-                    def packageVersion = args.package['version'] =~ /(?:a|b|rc|dev)?\d+/
-                    def package_version  = args.package['version'].split("\\.")
+                    cmakeArgs = cmakeArgs + " -DSpeedwagon_VERSION:STRING=${pythonPackageVersion}"
+                    def packageVersion = pythonPackageVersion =~ /(?:a|b|rc|dev)?\d+/
+                    def package_version  = pythonPackageVersion.split("\\.")
                     if(package_version.size() >= 1){
                         cmakeArgs = cmakeArgs + " -DCMAKE_PROJECT_VERSION_MAJOR=${packageVersion[0]}"
                         cmakeArgs = cmakeArgs + " -DCPACK_PACKAGE_VERSION_MAJOR=${packageVersion[0]}"
@@ -91,20 +166,19 @@ def build_standalone(args=[:]){
         try{
             dir(buildDir){
                 withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                    bat "ctest --output-on-failure --no-compress-output -T test -C Release -j ${NUMBER_OF_PROCESSORS} --output-log ${ctest_logs_file}"
+                    bat "ctest --output-on-failure --no-compress-output -T test -C Release -j ${NUMBER_OF_PROCESSORS} --output-log ${ctestLogsFilePath}"
                 }
             }
         }
         catch(e){
-            bat "${speedwagon_venv_path}\\Scripts\\pip.exe list --verbose"
+            bat "${venvPath}\\Scripts\\pip.exe list --verbose"
             throw e
         }
     }
     stage("Packaging Standalone"){
         script{
             try{
-                def cpack_generators = generate_cpack_arguments(packaging_msi, packaging_nsis, packaging_zip)
-                bat "cpack -C Release -G ${cpack_generators} --config ${buildDir}\\CPackConfig.cmake -B ${WORKSPACE}/dist -V"
+                bat "cpack -C Release ${cpack_generators_args} --config ${buildDir}\\CPackConfig.cmake -B ${WORKSPACE}/dist -V"
             } catch(e){
                 findFiles(glob: "dist/_CPack_Packages/**/*.log").each{ logFile ->
                     echo(readFile(logFile.path))

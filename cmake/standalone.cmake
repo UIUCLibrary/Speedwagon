@@ -258,7 +258,6 @@ if(WIN32)
             string(REPLACE "\n" ";" PYTEST_COLLECTION ${PYTEST_COLLECTION})
 
             foreach(test_name ${PYTEST_COLLECTION})
-#                string(REGEX MATCH "::test_.*" test_name ${test_name})
                 if(test_name)
                     if(test_name MATCHES "tests collected" )
                         continue()
@@ -268,12 +267,10 @@ if(WIN32)
                     endif()
                     string(STRIP ${test_name} test_name)
                     set(FULL_TEST_NAME "${PROJECT_NAME}.pytest${test_name}")
-#                    string(REPLACE " " "_" FULL_TEST_NAME ${FULL_TEST_NAME})
                     add_test(NAME ${FULL_TEST_NAME}
                             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-                            COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest "../../${test_name}" -v --full-trace -raP -c ${PROJECT_SOURCE_DIR}/pyproject.toml
+                            COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest "${PROJECT_SOURCE_DIR}/${test_name}" -v --full-trace -raP -c ${PROJECT_SOURCE_DIR}/pyproject.toml
                             )
-#                            COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ../../${test_name} -v --full-trace --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
                     set_tests_properties(${FULL_TEST_NAME} PROPERTIES
                             RESOURCE_LOCK ${pytest_file}
                             ENVIRONMENT "PYTHONDONTWRITEBYTECODE=x"
@@ -286,19 +283,11 @@ if(WIN32)
                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
                     COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest "${PROJECT_SOURCE_DIR}/${pytest_file}" -c ${PROJECT_SOURCE_DIR}/pyproject.toml -raP
                     )
-#                    COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone -raP
             set_tests_properties(${PROJECT_NAME}.pytest.${pytest_file} PROPERTIES
                     ENVIRONMENT "PYTHONDONTWRITEBYTECODE=x"
                     )
 
         endif(PYTEST_COLLECTION)
-
-
-        #    add_test(NAME ${PROJECT_NAME}.pytest.${pytest_file}
-        #        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/standalone
-        #        COMMAND ${PROJECT_BINARY_DIR}/standalone/python -m pytest ${PROJECT_SOURCE_DIR}/tests/${pytest_file} --rootdir=${PROJECT_BINARY_DIR}/standalone
-        #    )
-
     endforeach()
 
     ###########################################
