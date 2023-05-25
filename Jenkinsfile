@@ -1128,8 +1128,13 @@ pipeline {
                                                         nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
                                                         zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
                                                     ],
+                                                    buildDir: 'build\\cmake_build',
+                                                    venvPath: "${WORKSPACE}\\build\\standalone_venv",
                                                     package: [
                                                         version: props.Version
+                                                    ],
+                                                    testing:[
+                                                        ctestLogsFilePath: "${WORKSPACE}\\logs\\ctest.log"
                                                     ]
                                                 )
                                             }
@@ -1146,19 +1151,28 @@ pipeline {
                                         }
                                         cleanup{
                                             cleanWs(
-                                                deleteDirs: true,
-                                                notFailBuild: true
+                                                patterns: [
+                                                        [pattern: '*.egg-info/**', type: 'INCLUDE'],
+                                                        [pattern: '.pytest_cache/**', type: 'INCLUDE'],
+                                                        [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                                        [pattern: 'build/**', type: 'INCLUDE'],
+                                                        [pattern: 'temp/**', type: 'INCLUDE'],
+                                                        [pattern: 'dist/**', type: 'INCLUDE'],
+                                                        [pattern: 'logs/**', type: 'INCLUDE'],
+                                                    ],
+                                                notFailBuild: true,
+                                                deleteDirs: true
                                             )
                                         }
                                     }
                                 }
                                 stage('Testing MSI Install'){
                                     agent {
-                                      docker {
-                                        args '-u ContainerAdministrator'
-                                        image 'mcr.microsoft.com/windows/servercore:ltsc2019'
-                                        label 'Windows && Docker && x86'
-                                      }
+                                        docker {
+                                            args '-u ContainerAdministrator'
+                                            image 'mcr.microsoft.com/windows/servercore:ltsc2019'
+                                            label 'Windows && Docker && x86'
+                                        }
                                     }
                                     when{
                                         allOf{
