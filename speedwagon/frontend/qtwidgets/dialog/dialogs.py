@@ -639,5 +639,6 @@ class SpeedwagonExceptionDialog(QtWidgets.QMessageBox):
     def exception(self, value: BaseException) -> None:
         self.report_strategy.exception = value
         self.setWindowTitle(self.report_strategy.title())
-        self.setInformativeText(self.report_strategy.summary())
-        self.setDetailedText(self.report_strategy.report())
+        summary = self.report_strategy.summary()
+        if summary:
+            self.setInformativeText(summary)
