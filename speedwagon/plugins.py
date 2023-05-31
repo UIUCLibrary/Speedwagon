@@ -15,6 +15,7 @@ else:  # pragma: no cover
 
 if typing.TYPE_CHECKING:
     from speedwagon.job import Workflow
+    from speedwagon.tasks.system import AbsSystemTask
 
 __all__ = [
     'find_plugin_workflows',
@@ -24,8 +25,8 @@ __all__ = [
 
 class AbsPluginFinder(abc.ABC):  # pylint: disable=too-few-public-methods
     @abc.abstractmethod
-    def locate(self) -> Dict[str, Type[Workflow]]:
-        """Locate plugin workflows."""
+    def locate(self) -> Iterable[Plugin]:
+        """Locate the plugins"""
 
 
 class EntrypointPluginSearch(AbsPluginFinder, abc.ABC):
@@ -34,45 +35,56 @@ class EntrypointPluginSearch(AbsPluginFinder, abc.ABC):
     def get_entry_points(self) -> metadata.EntryPoints:
         return metadata.entry_points(group=self.entrypoint_group)
 
-    def load_workflows_from_entry_point(
-            self, entry_point: metadata.EntryPoint
-    ) -> Dict[str, Type[speedwagon.Workflow]]:
-        entry_point_plugin = typing.cast(
-            Type[speedwagon.Workflow], entry_point.load()
-        )
+    @staticmethod
+    def get_workflows_from_plugin(plugin: Plugin) -> Dict[str, Type[Workflow]]:
+        workflows: Dict[str, Type[Workflow]] = {
+            workflow.name if workflow.name is not None else '': workflow
+            for workflow in plugin.workflows
+        }
+        return workflows
 
+    @staticmethod
+    def get_plugin_from_entry_point(
+            entry_point: metadata.EntryPoint
+    ) -> Plugin:
+        entry_point_plugin = typing.cast(
+            Type[speedwagon.plugins.Plugin], entry_point.load()
+        )
         if not isinstance(entry_point_plugin, speedwagon.plugins.Plugin):
             raise speedwagon.exceptions.InvalidPlugin(
                 f"{entry_point.value} is not a Speedwagon Plugin",
                 entry_point=entry_point,
             )
-        workflows: Dict[str, Type[Workflow]] = {
-            workflow.name if workflow.name is not None else '': workflow
-            for workflow in entry_point_plugin.workflows
-        }
-        return workflows
+        return entry_point_plugin
+
+    def load_workflows_from_entry_point(
+            self, entry_point: metadata.EntryPoint
+    ) -> Dict[str, Type[speedwagon.Workflow]]:
+        entry_point_plugin = self.get_plugin_from_entry_point(entry_point)
+        return self.get_workflows_from_plugin(entry_point_plugin)
 
     @abc.abstractmethod
     def should_entrypoint_load(self, entrypoint: metadata.EntryPoint) -> bool:
         """Get if an entrypoint attempt to be loaded."""
 
-    def locate(self) -> Dict[str, Type[Workflow]]:
-        failed_plugins: List[str] = []
-        discovered_plugins: Dict[str, Type[Workflow]] = {}
-        for entrypoint in self.get_entry_points():
-            if not self.should_entrypoint_load(entrypoint):
-                continue
+    def _iter_entry_points(self) -> Iterable[metadata.EntryPoint]:
+        return [
+            entrypoint
+            for entrypoint in self.get_entry_points()
+            if self.should_entrypoint_load(entrypoint)
+        ]
+
+    def locate(self) -> Iterable[Plugin]:
+        plugins: List[Plugin] = []
+        failed: List[str] = []
+        for entrypoint in self._iter_entry_points():
             try:
-                result = self.load_workflows_from_entry_point(entrypoint)
-                if result:
-                    discovered_plugins = {**discovered_plugins, **result}
-            except speedwagon.exceptions.InvalidPlugin as error:
-                failed_plugins.append(error.entry_point.name)
-        if failed_plugins:
-            failed_plugins_string = ",".join(failed_plugins)
-            message = f"{failed_plugins_string} failed to load"
-            raise speedwagon.exceptions.PluginImportError(message)
-        return discovered_plugins
+                plugins.append(self.get_plugin_from_entry_point(entrypoint))
+            except speedwagon.exceptions.InvalidPlugin:
+                failed.append(entrypoint.value)
+        if failed:
+            raise speedwagon.exceptions.PluginImportError
+        return plugins
 
 
 class LoadAllPluginSearch(EntrypointPluginSearch):
@@ -110,7 +122,13 @@ def find_plugin_workflows(
         strategy: AbsPluginFinder = LoadAllPluginSearch(),
 ) -> Dict[str, Type[Workflow]]:
     """Locate all the plugin workflows."""
-    return strategy.locate()
+
+    workflows: Dict[str, Type[Workflow]] = {}
+    for plugin in strategy.locate():
+        for workflow in plugin.workflows:
+            plugin_name = workflow.name if workflow.name is not None else ''
+            workflows[plugin_name] = workflow
+    return workflows
 
 
 class Plugin:
@@ -122,12 +140,20 @@ class Plugin:
     def __init__(self) -> None:
         """Generate a new plugin object."""
         self._workflows: List[Type[Workflow]] = []
+        self._init_steps: List[AbsSystemTask] = []
 
     def register_workflow(self, workflow_klass: Type[Workflow]) -> None:
         """Register a workflow to the plugin."""
         self._workflows.append(workflow_klass)
 
+    def register_plugin_startup_task(self, task: AbsSystemTask) -> None:
+        self._init_steps.append(task)
+
     @property
     def workflows(self) -> List[Type[Workflow]]:
         """Get workflows registered to this plugin."""
         return self._workflows
+
+    @property
+    def plugin_init_tasks(self) -> List[AbsSystemTask]:
+        return self._init_steps
