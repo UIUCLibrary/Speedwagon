@@ -24,6 +24,7 @@ from PySide6 import QtWidgets
 import speedwagon
 from speedwagon.workflow import initialize_workflows
 from speedwagon import config
+from speedwagon.tasks import system as system_tasks
 from . import user_interaction
 from . import dialog
 from .dialog.settings import EntrypointsPluginModelLoader
@@ -88,96 +89,6 @@ class ResolveSettings(AbsResolveSettingsStrategy):  # pylint: disable=R0903
         config_strategy = config.StandardConfigFileLocator()
         manager = config.IniConfigManager(config_strategy.get_config_file())
         return manager.data()
-
-
-class AbsStartupTask(abc.ABC):
-    @abc.abstractmethod
-    def run(self) -> None:
-        """Run a startup task."""
-
-    @abc.abstractmethod
-    def description(self) -> str:
-        """Get human-readable information about current task."""
-
-
-class EnsureGlobalConfigFiles(AbsStartupTask):
-    def __init__(self, logger) -> None:
-        super().__init__()
-        self.logger = logger
-
-    def run(self) -> None:
-        config.config.ensure_settings_files(logger=self.logger)
-
-    def description(self) -> str:
-        return (
-            "Ensuring global settings files are available and creating "
-            "defaults where missing."
-        )
-
-
-class EnsureWorkflowConfigFiles(AbsStartupTask):
-    def __init__(self) -> None:
-        super().__init__()
-        self.config_file_location_strategy = (
-            speedwagon.config.StandardConfigFileLocator()
-        )
-
-    def run(self) -> None:
-        for (
-            name,
-            workflow_klass,
-        ) in speedwagon.job.available_workflows().items():
-            try:
-                workflow = workflow_klass()
-                self.ensure_workflow_config(
-                    workflow, workflow.workflow_options()
-                )
-            except speedwagon.exceptions.MissingConfiguration:
-                print(f"[{name}] has missing config")
-
-    def get_config_file(self):
-        return os.path.join(
-            self.config_file_location_strategy.get_app_data_dir(),
-            speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
-        )
-
-    def ensure_workflow_config(
-        self,
-        workflow: speedwagon.Workflow,
-        config_options: List[speedwagon.workflow.AbsOutputOptionDataType],
-    ):
-        yaml_file = self.get_config_file()
-
-        getter_strategy = speedwagon.config.WorkflowSettingsYAMLResolver(
-            yaml_file
-        )
-
-        setter_strategy = speedwagon.config.WorkflowSettingsYamlExporter(
-            yaml_file
-        )
-
-        manager = speedwagon.config.WorkflowSettingsManager(
-            getter_strategy=getter_strategy, setter_strategy=setter_strategy
-        )
-        workflow_settings: speedwagon.config.SettingsData = {}
-        existing_options = manager.get_workflow_settings(workflow)
-        for option in config_options:
-            name = option.setting_name or option.label
-            workflow_settings[name] = existing_options.get(name)
-            if (
-                workflow_settings[name] is None
-                and option.default_value is not None
-            ):
-                workflow_settings[name] = option.default_value
-
-        if workflow_settings:
-            manager.save_workflow_settings(workflow, workflow_settings)
-
-    def description(self) -> str:
-        return (
-            "Ensuring workflow settings file are available and creating "
-            "defaults where missing."
-        )
 
 
 def _setup_config_tab(
@@ -372,14 +283,19 @@ class StartQtThreaded(AbsGuiStarter):
         return self.startup_settings
 
     def initialize(self) -> None:
-        startup_tasks: List[AbsStartupTask] = [
-            EnsureGlobalConfigFiles(self.logger),
-            EnsureWorkflowConfigFiles(),
+        startup_tasks: List[system_tasks.AbsSystemTask] = [
+            system_tasks.EnsureGlobalConfigFiles(self.logger),
+            system_tasks.EnsureBuiltinWorkflowConfigFiles()
         ]
+        plugin_strategy = speedwagon.plugins.LoadWhiteListedPluginsOnly()
+        plugin_strategy.whitelisted_entry_points = (
+            speedwagon.config.get_whitelisted_plugins()
+        )
+        for plugin in plugin_strategy.locate():
+            startup_tasks.extend(iter(plugin.plugin_init_tasks))
         for task in startup_tasks:
             task.run()
 
-        # self.ensure_settings_files()
         self.startup_settings = self.resolve_settings()
 
     def load_workflows(self) -> None:

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Type
+from typing import Dict, Type, Iterable
 import typing
 import importlib
 import os
@@ -14,9 +14,11 @@ else:
 import pytest
 import speedwagon
 import speedwagon.plugins
+from speedwagon.tasks.system import AbsSystemTask
 
 if typing.TYPE_CHECKING:
     from speedwagon import Workflow
+    from speedwagon.plugins import Plugin
 
 
 @pytest.fixture
@@ -27,22 +29,26 @@ def sample_plugins(monkeypatch):
     return {
         "speedwagon-dummy": importlib.import_module(
             "speedwagon_dummy"
-        ).MyWorkflow
+        ).plugin
     }
 
 
 def test_load_plugins(sample_plugins):
     class LoadSamplePlugins(speedwagon.plugins.AbsPluginFinder):
-        def locate(self) -> Dict[str, Type[Workflow]]:
-            return {
-                sample_plugins["speedwagon-dummy"].name: sample_plugins[
-                    "speedwagon-dummy"
-                ]
-            }
+        def locate(self) -> Iterable[Plugin]:
+            return [
+                sample_plugins["speedwagon-dummy"]
+            ]
 
     workflows = speedwagon.plugins.find_plugin_workflows(LoadSamplePlugins())
     assert workflows["My Workflow"].name == "My Workflow"
 
+def test_run_startup_tasks(sample_plugins):
+    plugin = sample_plugins["speedwagon-dummy"]
+
+    task = Mock(AbsSystemTask)
+    plugin.register_plugin_startup_task(task)
+    assert task in plugin.plugin_init_tasks
 
 class TestLoadAllPluginSearch:
     def test_finding_nothing_returns_empty_dict(self, monkeypatch):
@@ -52,48 +58,18 @@ class TestLoadAllPluginSearch:
             return []
 
         monkeypatch.setattr(finder, "get_entry_points", get_entry_points)
-        assert finder.locate() == {}
-
-    def test_finding_dict(self, monkeypatch):
-        class FakeWork:
-            pass
-
-        finder = speedwagon.plugins.LoadAllPluginSearch()
-
-        def get_entry_points(*_):
-            return [Mock(metadata.EntryPoint)]
-
-        monkeypatch.setattr(finder, "get_entry_points", get_entry_points)
-
-        monkeypatch.setattr(
-            finder,
-            "load_workflows_from_entry_point",
-            lambda *_: {"dummy": FakeWork},
-        )
-
-        assert finder.locate() == {"dummy": FakeWork}
+        assert finder.locate() == []
 
     def test_failed_throws_exception(self, monkeypatch):
         finder = speedwagon.plugins.LoadAllPluginSearch()
 
         def get_entry_points(*_):
-            return [Mock(metadata.EntryPoint)]
+            load = Mock(name="load", return_value="some bad value")
+            # entry_point = Mock(metadata.EntryPoint, name='entry_point', load=load)
+            entry_point = Mock(metadata.EntryPoint, name='entry_point', load=load, value="something")
+            return [entry_point]
 
         monkeypatch.setattr(finder, "get_entry_points", get_entry_points)
-
-        def load_workflow_from_entry_point(entry_point):
-            entry_point = Mock(metadata.EntryPoint)
-            entry_point.name = "foo"
-            raise speedwagon.exceptions.InvalidPlugin(
-                "nope!", entry_point=entry_point
-            )
-            # finder.plugins_failed_to_import.append("spam")
-
-        monkeypatch.setattr(
-            finder,
-            "load_workflows_from_entry_point",
-            load_workflow_from_entry_point,
-        )
 
         with pytest.raises(speedwagon.exceptions.PluginImportError):
             finder.locate()
@@ -165,8 +141,11 @@ class TestLoadActivePluginsOnly:
         plugin_loader.whitelisted_entry_points = {
             ("myplugins", "whitelisted_workflow")
         }
+        located = set()
+        for plugin in plugin_loader.locate():
+            for workflow in plugin.workflows:
+                located.add(workflow.name)
 
-        located = plugin_loader.locate()
         assert all(["whitelisted" in located, "blacklisted" not in located])
 
 

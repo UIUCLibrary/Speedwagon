@@ -1,6 +1,6 @@
 from typing import List, Any, Dict
 import speedwagon
-
+from speedwagon.plugins import Plugin
 
 class MyWorkflow(speedwagon.Workflow):
     name = "My Workflow"
@@ -12,3 +12,6 @@ class MyWorkflow(speedwagon.Workflow):
         **user_args
     ) -> List[dict]:
         return []
+
+plugin = Plugin()
+plugin.register_workflow(MyWorkflow)
