@@ -2,6 +2,7 @@
 
 import abc
 from typing import Dict, Set, Tuple, List
+
 try:  # pragma: no cover
     from typing import TypedDict
 except ImportError:  # pragma: no cover
@@ -46,15 +47,15 @@ class AbsSerializer(abc.ABC):  # pylint: disable=R0903
 
 
 class IniSerializer(AbsSerializer):  # pylint: disable=R0903
-    def __init__(self):
+    def __init__(self) -> None:
         self.parser = ConfigParser()
 
     def serialize(self, data: PluginSettingsData) -> str:
         for plugin_name, workflows in data["enabled_plugins"].items():
-            section = f'PLUGINS.{plugin_name}'
+            section = f"PLUGINS.{plugin_name}"
             self.parser.add_section(section)
             for workflow in workflows:
-                self.parser.set(section, workflow, 'True')
+                self.parser.set(section, workflow, "True")
 
         with io.StringIO() as string_writer:
             self.parser.write(string_writer)

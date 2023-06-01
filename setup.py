@@ -49,7 +49,7 @@ if __name__ == "__main__":
         },
         include_package_data=True,
         package_data={
-            'speedwagon': ["favicon.ico", "logo.png"],
+            'speedwagon': ["favicon.ico", "logo.png", 'py.typed'],
             'speedwagon.frontend.qtwidgets.ui': [
                 "console.ui",
                 "main_window3.ui",
