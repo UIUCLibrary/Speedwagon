@@ -111,6 +111,7 @@ class TextLineEditData(AbsOutputOptionDataType):
     """Single text line."""
 
     def __init__(self, label: str, required: bool = True) -> None:
+        """Create a new TextLineEditData object."""
         super().__init__(label, required)
 
     widget_name = "TextInput"
@@ -120,6 +121,7 @@ class DirectorySelect(AbsOutputOptionDataType):
     """Directory path selection."""
 
     def __init__(self, label: str, required: bool = True) -> None:
+        """Create a new directory selection object."""
         super().__init__(label, required)
 
     widget_name = "DirectorySelect"
@@ -129,11 +131,13 @@ class BooleanSelect(AbsOutputOptionDataType):
     """Boolean selection."""
 
     def __init__(self, label: str, required: bool = False) -> None:
+        """Create a new BooleanSelect object."""
         super().__init__(label, required)
 
     widget_name = "BooleanSelect"
 
     def serialize(self) -> Dict[str, Any]:
+        """Serialize."""
         data = super().serialize()
         if self.value is None:
             data["value"] = False

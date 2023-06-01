@@ -26,7 +26,7 @@ __all__ = [
 class AbsPluginFinder(abc.ABC):  # pylint: disable=too-few-public-methods
     @abc.abstractmethod
     def locate(self) -> Iterable[Plugin]:
-        """Locate the plugins"""
+        """Locate the plugins."""
 
 
 class EntrypointPluginSearch(AbsPluginFinder, abc.ABC):
@@ -122,7 +122,6 @@ def find_plugin_workflows(
         strategy: AbsPluginFinder = LoadAllPluginSearch(),
 ) -> Dict[str, Type[Workflow]]:
     """Locate all the plugin workflows."""
-
     workflows: Dict[str, Type[Workflow]] = {}
     for plugin in strategy.locate():
         for workflow in plugin.workflows:
@@ -147,6 +146,7 @@ class Plugin:
         self._workflows.append(workflow_klass)
 
     def register_plugin_startup_task(self, task: AbsSystemTask) -> None:
+        """Register a task to run during the plugin's initialization."""
         self._init_steps.append(task)
 
     @property
@@ -156,4 +156,5 @@ class Plugin:
 
     @property
     def plugin_init_tasks(self) -> List[AbsSystemTask]:
+        """Get initializing tasks registered to this plugin."""
         return self._init_steps
