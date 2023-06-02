@@ -44,7 +44,7 @@ __all__ = [
     "StandardConfig",
     "StandardConfigFileLocator",
     "WindowsConfig",
-    "NixConfig"
+    "NixConfig",
 ]
 
 
@@ -586,7 +586,7 @@ class AbsGlobalConfigDataManagement(abc.ABC):
 
 class AbsConfigSaver(abc.ABC):  # pylint: disable=R0903
     @abc.abstractmethod
-    def save(self, file_name: str, data: FullSettingsData):
+    def save(self, file_name: str, data: FullSettingsData) -> None:
         """Save data to a file."""
 
 
@@ -640,7 +640,7 @@ class IniConfigSaver(AbsConfigSaver):
     def __init__(self) -> None:
         self.parser = configparser.ConfigParser()
 
-    def save(self, file_name: str, data: FullSettingsData):
+    def save(self, file_name: str, data: FullSettingsData) -> None:
         self.write_data_to_file(
             file_name, serialized_data=self.serialize(data)
         )

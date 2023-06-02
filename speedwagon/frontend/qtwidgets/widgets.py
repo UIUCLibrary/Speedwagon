@@ -32,7 +32,7 @@ except ImportError:  # pragma: no cover
     from importlib_resources import as_file
 
 
-__all__ = ["Workspace"]
+__all__ = ["Workspace", "DynamicForm", "SelectWorkflow"]
 
 
 class WidgetMetadata(TypedDict):
@@ -494,9 +494,12 @@ class InnerForm(QtWidgets.QWidget):
 
 
 class DynamicForm(QtWidgets.QScrollArea):
+    """Dynamic form for entering job configuration."""
+
     modelChanged = QtCore.Signal()
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Create a new DynamicForm object."""
         super().__init__(parent)
         self.setVerticalScrollBarPolicy(
             QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
@@ -521,6 +524,7 @@ class DynamicForm(QtWidgets.QScrollArea):
         self.issues: List[str] = []
 
     def update_issues(self) -> None:
+        """Update issues."""
         self.issues.clear()
         self.update_model()
         rows = self._background.model.rowCount()
@@ -536,30 +540,37 @@ class DynamicForm(QtWidgets.QScrollArea):
                 self.issues.append(f" Required value {data.label} is missing.")
 
     def is_valid(self) -> bool:
+        """Get validity of form."""
         self.update_issues()
         return len(self.issues) == 0
 
     def create_editor(
         self, widget_name: str, data: WidgetMetadata
     ) -> EditDelegateWidget:
+        """Create editor."""
         return self._background.create_editor(widget_name, data)
 
     # pylint: disable=invalid-name
     def set_model(self, model: models.ToolOptionsModel4) -> None:
+        """Set model used by the widget."""
         self._background.model = model
         self.modelChanged.emit()
 
     def update_model(self) -> None:
+        """Update model."""
         self._background.update_model()
 
     def update_widget(self) -> None:
+        """Update widget."""
         self._background.update_widget()
 
     @property
     def model(self) -> models.ToolOptionsModel4:
+        """Get the model used by the widget."""
         return self._background.model
 
     def get_configuration(self) -> Dict[str, UserDataType]:
+        """Get the configuration as a dictionary."""
         self.update_model()
         return self._background.model.get()
 
@@ -638,11 +649,17 @@ class Workspace(QtWidgets.QWidget):
 
 
 class SelectWorkflow(QtWidgets.QWidget):
+    """Workflow selection widget.
+
+    This is based on a QListView.
+    """
+
     workflowSelectionView: QtWidgets.QListView
     workflow_selected = QtCore.Signal(object)
     selected_index_changed = QtCore.Signal(QtCore.QModelIndex)
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Create a new SelectWorkflow object."""
         super().__init__(parent)
         with as_file(
             resources.files("speedwagon.frontend.qtwidgets.ui").joinpath(
@@ -654,6 +671,7 @@ class SelectWorkflow(QtWidgets.QWidget):
 
     @property
     def model(self) -> QtCore.QAbstractItemModel:
+        """Get the model used by the widget."""
         return self.workflowSelectionView.model()
 
     @model.setter
@@ -678,11 +696,13 @@ class SelectWorkflow(QtWidgets.QWidget):
         self.workflow_selected.emit(item)
 
     def add_workflow(self, workflow_klass: typing.Type[Workflow]) -> None:
+        """Add workflow to list."""
         new_row = self.model.rowCount()
         self.model.insertRow(new_row)
         self.model.setData(self.model.index(new_row, 0), workflow_klass)
 
     def set_current_by_name(self, workflow_name: str) -> None:
+        """Set current workflow by workflow name."""
         rows = self.model.rowCount()
         for row_id in range(rows):
             workflow_index = self.model.index(row_id, 0)
@@ -697,6 +717,7 @@ class SelectWorkflow(QtWidgets.QWidget):
             raise ValueError(f"{workflow_name} not loaded in model")
 
     def get_current_workflow_type(self) -> Optional[typing.Type[Workflow]]:
+        """Get current workflow type."""
         return typing.cast(
             typing.Type[Workflow],
             self.model.data(
@@ -707,6 +728,7 @@ class SelectWorkflow(QtWidgets.QWidget):
 
     @property
     def workflows(self) -> Dict[str, typing.Type[Workflow]]:
+        """Get loaded workflows."""
         loaded_workflows = {}
         for row_id in range(self.model.rowCount()):
             index = self.model.index(row_id, 0)

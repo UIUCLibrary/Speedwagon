@@ -5,6 +5,7 @@ import abc
 import os
 import io
 from typing import Optional, Dict, List, TYPE_CHECKING
+
 try:  # pragma: no cover
     from typing import TypedDict
 except ImportError:  # pragma: no cover
@@ -47,6 +48,9 @@ WORKFLOWS_SETTINGS_YML_FILE_NAME = "workflows_settings.yml"
 
 
 class AbsWorkflowBackend(abc.ABC):  # pylint: disable=R0903
+    def __init__(self) -> None:
+        self.workflow: Optional[Workflow] = None
+
     @abc.abstractmethod
     def get(self, key: str) -> Optional[SettingsDataType]:
         """Get data for some key."""
@@ -77,14 +81,18 @@ class AbsWorkflowSettingsManager(abc.ABC):
 
 
 class IndentingEmitter(yaml.emitter.Emitter):  # pylint: disable=R0903
-    def increase_indent(self, flow=False, indentless=False):
+    def increase_indent(
+        self, flow: bool = False, indentless: bool = False
+    ) -> None:
         """Ensure that lists items are always indented."""
-        return super().increase_indent(flow=False, indentless=False)
+        super().increase_indent(flow=False, indentless=False)
 
 
 class IndentedYAMLDumper(yaml.Dumper):  # pylint: disable=R0903
-    def increase_indent(self, flow=False, indentless=False):
-        return super().increase_indent(flow, False)
+    def increase_indent(
+        self, flow: bool = False, indentless: bool = False
+    ) -> None:
+        super().increase_indent(flow, False)
 
 
 class AbsWorkflowSettingsExporter(abc.ABC):  # pylint: disable=R0903
@@ -104,7 +112,9 @@ class WorkflowSettingsYAMLResolver(
         with open(file_name, "r", encoding="utf-8") as file_handle:
             return file_handle.read()
 
-    def get_config_data(self):
+    def get_config_data(
+        self,
+    ) -> Dict[str, List[WorkflowSettingsNameValuePair]]:
         """Get config data."""
         config_file = self.yaml_file
         return (
@@ -183,7 +193,7 @@ class WorkflowSettingsYamlExporter(
         with open(file_name, "w", encoding="utf-8") as file_handle:
             file_handle.write(data)
 
-    def get_existing_data(self):
+    def get_existing_data(self) -> StructuredWorkflowSettings:
         """Get existing data."""
         if os.path.exists(self.yaml_file):
             with open(self.yaml_file, "r", encoding="utf-8") as handle:
@@ -253,10 +263,9 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
         """Create a new object."""
         super().__init__()
         self.yaml_file: Optional[str] = None
-        self.workflow: Optional[Workflow] = None
         self.settings_resolver: Optional[AbsWorkflowSettingsResolver] = None
 
-    def get_yaml_strategy(self):
+    def get_yaml_strategy(self) -> AbsWorkflowSettingsResolver:
         """Get current yaml strategy."""
         if self.settings_resolver is not None:
             return self.settings_resolver
@@ -271,7 +280,7 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
         return self.get_yaml_strategy().get_response(self.workflow).get(key)
 
 
-def get_config_backend():
+def get_config_backend() -> AbsWorkflowBackend:
     """Get config backend."""
     config_backend = YAMLWorkflowConfigBackend()
     config_strategy = StandardConfigFileLocator()

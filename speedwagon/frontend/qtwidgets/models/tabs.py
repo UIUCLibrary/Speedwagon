@@ -22,7 +22,7 @@ import speedwagon
 from .common import WorkflowItem, WorkflowClassRole
 
 if TYPE_CHECKING:
-    from config import AbsTabsConfigDataManagement
+    from speedwagon.config import AbsTabsConfigDataManagement
 
 __all__ = ["TabsTreeModel", "TabStandardItem", "TabProxyModel"]
 

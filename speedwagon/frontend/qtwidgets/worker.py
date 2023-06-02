@@ -30,6 +30,7 @@ class ToolJobManager(speedwagon.worker.AbsToolJobManager):
     """Tool job manager."""
 
     def __init__(self) -> None:
+        """Don't use this."""
         warnings.warn("Don't use", DeprecationWarning)
         super().__init__()
 

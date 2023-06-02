@@ -1,3 +1,5 @@
+"""System tasks."""
+
 import abc
 import os
 
@@ -6,6 +8,8 @@ from speedwagon.workflows.workflow_ocr import OCRWorkflow
 
 
 class AbsSystemTask(abc.ABC):
+    """Abstract base class for creating system tasks."""
+
     @abc.abstractmethod
     def run(self) -> None:
         """Run a startup task."""
@@ -21,22 +25,27 @@ class EnsureBuiltinWorkflowConfigFiles(AbsSystemTask):
     Note: This will be removed as soon as plugins replace all builtin workflows
     that require a config file.
     """
+
     def __init__(self) -> None:
+        """Create a new EnsureBuiltinWorkflowConfigFiles object."""
         super().__init__()
         self.config_file_location_strategy = (
             speedwagon.config.StandardConfigFileLocator()
         )
 
     def description(self) -> str:
+        """Get human-readable information about current task."""
         return "Ensure builtin workflow configs"
 
     def get_config_file(self):
+        """Get config file path."""
         return os.path.join(
             self.config_file_location_strategy.get_app_data_dir(),
             speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
         )
 
     def run(self) -> None:
+        """Run a startup task."""
         yaml_file = self.get_config_file()
 
         getter_strategy = speedwagon.config.WorkflowSettingsYAMLResolver(
@@ -71,14 +80,23 @@ class EnsureBuiltinWorkflowConfigFiles(AbsSystemTask):
 
 
 class EnsureGlobalConfigFiles(AbsSystemTask):
+    """Task to ensure all global config files are located on system."""
+
     def __init__(self, logger) -> None:
+        """Create a new EnsureGlobalConfigFiles object.
+
+        Args:
+            logger: Used to report files being created.
+        """
         super().__init__()
         self.logger = logger
 
     def run(self) -> None:
+        """Run the ensure settings files task."""
         speedwagon.config.config.ensure_settings_files(logger=self.logger)
 
     def description(self) -> str:
+        """Get human-readable information about current task."""
         return (
             "Ensuring global settings files are available and creating "
             "defaults where missing."

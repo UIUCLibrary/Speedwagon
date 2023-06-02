@@ -39,7 +39,7 @@ from speedwagon.job import Workflow
 from speedwagon.workflow import AbsOutputOptionDataType
 from speedwagon.config import StandardConfig, FullSettingsData
 
-__all__ = ["MainWindow3"]
+__all__ = ["MainWindow3", "ToolConsole", "ItemTabsWidget"]
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

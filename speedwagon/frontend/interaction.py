@@ -77,6 +77,7 @@ class AbstractPackageBrowser(AbsUserWidget, ABC):
 
     @staticmethod
     def sort_package(package: collection.Package) -> collection.Package:
+        """Sort package by name alphabetically."""
         sorted_package = copy.copy(package)
         item_name = uiucprescon.packager.Metadata.ITEM_NAME
         sorted_package.items = sorted(
