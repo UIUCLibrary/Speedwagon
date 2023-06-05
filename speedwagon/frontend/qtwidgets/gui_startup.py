@@ -25,11 +25,10 @@ import speedwagon
 from speedwagon.workflow import initialize_workflows
 from speedwagon import config
 from speedwagon.tasks import system as system_tasks
+from speedwagon import plugins
 from . import user_interaction
 from . import dialog
-from .dialog.settings import EntrypointsPluginModelLoader
 from . import runners
-
 if typing.TYPE_CHECKING:
     from speedwagon import runner_strategies
     from speedwagon.frontend.qtwidgets import gui
@@ -37,6 +36,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.job import AbsWorkflow, AbsJobConfigSerializationStrategy
     from speedwagon.config import FullSettingsData
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
+    import pluggy
 
 
 class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
@@ -285,14 +285,16 @@ class StartQtThreaded(AbsGuiStarter):
     def initialize(self) -> None:
         startup_tasks: List[system_tasks.AbsSystemTask] = [
             system_tasks.EnsureGlobalConfigFiles(self.logger),
-            system_tasks.EnsureBuiltinWorkflowConfigFiles()
         ]
-        plugin_strategy = speedwagon.plugins.LoadWhiteListedPluginsOnly()
-        plugin_strategy.whitelisted_entry_points = (
-            speedwagon.config.get_whitelisted_plugins()
+
+        plugin_manager = plugins.get_plugin_manager(
+            plugins.register_whitelisted_plugins
         )
-        for plugin in plugin_strategy.locate():
-            startup_tasks.extend(iter(plugin.plugin_init_tasks))
+
+        for plugin_tasks in \
+                plugin_manager.hook.registered_initialization_tasks():
+            startup_tasks += plugin_tasks
+
         for task in startup_tasks:
             task.run()
 
@@ -408,7 +410,12 @@ class StartQtThreaded(AbsGuiStarter):
             active: bool
 
         def are_there_any_plugins() -> bool:
-            return len(EntrypointsPluginModelLoader.plugin_entry_points()) > 0
+            def no_builtins(manager: pluggy.PluginManager) -> None:
+                manager.load_setuptools_entrypoints('speedwagon.plugins')
+
+            plugin_manager = \
+                speedwagon.plugins.get_plugin_manager(no_builtins)
+            return len(plugin_manager.get_plugins()) > 0
 
         tabs: List[TabData] = [
             TabData("Workflow Settings", _setup_workflow_settings_tab, True),

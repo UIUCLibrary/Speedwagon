@@ -1,5 +1,5 @@
 """Toolkit for generating new workflows."""
-
+from __future__ import annotations
 import abc
 import json
 import os

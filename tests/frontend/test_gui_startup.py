@@ -141,6 +141,15 @@ class TestSingleWorkflowJSON:
             "get_whitelisted_plugins",
             lambda: []
         )
+        workflow = Mock()
+        workflow.name = "Zip Packages"
+
+        workflow_klass = Mock(return_value=workflow)
+        monkeypatch.setattr(
+            speedwagon.job,
+            "available_workflows",
+            lambda: {"Zip Packages": workflow_klass}
+        )
         import tracemalloc
         tracemalloc.start()
         monkeypatch.setattr(
@@ -241,7 +250,15 @@ class TestSingleWorkflowJSON:
             lambda: []
         )
         startup = gui_startup.SingleWorkflowJSON(app=None)
+        workflow = Mock()
+        workflow.name = "Zip Packages"
 
+        workflow_klass = Mock(return_value=workflow)
+        monkeypatch.setattr(
+            speedwagon.job,
+            "available_workflows",
+            lambda: {"Zip Packages": workflow_klass}
+        )
         startup.load_json_string(
             json.dumps(
                 {
@@ -458,6 +475,18 @@ class TestStartQtThreaded:
         )
 
         start = gui_startup.StartQtThreaded(Mock())
+        workflow = Mock(
+            name="workflow instance",
+            workflow_options=Mock(return_value=[])
+        )
+        workflow.name = "Zip Packages"
+
+        workflow_klass = Mock(return_value=workflow)
+        monkeypatch.setattr(
+            speedwagon.job,
+            "available_workflows",
+            lambda: {"Zip Packages": workflow_klass}
+        )
         start.request_settings()
         assert exec_.called is True
 
@@ -482,6 +511,18 @@ class TestStartQtThreaded:
         )
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
+        workflow = Mock(
+            name="workflow instance",
+            workflow_options=Mock(return_value=[])
+        )
+        workflow.name = "Zip Packages"
+
+        workflow_klass = Mock(return_value=workflow)
+        monkeypatch.setattr(
+            speedwagon.job,
+            "available_workflows",
+            lambda: {"Zip Packages": workflow_klass}
+        )
         starter.run()
         assert main_window3.show.called is True
 
@@ -536,7 +577,18 @@ class TestStartQtThreaded:
 
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
+        workflow = Mock(
+            name="workflow instance",
+            workflow_options=Mock(return_value=[])
+        )
+        workflow.name = "Zip Packages"
 
+        workflow_klass = Mock(return_value=workflow)
+        monkeypatch.setattr(
+            speedwagon.job,
+            "available_workflows",
+            lambda: {"Zip Packages": workflow_klass}
+        )
         starter.run()
 
         monkeypatch.setattr(
@@ -567,6 +619,18 @@ class TestStartQtThreaded:
 
         starter.load_custom_tabs = Mock()
         starter.load_all_workflows_tab = Mock()
+        workflow = Mock(
+            name="workflow instance",
+            workflow_options=Mock(return_value=[])
+        )
+        workflow.name = "Zip Packages"
+
+        workflow_klass = Mock(return_value=workflow)
+        monkeypatch.setattr(
+            speedwagon.job,
+            "available_workflows",
+            lambda: {"Zip Packages": workflow_klass}
+        )
         starter.run()
         open_new = Mock()
 
@@ -662,7 +726,7 @@ class TestStartQtThreaded:
 
         # Simulate no valid workflow
         monkeypatch.setattr(
-            speedwagon.startup.job, "available_workflows", lambda: {}
+            speedwagon.job, "available_workflows", lambda: {}
         )
 
         starter.submit_job(
@@ -694,7 +758,7 @@ class TestStartQtThreaded:
         spam_workflow = Mock()
 
         monkeypatch.setattr(
-            speedwagon.startup.job,
+            speedwagon.job,
             "available_workflows",
             lambda: {"spam": spam_workflow}
         )
