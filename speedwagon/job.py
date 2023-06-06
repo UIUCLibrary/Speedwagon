@@ -20,6 +20,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.frontend.interaction import UserRequestFactory
     from speedwagon.tasks import TaskBuilder, Result
     from speedwagon.config import SettingsData, SettingsDataType
+    from pluggy import PluginManager
 
 
 __all__ = [
@@ -302,22 +303,25 @@ class AbsWorkflowFinder(abc.ABC):  # pylint: disable=too-few-public-methods
         """Locate workflows from everywhere."""
 
 
-class FindAllWorkflowsStrategy(AbsWorkflowFinder):
+class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
+
+    def __init__(self, plugin_manager: Optional[PluginManager] = None) -> None:
+        super().__init__()
+        self.plugin_manager: PluginManager = \
+            plugin_manager or self.get_plugin_manager()
+
     @staticmethod
-    def get_plugin_strategy() -> speedwagon.plugins.LoadWhiteListedPluginsOnly:
-        plugin_strategy = speedwagon.plugins.LoadWhiteListedPluginsOnly()
-        plugin_strategy.whitelisted_entry_points = (
-            speedwagon.config.get_whitelisted_plugins()
+    def get_plugin_manager():
+        return speedwagon.plugins.get_plugin_manager(
+            speedwagon.plugins.register_whitelisted_plugins
         )
-        return plugin_strategy
 
     def locate(self) -> Dict[str, Type[Workflow]]:
-        return {
-            **speedwagon.job.find_builtin_workflows(),
-            **speedwagon.plugins.find_plugin_workflows(
-                self.get_plugin_strategy()
-            ),
-        }
+        all_workflows = {}
+        for plugin_workflows in \
+                self.plugin_manager.hook.registered_workflows():
+            all_workflows = {**all_workflows, **plugin_workflows}
+        return all_workflows
 
 
 def available_workflows(strategy: Optional[AbsWorkflowFinder] = None) -> dict:
@@ -329,7 +333,7 @@ def available_workflows(strategy: Optional[AbsWorkflowFinder] = None) -> dict:
         Dictionary of all workflow
 
     """
-    strategy = strategy or FindAllWorkflowsStrategy()
+    strategy = strategy or FindAllWorkflowsPluggyStrategy()
     return strategy.locate()
 
 

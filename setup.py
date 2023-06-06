@@ -18,6 +18,7 @@ if __name__ == "__main__":
             'typing-extensions;python_version<"3.11"',
             'lxml',
             "requests",
+            "pluggy>=1.0",
             "py3exiv2bind>=0.1.10",
         ],
         packages=[
@@ -32,7 +33,6 @@ if __name__ == "__main__":
             "speedwagon.tasks",
             "speedwagon.workflows",
         ],
-        # setup_requires=['pytest-runner'],
         tests_require=[
             'pytest',
             'pytest-mock'

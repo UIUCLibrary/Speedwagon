@@ -21,7 +21,6 @@ from typing import Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional
 import speedwagon
 import speedwagon.config
 
-from speedwagon import job
 from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
 
 try:
@@ -30,6 +29,7 @@ except ImportError:  # pragma: no cover
     from typing_extensions import Final  # type: ignore
 
 if TYPE_CHECKING:
+    from speedwagon import job
     import speedwagon.frontend.qtwidgets.gui_startup
 
 

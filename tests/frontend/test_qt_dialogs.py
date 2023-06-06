@@ -995,31 +995,6 @@ myworkflow = True
             add_entry_point.assert_called_once_with(entry_point, True)
 
 
-class TestEntrypointsPluginModelLoader:
-    def test_load_plugins_into_model(self, monkeypatch):
-        sample_ini_file = "config.ini"
-        model = models.PluginActivationModel()
-        assert model.rowCount() == 0
-        loader_strategy = \
-            settings.EntrypointsPluginModelLoader(sample_ini_file)
-
-        monkeypatch.setattr(
-            loader_strategy,
-            "plugin_entry_points",
-            Mock(return_value=[
-                Mock()
-            ])
-        )
-        read_settings_file_plugins = MagicMock()
-        monkeypatch.setattr(
-            speedwagon.config.plugins,
-            "read_settings_file_plugins",
-            read_settings_file_plugins
-        )
-        loader_strategy.load_plugins_into_model(model)
-        assert model.rowCount() > 0
-
-
 class TestSettingsDialog:
     def test_okay_button_active_only_when_modified(self, qtbot):
         dialog_box = settings.SettingsDialog()
@@ -1133,7 +1108,10 @@ class TestSettingsDialog:
     # dialog_box.exec()
 
 class TestTabDataModelYAMLLoader:
-    def test_prep_data(self):
+    def test_prep_data(self, monkeypatch):
+        def available_workflows():
+            return {}
+        monkeypatch.setattr(speedwagon.job, "available_workflows", available_workflows)
         loader = TabDataModelYAMLLoader()
         class DummyStrategy(speedwagon.config.tabs.AbsTabsConfigDataManagement):
             def data(self):
