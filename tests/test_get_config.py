@@ -208,7 +208,7 @@ def test_find_no_missing_configs(tmpdir, monkeypatch):
     config_file = str(os.path.join(tmpdir, "config.ini"))
     with monkeypatch.context() as mp:
         mp.setattr(
-            speedwagon.config,
+            speedwagon.config.config,
             "get_platform_settings",
             lambda: {'user_data_directory': tmpdir.strpath}
         )
