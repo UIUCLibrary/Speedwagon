@@ -3,49 +3,44 @@ def upload(args = [:]){
     def clientDir = args['clientDir'] ? args['clientDir']: './devpi'
     def index = args['index']
     def devpiExec = args['devpiExec'] ? args['devpiExec']: "devpi"
-    withCredentials([usernamePassword(
-                        credentialsId: credentialsId,
-                        passwordVariable: 'DEVPI_PASSWORD',
-                        usernameVariable: 'DEVPI_USERNAME'
-                    )
-                        ])
-    {
-        withEnv([
-                "DEVPI_SERVER=${args['server']}",
-                "CLIENT_DIR=${clientDir}",
-                "DEVPI=${devpiExec}"
-            ]) {
-            withEnv([
-                "INDEX=${args['server']}/${DEVPI_USERNAME}/${index}",
-            ]) {
-                if(isUnix()){
-                    sh(label: 'Logging into DevPi',
-                       script: '''$DEVPI use $DEVPI_SERVER --clientdir $CLIENT_DIR
-                                  $DEVPI login $DEVPI_USERNAME --password=$DEVPI_PASSWORD --clientdir $CLIENT_DIR
-                                  '''
-                       )
-               } else {
-                   bat(label: 'Logging into DevPi',
-                       script: '''%DEVPI% use %DEVPI_SERVER% --clientdir %CLIENT_DIR%
-                                  %DEVPI% login %DEVPI_USERNAME% --password %DEVPI_PASSWORD% --clientdir %CLIENT_DIR%
-                                  '''
-                       )
-               }
+    withEnv([
+            "DEVPI_INDEX=${index}",
+            "DEVPI_SERVER=${args['server']}",
+            "CLIENT_DIR=${clientDir}",
+            "DEVPI=${devpiExec}"
+        ]) {
+        withCredentials([usernamePassword(
+                            credentialsId: credentialsId,
+                            passwordVariable: 'DEVPI_PASSWORD',
+                            usernameVariable: 'DEVPI_USERNAME'
+                        )
+                            ])
+        {
+            if(isUnix()){
+                sh(label: "Logging into DevPi",
+                   script: '''$DEVPI use $DEVPI_SERVER --clientdir $CLIENT_DIR
+                              $DEVPI login $DEVPI_USERNAME --password=$DEVPI_PASSWORD --clientdir $CLIENT_DIR
+                              '''
+                   )
+           } else {
+               bat(label: "Logging into DevPi",
+                   script: '''%DEVPI% use %DEVPI_SERVER% --clientdir %CLIENT_DIR%
+                              %DEVPI% login %DEVPI_USERNAME% --password%$DEVPI_PASSWORD% --clientdir %CLIENT_DIR%
+                              '''
+                   )
            }
-           withEnv(["INDEX=/${DEVPI_USERNAME}/${index}"]){
-               if(isUnix()){
-                    sh(label: 'Uploading to DevPi Staging',
-                       script: '''$DEVPI use --clientdir $CLIENT_DIR --debug
-                                  $DEVPI upload --from-dir dist --clientdir $CLIENT_DIR --debug --index $INDEX
-                                  '''
-                    )
-               } else {
-                   bat(label: 'Uploading to DevPi Staging',
-                       script: '''%DEVPI% use %INDEX% --clientdir %CLIENT_DIR%
-                                  %DEVPI% upload --from-dir dist --clientdir %CLIENT_DIR%
-                                  '''
-                       )
-               }
+           if(isUnix()){
+                sh(label: "Uploading to DevPi Staging",
+                   script: '''$DEVPI use /$DEVPI_USERNAME/$DEVPI_INDEX --clientdir $CLIENT_DIR
+                              $DEVPI upload --from-dir dist --clientdir $CLIENT_DIR
+                              '''
+                )
+           } else {
+               bat(label: "Uploading to DevPi Staging",
+                   script: '''%DEVPI% use /%DEVPI_USERNAME%/%DEVPI_INDEX% --clientdir %CLIENT_DIR%
+                              %DEVPI% upload --from-dir dist --clientdir %CLIENT_DIR%
+                              '''
+                   )
            }
        }
     }
