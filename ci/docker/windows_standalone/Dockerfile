@@ -95,10 +95,13 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
+    # Using Wix version 3 because of an issue with CPack. See the following links for more details
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/23910
+    # https://wixtoolset.org/docs/releasenotes/#v4
     # Install WiX toolset for making .msi installers and put the tools on the path
 RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ;`
     Register-PackageSource -Name MyNuGet -Location https://www.nuget.org/api/v2 -ProviderName NuGet ;`
-    Install-Package -Name WiX -Source MyNuGet -Force ; `
+    Install-Package -Name WiX -RequiredVersion 3.11.2 -Source MyNuGet -Force ; `
     $WIX_NUGET_PATH = $(Split-Path((Get-Package -Name Wix)[0].Source));`
     $WIX_PATH ="$((Get-Childitem -Path $WIX_NUGET_PATH -Include wix.dll -File -Recurse)[0].DirectoryName)" ; `
     $env:Path += $WIX_PATH ; `
