@@ -95,19 +95,18 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
-    # Using Wix version 3 because of an issue with CPack. See the following links for more details
-    # https://gitlab.kitware.com/cmake/cmake/-/issues/23910
-    # https://wixtoolset.org/docs/releasenotes/#v4
     # Install WiX toolset for making .msi installers and put the tools on the path
-RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force ;`
+ARG NUGET_PACKAGE_PATH=c:/nuget_packages/
+COPY ci/docker/windows_standalone/nuget/packages.config c:\temp\packages.config
+COPY ci/docker/windows_standalone/nuget/verify_installed_correctly.ps1 c:\temp\verify_installed_correctly.ps1
+RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.208 -Force ;`
     Register-PackageSource -Name MyNuGet -Location https://www.nuget.org/api/v2 -ProviderName NuGet ;`
-    Install-Package -Name WiX -RequiredVersion 3.11.2 -Source MyNuGet -Force ; `
-    $WIX_NUGET_PATH = $(Split-Path((Get-Package -Name Wix)[0].Source));`
-    $WIX_PATH ="$((Get-Childitem -Path $WIX_NUGET_PATH -Include wix.dll -File -Recurse)[0].DirectoryName)" ; `
+    nuget.exe install c:\temp\packages.config -OutputDirectory ${Env:NUGET_PACKAGE_PATH}; `
+    $WIX_PATH ="$((Get-Childitem -Path ${Env:NUGET_PACKAGE_PATH} -Include wix.dll -File -Recurse)[0].DirectoryName)" ; `
     $env:Path += $WIX_PATH ; `
     [Environment]::SetEnvironmentVariable('Path', $env:Path, [EnvironmentVariableTarget]::Machine ) ;`
-    Write-Host "Updated path to = $env:Path"
-
+    Write-Host "Updated path to = $env:Path";`
+    c:\temp\verify_installed_correctly.ps1
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ADD requirements.txt requirements-dev.txt c:\temp\
