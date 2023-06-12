@@ -192,7 +192,7 @@ def test_find_missing_configs(tmpdir, monkeypatch):
     config_file = str(os.path.join(tmpdir, "config.ini"))
     with monkeypatch.context() as mp:
         mp.setattr(
-            speedwagon.config, "get_platform_settings", lambda: {'user_data_directory': tmpdir.strpath}
+            speedwagon.config.config, "get_platform_settings", lambda: {'user_data_directory': tmpdir.strpath}
         )
         speedwagon.config.config.generate_default(config_file)
     keys_that_dont_exist = {"spam", "bacon", "eggs"}
@@ -208,7 +208,7 @@ def test_find_no_missing_configs(tmpdir, monkeypatch):
     config_file = str(os.path.join(tmpdir, "config.ini"))
     with monkeypatch.context() as mp:
         mp.setattr(
-            speedwagon.config,
+            speedwagon.config.config,
             "get_platform_settings",
             lambda: {'user_data_directory': tmpdir.strpath}
         )
@@ -229,7 +229,7 @@ def test_add_empty_keys_if_missing(tmpdir, monkeypatch):
     config_file = str(os.path.join(tmpdir, "config.ini"))
     with monkeypatch.context() as mp:
         mp.setattr(
-            speedwagon.config, "get_platform_settings", lambda: {'user_data_directory': tmpdir.strpath}
+            speedwagon.config.config, "get_platform_settings", lambda: {'user_data_directory': tmpdir.strpath}
         )
         speedwagon.config.config.generate_default(config_file)
     keys_that_dont_exist = {"spam", "bacon"}

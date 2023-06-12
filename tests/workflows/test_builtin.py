@@ -21,11 +21,13 @@ class TestEnsureBuiltinWorkflowConfigFiles:
             manager,
             speedwagon.config.workflow.AbsWorkflowSettingsManager
         )
-    def test_run_save_workflow_settings(self, task):
+    def test_run_save_workflow_settings(self, task, monkeypatch):
         manager = Mock(
             name='settings_manager',
             get_workflow_settings=Mock(name='get_workflow_settings', return_value={})
         )
+        monkeypatch.setattr(builtin.EnsureBuiltinWorkflowConfigFiles, "default_tesseract_data_path", lambda *args: ".")
+
         task.get_settings_manager = \
             Mock(return_value=manager)
         task.run()

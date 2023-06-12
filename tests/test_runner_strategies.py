@@ -572,7 +572,7 @@ class TestBackgroundJobManager:
     @pytest.mark.filterwarnings(
         "ignore::pytest.PytestUnhandledThreadExceptionWarning"
     )
-    def test_exception_caught(self):
+    def test_exception_caught(self, monkeypatch):
         class BadTask(speedwagon.tasks.Subtask):
 
             def work(self) -> bool:
@@ -591,7 +591,11 @@ class TestBackgroundJobManager:
                 return [
                     {"dummy": "yes"}
                 ]
-
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            "get_app_data_dir",
+            lambda *_: "."
+        )
         with pytest.raises(FileNotFoundError):
             with runner_strategies.BackgroundJobManager() as manager:
                 manager.valid_workflows = {"bacon": BaconWorkflow}
