@@ -6,7 +6,7 @@ import os
 import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
-
+import pathlib
 import speedwagon.config
 gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
@@ -43,7 +43,8 @@ def test_standalone_tab_editor_loads(qtbot, monkeypatch):
 
 
 class TestTabsEditorApp:
-    def test_on_okay_closes(self, qtbot):
+    def test_on_okay_closes(self, qtbot, monkeypatch):
+        monkeypatch.setattr(pathlib.Path, "home", lambda : '.')
         editor = TabsEditorApp()
         qtbot.addWidget(editor)
         editor.close = Mock()
@@ -51,6 +52,7 @@ class TestTabsEditorApp:
         assert editor.close.called is True
 
     def test_save_on_modify(self, qtbot, monkeypatch):
+        monkeypatch.setattr(pathlib.Path, "home", lambda : '.')
         app = TabsEditorApp()
         qtbot.addWidget(app)
         editor: TabEditor = app.editor
@@ -784,6 +786,7 @@ class TestStartQtThreaded:
             "write_data_to_file",
             Mock()
         )
+        monkeypatch.setattr(pathlib.Path, "home", lambda : '.')
         start.initialize()
 
         expected = {

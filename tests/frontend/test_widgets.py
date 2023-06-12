@@ -1,6 +1,6 @@
 import os
 from unittest.mock import Mock
-
+import pathlib
 import pytest
 
 
@@ -518,14 +518,16 @@ class TestWorkspace:
                 return []
         return Spam
 
-    def test_show_workflow_name(self, qtbot, sample_workflow_klass):
+    def test_show_workflow_name(self, qtbot, sample_workflow_klass, monkeypatch):
+        monkeypatch.setattr(pathlib.Path, "home", lambda : '.')
         workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
         workspace.app_settings_lookup_strategy = Mock()
         workspace.set_workflow(sample_workflow_klass)
         assert workspace.workflow_name == \
                sample_workflow_klass.name
 
-    def test_show_workflow_description(self, qtbot, sample_workflow_klass):
+    def test_show_workflow_description(self, qtbot, sample_workflow_klass, monkeypatch):
+        monkeypatch.setattr(pathlib.Path, "home", lambda : '.')
         workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
         workspace.app_settings_lookup_strategy = Mock()
         workspace.set_workflow(sample_workflow_klass)

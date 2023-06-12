@@ -1,6 +1,6 @@
 import warnings
 from unittest.mock import MagicMock, Mock
-
+import pathlib
 import pytest
 
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
@@ -407,11 +407,15 @@ class TestSelectWorkflow:
 
 
 class TestWorkflowsTab3:
+    @pytest.fixture()
+    def tab(self, qtbot, monkeypatch):
+        monkeypatch.setattr(pathlib.Path, "home", lambda : '.')
+        return qtwidgets.tabs.WorkflowsTab3()
     def test_set_current_workflow_settings_before_workflow_raises(
             self,
-            qtbot
+            qtbot,
+            tab
     ):
-        tab = qtwidgets.tabs.WorkflowsTab3()
         with pytest.raises(ValueError):
             tab.set_current_workflow_settings({"does not exists": True})
 
@@ -429,7 +433,7 @@ class TestWorkflowsTab3:
         # tab.workflows = {"spam": Spam}
         assert tab.workflows["spam"] == Spam
 
-    def test_set_current_workflow(self, qtbot):
+    def test_set_current_workflow(self, qtbot, monkeypatch, tab):
         class Spam(speedwagon.Workflow):
             name = "spam"
 
@@ -440,7 +444,6 @@ class TestWorkflowsTab3:
             def discover_task_metadata(self, *args, **kwargs):
                 return []
 
-        tab = qtwidgets.tabs.WorkflowsTab3()
         tab.app_settings_lookup_strategy = Mock(
             settings=Mock(
                 return_value={"GLOBAL": {"spam": "eggs"}}
@@ -475,14 +478,13 @@ class TestWorkflowsTab3:
         tab.set_model(model)
         assert "dummy 1" in tab.workflows
 
-    def test_workflow_selected(self, qtbot):
+    def test_workflow_selected(self, qtbot, tab):
         class DummyWorkflow(speedwagon.Workflow):
             name = "dummy 1"
             description = "Dummy Description"
             def discover_task_metadata(self, *args, **kwargs):
                 return []
 
-        tab = qtwidgets.tabs.WorkflowsTab3()
         tab.add_workflow(DummyWorkflow)
         tab.workspace.app_settings_lookup_strategy = \
             Mock(
@@ -498,7 +500,7 @@ class TestWorkflowsTab3:
                 ).center()
             )
 
-    def test_workflow_selected_updates_workspace(self, qtbot):
+    def test_workflow_selected_updates_workspace(self, qtbot, tab):
         class DummyWorkflow(speedwagon.Workflow):
             name = "dummy 1"
             description = "Dummy Description"
@@ -506,7 +508,6 @@ class TestWorkflowsTab3:
             def discover_task_metadata(self, *args, **kwargs):
                 return []
 
-        tab = qtwidgets.tabs.WorkflowsTab3()
         tab.workspace.app_settings_lookup_strategy = Mock(
             speedwagon.config.AbsConfigSettings,
             settings=Mock(return_value={})
