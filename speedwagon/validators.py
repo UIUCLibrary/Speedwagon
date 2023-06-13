@@ -17,7 +17,7 @@ class AbsOptionValidator(abc.ABC):
         """Get reason for is_valid.
 
         Args:
-            **user_data:
+            **user_data: user data to inspect.
 
         Returns:
             returns a message explaining why something isn't valid, otherwise

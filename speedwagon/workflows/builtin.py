@@ -1,3 +1,5 @@
+"""Built-in workflows."""
+
 from __future__ import annotations
 import os
 import typing
@@ -10,9 +12,12 @@ from speedwagon.workflows.workflow_ocr import OCRWorkflow
 if typing.TYPE_CHECKING:
     from speedwagon import Workflow
 
+__all__ = ['registered_workflows', 'registered_initialization_tasks']
+
 
 @hookimpl
 def registered_workflows() -> Dict[str, Type[Workflow]]:
+    """Get workflows registered to this plugin."""
     root = os.path.dirname(__file__)
     finder = speedwagon.job.WorkflowFinder(root)
     return finder.locate()
@@ -20,6 +25,7 @@ def registered_workflows() -> Dict[str, Type[Workflow]]:
 
 @hookimpl
 def registered_initialization_tasks() -> List[AbsSystemTask]:
+    """Get initializing tasks registered to this plugin."""
     return [EnsureBuiltinWorkflowConfigFiles()]
 
 

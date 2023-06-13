@@ -1,3 +1,5 @@
+"""Start up gui windows."""
+
 from __future__ import annotations
 import abc
 import collections
@@ -38,13 +40,23 @@ if typing.TYPE_CHECKING:
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
     import pluggy
 
+__all__ = [
+    'AbsGuiStarter',
+    'StartQtThreaded',
+    'SingleWorkflowJSON'
+]
+
 
 class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
+    """Abstract base class to starting a gui application."""
+
     def __init__(self, app) -> None:
+        """Create a new gui starter object."""
         super().__init__()
         self.app = app
 
     def run(self) -> int:
+        """Start gui application."""
         return self.start_gui(self.app)
 
     @abc.abstractmethod
@@ -81,7 +93,7 @@ def save_workflow_config(
 class AbsResolveSettingsStrategy(abc.ABC):  # pylint: disable=R0903
     @abc.abstractmethod
     def get_settings(self) -> FullSettingsData:
-        """Get full settings"""
+        """Get full settings."""
 
 
 class ResolveSettings(AbsResolveSettingsStrategy):  # pylint: disable=R0903
@@ -206,7 +218,10 @@ def _setup_plugins_tab(
 
 
 class StartQtThreaded(AbsGuiStarter):
+    """Start a Qt Widgets base app using threads for job workers."""
+
     def __init__(self, app: Optional[QtWidgets.QApplication] = None) -> None:
+        """Create a new starter object."""
         super().__init__(app)
         self.settings_resolver: AbsResolveSettingsStrategy = ResolveSettings()
         self.startup_settings: FullSettingsData = {"GLOBAL": {"debug": False}}
@@ -242,6 +257,7 @@ class StartQtThreaded(AbsGuiStarter):
             AbsJobConfigSerializationStrategy
         ] = None,
     ) -> None:
+        """Import workflow configuration to parent."""
         serialization_strategy = (
             serialization_strategy or speedwagon.job.ConfigJSONSerialize()
         )
@@ -274,15 +290,18 @@ class StartQtThreaded(AbsGuiStarter):
             self.logger.warning("No help link available. Reason: %s", error)
 
     def ensure_settings_files(self) -> None:
+        """Ensure settings files exists."""
         config.config.ensure_settings_files(logger=self.logger)
 
     def resolve_settings(self) -> FullSettingsData:
+        """Resolve settings."""
         settings = self.settings_resolver.get_settings()
         self.platform_settings._data.update(settings.get("GLOBAL", {}))
         self.startup_settings = settings
         return self.startup_settings
 
     def initialize(self) -> None:
+        """Initialize the application before opening the main window."""
         startup_tasks: List[system_tasks.AbsSystemTask] = [
             system_tasks.EnsureGlobalConfigFiles(self.logger),
         ]
@@ -301,6 +320,7 @@ class StartQtThreaded(AbsGuiStarter):
         self.startup_settings = self.resolve_settings()
 
     def load_workflows(self) -> None:
+        """Load workflows."""
         if self.windows is None:
             return
         config_strategy = config.StandardConfigFileLocator()
@@ -338,6 +358,7 @@ class StartQtThreaded(AbsGuiStarter):
         application: gui.MainWindow3,
         loaded_workflows: typing.Dict[str, Type[speedwagon.job.Workflow]],
     ) -> None:
+        """Load tab that contains all workflows."""
         print("Loading Tab All")
         self.logger.debug("Loading Tab All")
         application.add_tab(
@@ -350,6 +371,7 @@ class StartQtThreaded(AbsGuiStarter):
         tabs_file: str,
         loaded_workflows: typing.Dict[str, Type[speedwagon.job.Workflow]],
     ) -> None:
+        """Load custom tabs."""
         tabs_file_size = os.path.getsize(tabs_file)
         if tabs_file_size > 0:
             try:
@@ -368,6 +390,7 @@ class StartQtThreaded(AbsGuiStarter):
                 )
 
     def save_log(self, parent: QtWidgets.QWidget) -> None:
+        """Action for user to save logs as a file."""
         data = self._log_data.getvalue()
         epoch_in_minutes = int(time.time() / 60)
         while True:
@@ -397,11 +420,13 @@ class StartQtThreaded(AbsGuiStarter):
     def request_system_info(
         parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
+        """Action to open up system info dialog box."""
         dialog.dialogs.SystemInfoDialog(parent).exec()
 
     def request_settings(
         self, parent: Optional[QtWidgets.QWidget] = None
     ) -> None:
+        """Open dialog box for settings."""
         class TabData(typing.NamedTuple):
             name: str
             setup_function: Callable[
@@ -447,6 +472,7 @@ class StartQtThreaded(AbsGuiStarter):
         config_dialog.exec()
 
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
+        """Start gui application."""
         original_hook = sys.excepthook
 
         # without this, unhandled exceptions won't close the application
@@ -476,6 +502,7 @@ class StartQtThreaded(AbsGuiStarter):
     def build_main_window(
         self, job_manager
     ) -> speedwagon.frontend.qtwidgets.gui.MainWindow3:
+        """Build main window widget."""
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
         window.console.attach_logger(self.logger)
 
@@ -518,6 +545,7 @@ class StartQtThreaded(AbsGuiStarter):
         dialog_box: dialogs.WorkflowProgress,
         events: runner_strategies.AbsEvents,
     ) -> None:
+        """Abort job."""
         dialog_box.stop()
         events.stop()
 
@@ -528,6 +556,7 @@ class StartQtThreaded(AbsGuiStarter):
         pre_results: List[typing.Any],
         wait_condition: Optional[threading.Condition] = None,
     ) -> Optional[Dict[str, typing.Any]]:
+        """Request more information from the user."""
         self._request_window.exc = None
         waiter = wait_condition or threading.Condition()
         with waiter:
@@ -546,6 +575,7 @@ class StartQtThreaded(AbsGuiStarter):
         options: Dict[str, typing.Any],
         main_app: typing.Optional[gui.MainWindow3] = None,
     ) -> None:
+        """Submit job."""
         workflow_class = speedwagon.job.available_workflows().get(
             workflow_name
         )
@@ -709,7 +739,6 @@ def standalone_tab_editor(
     app: Optional[QtWidgets.QApplication] = None,
 ) -> None:
     """Launch standalone tab editor app."""
-
     print("Loading settings")
     app = app or QtWidgets.QApplication(sys.argv)
 
@@ -741,9 +770,10 @@ class SingleWorkflowJSON(AbsGuiStarter):
     """
 
     def __init__(self, app, logger: Optional[logging.Logger] = None) -> None:
-        """Create a environment where the workflow is loaded from a json file.
+        """Create an environment where the workflow is loaded from a json file.
 
         Args:
+            app: Qt application
             logger: Optional Logger, defaults to default logger for __name__.
         """
         super().__init__(app)
