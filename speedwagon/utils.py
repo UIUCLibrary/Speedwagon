@@ -14,8 +14,8 @@ def log_config(
     """Configure logs so they get forwarded to the speedwagon console.
 
     Args:
-        logger:
-        callback:
+        logger: logger to use.
+        callback: callback function handle messages.
 
     """
     try:

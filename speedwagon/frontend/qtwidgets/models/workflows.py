@@ -8,24 +8,18 @@ from typing import Type, Optional, List, cast, Union, overload, Any
 from PySide6 import QtCore
 
 import speedwagon
-from .common import AbsWorkflowItemData, WorkflowItemData, WorkflowClassRole
+from .common import (
+    AbsWorkflowItemData,
+    WorkflowItemData,
+    WorkflowClassRole,
+    AbsWorkflowList,
+)
 from .tabs import TabStandardItem, TabsTreeModel
 
 __all__ = [
-    "AbsWorkflowList",
     "WorkflowList",
     "WorkflowListProxyModel",
 ]
-
-
-class AbsWorkflowList(  # pylint: disable=too-few-public-methods
-    QtCore.QAbstractListModel
-):
-    """Abstract workflow list model."""
-
-    def add_workflow(self, workflow: Type[speedwagon.Workflow]) -> None:
-        """Add a workflow to the model."""
-        raise NotImplementedError
 
 
 class WorkflowList(AbsWorkflowList):

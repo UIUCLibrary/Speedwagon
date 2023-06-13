@@ -10,7 +10,7 @@ import contextlib
 import logging
 import logging.handlers
 import typing
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Type
 
 
 try:  # pragma: no cover
@@ -55,6 +55,11 @@ class ToolConsole(QtWidgets.QWidget):
     _console: QtWidgets.QTextBrowser
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Create a new tool console object.
+
+        Args:
+            parent: Parent widget.
+        """
         super().__init__(parent)
 
         self.log_handler = logging_helpers.QtSignalLogHandler(self)
@@ -93,21 +98,28 @@ class ToolConsole(QtWidgets.QWidget):
         self,
         message: str,
     ) -> None:
-        # self.cursor.movePosition(self.cursor.MoveOperation.End)
+        """Add message to console.
+
+        Args:
+            message: message text.
+
+        """
         self.cursor.beginEditBlock()
-        # self._console.setTextCursor(self.cursor)
         self.cursor.insertHtml(message)
         self.cursor.endEditBlock()
 
     @property
     def text(self) -> str:
+        """Get the complete text in the console."""
         return self._log.toPlainText()
 
     def attach_logger(self, logger: logging.Logger) -> None:
+        """Attach Python logger."""
         logger.addHandler(self.log_handler)
         self._attached_logger = logger
 
     def detach_logger(self) -> None:
+        """Detach Python logger."""
         if self._attached_logger is not None:
             self.log_handler.flush()
             self._attached_logger.removeHandler(self.log_handler)
@@ -124,19 +136,27 @@ class ItemTabsUI(QtWidgets.QWidget):
 
 
 class ItemTabsWidget(ItemTabsUI):
+    """Widget to hold all item tabs."""
+
     tabs: QtWidgets.QTabWidget
     submit_job = QtCore.Signal(str, dict)
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Create new widget.
+
+        Args:
+            parent: parent widget.
+        """
         super().__init__(parent)
         self.layout().addWidget(self.tabs)
         self._model = models.TabsTreeModel()
         self._model.modelReset.connect(self._model_reset)
 
-    def model(self):
+    def model(self) -> QtCore.QAbstractItemModel:
+        """Get module used by widget."""
         return self._model
 
-    def _model_reset(self):
+    def _model_reset(self) -> None:
         self.tabs.clear()
         tab_count = self._model.rowCount()
         for tab_row_id in range(tab_count):
@@ -162,20 +182,27 @@ class ItemTabsWidget(ItemTabsUI):
             self.tabs.addTab(workflows_tab, tab_name)
 
     def add_tab(self, tab: QtWidgets.QWidget, name: str) -> None:
+        """Add tab widget."""
         self.tabs.addTab(tab, name)
 
-    def add_workflows_tab(self, name, workflows):
+    def add_workflows_tab(
+        self, name: str, workflows: List[Type[speedwagon.Workflow]]
+    ) -> None:
+        """Add workflow tab."""
         self._model.append_workflow_tab(name, workflows)
 
     def clear_tabs(self) -> None:
+        """Clear all tabs."""
         self._model.clear()
         self._model_reset()
 
     def count(self) -> int:
+        """Get the number of tabs."""
         return self.tabs.count()
 
     @property
     def current_tab(self) -> Optional[qtwidgets.tabs.WorkflowsTab3]:
+        """Return the active tab."""
         return typing.cast(
             Optional[qtwidgets.tabs.WorkflowsTab3], self.tabs.currentWidget()
         )
@@ -205,10 +232,20 @@ class MainWindow3UI(QtWidgets.QMainWindow):
 
 
 class MainWindow3(MainWindow3UI):
+    """Main window widget.
+
+    Version 3
+    """
+
     submit_job = QtCore.Signal(str, dict)
     export_job_config = QtCore.Signal(str, dict, QtWidgets.QWidget)
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Create a new widget.
+
+        Args:
+            parent: parent widget.
+        """
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.job_manager: Optional[
@@ -237,6 +274,7 @@ class MainWindow3(MainWindow3UI):
         self.submit_job.connect(lambda *args: print("got it"))
 
     def update_settings(self) -> None:
+        """Update settings."""
         settings = self._get_settings()
         global_settings = settings.get("GLOBAL")
         if global_settings:
@@ -268,20 +306,24 @@ class MainWindow3(MainWindow3UI):
             )
 
     def locate_tab_index_by_name(self, name: str) -> typing.Optional[int]:
+        """Get tab index by name."""
         for index in range(self.tab_widget.tabs.count()):
             if self.tab_widget.tabs.tabText(index) == name:
                 return index
         return None
 
     def clear_tabs(self) -> None:
+        """Clear all tabs."""
         self.tab_widget.clear_tabs()
 
     def add_tab(
         self, tab_name: str, workflows: typing.Dict[str, typing.Type[Workflow]]
     ) -> None:
-        self.tab_widget.add_workflows_tab(tab_name, workflows.values())
+        """Add tab."""
+        self.tab_widget.add_workflows_tab(tab_name, list(workflows.values()))
 
     def set_active_workflow(self, workflow_name: str) -> None:
+        """Set active workflow."""
         tab_index = self.locate_tab_index_by_name("All")
         if tab_index is None:
             raise AssertionError("Missing All tab")
@@ -293,6 +335,7 @@ class MainWindow3(MainWindow3UI):
     def set_current_workflow_settings(
         self, data: typing.Dict[str, typing.Any]
     ) -> None:
+        """Set current workflow settings."""
         tab_index = self.locate_tab_index_by_name("All")
         if tab_index is None:
             raise AssertionError("Missing All tab")
@@ -301,6 +344,7 @@ class MainWindow3(MainWindow3UI):
             current_tab.set_current_workflow_settings(data)
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        """Run closing event."""
         self.console.detach_logger()
         super().closeEvent(event)
 

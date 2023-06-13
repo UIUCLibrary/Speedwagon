@@ -69,7 +69,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
         self.settings_changed.connect(self._update_okay_button)
         self.settings_changed.emit()
 
-    def model(self) -> QtCore.QAbstractItemModel:
+    def model(self) -> workflow_models.AbsWorkflowList:
         """Get the model used by the current tab."""
         return self._model
 

@@ -90,15 +90,15 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         Use the task_builder parameter's add_subtask method to include a
         :py:class:`speedwagon.Subtask()`
 
-            Example:
-                .. code-block::
+        Example:
+            .. code-block::
 
-                    title_page = job_args['title_page']
-                    source = job_args['source_path']
-                    package_id = job_args['package_id']
+                title_page = job_args['title_page']
+                source = job_args['source_path']
+                package_id = job_args['package_id']
 
-                    task_builder.add_subtask(
-                        subtask=MakeYamlTask(package_id, source, title_page))
+                task_builder.add_subtask(
+                    subtask=MakeYamlTask(package_id, source, title_page))
 
         """
 
@@ -135,7 +135,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
             This should be rewritten to be better.
 
         Args:
-            **user_args:
+            **user_args: user arguments
 
         Returns:
             Returns True on valid else returns False.

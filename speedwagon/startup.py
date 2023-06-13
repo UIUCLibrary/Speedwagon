@@ -55,7 +55,7 @@ class CustomTabsFileReader:
         """Load all workflows supported.
 
         Args:
-            all_workflows:
+            all_workflows: Source workflows referred to by file.
         """
         self.all_workflows = all_workflows
 

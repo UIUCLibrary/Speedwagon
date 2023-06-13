@@ -28,7 +28,7 @@ class JobCancelled(Exception):
         """Indicate a job was cancelled.
 
         Args:
-            *args:
+            *args: exception args
             expected: If the job was cancelled on purpose or not, such as a
                 failure.
         """

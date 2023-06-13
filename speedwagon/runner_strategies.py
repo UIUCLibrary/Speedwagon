@@ -514,7 +514,7 @@ class TaskScheduler:
 
         Args:
             workflow: Workflow to run
-            options:
+            options: Options used with workflow
 
         Yields:
             Yields subtasks for a workflow.

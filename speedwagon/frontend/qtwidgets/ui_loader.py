@@ -54,6 +54,7 @@ class UiLoader(QUiLoader):  # pylint: disable=too-few-public-methods
 def load_ui(
     ui_file: str, base_instance: typing.Optional[QtWidgets.QWidget] = None
 ) -> QtWidgets.QWidget:
+    """Load ui file widget and apply it to base instance."""
     loader = UiLoader(base_instance)
     loader.register_custom_widget(ToolConsole)
     loader.register_custom_widget(ItemTabsWidget)
