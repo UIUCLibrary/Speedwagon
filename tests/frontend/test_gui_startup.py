@@ -16,6 +16,8 @@ from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEdi
 from speedwagon.frontend.qtwidgets.models.tabs import AbsLoadTabDataModelStrategy
 from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp
 from speedwagon.frontend.qtwidgets.models import tabs as tab_models
+from speedwagon.config import StandardConfigFileLocator
+import speedwagon.workflows.builtin
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
@@ -43,15 +45,21 @@ def test_standalone_tab_editor_loads(qtbot, monkeypatch):
 
 
 class TestTabsEditorApp:
-    def test_on_okay_closes(self, qtbot):
-        editor = TabsEditorApp()
-        qtbot.addWidget(editor)
-        editor.close = Mock()
-        editor.on_okay()
-        assert editor.close.called is True
+    @pytest.fixture()
+    def app(self, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
+        )
+        return TabsEditorApp()
+    def test_on_okay_closes(self, qtbot, app):
+        qtbot.addWidget(app)
+        app.close = Mock()
+        app.on_okay()
+        assert app.close.called is True
 
-    def test_save_on_modify(self, qtbot, monkeypatch):
-        app = TabsEditorApp()
+    def test_save_on_modify(self, qtbot, monkeypatch, app):
         qtbot.addWidget(app)
         editor: TabEditor = app.editor
 
@@ -487,6 +495,11 @@ class TestStartQtThreaded:
             "available_workflows",
             lambda: {"Zip Packages": workflow_klass}
         )
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
+        )
         start.request_settings()
         assert exec_.called is True
 
@@ -522,6 +535,11 @@ class TestStartQtThreaded:
             speedwagon.job,
             "available_workflows",
             lambda: {"Zip Packages": workflow_klass}
+        )
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
         )
         starter.run()
         assert main_window3.show.called is True
@@ -589,6 +607,11 @@ class TestStartQtThreaded:
             "available_workflows",
             lambda: {"Zip Packages": workflow_klass}
         )
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
+        )
         starter.run()
 
         monkeypatch.setattr(
@@ -630,6 +653,11 @@ class TestStartQtThreaded:
             speedwagon.job,
             "available_workflows",
             lambda: {"Zip Packages": workflow_klass}
+        )
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
         )
         starter.run()
         open_new = Mock()
@@ -783,6 +811,16 @@ class TestStartQtThreaded:
             speedwagon.config.WorkflowSettingsYamlExporter,
             "write_data_to_file",
             Mock()
+        )
+        monkeypatch.setattr(
+            StandardConfigFileLocator,
+            "get_config_file",
+            lambda _ : "dummy.ini"
+        )
+        monkeypatch.setattr(
+            speedwagon.workflows.builtin,
+            "EnsureBuiltinWorkflowConfigFiles",
+            Mock(speedwagon.workflows.builtin.AbsSystemTask)
         )
         start.initialize()
 
