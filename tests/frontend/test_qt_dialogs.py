@@ -132,16 +132,25 @@ class TestGlobalSettingsTab:
 
 
 class TestTabsConfigurationTab:
+    @pytest.fixture()
+    def config_tab(self, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
+        )
+        return settings.TabsConfigurationTab()
+
     @pytest.mark.parametrize("settings_location, writes_to_file", [
         ("setting_location", True),
         (None, False)
     ])
     def test_on_okay_modified(self, qtbot, monkeypatch, settings_location,
-                              writes_to_file):
+                              writes_to_file, config_tab):
 
         from PySide6 import QtWidgets
 
-        config_tab = settings.TabsConfigurationTab()
+
         config_tab.settings_location = settings_location
         # from speedwagon.frontend.qtwidgets import tabs
         from speedwagon import config
@@ -165,8 +174,7 @@ class TestTabsConfigurationTab:
             config_management_strategy.save.called is writes_to_file, \
             f"mock_exec.called is {mock_exec.called}"
 
-    def test_create_new_tab_set_modified_true(self, qtbot, monkeypatch):
-        config_tab = settings.TabsConfigurationTab()
+    def test_create_new_tab_set_modified_true(self, qtbot, monkeypatch, config_tab):
         with qtbot.wait_signal(config_tab.changes_made):
             with monkeypatch.context() as mp:
                 mp.setattr(
@@ -179,10 +187,9 @@ class TestTabsConfigurationTab:
                     QtCore.Qt.LeftButton
                 )
         assert config_tab.data_is_modified() is True
-    def test_revert_changes(self, qtbot, monkeypatch):
+    def test_revert_changes(self, qtbot, monkeypatch, config_tab):
         # Test if the changes made reverted to original start shows data not
         # modified
-        config_tab = settings.TabsConfigurationTab()
         with qtbot.wait_signal(config_tab.changes_made):
             with monkeypatch.context() as mp:
                 mp.setattr(
@@ -203,26 +210,26 @@ class TestTabsConfigurationTab:
             )
         assert config_tab.data_is_modified() is False
 
-    def test_tab_config_management_strategy_no_settings_location_raises(self, qtbot):
-        config_tab = settings.TabsConfigurationTab()
+    def test_tab_config_management_strategy_no_settings_location_raises(
+        self,
+        qtbot,
+        config_tab
+    ):
         with pytest.raises(RuntimeError):
             config_tab.tab_config_management_strategy()
 
-    def test_tab_config_management_strategy(self, qtbot):
-        config_tab = settings.TabsConfigurationTab()
+    def test_tab_config_management_strategy(self, qtbot, config_tab):
         config_tab.settings_location = "dummy.yml"
         assert isinstance(
             config_tab.tab_config_management_strategy(),
             speedwagon.config.tabs.AbsTabsConfigDataManagement
         )
 
-    def test_get_data(self, qtbot):
-        config_tab = settings.TabsConfigurationTab()
+    def test_get_data(self, qtbot, config_tab):
         assert "tab_information" in config_tab.get_data()
 
-    def test_load(self, qtbot):
+    def test_load(self, qtbot, config_tab):
         strategy = Mock(AbsLoadTabDataModelStrategy)
-        config_tab = settings.TabsConfigurationTab()
 
         config_tab.load(strategy)
         assert strategy.load.called is True
@@ -230,8 +237,14 @@ class TestTabsConfigurationTab:
 
 class TestTabEditor:
     @pytest.fixture()
-    def editor(self):
-        return settings.TabEditor()
+    def editor(self, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
+        )
+        new_editor = settings.TabEditor()
+        return new_editor
 
     def test_set_all_workflows_set_model(self, qtbot, editor):
         qtbot.addWidget(editor)
@@ -364,9 +377,7 @@ class TestTabEditor:
             )
         a = editor.tab_workflows_list_view.model()
         print(a.rowCount())
-    def test_modified_by_add(self, qtbot, monkeypatch):
-        editor = settings.TabEditor()
-
+    def test_modified_by_add(self, qtbot, monkeypatch, editor):
         qtbot.addWidget(editor)
         def getText(*args, **kwargs):
             return "new name", True
@@ -379,10 +390,9 @@ class TestTabEditor:
     def test_not_modified_if_deleted_newly_added_tab(
             self,
             qtbot,
-            monkeypatch
+            monkeypatch,
+            editor
     ):
-        editor = settings.TabEditor()
-
         qtbot.addWidget(editor)
         def getText(*args, **kwargs):
             return "new name", True
@@ -397,12 +407,10 @@ class TestTabEditor:
             qtbot.mouseClick(editor.delete_current_tab_button, QtCore.Qt.LeftButton)
         assert editor.modified is False
 
-    def test_workflow_switch_index(self, qtbot):
+    def test_workflow_switch_index(self, qtbot, editor):
         # Check what index is being called when selected tab combobox widget
         # value for is changed
         dialog_box = QtWidgets.QDialog()
-        editor = settings.TabEditor(dialog_box)
-
         class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
                 class Spam1(speedwagon.Workflow):
@@ -428,8 +436,7 @@ class TestTabEditor:
             editor.set_current_tab("Eggs")
         assert editor.model.data(editor.model.index(e.args[0].row())) == "Eggs"
 
-    def test_add_workflow(self, qtbot):
-        editor = settings.TabEditor()
+    def test_add_workflow(self, qtbot, editor):
         class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
                 class Spam1(speedwagon.Workflow):
@@ -468,8 +475,7 @@ class TestTabEditor:
         )
         assert editor.tab_workflows_list_view.model().rowCount() == 2
 
-    def test_workflow_emits_changes(self, qtbot):
-        editor = settings.TabEditor()
+    def test_workflow_emits_changes(self, qtbot, editor):
 
         class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
@@ -526,9 +532,8 @@ class TestTabEditor:
             )
         assert editor.modified is True
 
-    def test_workflow_revert_no_modified(self, qtbot):
+    def test_workflow_revert_no_modified(self, qtbot, editor):
         dialog = QtWidgets.QDialog()
-        editor = settings.TabEditor()
         editor.setParent(dialog)
         class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
@@ -587,6 +592,16 @@ class TestTabEditor:
 
 
 class TestSettingsBuilder2:
+
+    @pytest.fixture()
+    def builder(self, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
+        )
+        return settings.SettingsBuilder2()
+
     def test_accepted(self, qtbot):
         builder = settings.SettingsBuilder2()
         dialog = builder.build()
@@ -608,15 +623,13 @@ class TestSettingsBuilder2:
         with qtbot.wait_signal(dialog.rejected):
             qtbot.mouseClick(cancel_button, QtCore.Qt.LeftButton)
 
-    def test_add_tab_increases_tabs(self, qtbot):
-        builder = settings.SettingsBuilder2()
+    def test_add_tab_increases_tabs(self, qtbot, builder):
         item = settings.TabsConfigurationTab()
         builder.add_tab("spam", item)
         dialog = builder.build()
         assert dialog.tabs_widget.count() == 1
 
-    def test_save_callback_called(self, qtbot):
-        builder = settings.SettingsBuilder2()
+    def test_save_callback_called(self, qtbot, builder):
         on_save_callback = Mock()
         builder.add_on_save_callback(on_save_callback)
         item = settings.TabsConfigurationTab()
@@ -631,9 +644,7 @@ class TestSettingsBuilder2:
             qtbot.mouseClick(ok, QtCore.Qt.LeftButton)
         assert on_save_callback.called is True
 
-    def test_add_on_save_callback_returns_same_widgets(self, qtbot):
-
-        builder = settings.SettingsBuilder2()
+    def test_add_on_save_callback_returns_same_widgets(self, qtbot, builder):
         item = settings.TabsConfigurationTab()
         builder.add_tab("spam", item)
 
@@ -658,9 +669,7 @@ class TestSettingsBuilder2:
             settings.PluginsTab
         ]
     )
-    def test_get_data(self, qtbot, settings_widget):
-
-        builder = settings.SettingsBuilder2()
+    def test_get_data(self, qtbot, settings_widget, builder):
         item = settings_widget()
         builder.add_tab("spam", item)
 
@@ -841,7 +850,11 @@ class TestConfigSaver:
         CustomTabsYamlConfig = Mock(name="CustomTabsYamlConfig")
         CustomTabsYamlConfig.save = Mock(name='save')
         monkeypatch.setattr(saver, "get_tab_config_strategy", Mock(return_value=CustomTabsYamlConfig))
-
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
+        )
         with patch('builtins.open', mock_open()) as mocked_file:
                 saver.save({
                     "Global Settings": global_settings,
@@ -996,6 +1009,14 @@ myworkflow = True
 
 
 class TestSettingsDialog:
+    @pytest.fixture()
+    def plugin_tab(self, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
+        )
+        return settings.TabsConfigurationTab()
     def test_okay_button_active_only_when_modified(self, qtbot):
         dialog_box = settings.SettingsDialog()
 
@@ -1022,10 +1043,9 @@ class TestSettingsDialog:
             )
         )
 
-    def test_revert_new_tab_plugins_state_buttons(self, qtbot, monkeypatch):
+    def test_revert_new_tab_plugins_state_buttons(self, qtbot, monkeypatch, plugin_tab):
         dialog_box = settings.SettingsDialog()
 
-        plugin_tab = settings.TabsConfigurationTab()
         dialog_box.add_tab(plugin_tab, "Plugins")
         ok_enabled_before_modified = dialog_box.button_box.button(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
@@ -1065,10 +1085,8 @@ class TestSettingsDialog:
             "Ok button enabled after reverting": ok_enabled_after_reverted
         }
         assert expected == actual
-    def test_revert_add_workflows_plugins_state_buttons(self, qtbot, monkeypatch):
+    def test_revert_add_workflows_plugins_state_buttons(self, qtbot, monkeypatch, plugin_tab):
         dialog_box = settings.SettingsDialog()
-
-        plugin_tab = settings.TabsConfigurationTab()
         dialog_box.add_tab(plugin_tab, "Plugins")
         with qtbot.wait_signal(dialog_box.changes_made):
             with monkeypatch.context() as mp:
@@ -1108,6 +1126,14 @@ class TestSettingsDialog:
     # dialog_box.exec()
 
 class TestTabDataModelYAMLLoader:
+    @pytest.fixture()
+    def tab_widget(self, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.config.StandardConfigFileLocator,
+            'get_tabs_file',
+            lambda *_: 'dummy.yml'
+        )
+        return settings.TabEditor()
     def test_prep_data(self, monkeypatch):
         def available_workflows():
             return {}
@@ -1123,9 +1149,9 @@ class TestTabDataModelYAMLLoader:
 
         assert "All" in loader.prep_data(DummyStrategy())
 
-    def test_with_no_file_is_no_op(self, qtbot):
+    def test_with_no_file_is_no_op(self, qtbot, tab_widget):
         loader = TabDataModelYAMLLoader()
-        tab_widget = settings.TabEditor()
+
         loader.load(tab_widget)
         loader.yml_file = None
 

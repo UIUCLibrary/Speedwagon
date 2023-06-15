@@ -17,7 +17,7 @@ import speedwagon.frontend.qtwidgets.widgets
 from speedwagon.frontend.qtwidgets.models import options as option_models
 from speedwagon.frontend.qtwidgets import models
 from speedwagon import Workflow
-
+from speedwagon.config import StandardConfigFileLocator
 class TestDropDownWidget:
     def test_empty_widget_metadata(self, qtbot):
         parent = QtWidgets.QWidget()
@@ -518,15 +518,21 @@ class TestWorkspace:
                 return []
         return Spam
 
-    def test_show_workflow_name(self, qtbot, sample_workflow_klass):
-        workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
+    @pytest.fixture()
+    def workspace(self, monkeypatch):
+        monkeypatch.setattr(
+            StandardConfigFileLocator,
+            "get_app_data_dir",
+            lambda _ : "."
+        )
+        return speedwagon.frontend.qtwidgets.widgets.Workspace()
+    def test_show_workflow_name(self, qtbot, sample_workflow_klass, workspace):
         workspace.app_settings_lookup_strategy = Mock()
         workspace.set_workflow(sample_workflow_klass)
         assert workspace.workflow_name == \
                sample_workflow_klass.name
 
-    def test_show_workflow_description(self, qtbot, sample_workflow_klass):
-        workspace = speedwagon.frontend.qtwidgets.widgets.Workspace()
+    def test_show_workflow_description(self, qtbot, sample_workflow_klass, workspace):
         workspace.app_settings_lookup_strategy = Mock()
         workspace.set_workflow(sample_workflow_klass)
         assert workspace.workflow_description == \
