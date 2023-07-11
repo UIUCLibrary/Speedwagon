@@ -1,0 +1,14 @@
+analysis-model-api:latest
+checks-api:latest
+cobertura:latest
+code-coverage-api:latest
+config-file-provider:latest
+docker-workflow:latest
+forensics-api:latest
+htmlpublisher:latest
+http-request:latest
+lockable-resources:latest
+sonar:latest
+versionnumber:latest
+warnings-ng:latest
+workflow-remote-loader
