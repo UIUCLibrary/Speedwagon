@@ -784,7 +784,7 @@ pipeline {
                                     def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
                                     def sonarqubeConfig = [
                                                 installationName: 'sonarcloud',
-                                                credentialsId: 'sonarcloud-speedwagon',
+                                                credentialsId: 'sonarcloud_token',
                                             ]
                                     milestone label: 'sonarcloud'
                                     if (env.CHANGE_ID){
