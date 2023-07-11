@@ -7,7 +7,7 @@ get_python_version(
         PATCH SPEEDWAGON_VERSION_PATCH
         VERSION SPEEDWAGON_VERSION
 )
-
+message(STATUS "Speedwagon version discovered - ${SPEEDWAGON_VERSION}")
 #project(Speedwagon
 #        LANGUAGES NONE
 #        VERSION ${SPEEDWAGON_VERSION_MAJOR}.${SPEEDWAGON_VERSION_MINOR}.${SPEEDWAGON_VERSION_PATCH})
