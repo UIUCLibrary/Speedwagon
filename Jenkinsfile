@@ -574,8 +574,9 @@ props = get_props()
 pipeline {
     agent none
     parameters {
-        booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
+        booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
+        credentials(name: 'SONARCLOUD_TOKEN', credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl', defaultValue: 'sonarcloud_token', required: false)
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
         booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Packages')
         booleanParam(name: 'TEST_STANDALONE_PACKAGE_DEPLOYMENT', defaultValue: true, description: 'Test deploying any packages that are designed to be installed without using Python directly')
@@ -784,7 +785,7 @@ pipeline {
                                     def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
                                     def sonarqubeConfig = [
                                                 installationName: 'sonarcloud',
-                                                credentialsId: 'sonarcloud_token',
+                                                credentialsId: params.SONARCLOUD_TOKEN,
                                             ]
                                     milestone label: 'sonarcloud'
                                     if (env.CHANGE_ID){
