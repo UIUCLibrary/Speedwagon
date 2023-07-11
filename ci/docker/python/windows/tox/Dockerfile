@@ -48,9 +48,6 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
-## ==============================================================================
-#
-FROM BASE_BUILDER
 COPY --from=certsgen c:/roots.sst roots.sst
 RUN certutil -addstore -f root roots.sst ; `
     del roots.sst
@@ -58,7 +55,8 @@ RUN certutil -addstore -f root roots.sst ; `
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
 COPY requirements/ c:/requirements/requirements
-
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_INDEX_URL
 RUN python -m pip install pip --upgrade ; `
     pip install wheel ; `
     pip wheel -w c:\wheels wheel ; `
