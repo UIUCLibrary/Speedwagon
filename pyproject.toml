@@ -24,7 +24,7 @@ follow_imports_for_stubs=true
 #incremental=false
 
 [tool.ruff]
-select = ["E", "F", "W"]
+select = ["E", "F", "W", "D"]
 exclude = [
     "windows_build",
     "tests",

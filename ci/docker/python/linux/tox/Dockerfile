@@ -9,22 +9,21 @@ RUN apt-get update && \
      < /tmp/apt-packages.txt xargs apt-get install -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+ENV QT_QPA_PLATFORM="offscreen"
+
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
-FROM wheel_builder_base
+COPY requirements/ /tmp/python_requirements/requirements/
+COPY requirements-ci.txt /tmp/python_requirements
+RUN python3 -m pip install --upgrade pip && \
+    python3 -m pip install -r /tmp/python_requirements/requirements-ci.txt
+
 ARG PIP_DOWNLOAD_CACHE
 RUN mkdir -p ${PIP_DOWNLOAD_CACHE} && \
     chmod -R 777 ${PIP_DOWNLOAD_CACHE}
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
-ENV QT_QPA_PLATFORM="offscreen"
-COPY requirements/ /tmp/requirements
-RUN pip3 install --no-cache-dir pip --upgrade && \
-    pip3 install --no-cache-dir -r /tmp/requirements/requirements_tox.txt
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-RUN pip3 wheel -w /wheels --no-cache-dir wheel
 
-RUN pip3 install --no-cache-dir -r /tmp/requirements/requirements-devpi.txt
 WORKDIR /src
 CMD ["tox", "--workdir", "/tmp/tox", "--recreate", "-p=auto"]
