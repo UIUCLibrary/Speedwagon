@@ -54,12 +54,13 @@ RUN certutil -addstore -f root roots.sst ; `
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
-COPY requirements/ c:/requirements/requirements
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
-RUN python -m pip install pip --upgrade ; `
-    pip install wheel ; `
-    pip wheel -w c:\wheels wheel ; `
-    pip install --find-links=c:\wheels -r c:/requirements/requirements/requirements_tox.txt -r c:/requirements/requirements/requirements-devpi.txt
+
+COPY requirements-ci.txt c:/python_requirments/
+COPY requirements/ c:/python_requirments/requirements
+RUN python -m pip install pip --upgrade ; pip install --no-cache-dir -r c:/python_requirments/requirements-ci.txt
+
+
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate -p=auto

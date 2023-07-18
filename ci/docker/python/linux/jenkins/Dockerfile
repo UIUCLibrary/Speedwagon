@@ -1,4 +1,6 @@
 ARG PYTHON_VERSION=3.11
+ARG PIP_FIND_LINKS=/wheels/
+ARG SONAR_SCANNER_VERSION=4.6.2.2472
 FROM python:${PYTHON_VERSION} as base_image
 FROM base_image as wheel_builder
 
@@ -6,25 +8,19 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
 ARG PIP_INDEX_URL
 
-COPY requirements.txt requirements-dev.txt requirements-gui.txt ci/docker/python/shared/requirements-ci.txt ci/docker/python/shared/requirements-extra.txt /tmp/
-COPY requirements/ /tmp/requirements
-RUN python -m pip install  --no-cache-dir --upgrade pip &&  \
-    pip install --no-cache-dir wheel && \
-    pip install --no-cache-dir setuptools && \
-    pip install --no-cache-dir conan cmake && \
-    pip wheel --wheel-dir=/wheels --no-cache-dir \
-        -r /tmp/requirements.txt \
-        -r /tmp/requirements-dev.txt \
-        -r /tmp/requirements-gui.txt \
-        -r /tmp/requirements-ci.txt && \
-    pip wheel  --no-cache-dir --wheel-dir=/wheels -r /tmp/requirements-extra.txt && \
-    rm -rf  /root/.cache
+COPY requirements-ci.txt requirements-gui.txt /requirements/
+COPY requirements/ /requirements/requirements/
+
+ARG PIP_FIND_LINKS
+RUN mkdir -p ${PIP_FIND_LINKS} &&  \
+    pip wheel --wheel-dir=${PIP_FIND_LINKS} --no-cache-dir -r /requirements/requirements-ci.txt -r /requirements/requirements-gui.txt
 
 #==============================================================================
 FROM base_image as SONAR_BUILDER
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends unzip
-ENV SONAR_SCANNER_VERSION=4.6.2.2472
+    apt-get install --no-install-recommends -y unzip
+
+ARG SONAR_SCANNER_VERSION
 ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
 ENV SONAR_USER_HOME=/opt/sonar/.sonar
 RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
@@ -37,13 +33,12 @@ RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
     which sonar-scanner
 
 
+
 #==============================================================================
 FROM base_image
 
 RUN apt-get update &&  \
-    apt-get install -y --no-install-recommends tzdata && \
-    ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
-    dpkg-reconfigure --frontend noninteractive tzdata && \
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install --no-install-recommends tzdata && \
     apt-get install -y --no-install-recommends \
       libxkbcommon-x11-0 \
       libgl1-mesa-glx \
@@ -62,26 +57,19 @@ RUN mkdir -p /.cache/pip && \
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 ENV QT_QPA_PLATFORM="offscreen"
-COPY --from=wheel_builder /wheels /wheels/
-COPY ci/docker/python/shared/requirements-ci.txt requirements.txt requirements-dev.txt requirements-vendor.txt requirements-gui.txt ci/docker/python/shared/requirements-extra.txt /tmp/
-COPY requirements/ /tmp/requirements
-
-RUN python -m pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --no-index --find-links=/wheels \
-        -r /tmp/requirements.txt \
-        -r /tmp/requirements-dev.txt \
-        -r /tmp/requirements-gui.txt \
-        -r /tmp/requirements-ci.txt \
-        -r /tmp/requirements/requirements-devpi.txt
-
-ENV PIP_FIND_LINKS=/wheels
-RUN python -m pip install --no-cache-dir types-PyYAML types-requests
+ARG PIP_FIND_LINKS
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_TRUSTED_HOST
+COPY --from=wheel_builder ${PIP_FIND_LINKS}/* ${PIP_FIND_LINKS}/
+COPY --from=wheel_builder requirements/ /requirements
+RUN pip install --no-index --no-cache-dir --find-links=${PIP_FIND_LINKS} \
+    -r /requirements/requirements-ci.txt -r /requirements/requirements-gui.txt
 
 COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
-ENV SONAR_SCANNER_VERSION=4.6.2.2472
+ARG SONAR_SCANNER_VERSION
+ENV SONAR_SCANNER_VERSION=${SONAR_SCANNER_VERSION}
 ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
 ENV SONAR_USER_HOME=/opt/sonar/.sonar
 RUN ln -s /opt/sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
     which sonar-scanner
 RUN mkdir -p /home/user/.sonar/ && chmod -R 777 /home/user/
-RUN mkdir -p /.devpi && chmod -R 777 /.devpi

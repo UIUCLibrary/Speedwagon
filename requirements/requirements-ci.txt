@@ -1,10 +1,8 @@
 build
-conan
--r requirements/requirements-devpi.txt
 flake8
 pykdu_compress >= 0.1.8
 pylint
-sphinx
+sphinx>=6
 paramiko
 pydocstyle
 pytest-xvfb

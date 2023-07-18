@@ -1,0 +1,12 @@
+# The following dependencies are not accessible on PyPi. Add the following
+# with distribution.
+
+HathiValidate==0.3.8
+HathiZip==0.1.10
+py3exiv2bind==0.1.10
+pyhathiprep==0.1.7
+pykdu-compress==0.1.8
+uiucprescon.images==0.0.5
+uiucprescon.imagevalidate==0.1.9
+uiucprescon.ocr==0.1.4
+uiucprescon.packager==0.2.15
