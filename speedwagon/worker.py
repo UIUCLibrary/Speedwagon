@@ -257,7 +257,7 @@ class SubtaskJobAdapter(AbsJobAdapter, ProcessJobWorker):
 
     def __init__(self, adaptee: AbsSubtask) -> None:
         """Create a sub-task job adapter."""
-        warnings.warn("Don't use", DeprecationWarning)
+        warnings.warn("Don't use", DeprecationWarning, stacklevel=2)
         AbsJobAdapter.__init__(self, adaptee)
         ProcessJobWorker.__init__(self)
         self.adaptee.parent_task_log_q = QueueAdapter()
@@ -313,7 +313,11 @@ class AbsToolJobManager(
 
     @active.setter
     def active(self, value: bool) -> None:
-        warnings.warn("don't use directly", DeprecationWarning)
+        warnings.warn(
+            "don't use directly",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self._job_runtime.active = value
 
     @property
@@ -373,7 +377,11 @@ class AbsToolJobManager(
 class JobProcessor:
     def __init__(self, parent: "ToolJobManager"):
         """Create a Job Processor object."""
-        warnings.warn("Don't use", DeprecationWarning)
+        warnings.warn(
+            "Don't use",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self._parent = parent
         self.completed = 0
         self._total_jobs = None

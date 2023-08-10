@@ -31,7 +31,7 @@ class ToolJobManager(speedwagon.worker.AbsToolJobManager):
 
     def __init__(self) -> None:
         """Don't use this."""
-        warnings.warn("Don't use", DeprecationWarning)
+        warnings.warn("Don't use", DeprecationWarning, stacklevel=2)
         super().__init__()
 
     def flush_message_buffer(self) -> None:
@@ -114,7 +114,7 @@ class ProcessWorker(UIWorker):
     def __init__(self, *args, **kwargs) -> None:
         """Create a process worker."""
         super().__init__(*args, **kwargs)
-        warnings.warn("Don't use", DeprecationWarning)
+        warnings.warn("Don't use", DeprecationWarning, stacklevel=2)
         self.manager = multiprocessing.Manager()
         self._message_queue = self.manager.Queue()
         self._results = None

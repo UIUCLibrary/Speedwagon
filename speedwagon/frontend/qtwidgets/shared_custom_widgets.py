@@ -37,7 +37,9 @@ class CustomItemWidget(QtWidgets.QWidget):
     ) -> None:
         """Create a custom item widget."""
         warnings.warn(
-            "Use workflow.AbsOutputOptionDataType instead", DeprecationWarning
+            "Use workflow.AbsOutputOptionDataType instead",
+            DeprecationWarning,
+            stacklevel=2
         )
         super().__init__(parent, *args, **kwargs)
         self._data = ""
@@ -67,7 +69,9 @@ class AbsBrowseableWidget(CustomItemWidget):
     def __init__(self, *args, **kwargs) -> None:
         """Create the base structure for a browseable widget."""
         warnings.warn(
-            "Use workflow.AbsOutputOptionDataType instead", DeprecationWarning
+            "Use workflow.AbsOutputOptionDataType instead",
+            DeprecationWarning,
+            stacklevel=2
         )
         super().__init__()
         self.text_line = QtWidgets.QLineEdit(self)

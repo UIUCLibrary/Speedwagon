@@ -344,7 +344,7 @@ class TabsConfigurationTab(SettingsTab):
         """Check if data has changed since originally set."""
         return self.editor.modified
 
-    def get_data(self) -> Dict[str, typing.Any]:
+    def get_data(self) -> config.plugins.PluginSettingsData:
         """Get the data the user entered."""
         return {"tab_information": self.editor.model.tab_information()}
 

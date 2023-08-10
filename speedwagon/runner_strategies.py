@@ -155,7 +155,7 @@ class TaskGenerator:
                 self.workflow, self.options, pretask_results
             )
         else:
-            warnings.warn("No way to request info from user")
+            warnings.warn("No way to request info from user", stacklevel=2)
             additional_data = {}
 
         for task in self.get_main_tasks(
