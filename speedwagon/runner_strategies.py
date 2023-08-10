@@ -155,7 +155,7 @@ class TaskGenerator:
                 self.workflow, self.options, pretask_results
             )
         else:
-            warnings.warn("No way to request info from user")
+            warnings.warn("No way to request info from user", stacklevel=2)
             additional_data = {}
 
         for task in self.get_main_tasks(
@@ -311,7 +311,7 @@ class TaskDispatcherRunning(AbsTaskDispatcherState):
             )
 
             self.parent.current_task = task
-            setattr(task, "log", lambda message: logger.info(msg=message))
+            task.log = lambda message: logger.info(msg=message)
             task.exec()
             logger.debug("Threaded worker completed task: [%s]", task.name)
 
@@ -827,7 +827,7 @@ def simple_api_run_workflow(
                 factory, options, pretask_results
             )
 
-        setattr(task_scheduler, "request_more_info", request_more_info)
+        task_scheduler.request_more_info = request_more_info
         for task in task_scheduler.iter_tasks(
             workflow=workflow, options=workflow_options
         ):

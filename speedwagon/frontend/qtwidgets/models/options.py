@@ -75,7 +75,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         self,
         section: int,
         orientation: QtCore.Qt.Orientation,
-        role: int = cast(int, QtCore.Qt.ItemDataRole.DisplayRole),
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         """Get model header data."""
         if (
@@ -88,7 +88,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     def data(
         self,
         index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-        role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole),
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> Optional[Any]:
         """Get data from model."""
         if not index.isValid():
@@ -104,7 +104,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         self,
         index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
         value: Optional[Any],
-        role: int = typing.cast(int, QtCore.Qt.ItemDataRole.EditRole),
+        role: int = QtCore.Qt.ItemDataRole.EditRole,
     ) -> bool:
         """Set model data.
 

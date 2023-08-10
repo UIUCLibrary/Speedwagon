@@ -35,6 +35,8 @@ __all__ = ["SettingsModel"]
 
 QtConstant = int
 
+DEFAULT_QMODEL_INDEX = QtCore.QModelIndex()
+
 
 class SettingsModel(QtCore.QAbstractTableModel):
     """Settings Qt table model."""
@@ -482,7 +484,7 @@ class WorkflowSettingsModel(QtCore.QAbstractItemModel):
         self,
         parent: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> int:
         if parent.isValid():
             item = self.get_item(parent)
@@ -543,7 +545,7 @@ class WorkflowSettingsModel(QtCore.QAbstractItemModel):
         self,
         parent: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> int:
         if parent.isValid() and parent.column() > 0:
             return 0
@@ -561,7 +563,7 @@ class WorkflowSettingsModel(QtCore.QAbstractItemModel):
         column: int = 0,
         parent: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> QtCore.QModelIndex:
         if parent.isValid() and parent.column() != 0:
             return QtCore.QModelIndex()
@@ -626,7 +628,7 @@ class WorkflowSettingsModel(QtCore.QAbstractItemModel):
         child: Union[
             QtCore.QModelIndex,
             QtCore.QPersistentModelIndex,
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> Union[QtCore.QModelIndex, QtCore.QObject]:
         if not child.isValid():
             return QtCore.QModelIndex()
@@ -643,7 +645,7 @@ class WorkflowSettingsModel(QtCore.QAbstractItemModel):
         index: Union[
             QtCore.QModelIndex,
             QtCore.QPersistentModelIndex,
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> AbsWorkflowSettingItem:
         if index.isValid():
             item = typing.cast(WorkflowSettingsRoot, index.internalPointer())

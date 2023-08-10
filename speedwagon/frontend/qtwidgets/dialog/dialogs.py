@@ -30,6 +30,7 @@ import speedwagon.frontend.qtwidgets.ui
 __all__ = ["SystemInfoDialog", "WorkProgressBar", "about_dialog_box"]
 
 ALREADY_STOPPED_MESSAGE = "Already stopped"
+DEFAULT_WINDOW_FLAGS = QtCore.Qt.WindowType(0)
 
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
@@ -79,7 +80,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Create a work progress dialog window."""
         super().__init__(parent, flags)
@@ -129,7 +130,7 @@ class SystemInfoDialog(QtWidgets.QDialog):
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Display System information."""
         super().__init__(parent, flags)
@@ -230,7 +231,7 @@ class WorkflowProgressStateIdle(AbsWorkflowProgressState):
         self.reset_cancel_button()
 
     def stop(self) -> None:
-        warnings.warn(ALREADY_STOPPED_MESSAGE)
+        warnings.warn(ALREADY_STOPPED_MESSAGE, stacklevel=2)
 
     def _set_button_defaults(self) -> None:
         cancel_button: QtWidgets.QPushButton = self.context.button_box.button(
@@ -262,7 +263,7 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
         close_button.setEnabled(False)
 
     def start(self) -> None:
-        warnings.warn("Already started")
+        warnings.warn("Already started", stacklevel=2)
 
     def stop(self) -> None:
         self.context.state = WorkflowProgressStateStopping(self.context)
@@ -301,7 +302,7 @@ class WorkflowProgressStateStopping(AbsWorkflowProgressState):
         self.context.progress_bar.setMinimum(0)
 
     def start(self) -> None:
-        warnings.warn("Already started")
+        warnings.warn("Already started", stacklevel=2)
 
     def stop(self) -> None:
         dialog = QtWidgets.QMessageBox(
@@ -313,7 +314,7 @@ class WorkflowProgressStateStopping(AbsWorkflowProgressState):
         )
         if dialog.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
             sys.exit(1)
-        warnings.warn("Already stopping")
+        warnings.warn("Already stopping", stacklevel=2)
 
 
 class WorkflowProgressStateAborted(AbsWorkflowProgressState):
@@ -332,7 +333,7 @@ class WorkflowProgressStateAborted(AbsWorkflowProgressState):
         close_button.clicked.connect(self.context.accept)  # type: ignore
 
     def stop(self) -> None:
-        warnings.warn(ALREADY_STOPPED_MESSAGE)
+        warnings.warn(ALREADY_STOPPED_MESSAGE, stacklevel=2)
 
 
 class WorkflowProgressStateFailed(AbsWorkflowProgressState):
@@ -351,7 +352,7 @@ class WorkflowProgressStateFailed(AbsWorkflowProgressState):
         self.context.banner.setText("Failed")
 
     def stop(self) -> None:
-        warnings.warn(ALREADY_STOPPED_MESSAGE)
+        warnings.warn(ALREADY_STOPPED_MESSAGE, stacklevel=2)
 
 
 class WorkflowProgressStateWorkingIndeterminate(WorkflowProgressStateWorking):
@@ -383,7 +384,7 @@ class WorkflowProgressStateDone(AbsWorkflowProgressState):
         progress_bar.setValue(progress_bar.maximum())
 
     def stop(self) -> None:
-        warnings.warn("Already Finished")
+        warnings.warn("Already Finished", stacklevel=2)
 
 
 class WorkflowProgressGui(QtWidgets.QDialog):
