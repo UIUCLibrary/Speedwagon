@@ -812,6 +812,26 @@ class TestWorkflowProgressState:
             getattr(state, command)()
         assert len(record) > 0
 
+class TestWorkflowProgressStateStopping:
+    def test_stopping_produces_a_warning(self, qtbot, monkeypatch):
+        context = dialogs.WorkflowProgress()
+        mock_dialog = Mock(
+            Icon = Mock(name="Icon", Information = ""),
+            StandardButton=Mock(name="StandardButton", Yes=1, No=0)
+        )
+        state = dialogs.WorkflowProgressStateStopping(context)
+        monkeypatch.setattr(QtWidgets, "QMessageBox", mock_dialog)
+        with pytest.warns(UserWarning):
+            state.stop()
+
+
+class TestWorkflowProgressStateIdle:
+    def test_stopping_produces_a_warning(self, qtbot):
+        context = dialogs.WorkflowProgress()
+        state = dialogs.WorkflowProgressStateIdle(context)
+        with pytest.warns(UserWarning):
+            state.stop()
+
 
 class TestConfigSaver:
 
