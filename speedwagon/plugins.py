@@ -21,7 +21,7 @@ def register_whitelisted_plugins(plugin_manager: pluggy.PluginManager) -> None:
     whitelisted_plugin_names = [
         plugin[-1] for plugin in speedwagon.config.get_whitelisted_plugins()
     ]
-    for plugin_name, plugin in plugin_manager.list_name_plugin():
+    for plugin_name, _ in plugin_manager.list_name_plugin():
         if plugin_name == "speedwagon.workflows.builtin":
             continue
         if plugin_name not in whitelisted_plugin_names:
