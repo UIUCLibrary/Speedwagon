@@ -613,7 +613,7 @@ class StartQtThreaded(AbsGuiStarter):
             )
 
         dialog_box.attach_logger(self.logger)
-        setattr(job_manager, "request_more_info", self.request_more_info)
+        job_manager.request_more_info = self.request_more_info
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=options,
