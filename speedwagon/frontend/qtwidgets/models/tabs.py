@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 __all__ = ["TabsTreeModel", "TabStandardItem", "TabProxyModel"]
 
+DEFAULT_QMODEL_INDEX = QtCore.QModelIndex()
+
 
 class TabsTreeModel(QtCore.QAbstractItemModel):
     """Tree model containing user defined tabs and the containing workflows."""
@@ -66,7 +68,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         self,
         parent: Union[  # pylint: disable=unused-argument
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> int:
         """Get column count."""
         return 2
@@ -75,7 +77,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         self,
         parent: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> int:
         """Get the number of tabs in the model."""
         if parent.isValid() and parent.column() > 2:
@@ -89,7 +91,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         column: int = 0,
         parent: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> QtCore.QModelIndex:
         """Get index."""
         if not self.hasIndex(row, column, parent):
@@ -114,7 +116,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         child: Union[
             QtCore.QModelIndex,
             QtCore.QPersistentModelIndex,
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> Union[QtCore.QModelIndex, QtCore.QObject]:
         """Get the parent object or object."""
         if not child.isValid():
@@ -160,7 +162,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         self,
         index: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> Union[QtGui.QStandardItem, TabStandardItem, WorkflowItem]:
         """Get item at a given index."""
         if index.isValid():
@@ -213,7 +215,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         row: int,
         parent: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> bool:
         """Remove row from model."""
         if parent.isValid():
@@ -364,7 +366,7 @@ class TabProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
         self,
         parent: Union[  # pylint: disable=unused-argument
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> int:
         """Get the number of workflows in the list."""
         if self.source_tab is None:
@@ -401,7 +403,7 @@ class TabProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
         column: int = 0,
         parent: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> QtCore.QModelIndex:
         """Get index."""
         if parent.isValid():

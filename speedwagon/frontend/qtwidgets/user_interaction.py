@@ -24,6 +24,8 @@ if typing.TYPE_CHECKING:
     from uiucprescon.packager.packages import collection
     from speedwagon.job import Workflow
 
+DEFAULT_WINDOW_FLAGS = Qt.WindowType(0)
+
 
 class ConfirmItem(TypedDict):
     """Confirm plugin by name."""
@@ -120,7 +122,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
     def data(
         self,
         index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
-        role: int = typing.cast(int, Qt.ItemDataRole.DisplayRole),
+        role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         """Get data from the model."""
         if role == Qt.ItemDataRole.CheckStateRole:
@@ -135,7 +137,7 @@ class ConfirmListModel(QtCore.QAbstractListModel):
         self,
         index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
         value: Any,
-        role: int = typing.cast(int, Qt.ItemDataRole.DisplayRole),
+        role: int = Qt.ItemDataRole.DisplayRole,
     ) -> bool:
         """Set model data."""
         if role == Qt.ItemDataRole.CheckStateRole:
@@ -160,7 +162,7 @@ class ConfirmDeleteDialog(QtWidgets.QDialog):
         self,
         items: typing.List[str],
         parent: typing.Optional[QtWidgets.QWidget] = None,
-        flags: Qt.WindowType = Qt.WindowType(0),
+        flags: Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Create a package browser dialog window."""
         super().__init__(parent, flags)

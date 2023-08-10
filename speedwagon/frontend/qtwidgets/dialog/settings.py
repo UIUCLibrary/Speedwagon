@@ -53,6 +53,8 @@ __all__ = ["GlobalSettingsTab", "TabsConfigurationTab", "TabEditor"]
 
 SaveCallback = Callable[["SettingsTab"], Dict[str, typing.Any]]
 
+DEFAULT_WINDOW_FLAGS = QtCore.Qt.WindowType(0)
+
 
 class AbsOpenSettings(abc.ABC):
     def __init__(self, settings_directory: str) -> None:
@@ -108,7 +110,7 @@ class SettingsDialog(QtWidgets.QDialog):
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         super().__init__(parent, flags)
         self.settings_location: Optional[str] = None
@@ -251,7 +253,7 @@ class GlobalSettingsTab(SettingsTab):
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Create a global settings tab widget."""
         super().__init__(parent, flags)
@@ -327,7 +329,7 @@ class TabsConfigurationTab(SettingsTab):
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Create a tab configuration widget."""
         super().__init__(parent, flags)
@@ -656,7 +658,7 @@ class TabEditorWidgetUI(QtWidgets.QWidget):  # pylint: disable=R0903
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)
@@ -683,7 +685,7 @@ class TabEditor(TabEditorWidgetUI):
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Create a tab editor widget."""
         super().__init__(parent, flags)

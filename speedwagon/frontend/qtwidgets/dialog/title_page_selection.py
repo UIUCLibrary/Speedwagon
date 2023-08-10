@@ -8,6 +8,8 @@ from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import Qt
 from uiucprescon.packager.packages import collection
 
+DEFAULT_WINDOW_FLAGS = Qt.WindowType(0)
+
 
 class ModelField(NamedTuple):
     """Model field."""
@@ -133,7 +135,7 @@ class PackagesModel(QtCore.QAbstractTableModel):
         self,
         index: int,
         orientation: Qt.Orientation,
-        role: int = typing.cast(int, QtCore.Qt.ItemDataRole.DisplayRole),
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> Union[str, QtCore.QObject]:
         """Get model header information."""
         if (
@@ -192,7 +194,7 @@ class PackageBrowser(QtWidgets.QDialog):
         self,
         packages: typing.List[collection.Package],
         parent: typing.Optional[QtWidgets.QWidget],
-        flags: Qt.WindowType = Qt.WindowType(0),
+        flags: Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Create a package browser dialog window."""
         super().__init__(parent, flags)

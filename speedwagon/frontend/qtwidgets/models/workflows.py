@@ -21,6 +21,8 @@ __all__ = [
     "WorkflowListProxyModel",
 ]
 
+DEFAULT_QMODEL_INDEX = QtCore.QModelIndex()
+
 
 class WorkflowList(AbsWorkflowList):
     """List of workflow uninitiated classes."""
@@ -39,7 +41,7 @@ class WorkflowList(AbsWorkflowList):
         self,
         parent: Union[  # pylint: disable=unused-argument
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> int:
         """Get the number of workflows in the list."""
         return len(self._workflows)
@@ -66,7 +68,7 @@ class WorkflowList(AbsWorkflowList):
         row: int,
         parent: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> bool:
         """Insert row with a Null Workflow."""
         self._workflows.insert(row, speedwagon.job.NullWorkflow)
@@ -77,7 +79,7 @@ class WorkflowList(AbsWorkflowList):
         row: int,
         parent: Union[  # pylint: disable=unused-argument
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> bool:
         """Remove row from model."""
         if row > len(self._workflows):
@@ -137,7 +139,7 @@ class WorkflowListProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
         self,
         parent: Union[  # pylint: disable=unused-argument
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> int:
         """Get the number of workflows in the list."""
         source_model = typing.cast(Optional[TabsTreeModel], self.sourceModel())
@@ -149,7 +151,7 @@ class WorkflowListProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
         self,
         parent: Union[  # pylint: disable=unused-argument
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> int:
         """Get column count."""
         return 0 if self.sourceModel() is None else 1
@@ -160,7 +162,7 @@ class WorkflowListProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
         column: int = 0,
         parent: Union[
             QtCore.QModelIndex, QtCore.QPersistentModelIndex
-        ] = QtCore.QModelIndex(),
+        ] = DEFAULT_QMODEL_INDEX,
     ) -> QtCore.QModelIndex:
         """Get index."""
         if parent.isValid():

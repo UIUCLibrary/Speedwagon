@@ -30,6 +30,7 @@ import speedwagon.frontend.qtwidgets.ui
 __all__ = ["SystemInfoDialog", "WorkProgressBar", "about_dialog_box"]
 
 ALREADY_STOPPED_MESSAGE = "Already stopped"
+DEFAULT_WINDOW_FLAGS = QtCore.Qt.WindowType(0)
 
 
 class ErrorDialogBox(QtWidgets.QMessageBox):
@@ -79,7 +80,7 @@ class WorkProgressBar(QtWidgets.QProgressDialog):
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Create a work progress dialog window."""
         super().__init__(parent, flags)
@@ -129,7 +130,7 @@ class SystemInfoDialog(QtWidgets.QDialog):
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = QtCore.Qt.WindowType(0),
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Display System information."""
         super().__init__(parent, flags)
