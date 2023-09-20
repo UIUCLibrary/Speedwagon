@@ -970,7 +970,7 @@ pipeline {
                                                 script: '''
                                                     py -m pip install pip --upgrade
                                                     py -m pip install wheel
-                                                    py -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/simple
+                                                    py -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i %PIP_EXTRA_INDEX_URL%
                                                 '''
                                             )
                                         }
