@@ -187,6 +187,12 @@ def testSpeedwagonChocolateyPkg(version){
             label: 'Checking for Start Menu shortcut',
             script: 'Get-ChildItem "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs" -Recurse -Include *.lnk'
         )
+//    powershell('''
+//        $proc = Start-Process "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\speedwagon\\speedwagon.lnk" --PassThru
+//        (Get-Process -Id $proc.Id).MainWindowHandle
+//        Stop-Process -Id $proc.Id
+//        '''
+//    )
     bat 'speedwagon --help'
 }
 
@@ -995,7 +1001,7 @@ pipeline {
                                                 script: '''
                                                     py -m pip install pip --upgrade
                                                     py -m pip install wheel
-                                                    py -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/simple
+                                                    py -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i %PIP_EXTRA_INDEX_URL%
                                                 '''
                                             )
                                         }
