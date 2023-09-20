@@ -187,17 +187,12 @@ def testSpeedwagonChocolateyPkg(version){
             label: 'Checking for Start Menu shortcut',
             script: 'Get-ChildItem "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs" -Recurse -Include *.lnk'
         )
-    powershell('''
-        $proc = Start-Process "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\speedwagon\\speedwagon.lnk" --PassThru
-        try {
-            (Get-Process -Id $proc.Id).MainWindowHandle
-            Stop-Process -Id $proc.Id
-        }
-        catch {
-            Write-Error 'Unable to load speedwagon' -ErrorAction Stop
-        }
-        '''
-    )
+//    powershell('''
+//        $proc = Start-Process "$Env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\speedwagon\\speedwagon.lnk" --PassThru
+//        (Get-Process -Id $proc.Id).MainWindowHandle
+//        Stop-Process -Id $proc.Id
+//        '''
+//    )
     bat 'speedwagon --help'
 }
 

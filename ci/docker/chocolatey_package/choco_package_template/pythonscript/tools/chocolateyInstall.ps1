@@ -12,7 +12,7 @@ $venvDir      = "$installDir\venv"
 $fileLocation = Join-Path $toolsDir '[[InstallerFile]]'
 $dependenciesLocation = Join-Path $toolsDir dist\deps
 $packageSourceUrl =  '[[PackageSourceUrl]]'
-$PYTHON = "C:\Python311\python.exe"
+#$PYTHON = "C:\Windows\py.exe -3.11"
 $requirementSpecifier = "$($fileLocation)`[QT`]"
 If(test-path -PathType container $venvDir){
   Write-Host "Removing existing Python virtual environment"
@@ -20,7 +20,7 @@ If(test-path -PathType container $venvDir){
 }
 
 Write-Host "Creating Python virtualenv at $venvDir"
-& "$PYTHON" -m venv $venvDir
+& "C:\Windows\py.exe" -3.11 -m venv $venvDir
 & "$installDir\venv\Scripts\python.exe" -m pip install pip --upgrade --no-compile
 & "$installDir\venv\Scripts\python.exe" -m pip install  "$requirementSpecifier" --find-link "$dependenciesLocation"
 
