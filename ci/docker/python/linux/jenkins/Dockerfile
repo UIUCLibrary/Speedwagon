@@ -11,7 +11,6 @@ COPY requirements/ /tmp/requirements
 RUN python -m pip install  --no-cache-dir --upgrade pip &&  \
     pip install --no-cache-dir wheel && \
     pip install --no-cache-dir setuptools && \
-    pip install --no-cache-dir conan cmake && \
     pip wheel --wheel-dir=/wheels --no-cache-dir \
         -r /tmp/requirements.txt \
         -r /tmp/requirements-dev.txt \

@@ -14,7 +14,7 @@ py3exiv2bind>=0.1.10
 pyhathiprep>=0.1.7
 pyqt-distutils>=0.7.3
 pytz==2020.1
-PyYAML==5.4
+PyYAML==6.0
 ruamel.yaml>=0.17.17
 tzlocal==2.1
 uiucprescon.packager[kdu]>=0.2.15
