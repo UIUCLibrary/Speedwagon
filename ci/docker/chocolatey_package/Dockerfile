@@ -1,5 +1,5 @@
 # escape=`
-FROM mcr.microsoft.com/windows/servercore:ltsc2019
+FROM mcr.microsoft.com/dotnet/framework/sdk:4.8-windowsservercore-ltsc2019
 #FROM mcr.microsoft.com/windows/servercore:ltsc2019 as choco_builder
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
