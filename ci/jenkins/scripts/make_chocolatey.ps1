@@ -18,17 +18,23 @@ function SanitizeVersion {
     }
     $REGEX = '(?:((\.)?))((?<postfix>b|a|dev|rc|post)(?<postVersionNumber>[0-9]+))$'
     if ($Version -match $REGEX) {
-        $POSTFIX = switch($Matches.postfix) {
-            b {'beta'; break}
-            a {'alpha'; break}
-            dev {'dev'; break}
-            rc {'rc'; break}
-            post {'post'; break}
-            Default {
-                'No match'
-            }
+        if ($Matches.postfix.equals("post") ){
+            $ENDING = '.' + $Matches.postVersionNumber
         }
-        $ENDING = '-' + $POSTFIX + $Matches.postVersionNumber
+        else
+        {
+            $POSTFIX = switch($Matches.postfix) {
+                b {'beta'; break}
+                a {'alpha'; break}
+                dev {'dev'; break}
+                rc {'rc'; break}
+                Default {
+                    'No match'
+                }
+            }
+            $ENDING = '-' + $POSTFIX + $Matches.postVersionNumber
+        }
+
         $SANTIZED = $("$Version" -replace $REGEX, $ENDING)
 
 
