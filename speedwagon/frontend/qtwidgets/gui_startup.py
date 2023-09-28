@@ -13,7 +13,7 @@ import threading
 import time
 import types
 import typing
-from typing import Dict, Optional, cast, List, Type, Callable
+from typing import Dict, Optional, cast, List, Type, Callable, DefaultDict
 import traceback as tb
 import webbrowser
 
@@ -27,7 +27,7 @@ import speedwagon
 from speedwagon.workflow import initialize_workflows
 from speedwagon import config
 from speedwagon.tasks import system as system_tasks
-from speedwagon import plugins
+from speedwagon import plugins, info
 from . import user_interaction
 from . import dialog
 from . import runners
@@ -45,6 +45,17 @@ __all__ = [
     'StartQtThreaded',
     'SingleWorkflowJSON'
 ]
+
+
+system_info_report_formatters: DefaultDict[
+    str,
+    Callable[[info.SystemInfo], str]
+] = collections.defaultdict(
+        lambda: info.system_info_to_text_formatter,
+        {
+            "Text (*.txt)": info.system_info_to_text_formatter
+        }
+    )
 
 
 class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
@@ -421,7 +432,12 @@ class StartQtThreaded(AbsGuiStarter):
         parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         """Action to open up system info dialog box."""
-        dialog.dialogs.SystemInfoDialog(parent).exec()
+        system_info_dialog = dialog.dialogs.SystemInfoDialog(
+            system_info=info.SystemInfo(),
+            parent=parent
+        )
+        system_info_dialog.export_to_file.connect(export_system_info_to_file)
+        system_info_dialog.exec()
 
     def request_settings(
         self, parent: Optional[QtWidgets.QWidget] = None
@@ -883,3 +899,11 @@ class SingleWorkflowJSON(AbsGuiStarter):
             window.setWindowTitle(title)
 
         return window
+
+
+def export_system_info_to_file(
+        file: str,
+        file_type: str,
+        writer=info.write_system_info_to_file
+) -> None:
+    writer(info.SystemInfo(), file, system_info_report_formatters[file_type])

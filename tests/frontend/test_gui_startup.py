@@ -1168,3 +1168,13 @@ def test_report_exception_dialog(qtbot, monkeypatch):
     assert \
         gui_startup.dialog.dialogs.SpeedwagonExceptionDialog.exec.called \
         is True
+
+
+def test_export_system_info_to_file():
+    writer = Mock()
+    gui_startup.export_system_info_to_file(
+        file="fake.txt",
+        file_type="Text (*.txt)",
+        writer=writer
+    )
+    writer.assert_called_once()

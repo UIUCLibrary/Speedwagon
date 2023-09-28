@@ -1,4 +1,5 @@
 """Dialog boxes."""
+from __future__ import annotations
 import abc
 import logging
 import logging.handlers
@@ -6,7 +7,7 @@ import sys
 import typing
 import warnings
 import time
-from typing import Optional, Sequence
+from typing import Optional, TYPE_CHECKING
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -26,6 +27,11 @@ import speedwagon
 from speedwagon.reports import ExceptionReport
 from speedwagon.frontend.qtwidgets import logging_helpers, ui_loader
 import speedwagon.frontend.qtwidgets.ui
+from speedwagon.info import convert_package_metadata_to_string
+
+if TYPE_CHECKING:
+    from speedwagon.info import SystemInfo
+
 
 __all__ = ["SystemInfoDialog", "WorkProgressBar", "about_dialog_box"]
 
@@ -125,45 +131,49 @@ def about_dialog_box(parent: QtWidgets.QWidget) -> None:
 class SystemInfoDialog(QtWidgets.QDialog):
     """System information dialog window."""
 
-    # parent: QWidget = None, flags: Union[
-    #     Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags()
+    installed_packages_widget: QtWidgets.QListWidget
+    export_to_file_button: QtWidgets.QToolButton
+    export_to_file = QtCore.Signal(str, str)
+
     def __init__(
         self,
+        system_info: SystemInfo,
         parent: Optional[QtWidgets.QWidget] = None,
         flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
     ) -> None:
         """Display System information."""
         super().__init__(parent, flags)
 
-        self.setWindowTitle("System Information")
-        layout = QtWidgets.QVBoxLayout(self)
-        self.setLayout(layout)
+        with as_file(
+                resources.files("speedwagon.frontend.qtwidgets.ui").joinpath(
+                    "system_info_dialog.ui"
+                )
+        ) as ui_file:
+            ui_loader.load_ui(str(ui_file), self)
 
-        self.installed_packages_title = QtWidgets.QLabel(parent)
-        self.installed_packages_title.setText("Installed Python Packages:")
-
-        installed_python_packages = self.get_installed_packages()
-
-        self.installed_packages_widget = QtWidgets.QListWidget(parent)
+        self.system_info = system_info
+        installed_python_packages =\
+            self.system_info.get_installed_packages(
+                formatter=convert_package_metadata_to_string
+            )
         self.installed_packages_widget.addItems(installed_python_packages)
-
-        layout.addWidget(self.installed_packages_title)
-        layout.addWidget(self.installed_packages_widget)
-
-        self._button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
+        self.export_to_file_button.clicked.connect(
+            self.request_export_system_information
         )
-        # pylint: disable=no-member
-        self._button_box.accepted.connect(self.accept)  # type: ignore
-        layout.addWidget(self._button_box)
 
-    @staticmethod
-    def get_installed_packages() -> Sequence[str]:
-        """Get list of strings of installed packages."""
-        pkgs = sorted(
-            metadata.distributions(), key=lambda x: x.metadata["Name"].upper()
+    def request_export_system_information(
+            self,
+            save_dialog_box=QtWidgets.QFileDialog.getSaveFileName
+    ) -> None:
+        """Request system information be saved to a file."""
+        file, file_format = save_dialog_box(
+            self,
+            "Save File",
+            "speedwagon-info.txt",
+            "Text (*.txt)"
         )
-        return [f"{x.metadata['Name']} {x.metadata['Version']}" for x in pkgs]
+        if file:
+            self.export_to_file.emit(file, file_format)
 
 
 class AbsWorkflowProgressState(abc.ABC):

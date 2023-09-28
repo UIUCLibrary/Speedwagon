@@ -1,6 +1,8 @@
 import pytest
 from unittest.mock import Mock, patch, mock_open
-import builtins
+
+import speedwagon.info
+
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 QtCore = pytest.importorskip("PySide6.QtCore")
 
@@ -43,34 +45,6 @@ def test_about_dialog_box_no_metadata(qtbot, monkeypatch):
         mp.setattr(QtWidgets.QMessageBox, "about", mock_about)
         mp.setattr(metadata, "metadata", mock_metadata)
         dialogs.about_dialog_box(None)
-
-
-def test_get_install_packages(monkeypatch):
-
-    def mock_distributions(*args, **kwargs):
-        fake_distributions = [
-            {
-                "Name": 'Spam',
-                "Version": '1.0',
-            },
-            {
-                "Name": 'Bacon',
-                "Version": '1.1',
-            },
-            {
-                "Name": 'Eggs',
-                "Version": '0.1',
-            }
-        ]
-        return [Mock(metadata=d) for d in fake_distributions]
-
-    with monkeypatch.context() as ctx:
-        ctx.setattr(metadata, "distributions", mock_distributions)
-        assert dialogs.SystemInfoDialog.get_installed_packages() == [
-            'Bacon 1.1',
-            'Eggs 0.1',
-            'Spam 1.0',
-        ]
 
 
 class TestSpeedwagonUnhandledExceptionDialog:
@@ -170,3 +144,48 @@ class TestSaveReportDialogBox:
         with patch('builtins.open', mock_open_data) as mocked_file:
             result = saver.write_data("output.txt", "spam")
         assert result is False
+
+
+class TestSystemInfoDialog:
+
+    def test_export_calls_get_export_file_path(self, qtbot):
+        system_info = Mock(
+            spec=speedwagon.info.SystemInfo,
+            get_installed_packages=Mock(return_value=[])
+        )
+        dialog_box = dialogs.SystemInfoDialog(system_info)
+        dialog_box.request_export_system_information = Mock()
+        dialog_box.export_to_file_button.click()
+        dialog_box.request_export_system_information.assert_called_once()
+
+    def test_get_export_file_path(self, qtbot):
+        system_info = Mock(
+            spec=speedwagon.info.SystemInfo,
+            get_installed_packages=Mock(return_value=[])
+        )
+        dialog_box = dialogs.SystemInfoDialog(system_info)
+
+        def save_dialog_box(*args, **kwargs):
+            return "file.txt", "Text (*.txt)"
+
+        with qtbot.waitSignal(dialog_box.export_to_file) as blocker:
+            dialog_box.request_export_system_information(
+                save_dialog_box=save_dialog_box
+            )
+
+        assert blocker.signal_triggered
+
+    def test_get_export_file_path_cancel(self, qtbot):
+        system_info = Mock(
+            spec=speedwagon.info.SystemInfo,
+            get_installed_packages=Mock(return_value=[])
+        )
+        dialog_box = dialogs.SystemInfoDialog(system_info)
+
+        def save_dialog_box_gets_canceled(*args, **kwargs):
+            return None, None
+
+        with qtbot.assertNotEmitted(dialog_box.export_to_file):
+            dialog_box.request_export_system_information(
+                save_dialog_box=save_dialog_box_gets_canceled
+            )
