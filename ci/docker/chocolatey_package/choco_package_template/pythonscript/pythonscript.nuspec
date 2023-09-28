@@ -23,6 +23,7 @@
   <files>
     <file src="tools\**" target="tools" />
     <file src="[[InstallerFile]]" target="tools\[[InstallerFile]]" />
+    <file src="requirements.txt" target="tools\dist\requirements.txt" />
     <file src="deps\**" target="tools\dist\deps" />
     <file src="docs\*.pdf" target="tools\documentation" />
   </files>

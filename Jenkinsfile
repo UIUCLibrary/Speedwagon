@@ -1005,6 +1005,7 @@ pipeline {
                                                                 -PackageMaintainer \"${props.Maintainer}\" `
                                                                 -Wheel ${it.path} `
                                                                 -DependenciesDir '.\\deps' `
+                                                                -Requirements '.\\requirements\\requirements-gui-freeze.txt' `
                                                                 -DocsDir '.\\dist\\docs'
                                                             """
                                                 )
