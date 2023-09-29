@@ -5,6 +5,7 @@ param (
     [Parameter(Mandatory=$true)] $PackageMaintainer,
     [Parameter(Mandatory=$true)] $Wheel,
     [Parameter(Mandatory=$true)] $DependenciesDir,
+    [Parameter(Mandatory=$true)] $Requirements,
     [Parameter(Mandatory=$true)] $DocsDir,
     $OutputFolder='packages'
 )
@@ -55,7 +56,7 @@ $PackageFolder = Join-Path -Path $OutputFolder -ChildPath $PackageName
 $DependenciesOutputFolder = Join-Path -Path $PackageFolder -ChildPath 'deps'
 $DocsOutputFolder = Join-Path -Path $PackageFolder -ChildPath 'docs'
 $NuspecFile = Join-Path -Path $PackageFolder -ChildPath "$($PackageName).nuspec"
-
+$RequirementsFile = $(Join-Path -Path $PackageFolder -ChildPath 'requirements.txt')
 
 Write-Host "Creating new Chocolatey package workspace"
 choco new $PackageName packageversion=$PackageVersion PythonSummary="$PackageSummary" InstallerFile=$Wheel MaintainerName="$PackageMaintainer" -t pythonscript --outputdirectory packages
@@ -69,6 +70,10 @@ Copy-Item -Path "$DependenciesDir"  -Destination $DependenciesOutputFolder -Forc
 
 Write-Host "Vendoring the following package wheels"
 Get-ChildItem $DependenciesOutputFolder | Format-Table -Property Name, Length
+
+Write-Host "Adding requirement file: $Requirements to $PackageFolder"
+New-Item -ItemType File -Path $RequirementsFile -Force | Out-Null
+Copy-Item -Path "$Requirements"  -Destination $RequirementsFile -Force  -Recurse
 
 Copy-Item -Path "$DocsDir"  -Destination $DocsOutputFolder -Force -Recurse
 
