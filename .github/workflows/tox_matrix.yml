@@ -44,7 +44,7 @@ jobs:
       - name: Run tox
         run: tox -e ${{ steps.tox-env.outputs.result }} -vvv
         env:
-          PIP_EXTRA_INDEX_URL: https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/simple/
+          PIP_EXTRA_INDEX_URL: ${{vars.PIP_EXTRA_INDEX_URL}}
           QT_QPA_PLATFORM: "offscreen"
           DISPLAY: ':99.0'
 
