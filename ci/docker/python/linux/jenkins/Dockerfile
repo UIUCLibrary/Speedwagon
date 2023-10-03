@@ -1,8 +1,9 @@
 ARG PYTHON_VERSION=3.11
 ARG PIP_FIND_LINKS=/wheels/
+ARG PIPX_HOME=/pipx
 ARG SONAR_SCANNER_VERSION=4.6.2.2472
-FROM python:${PYTHON_VERSION} as base_image
-FROM base_image as wheel_builder
+FROM python:${PYTHON_VERSION} AS base_image
+FROM base_image AS wheel_builder
 
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
@@ -16,7 +17,7 @@ RUN mkdir -p ${PIP_FIND_LINKS} &&  \
     pip wheel --wheel-dir=${PIP_FIND_LINKS} --no-cache-dir -r /requirements/requirements-ci.txt -r /requirements/requirements-gui.txt
 
 #==============================================================================
-FROM base_image as SONAR_BUILDER
+FROM base_image AS SONAR_BUILDER
 RUN apt-get update && \
     apt-get install --no-install-recommends -y unzip
 
@@ -64,6 +65,14 @@ COPY --from=wheel_builder ${PIP_FIND_LINKS}/* ${PIP_FIND_LINKS}/
 COPY --from=wheel_builder requirements/ /requirements
 RUN pip install --no-index --no-cache-dir --find-links=${PIP_FIND_LINKS} \
     -r /requirements/requirements-ci.txt -r /requirements/requirements-gui.txt
+
+ARG PIPX_HOME
+ENV PIPX_HOME=${PIPX_HOME}
+ENV PIPX_BIN_DIR=${PIPX_HOME}/bin
+RUN pip install --no-cache-dir pipx && \
+    pipx ensurepath && \
+    mkdir -p $PIPX_HOME  && chmod -R 777 $PIPX_HOME
+RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install 'devpi-client<7.0'
 
 COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
 ARG SONAR_SCANNER_VERSION

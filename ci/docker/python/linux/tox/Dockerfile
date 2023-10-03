@@ -1,5 +1,7 @@
 ARG PIP_DOWNLOAD_CACHE=/.cache/pip
-FROM ubuntu:22.04 as wheel_builder_base
+ARG PIPX_HOME=/pipx
+
+FROM ubuntu:22.04 AS wheel_builder_base
 COPY ci/docker/python/linux/tox/apt-packages.txt /tmp/
 RUN apt-get update && \
     apt-get install -y software-properties-common gpg-agent --no-install-recommends && \
@@ -24,6 +26,15 @@ ARG PIP_DOWNLOAD_CACHE
 RUN mkdir -p ${PIP_DOWNLOAD_CACHE} && \
     chmod -R 777 ${PIP_DOWNLOAD_CACHE}
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
+
+ARG PIPX_HOME
+ENV PIPX_HOME=${PIPX_HOME}
+ENV PIPX_BIN_DIR=${PIPX_HOME}/bin
+RUN python3 -m pip install --no-cache-dir pipx && \
+    pipx ensurepath && \
+    mkdir -p $PIPX_HOME  && chmod -R 777 $PIPX_HOME
+
+RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install 'devpi-client<7.0'
 
 WORKDIR /src
 CMD ["tox", "--workdir", "/tmp/tox", "--recreate", "-p=auto"]
