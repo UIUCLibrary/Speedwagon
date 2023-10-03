@@ -30,6 +30,6 @@ uiucprescon.images==0.0.5
 uiucprescon.imagevalidate==0.1.9
 uiucprescon.ocr==0.1.4
 uiucprescon.packager==0.2.15
-urllib3==2.0.5
+urllib3==2.0.6
 yarl==1.9.2
 zipp==3.1.0
