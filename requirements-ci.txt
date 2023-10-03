@@ -1,7 +1,0 @@
--r requirements/requirements.txt
--r requirements/requirements-ci.txt
--r requirements/requirements-ci-freeze.txt
--r requirements/requirements-vendor.txt
--r requirements/requirements_tox.txt
--r requirements/requirements-dev.txt
--r requirements/requirements-extra.txt
