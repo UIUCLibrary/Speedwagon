@@ -681,6 +681,13 @@ pipeline {
                                                 recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'speedwagon/**/*.py', normalTags: 'TODO')])
                                             }
                                         }
+                                        stage('Audit Requirement Freeze File'){
+                                            steps{
+                                                catchError(buildResult: 'SUCCESS', message: 'pip-audit found issues', stageResult: 'UNSTABLE') {
+                                                    sh 'pip-audit -r requirements/requirements-gui-freeze.txt --cache-dir=/tmp/pip-audit-cache'
+                                                }
+                                            }
+                                        }
                                         stage('Run Doctest Tests'){
                                             steps {
                                                 sh(
@@ -698,7 +705,6 @@ pipeline {
                                         }
                                         stage('Run MyPy Static Analysis') {
                                             steps{
-                                                sh 'mypy --version'
                                                 catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
                                                     tee('logs/mypy.log'){
                                                         sh(label: 'Running MyPy',
@@ -712,12 +718,8 @@ pipeline {
                                                     recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
                                                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                                 }
-                                                cleanup{
-                                                    cleanWs(patterns: [[pattern: 'logs/mypy.log', type: 'INCLUDE']])
-                                                }
                                             }
                                         }
-
                                         stage('Run Pylint Static Analysis') {
                                             steps{
                                                 run_pylint()
