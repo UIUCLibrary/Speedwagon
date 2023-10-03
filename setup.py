@@ -6,7 +6,7 @@ if __name__ == "__main__":
         install_requires=[
             "HathiZip>=0.1.10",
             "HathiValidate>=0.3.8",
-            "pyhathiprep>=0.1.7",
+            "pyhathiprep>=0.1.10",
             "pyyaml",
             "uiucprescon.imagevalidate>=0.1.9",
             "uiucprescon.ocr>=0.1.4",
@@ -19,7 +19,7 @@ if __name__ == "__main__":
             'lxml',
             "requests",
             "pluggy>=1.0",
-            "py3exiv2bind>=0.1.10",
+            "py3exiv2bind>=0.1.11",
         ],
         packages=[
             "speedwagon",
