@@ -1148,6 +1148,7 @@ pipeline {
                                                         nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
                                                         zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
                                                     ],
+                                                    vendoredPythonRequirementsFile: 'requirements/requirements-gui-freeze.txt',
                                                     buildDir: 'build\\cmake_build',
                                                     venvPath: "${WORKSPACE}\\build\\standalone_venv",
                                                     package: [

@@ -27,36 +27,45 @@ def generate_cpack_arguments(BuildWix=true, BuildNSIS=true, BuildZip=true){
 
 }
 
+def parseCPackFormatArgs(packageFormat){
+    def format = packageFormat.clone()
+    def cpack_generators_args = ''
+
+    def packaging_msi = false
+    if(format.containsKey('msi')){
+        packaging_msi = format['msi']
+        format.remove('msi')
+    }
+
+    def packaging_nsis = false
+    if(format.containsKey('nsis')){
+        packaging_nsis = format['nsis']
+        format.remove('nsis')
+    }
+
+    def packaging_zip = false
+    if(format.containsKey('zipFile')){
+        packaging_zip = format['zipFile']
+        format.remove('zipFile')
+    }
+    if(format.size() > 0){
+        error "invalid arguments in packageFormat ${packageFormat.keySet()}"
+    }
+    return "-G ${generate_cpack_arguments(packaging_msi, packaging_nsis, packaging_zip)}"
+}
 
 def build_standalone(args=[:]){
     // Parse packageFormat args
     def cpack_generators_args = ''
     if (args.containsKey('packageFormat')){
-        def packageFormat = args['packageFormat']
 
-        def packaging_msi = false
-        if(packageFormat.containsKey('msi')){
-            packaging_msi = args.packageFormat['msi']
-            packageFormat.remove('msi')
-        }
-
-        def packaging_nsis = false
-        if(packageFormat.containsKey('nsis')){
-            packaging_nsis = packageFormat['nsis']
-            packageFormat.remove('nsis')
-        }
-
-        def packaging_zip = false
-        if(packageFormat.containsKey('zipFile')){
-            packaging_zip = packageFormat['zipFile']
-            packageFormat.remove('zipFile')
-        }
-        cpack_generators_args = "-G ${generate_cpack_arguments(packaging_msi, packaging_nsis, packaging_zip)}"
-
-        if(packageFormat.size() > 0){
-            error "invalid arguments in packageFormat ${packageFormat.keySet()}"
-        }
+        cpack_generators_args = parseCPackFormatArgs(args['packageFormat'])
         args.remove('packageFormat')
+    }
+    def vendoredPythonRequirementsFile
+    if(args['vendoredPythonRequirementsFile']){
+        vendoredPythonRequirementsFile = args['vendoredPythonRequirementsFile']
+        args.remove('vendoredPythonRequirementsFile')
     }
 
     // Parse testing args
@@ -124,6 +133,9 @@ def build_standalone(args=[:]){
         script{
             try{
                 def cmakeArgs = "-DSPEEDWAGON_PYTHON_DEPENDENCY_CACHE=c:\\wheels -DSPEEDWAGON_VENV_PATH=${venvPath} -DSPEEDWAGON_DOC_PDF=${documentationPdf} -Wdev"
+                if(vendoredPythonRequirementsFile){
+                    cmakeArgs = cmakeArgs + " -DSPEEDWAGON_REQUIREMENTS_FILE=${vendoredPythonRequirementsFile}"
+                }
                 if(args['package']){
                     cmakeArgs = cmakeArgs + " -DSpeedwagon_VERSION:STRING=${pythonPackageVersion}"
                     def packageVersion = pythonPackageVersion =~ /(?:a|b|rc|dev)?\d+/
