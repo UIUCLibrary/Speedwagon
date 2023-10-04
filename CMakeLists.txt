@@ -14,7 +14,7 @@ option(SPEEDWAGON_TESTCI "For testing ci builds" OFF)
 
 set(SPEEDWAGON_PYTHON_DEPENDENCY_CACHE ${CMAKE_CURRENT_BINARY_DIR}/_deps/python_wheels CACHE PATH "location to put Python deps")
 set(SPEEDWAGON_VENV_PATH ${CMAKE_CURRENT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
-set(SPEEDWAGON_EXTRA_REQUIREMENTS_FILE "" CACHE FILEPATH "Extra requirements file to install to standalone build")
+set(SPEEDWAGON_REQUIREMENTS_FILE "" CACHE FILEPATH "requirements file to package with standalone build")
 if(WIN32)
     include(cmake/standalone.cmake)
 endif()
