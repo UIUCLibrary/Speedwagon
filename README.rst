@@ -20,7 +20,7 @@ Collection of tools and workflows for DS
 
         .. image:: https://img.shields.io/jenkins/coverage/api/https://jenkins-prod.library.illinois.edu/job/open%20source/job/speedwagon/job/master/coverage/   
            :alt: Jenkins Coverage
-           :target: https://jenkins-prod.library.illinois.edu/job/open source/job/speedwagon/job/master/coverage/
+           :target: https://jenkins-prod.library.illinois.edu/job/open%20source/job/speedwagon/job/master/coverage/
            
 How to Build Wheel from Source
 ------------------------------
