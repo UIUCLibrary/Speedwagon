@@ -39,7 +39,7 @@ if __name__ == "__main__":
         ],
         python_requires=">=3.7",
         extras_require={
-          "QT": ["PySide6==6.4.*"]
+          "QT": ["PySide6==6.5.3"]
         },
         entry_points={
             "gui_scripts": [
