@@ -1,5 +1,9 @@
 
-SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
+// Note:
+// Python version 3.8 testing is not supported on mac because PySide 6.5.3 doesn't work on python 3.8.10 and that's
+// the last version that was distributed with a mac installer. It does work with the latest version of python 3.8
+// on MacOS if you compile it yourself or get it off of homebrew.
+SUPPORTED_MAC_VERSIONS = ['3.9', '3.10', '3.11']
 SUPPORTED_LINUX_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 SUPPORTED_WINDOWS_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 DOCKER_PLATFORM_BUILD_ARGS = [
@@ -230,7 +234,6 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
         macArchitectures.each{ processorArchitecture ->
             macPackageStages["Test Python ${pythonVersion}: wheel Mac ${processorArchitecture}"] = {
                 withEnv([
-                    'QT_QPA_PLATFORM=offscreen',
                     'PATH+EXTRA=./venv/bin'
                     ]) {
                     devpi.testDevpiPackage(
@@ -270,7 +273,6 @@ def getMacDevpiTestStages(packageName, packageVersion, pythonVersions, devpiServ
             }
             macPackageStages["Test Python ${pythonVersion}: sdist Mac ${processorArchitecture}"] = {
                 withEnv([
-                    'QT_QPA_PLATFORM=offscreen',
                     'PATH+EXTRA=./venv/bin'
                     ]) {
                     devpi.testDevpiPackage(
@@ -459,60 +461,56 @@ def testPythonPackages(){
             }
             architectures.each{ processorArchitecture ->
                 macTests["Mac - ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
-                    withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                        packages.testPkg2(
-                            agent: [
-                                label: "mac && python${pythonVersion} && ${processorArchitecture}",
-                            ],
-                            glob: 'dist/*.tar.gz,dist/*.zip',
-                            stash: 'PYTHON_PACKAGES',
-                            toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                            toxExec: 'venv/bin/tox',
-                            testSetup: {
-                                checkout scm
-                                unstash 'PYTHON_PACKAGES'
-                                sh(
-                                    label:'Install Tox',
-                                    script: '''python3 -m venv venv
-                                               venv/bin/pip install pip --upgrade
-                                               venv/bin/pip install -r requirements/requirements_tox.txt
-                                               '''
-                                )
-                            },
-                            testTeardown: {
-                                sh 'rm -r venv/'
-                            },
-                            retry: 3,
-                        )
-                    }
+                    packages.testPkg2(
+                        agent: [
+                            label: "mac && python${pythonVersion} && ${processorArchitecture}",
+                        ],
+                        glob: 'dist/*.tar.gz,dist/*.zip',
+                        stash: 'PYTHON_PACKAGES',
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        toxExec: 'venv/bin/tox',
+                        testSetup: {
+                            checkout scm
+                            unstash 'PYTHON_PACKAGES'
+                            sh(
+                                label:'Install Tox',
+                                script: '''python3 -m venv venv
+                                           venv/bin/pip install pip --upgrade
+                                           venv/bin/pip install -r requirements/requirements_tox.txt
+                                           '''
+                            )
+                        },
+                        testTeardown: {
+                            sh 'rm -r venv/'
+                        },
+                        retry: 3,
+                    )
                 }
                 macTests["Mac - ${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
-                    withEnv(['QT_QPA_PLATFORM=offscreen']) {
-                        packages.testPkg2(
-                            agent: [
-                                label: "mac && python${pythonVersion} && ${processorArchitecture}",
-                            ],
-                            glob: 'dist/*.tar.gz,dist/*.zip',
-                            stash: 'PYTHON_PACKAGES',
-                            toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
-                            toxExec: 'venv/bin/tox',
-                            testSetup: {
-                                checkout scm
-                                unstash 'PYTHON_PACKAGES'
-                                sh(
-                                    label:'Install Tox',
-                                    script: '''python3 -m venv venv
-                                               venv/bin/pip install pip --upgrade
-                                               venv/bin/pip install -r requirements/requirements_tox.txt
-                                               '''
-                                )
-                            },
-                            testTeardown: {
-                                sh 'rm -r venv/'
-                            },
-                            retry: 3,
-                        )
-                    }
+                    packages.testPkg2(
+                        agent: [
+                            label: "mac && python${pythonVersion} && ${processorArchitecture}",
+                        ],
+                        glob: 'dist/*.tar.gz,dist/*.zip',
+                        stash: 'PYTHON_PACKAGES',
+                        toxEnv: "py${pythonVersion.replace('.', '')}-PySide6",
+                        toxExec: 'venv/bin/tox',
+                        testSetup: {
+                            checkout scm
+                            unstash 'PYTHON_PACKAGES'
+                            sh(
+                                label:'Install Tox',
+                                script: '''python3 -m venv venv
+                                           venv/bin/pip install pip --upgrade
+                                           venv/bin/pip install -r requirements/requirements_tox.txt
+                                           '''
+                            )
+                        },
+                        testTeardown: {
+                            sh 'rm -r venv/'
+                        },
+                        retry: 3,
+                    )
                 }
             }
         }
