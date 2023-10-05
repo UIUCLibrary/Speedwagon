@@ -1,5 +1,9 @@
 
-SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
+// Note:
+// Python version 3.8 testing is not supported on mac because PySide 6.5.3 doesn't work on python 3.8.10 and that's
+// the last version that was distributed with a mac installer. It does work with the latest version of python 3.8
+// on MacOS if you compile it yourself or get it off of homebrew.
+SUPPORTED_MAC_VERSIONS = ['3.9', '3.10', '3.11']
 SUPPORTED_LINUX_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 SUPPORTED_WINDOWS_VERSIONS = ['3.8', '3.9', '3.10', '3.11']
 DOCKER_PLATFORM_BUILD_ARGS = [
