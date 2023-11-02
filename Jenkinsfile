@@ -611,6 +611,9 @@ pipeline {
                     additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                   }
             }
+            options {
+                retry(conditions: [agent()], count: 2)
+            }
             steps {
                 catchError(buildResult: 'UNSTABLE', message: 'Sphinx has warnings', stageResult: 'UNSTABLE') {
                     buildSphinx()
