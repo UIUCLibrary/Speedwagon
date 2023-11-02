@@ -21,7 +21,7 @@ pytz==2023.3.post1
 pytz-deprecation-shim==0.1.0.post0
 PyYAML==6.0.1
 requests==2.31.0
-ruamel.yaml==0.18.3
+ruamel.yaml==0.18.4
 ruamel.yaml.clib==0.2.8
 shiboken6==6.5.3
 typing_extensions==4.8.0
