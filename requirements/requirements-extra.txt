@@ -1,4 +1,3 @@
 HathiValidate>=0.3.4
-ruamel.yaml
 six>=1.11
 pydocstyle
