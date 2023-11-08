@@ -9,7 +9,6 @@ py3exiv2bind>=0.1.11
 pyhathiprep>=0.1.10
 pyqt-distutils>=0.7.3
 PyYAML
-ruamel.yaml>=0.17.17
 uiucprescon.packager[kdu]>=0.2.15
 uiucprescon.images>=0.0.5
 uiucprescon.imagevalidate>=0.1.9

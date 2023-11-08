@@ -14,7 +14,8 @@ COPY requirements/ /requirements/requirements/
 
 ARG PIP_FIND_LINKS
 RUN mkdir -p ${PIP_FIND_LINKS} &&  \
-    pip wheel --wheel-dir=${PIP_FIND_LINKS} --no-cache-dir -r /requirements/requirements-dev.txt -r /requirements/requirements-gui.txt
+    python -m pip install pip --upgrade && \
+    python -m pip wheel --wheel-dir=${PIP_FIND_LINKS} --no-cache-dir -r /requirements/requirements-dev.txt -r /requirements/requirements-gui.txt
 
 #==============================================================================
 FROM base_image AS SONAR_BUILDER
