@@ -767,13 +767,7 @@ pipeline {
                                         always{
                                             sh 'coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage'
                                             stash includes: 'reports/coverage.xml', name: 'COVERAGE_REPORT_DATA'
-                                            publishCoverage(
-                                                adapters: [
-                                                    coberturaAdapter('reports/coverage.xml')
-                                                ],
-                                                calculateDiffForChangeRequests: true,
-                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                                            )
+                                            recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
                                         }
                                     }
                                 }
