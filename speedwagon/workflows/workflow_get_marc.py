@@ -134,9 +134,10 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         return True
 
     def get_marc_server(self) -> Optional[str]:
+        """Get the server url from the configuration."""
         return typing.cast(
             Optional[str],
-            self.get_workflow_configuration_value('Getmarc server url')
+            self.get_workflow_configuration_value("Getmarc server url"),
         )
 
     def discover_task_metadata(
@@ -190,7 +191,7 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         """Make sure that the options the user provided is valid.
 
         Args:
-            **user_args:
+            **user_args: Options provided by the user.
 
         """
         option_validators = validators.OptionValidator()
@@ -430,7 +431,7 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
         """Get reason for is_valid.
 
         Args:
-            **user_data:
+            **user_data: Options provided by the user.
 
         Returns:
             returns a message explaining why something isn't valid, otherwise
@@ -487,7 +488,7 @@ class RequiredValueValidation(validators.AbsOptionValidator):
         """Get reason for is_valid.
 
         Args:
-            **user_data:
+            **user_data: Options provided by the user.
 
         Returns:
             returns a message explaining why something isn't valid, otherwise
@@ -757,7 +758,7 @@ class MarcEnhancement035Task(EnhancementTask):
         """Locate any 959 fields containing the text UIUdb.
 
         Args:
-            tree:
+            tree: Root element of record
 
         Yields:
             Yields subelements if found.
@@ -775,7 +776,7 @@ class MarcEnhancement035Task(EnhancementTask):
         """Check if tree contains an 955 element with UIUdb.
 
         Args:
-            tree:
+            tree: Root element of record
 
         Returns:
             Returns True is found one, False if none have been found.
