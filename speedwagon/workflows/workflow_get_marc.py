@@ -24,6 +24,8 @@ from typing import (
     Iterator,
     Collection,
     TYPE_CHECKING,
+    Callable,
+    cast,
 )
 
 from xml.dom import minidom
@@ -60,8 +62,33 @@ MMSID_PATTERN = re.compile(
 BIBID_PATTERN = re.compile(r"^(?P<identifier>[0-9]*)")
 
 MARC21_NAMESPACE = "http://www.loc.gov/MARC21/slim"
+
+
 class RecordNotFound(SpeedwagonException):
     pass
+
+
+class DirectoryType(typing.TypedDict):
+    type: str
+    value: str
+
+
+class JobArgs(typing.TypedDict):
+    directory: DirectoryType
+    api_server: str
+    path: str
+    enhancements: Dict[str, bool]
+
+
+UserArgs = typing.TypedDict(
+    "UserArgs",
+    {
+        "Input": str,
+        "Add 035 field": str,
+        "Add 955 field": str,
+        "Identifier type": str,
+    },
+)
 
 
 class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
@@ -157,20 +184,21 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
             list of dictionaries of job metadata
 
         """
+        _user_args = cast(UserArgs, user_args)
         server_url = self.get_marc_server()
         if server_url is None:
             raise MissingConfiguration("Getmarc server url is not set")
 
-        search_path = user_args[OPTION_USER_INPUT]
-        jobs = [
+        search_path = _user_args["Input"]
+        jobs: List[Dict[str, Union[str, Collection[str]]]] = [
             {
                 "directory": {
                     "value": folder.name,
-                    "type": user_args[IDENTIFIER_TYPE],
+                    "type": _user_args["Identifier type"],
                 },
                 "enhancements": {
-                    "955": user_args.get(OPTION_955_FIELD, False),
-                    "035": user_args.get(OPTION_035_FIELD, False),
+                    "955": _user_args.get(OPTION_955_FIELD, False),
+                    "035": _user_args.get(OPTION_035_FIELD, False),
                 },
                 "api_server": server_url,
                 "path": folder.path,
@@ -194,6 +222,7 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
             **user_args: Options provided by the user.
 
         """
+        _user_args = cast(UserArgs, user_args)
         option_validators = validators.OptionValidator()
         option_validators.register_validator(
             key=OPTION_USER_INPUT,
@@ -215,14 +244,14 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         )
 
         invalid_messages = [
-            validation.explanation(**user_args)
+            validation.explanation(**_user_args)
             for validation in [
                 option_validators.get(OPTION_USER_INPUT),
                 option_validators.get("Input Required"),
                 option_validators.get("Identifier type Required"),
                 option_validators.get("Match 035 and 955"),
             ]
-            if not validation.is_valid(**user_args)
+            if not validation.is_valid(**_user_args)
         ]
         if invalid_messages:
             raise ValueError("\n".join(invalid_messages))
@@ -240,26 +269,27 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
             **job_args:
 
         """
-        if "directory" not in job_args.keys():
+        _job_args = cast(JobArgs, job_args)
+        if "directory" not in _job_args.keys():
             raise KeyError("Missing directory")
-        directory = job_args.get("directory", {})
+        directory = _job_args.get("directory", {})
         if not isinstance(directory, dict):
             raise TypeError()
         identifier_type = str(directory["type"])
         subdirectory = str(directory["value"])
-        identifier, _ = self._get_identifier_volume(job_args)
+        identifier, _ = self._get_identifier_volume(_job_args)
 
-        folder = str(job_args["path"])
+        folder = str(_job_args["path"])
         marc_file = os.path.join(folder, "MARC.XML")
         task_builder.add_subtask(
             MarcGeneratorTask(
                 identifier=identifier,
                 identifier_type=identifier_type,
                 output_name=marc_file,
-                server_url=str(job_args["api_server"]),
+                server_url=str(_job_args["api_server"]),
             )
         )
-        enhancements = job_args.get("enhancements", {})
+        enhancements = _job_args.get("enhancements", {})
         if not isinstance(enhancements, dict):
             raise TypeError()
 
@@ -311,12 +341,12 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
             f"  * {i['identifier']}. Reason: {i['output']}" for i in failed
         )
 
-        return f"{status}" \
-               f"\n" \
-               f"\n{failed_list}"
+        return f"{status}\n \n{failed_list}"
 
     @staticmethod
-    def _get_identifier_volume(job_args) -> Tuple[str, Union[str, None]]:
+    def _get_identifier_volume(
+        job_args: JobArgs,
+    ) -> Tuple[str, Union[str, None]]:
         directory = job_args["directory"]
         subdirectory = directory["value"]
         regex_patterns: Dict[str, re.Pattern] = {
@@ -374,7 +404,7 @@ class AbsMarcFileStrategy(abc.ABC):
         """
 
     @staticmethod
-    def download_record(url: str):
+    def download_record(url: str) -> str:
         """Download a marc record from the url."""
         record = requests.get(url)
         record.raise_for_status()
@@ -733,9 +763,21 @@ class EnhancementTask(speedwagon.tasks.Subtask):
         return root
 
 
-def provide_info(func):
+_T = typing.TypeVar("_T")
+# pylint: disable=typevar-name-incorrect-variance
+# pylint: disable=invalid-name
+_T_EnhancementTask = typing.TypeVar(
+    "_T_EnhancementTask", contravariant=True, bound=EnhancementTask
+)
+# pylint: enable=typevar-name-incorrect-variance
+# pylint: enable=invalid-name
+
+
+def provide_info(
+    func: Callable[[_T_EnhancementTask], _T]
+) -> Callable[[_T_EnhancementTask], _T]:
     @functools.wraps(func)
-    def wrapped(task: EnhancementTask):
+    def wrapped(task: _T_EnhancementTask) -> _T:
         try:
             return func(task)
         except Exception as error:
