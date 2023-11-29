@@ -611,8 +611,10 @@ class StartQtThreaded(AbsGuiStarter):
         dialog_box = dialog.dialogs.WorkflowProgress(parent=self.windows)
 
         if main_app is not None:
-            # pylint: disable=no-member
-            dialog_box.rejected.connect(main_app.close)  # type: ignore
+            def _rejected():
+                QtWidgets.QApplication.processEvents()
+                main_app.close()
+            dialog_box.rejected.connect(_rejected)  # type: ignore
 
         dialog_box.setWindowTitle(workflow_name)
         dialog_box.show()
