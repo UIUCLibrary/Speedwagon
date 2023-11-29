@@ -13,8 +13,18 @@ except ImportError:  # pragma: no cover
     from typing_extensions import Final  # type: ignore
 
 
-from typing import List, Any, Optional, Union, Sequence, Dict, Tuple, \
-    Iterator, Collection, TYPE_CHECKING
+from typing import (
+    List,
+    Any,
+    Optional,
+    Union,
+    Sequence,
+    Dict,
+    Tuple,
+    Iterator,
+    Collection,
+    TYPE_CHECKING,
+)
 
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
@@ -49,7 +59,7 @@ MMSID_PATTERN = re.compile(
 
 BIBID_PATTERN = re.compile(r"^(?P<identifier>[0-9]*)")
 
-
+MARC21_NAMESPACE = "http://www.loc.gov/MARC21/slim"
 class RecordNotFound(SpeedwagonException):
     pass
 
@@ -699,7 +709,7 @@ class EnhancementTask(speedwagon.tasks.Subtask):
     @staticmethod
     def to_pretty_string(root: ET.Element) -> str:
         """Convert lxml Element into a pretty formatted string."""
-        ET.register_namespace("", "http://www.loc.gov/MARC21/slim")
+        ET.register_namespace("", MARC21_NAMESPACE)
         flat_xml_string = "\n".join(
             line.strip()
             for line in ET.tostring(root, encoding="unicode").split("\n")
@@ -712,7 +722,7 @@ class EnhancementTask(speedwagon.tasks.Subtask):
     ) -> ET.Element:
         """Redraw the tree so that everything is in order."""
         root = tree.getroot()
-        namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
+        namespaces = {"marc": MARC21_NAMESPACE}
         fields = list(new_datafields)
         for datafield in tree.findall(".//marc:datafield", namespaces):
             fields.append(datafield)
@@ -738,7 +748,7 @@ def provide_info(func):
 class MarcEnhancement035Task(EnhancementTask):
     """Enhancement for Marc xml by adding a 035 field."""
 
-    namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
+    namespaces = {"marc": MARC21_NAMESPACE}
 
     @classmethod
     def find_959_field_with_uiudb(
