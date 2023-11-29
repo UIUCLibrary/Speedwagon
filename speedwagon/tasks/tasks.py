@@ -20,6 +20,8 @@ __all__ = [
     "TaskStatus",
 ]
 
+import speedwagon.exceptions
+
 
 class TaskStatus(enum.IntEnum):
     """Task Status."""
@@ -181,10 +183,13 @@ class Subtask(AbsSubtask):
     def exec(self) -> None:
         """Execute subtask."""
         self.status = TaskStatus.WORKING
-
-        self.status = (
-            TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
-        )
+        try:
+            self.status = (
+                TaskStatus.FAILED if not self.work() else TaskStatus.SUCCESS
+            )
+        except speedwagon.exceptions.SpeedwagonException as e:
+            self.status = TaskStatus.FAILED
+            raise e
 
 
 class PreTask(AbsSubtask):

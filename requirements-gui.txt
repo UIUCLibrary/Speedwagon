@@ -1,3 +1,4 @@
 -r requirements/requirements.txt
+-r requirements-vendor.txt
 -r requirements/requirements-gui.txt
 

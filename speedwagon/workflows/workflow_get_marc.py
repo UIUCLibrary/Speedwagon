@@ -13,8 +13,20 @@ except ImportError:  # pragma: no cover
     from typing_extensions import Final  # type: ignore
 
 
-from typing import List, Any, Optional, Union, Sequence, Dict, Tuple, \
-    Iterator, Collection, TYPE_CHECKING
+from typing import (
+    List,
+    Any,
+    Optional,
+    Union,
+    Sequence,
+    Dict,
+    Tuple,
+    Iterator,
+    Collection,
+    TYPE_CHECKING,
+    Callable,
+    cast,
+)
 
 from xml.dom import minidom
 import xml.etree.ElementTree as ET
@@ -23,26 +35,60 @@ import sys
 import requests
 
 import speedwagon
-from speedwagon.exceptions import MissingConfiguration, SpeedwagonException
+from speedwagon.exceptions import (
+    MissingConfiguration,
+    SpeedwagonException,
+    JobCancelled,
+)
 from speedwagon import reports, validators, workflow
 
 if TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType
 
-__all__ = ['GenerateMarcXMLFilesWorkflow']
+__all__ = ["GenerateMarcXMLFilesWorkflow"]
 
 
 # =========================== USER OPTIONS CONSTANTS ======================== #
 OPTION_955_FIELD: Final[str] = "Add 955 field"
 OPTION_035_FIELD: Final[str] = "Add 035 field"
 OPTION_USER_INPUT: Final[str] = "Input"
-IDENTIFIER_TYPE: Final[str] = 'Identifier type'
+IDENTIFIER_TYPE: Final[str] = "Identifier type"
 # =========================================================================== #
 
-MMSID_PATTERN = \
-    re.compile(r"^(?P<identifier>99[0-9]*(122)?05899)(_(?P<volume>[0-1]*))?")
+MMSID_PATTERN = re.compile(
+    r"^(?P<identifier>99[0-9]*(122)?05899)(_(?P<volume>[0-1]*))?"
+)
 
 BIBID_PATTERN = re.compile(r"^(?P<identifier>[0-9]*)")
+
+MARC21_NAMESPACE = "http://www.loc.gov/MARC21/slim"
+
+
+class RecordNotFound(SpeedwagonException):
+    pass
+
+
+class DirectoryType(typing.TypedDict):
+    type: str
+    value: str
+
+
+class JobArgs(typing.TypedDict):
+    directory: DirectoryType
+    api_server: str
+    path: str
+    enhancements: Dict[str, bool]
+
+
+UserArgs = typing.TypedDict(
+    "UserArgs",
+    {
+        "Input": str,
+        "Add 035 field": str,
+        "Add 955 field": str,
+        "Identifier type": str,
+    },
+)
 
 
 class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
@@ -61,13 +107,15 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
     """
 
     name = "Generate MARC.XML Files"
-    description = "For input, this tool takes a path to a directory of " \
-                  "files, each of which is a digitized volume, and is named " \
-                  "for that volume’s bibid. The program then retrieves " \
-                  "MARC.XML files for these bibId's and writes them into " \
-                  "the folder for each corresponding bibid or mmsid. It " \
-                  "uses the GetMARC service to retrieve these MARC.XML " \
-                  "files from the Library."
+    description = (
+        "For input, this tool takes a path to a directory of "
+        "files, each of which is a digitized volume, and is named "
+        "for that volume’s bibid. The program then retrieves "
+        "MARC.XML files for these bibId's and writes them into "
+        "the folder for each corresponding bibid or mmsid. It "
+        "uses the GetMARC service to retrieve these MARC.XML "
+        "files from the Library."
+    )
 
     def job_options(self) -> List[AbsOutputOptionDataType]:
         """Request user options.
@@ -91,19 +139,14 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         add_field_035 = workflow.BooleanSelect(OPTION_035_FIELD)
         add_field_035.value = True
 
-        return [
-            user_input,
-            id_type_option,
-            add_field_955,
-            add_field_035
-        ]
+        return [user_input, id_type_option, add_field_955, add_field_035]
 
     @classmethod
     def filter_bib_id_folders(cls, item: os.DirEntry) -> bool:
         """Filter only folders with bibids.
 
         Args:
-            item:
+            item: Directory path candidate
 
         Returns:
             True is the item is a folder with a bibid, else returns false
@@ -118,16 +161,17 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         return True
 
     def get_marc_server(self) -> Optional[str]:
+        """Get the server url from the configuration."""
         return typing.cast(
             Optional[str],
-            self.get_workflow_configuration_value('Getmarc server url')
+            self.get_workflow_configuration_value("Getmarc server url"),
         )
 
     def discover_task_metadata(
-            self,
-            initial_results: Sequence[Any],
-            additional_data,
-            **user_args: Union[str, bool]
+        self,
+        initial_results: Sequence[Any],
+        additional_data,
+        **user_args: Union[str, bool],
     ) -> List[Dict[str, Union[str, Collection[str]]]]:
         """Create a list of metadata that the jobs will need in order to work.
 
@@ -140,70 +184,83 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
             list of dictionaries of job metadata
 
         """
+        _user_args = cast(UserArgs, user_args)
         server_url = self.get_marc_server()
         if server_url is None:
             raise MissingConfiguration("Getmarc server url is not set")
 
-        return [{
-            "directory": {
-                "value": folder.name,
-                "type": user_args[IDENTIFIER_TYPE],
-            },
-            "enhancements": {
-                "955": user_args.get(OPTION_955_FIELD, False),
-                "035": user_args.get(OPTION_035_FIELD, False)
-            },
-            "api_server": server_url,
-            "path": folder.path
-        } for folder in filter(self.filter_bib_id_folders,
-                               os.scandir(user_args[OPTION_USER_INPUT]))]
+        search_path = _user_args["Input"]
+        jobs: List[Dict[str, Union[str, Collection[str]]]] = [
+            {
+                "directory": {
+                    "value": folder.name,
+                    "type": _user_args["Identifier type"],
+                },
+                "enhancements": {
+                    "955": _user_args.get(OPTION_955_FIELD, False),
+                    "035": _user_args.get(OPTION_035_FIELD, False),
+                },
+                "api_server": server_url,
+                "path": folder.path,
+            }
+            for folder in filter(
+                self.filter_bib_id_folders, os.scandir(search_path)
+            )
+        ]
+        if not jobs:
+            raise JobCancelled(
+                f"No directories containing packages located inside "
+                f"of {search_path}"
+            )
+        return jobs
 
     @staticmethod
     def validate_user_options(**user_args: Dict[str, str]) -> bool:
         """Make sure that the options the user provided is valid.
 
         Args:
-            **user_args:
+            **user_args: Options provided by the user.
 
         """
+        _user_args = cast(UserArgs, user_args)
         option_validators = validators.OptionValidator()
         option_validators.register_validator(
             key=OPTION_USER_INPUT,
-            validator=validators.DirectoryValidation(key=OPTION_USER_INPUT)
+            validator=validators.DirectoryValidation(key=OPTION_USER_INPUT),
         )
         option_validators.register_validator(
             key="Input Required",
-            validator=RequiredValueValidation(key=OPTION_USER_INPUT)
+            validator=RequiredValueValidation(key=OPTION_USER_INPUT),
         )
         option_validators.register_validator(
             key="Identifier type Required",
-            validator=RequiredValueValidation(key=IDENTIFIER_TYPE)
+            validator=RequiredValueValidation(key=IDENTIFIER_TYPE),
         )
         option_validators.register_validator(
             key="Match 035 and 955",
             validator=DependentTruthyValueValidation(
-                key=OPTION_035_FIELD,
-                required_true_keys=[
-                    OPTION_955_FIELD
-                ]
-            )
+                key=OPTION_035_FIELD, required_true_keys=[OPTION_955_FIELD]
+            ),
         )
 
         invalid_messages = [
-            validation.explanation(**user_args) for validation in [
+            validation.explanation(**_user_args)
+            for validation in [
                 option_validators.get(OPTION_USER_INPUT),
                 option_validators.get("Input Required"),
                 option_validators.get("Identifier type Required"),
-                option_validators.get('Match 035 and 955')
-            ] if not validation.is_valid(**user_args)]
+                option_validators.get("Match 035 and 955"),
+            ]
+            if not validation.is_valid(**_user_args)
+        ]
         if invalid_messages:
             raise ValueError("\n".join(invalid_messages))
         return True
 
     def create_new_task(
-            self,
-            task_builder: "speedwagon.tasks.TaskBuilder",
-            **job_args: Union[str, Dict[str, Union[str, bool]]]
+        self,
+        task_builder: "speedwagon.tasks.TaskBuilder",
+        **job_args: Union[str, Dict[str, Union[str, bool]]],
     ) -> None:
         """Create the task to be run.
 
@@ -212,49 +269,48 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
             **job_args:
 
         """
-        if 'directory' not in job_args.keys():
+        _job_args = cast(JobArgs, job_args)
+        if "directory" not in _job_args.keys():
             raise KeyError("Missing directory")
-        directory = job_args.get('directory', {})
+        directory = _job_args.get("directory", {})
         if not isinstance(directory, dict):
             raise TypeError()
         identifier_type = str(directory["type"])
         subdirectory = str(directory["value"])
-        identifier, _ = self._get_identifier_volume(job_args)
+        identifier, _ = self._get_identifier_volume(_job_args)
 
-        folder = str(job_args["path"])
+        folder = str(_job_args["path"])
         marc_file = os.path.join(folder, "MARC.XML")
         task_builder.add_subtask(
             MarcGeneratorTask(
                 identifier=identifier,
                 identifier_type=identifier_type,
                 output_name=marc_file,
-                server_url=str(job_args['api_server'])
+                server_url=str(_job_args["api_server"]),
             )
         )
-        enhancements = job_args.get('enhancements', {})
+        enhancements = _job_args.get("enhancements", {})
         if not isinstance(enhancements, dict):
             raise TypeError()
 
-        add_955 = enhancements.get('955', False)
+        add_955 = enhancements.get("955", False)
         if add_955:
             task_builder.add_subtask(
                 MarcEnhancement955Task(
-                    added_value=subdirectory,
-                    xml_file=marc_file
+                    added_value=subdirectory, xml_file=marc_file
                 )
             )
-        add_035 = enhancements.get('035')
+        add_035 = enhancements.get("035")
         if add_035:
             task_builder.add_subtask(
-                MarcEnhancement035Task(
-                    xml_file=marc_file
-                )
+                MarcEnhancement035Task(xml_file=marc_file)
             )
 
     @classmethod
     @reports.add_report_borders
-    def generate_report(cls, results: List[speedwagon.tasks.Result],
-                        **user_args) -> Optional[str]:
+    def generate_report(
+        cls, results: List[speedwagon.tasks.Result], **user_args
+    ) -> Optional[str]:
         """Generate a simple home-readable report from the job results.
 
         Args:
@@ -271,30 +327,33 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         ]
 
         if not failed:
+            return (
+                f"Success! [{len(all_results)}] MARC.XML files were "
+                f"retrieved and written to their named folders"
+            )
 
-            return f"Success! [{len(all_results)}] MARC.XML files were " \
-                      f"retrieved and written to their named folders"
-
-        status = f"Warning! [{len(failed)}] packages experienced errors " \
-                 f"retrieving MARC.XML files:"
+        status = (
+            f"Warning! [{len(failed)}] packages experienced errors "
+            f"retrieving MARC.XML files:"
+        )
 
         failed_list = "\n".join(
             f"  * {i['identifier']}. Reason: {i['output']}" for i in failed
         )
 
-        return f"{status}" \
-               f"\n" \
-               f"\n{failed_list}"
+        return f"{status}\n \n{failed_list}"
 
     @staticmethod
-    def _get_identifier_volume(job_args) -> Tuple[str, Union[str, None]]:
-        directory = job_args['directory']
-        subdirectory = directory['value']
+    def _get_identifier_volume(
+        job_args: JobArgs,
+    ) -> Tuple[str, Union[str, None]]:
+        directory = job_args["directory"]
+        subdirectory = directory["value"]
         regex_patterns: Dict[str, re.Pattern] = {
             "MMS ID": MMSID_PATTERN,
-            "Bibid": BIBID_PATTERN
+            "Bibid": BIBID_PATTERN,
         }
-        regex_pattern = regex_patterns.get(directory['type'])
+        regex_pattern = regex_patterns.get(directory["type"])
         if regex_pattern is None:
             raise SpeedwagonException(
                 f"No identifier pattern for {directory['type']}"
@@ -306,7 +365,7 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
                 f"{directory['type']}: {subdirectory}"
             )
         results = match.groupdict()
-        return results['identifier'], results.get('volume')
+        return results["identifier"], results.get("volume")
 
     def workflow_options(self) -> List[AbsOutputOptionDataType]:
         """Set the settings for get marc workflow.
@@ -315,8 +374,7 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         """
         return [
             speedwagon.workflow.TextLineEditData(
-                'Getmarc server url',
-                required=True
+                "Getmarc server url", required=True
             ),
         ]
 
@@ -346,7 +404,7 @@ class AbsMarcFileStrategy(abc.ABC):
         """
 
     @staticmethod
-    def download_record(url: str):
+    def download_record(url: str) -> str:
         """Download a marc record from the url."""
         record = requests.get(url)
         record.raise_for_status()
@@ -370,9 +428,9 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
         self.required_true_keys = required_true_keys
 
     @staticmethod
-    def _has_required_key(user_data: Dict[str, Union[str, bool]],
-                          key: str) -> bool:
-
+    def _has_required_key(
+        user_data: Dict[str, Union[str, bool]], key: str
+    ) -> bool:
         return key not in user_data
 
     @staticmethod
@@ -391,27 +449,31 @@ class DependentTruthyValueValidation(validators.AbsOptionValidator):
             if self._has_required_key(user_data, required_key):
                 return False
 
-        return self._requirement_is_also_true(
-            bool(user_data[OPTION_035_FIELD]),
-            [bool(user_data[OPTION_955_FIELD])]
-        ) is not False
+        return (
+            self._requirement_is_also_true(
+                bool(user_data[OPTION_035_FIELD]),
+                [bool(user_data[OPTION_955_FIELD])],
+            )
+            is not False
+        )
 
     def explanation(self, **user_data: Union[str, bool]) -> str:
         """Get reason for is_valid.
 
         Args:
-            **user_data:
+            **user_data: Options provided by the user.
 
         Returns:
             returns a message explaining why something isn't valid, otherwise
                 produce the message "ok"
         """
-        if self._requirement_is_also_true(
+        if (
+            self._requirement_is_also_true(
                 bool(user_data[OPTION_035_FIELD]),
-                [
-                    bool(user_data[OPTION_955_FIELD])
-                ]
-        ) is False:
+                [bool(user_data[OPTION_955_FIELD])],
+            )
+            is False
+        ):
             return "Add 035 field requires Add 955 field"
         return "ok"
 
@@ -437,8 +499,9 @@ class RequiredValueValidation(validators.AbsOptionValidator):
         return user_data[key] is not None
 
     @staticmethod
-    def _not_empty_str(user_data: Dict[str, Union[str, bool]],
-                       key: str) -> bool:
+    def _not_empty_str(
+        user_data: Dict[str, Union[str, bool]], key: str
+    ) -> bool:
         return str(user_data[key]).strip() != ""
 
     def is_valid(self, **user_data: Union[str, bool]) -> bool:
@@ -455,7 +518,7 @@ class RequiredValueValidation(validators.AbsOptionValidator):
         """Get reason for is_valid.
 
         Args:
-            **user_data:
+            **user_data: Options provided by the user.
 
         Returns:
             returns a message explaining why something isn't valid, otherwise
@@ -464,10 +527,12 @@ class RequiredValueValidation(validators.AbsOptionValidator):
         if self._has_key(user_data, self.key) is False:
             return f"Missing key {self.key}"
 
-        if any([
-            self._is_not_none(user_data, self.key) is False,
-            self._not_empty_str(user_data, self.key) is False
-        ]):
+        if any(
+            [
+                self._is_not_none(user_data, self.key) is False,
+                self._not_empty_str(user_data, self.key) is False,
+            ]
+        ):
             return f"Missing {self.key}"
 
         return "ok"
@@ -486,14 +551,21 @@ class GetMarcBibId(AbsMarcFileStrategy):
             str: Record requested as a string
 
         """
-        return self.download_record(f"{self.url}/api/record?bib_id={ident}")
+        try:
+            return self.download_record(
+                f"{self.url}/api/record?bib_id={ident}"
+            )
+        except requests.exceptions.HTTPError as error:
+            raise RecordNotFound(
+                f"Unable to retrieve record with bib_id: {ident}"
+            ) from error
 
 
 class GetMarcMMSID(AbsMarcFileStrategy):
-    """Retrieve an record based on MMSID."""
+    """Retrieve a record based on MMSID."""
 
     def get_record(self, ident: str) -> str:
-        """Retrieve an record based on MMSID.
+        """Retrieve a record based on MMSID.
 
         Args:
             ident: MMSID
@@ -502,7 +574,14 @@ class GetMarcMMSID(AbsMarcFileStrategy):
             str: Record requested as a string
 
         """
-        return self.download_record(f"{self.url}/api/record?mms_id={ident}")
+        try:
+            return self.download_record(
+                f"{self.url}/api/record?mms_id={ident}"
+            )
+        except requests.exceptions.HTTPError as error:
+            raise RecordNotFound(
+                f"Unable to retrieve record with mms_id: {ident}"
+            ) from error
 
 
 def strip_volume(full_bib_id: str) -> int:
@@ -514,10 +593,7 @@ def strip_volume(full_bib_id: str) -> int:
     return int(result.group(0))
 
 
-SUPPORTED_IDENTIFIERS = {
-    "MMS ID": GetMarcMMSID,
-    "Bibid": GetMarcBibId
-}
+SUPPORTED_IDENTIFIERS = {"MMS ID": GetMarcMMSID, "Bibid": GetMarcBibId}
 
 
 class MarcGeneratorTask(speedwagon.tasks.Subtask):
@@ -525,11 +601,13 @@ class MarcGeneratorTask(speedwagon.tasks.Subtask):
 
     name = "Generate MARC File"
 
-    def __init__(self,
-                 identifier: str,
-                 identifier_type: str,
-                 output_name: str,
-                 server_url: str) -> None:
+    def __init__(
+        self,
+        identifier: str,
+        identifier_type: str,
+        output_name: str,
+        server_url: str,
+    ) -> None:
         """Task for retrieving the data from the server and saving as a file.
 
         Args:
@@ -585,8 +663,9 @@ class MarcGeneratorTask(speedwagon.tasks.Subtask):
             Connection errors to the getmarc server will throw a
                 SpeedwagonException.
         """
-        strategy = \
-            SUPPORTED_IDENTIFIERS[self._identifier_type](self._server_url)
+        strategy = SUPPORTED_IDENTIFIERS[self._identifier_type](
+            self._server_url
+        )
         try:
             self.log(f"Accessing MARC record for {self._identifier}")
             record = strategy.get_record(self._identifier)
@@ -594,22 +673,32 @@ class MarcGeneratorTask(speedwagon.tasks.Subtask):
             self.write_file(data=pretty_xml)
 
             self.log(f"Wrote file {self._output_name}")
-            self.set_results({
-                "success": True,
-                "identifier": self._identifier,
-                "output": self._output_name
-            })
+            self.set_results(
+                {
+                    "success": True,
+                    "identifier": self._identifier,
+                    "output": self._output_name,
+                }
+            )
             return True
         except UnicodeError as error:
             raise SpeedwagonException(
                 f"Error with {self._identifier}"
             ) from error
+        except RecordNotFound as record_error:
+            raise JobCancelled(
+                f"Unable to locate record with identifier: {self._identifier}."
+                " Make the identifier is valid and the identifier type is "
+                "correct.",
+            ) from record_error
         except (requests.ConnectionError, requests.HTTPError) as exception:
-            self.set_results({
-                "success": False,
-                "identifier": self._identifier,
-                "output": str(exception)
-            })
+            self.set_results(
+                {
+                    "success": False,
+                    "identifier": self._identifier,
+                    "output": str(exception),
+                }
+            )
             raise SpeedwagonException(
                 "Trouble connecting to server getmarc"
             ) from exception
@@ -651,33 +740,44 @@ class EnhancementTask(speedwagon.tasks.Subtask):
     @staticmethod
     def to_pretty_string(root: ET.Element) -> str:
         """Convert lxml Element into a pretty formatted string."""
-        ET.register_namespace('', 'http://www.loc.gov/MARC21/slim')
-        flat_xml_string = \
-            "\n".join(line.strip() for line in ET.tostring(
-                    root, encoding="unicode")
-                          .split("\n")).replace("\n", "")
+        ET.register_namespace("", MARC21_NAMESPACE)
+        flat_xml_string = "\n".join(
+            line.strip()
+            for line in ET.tostring(root, encoding="unicode").split("\n")
+        ).replace("\n", "")
         return str(minidom.parseString(flat_xml_string).toprettyxml())
 
     @staticmethod
     def redraw_tree(
-            tree: ET.ElementTree,
-            *new_datafields: ET.Element
+        tree: ET.ElementTree, *new_datafields: ET.Element
     ) -> ET.Element:
         """Redraw the tree so that everything is in order."""
         root = tree.getroot()
-        namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
+        namespaces = {"marc": MARC21_NAMESPACE}
         fields = list(new_datafields)
         for datafield in tree.findall(".//marc:datafield", namespaces):
             fields.append(datafield)
             root.remove(datafield)
-        for field in sorted(fields, key=lambda x: int(x.attrib['tag'])):
+        for field in sorted(fields, key=lambda x: int(x.attrib["tag"])):
             root.append(field)
         return root
 
 
-def provide_info(func):
+_T = typing.TypeVar("_T")
+# pylint: disable=typevar-name-incorrect-variance
+# pylint: disable=invalid-name
+_T_EnhancementTask = typing.TypeVar(
+    "_T_EnhancementTask", contravariant=True, bound=EnhancementTask
+)
+# pylint: enable=typevar-name-incorrect-variance
+# pylint: enable=invalid-name
+
+
+def provide_info(
+    func: Callable[[_T_EnhancementTask], _T]
+) -> Callable[[_T_EnhancementTask], _T]:
     @functools.wraps(func)
-    def wrapped(task: EnhancementTask):
+    def wrapped(task: _T_EnhancementTask) -> _T:
         try:
             return func(task)
         except Exception as error:
@@ -691,24 +791,24 @@ def provide_info(func):
 class MarcEnhancement035Task(EnhancementTask):
     """Enhancement for Marc xml by adding a 035 field."""
 
-    namespaces = {"marc": "http://www.loc.gov/MARC21/slim"}
+    namespaces = {"marc": MARC21_NAMESPACE}
 
     @classmethod
     def find_959_field_with_uiudb(
-            cls,
-            tree: ET.ElementTree
+        cls, tree: ET.ElementTree
     ) -> Iterator[ET.Element]:
         """Locate any 959 fields containing the text UIUdb.
 
         Args:
-            tree:
+            tree: Root element of record
 
         Yields:
             Yields subelements if found.
 
         """
-        for datafield in tree.findall(".//marc:datafield/[@tag='959']",
-                                      cls.namespaces):
+        for datafield in tree.findall(
+            ".//marc:datafield/[@tag='959']", cls.namespaces
+        ):
             for subfield in datafield:
                 if subfield.text is not None and "UIUdb" in subfield.text:
                     yield subfield
@@ -718,7 +818,7 @@ class MarcEnhancement035Task(EnhancementTask):
         """Check if tree contains an 955 element with UIUdb.
 
         Args:
-            tree:
+            tree: Root element of record
 
         Returns:
             Returns True is found one, False if none have been found.
@@ -742,17 +842,14 @@ class MarcEnhancement035Task(EnhancementTask):
 
         """
         new_datafield = ET.Element(
-            '{http://www.loc.gov/MARC21/slim}datafield',
-            attrib={
-                'tag': "035",
-                'ind1': ' ',
-                'ind2': ' '
-            }
+            "{http://www.loc.gov/MARC21/slim}datafield",
+            attrib={"tag": "035", "ind1": " ", "ind2": " "},
         )
         new_subfield = deepcopy(data)
         if new_subfield.text is not None:
-            new_subfield.text = \
-                new_subfield.text.replace("(UIUdb)", "(UIU)Voyager")
+            new_subfield.text = new_subfield.text.replace(
+                "(UIUdb)", "(UIU)Voyager"
+            )
 
         new_datafield.append(new_subfield)
         return new_datafield
@@ -776,8 +873,7 @@ class MarcEnhancement035Task(EnhancementTask):
 
         if uiudb_subfields:
             root = self.redraw_tree(
-                tree,
-                self.new_035_field(uiudb_subfields[0])
+                tree, self.new_035_field(uiudb_subfields[0])
             )
 
             with open(self.xml_file, "w", encoding="utf-8") as write_file:
@@ -842,15 +938,11 @@ class MarcEnhancement955Task(EnhancementTask):
 
         """
         new_datafield = ET.Element(
-            '{http://www.loc.gov/MARC21/slim}datafield',
-            attrib={
-                'tag': "955",
-                'ind1': ' ',
-                'ind2': ' '
-            }
+            "{http://www.loc.gov/MARC21/slim}datafield",
+            attrib={"tag": "955", "ind1": " ", "ind2": " "},
         )
         new_subfield = ET.Element(
-            '{http://www.loc.gov/MARC21/slim}subfield',
+            "{http://www.loc.gov/MARC21/slim}subfield",
             attrib={"code": "b"},
         )
         new_subfield.text = added_value
