@@ -800,17 +800,14 @@ class MarcEnhancement035Task(EnhancementTask):
 
         """
         new_datafield = ET.Element(
-            '{http://www.loc.gov/MARC21/slim}datafield',
-            attrib={
-                'tag': "035",
-                'ind1': ' ',
-                'ind2': ' '
-            }
+            "{http://www.loc.gov/MARC21/slim}datafield",
+            attrib={"tag": "035", "ind1": " ", "ind2": " "},
         )
         new_subfield = deepcopy(data)
         if new_subfield.text is not None:
-            new_subfield.text = \
-                new_subfield.text.replace("(UIUdb)", "(UIU)Voyager")
+            new_subfield.text = new_subfield.text.replace(
+                "(UIUdb)", "(UIU)Voyager"
+            )
 
         new_datafield.append(new_subfield)
         return new_datafield
