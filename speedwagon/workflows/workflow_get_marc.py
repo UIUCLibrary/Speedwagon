@@ -44,6 +44,8 @@ MMSID_PATTERN = \
 
 BIBID_PATTERN = re.compile(r"^(?P<identifier>[0-9]*)")
 
+class RecordNotFound(SpeedwagonException):
+    pass
 
 class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
     """Generate Marc XML files.
@@ -486,14 +488,19 @@ class GetMarcBibId(AbsMarcFileStrategy):
             str: Record requested as a string
 
         """
-        return self.download_record(f"{self.url}/api/record?bib_id={ident}")
+        try:
+            return self.download_record(f"{self.url}/api/record?bib_id={ident}")
+        except requests.exceptions.HTTPError as error:
+            raise RecordNotFound(
+                f"Unable to retrieve record with bib_id: {ident}"
+            ) from error
 
 
 class GetMarcMMSID(AbsMarcFileStrategy):
-    """Retrieve an record based on MMSID."""
+    """Retrieve a record based on MMSID."""
 
     def get_record(self, ident: str) -> str:
-        """Retrieve an record based on MMSID.
+        """Retrieve a record based on MMSID.
 
         Args:
             ident: MMSID
@@ -502,7 +509,12 @@ class GetMarcMMSID(AbsMarcFileStrategy):
             str: Record requested as a string
 
         """
-        return self.download_record(f"{self.url}/api/record?mms_id={ident}")
+        try:
+            return self.download_record(f"{self.url}/api/record?mms_id={ident}")
+        except requests.exceptions.HTTPError as error:
+            raise RecordNotFound(
+                f"Unable to retrieve record with mms_id: {ident}"
+            ) from error
 
 
 def strip_volume(full_bib_id: str) -> int:
@@ -604,6 +616,12 @@ class MarcGeneratorTask(speedwagon.tasks.Subtask):
             raise SpeedwagonException(
                 f"Error with {self._identifier}"
             ) from error
+        except RecordNotFound:
+            raise SpeedwagonException(
+                f"Unable to locate record with identifier: {self._identifier}. "
+                f"Make the identifier is valid and the identifier type is "
+                f"correct.",
+            )
         except (requests.ConnectionError, requests.HTTPError) as exception:
             self.set_results({
                 "success": False,
