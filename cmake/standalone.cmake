@@ -1,7 +1,6 @@
 include(cmake/python_functions.cmake)
 
 get_python_version(
-        ${CMAKE_CURRENT_SOURCE_DIR}/setup.py
         MAJOR SPEEDWAGON_VERSION_MAJOR
         MINOR SPEEDWAGON_VERSION_MINOR
         PATCH SPEEDWAGON_VERSION_PATCH
@@ -71,21 +70,6 @@ if (NOT embedded_python_POPULATED)
 endif()
 
 # Set project Version number based on the metadata
-#get_python_version(
-#    ${CMAKE_CURRENT_SOURCE_DIR}/setup.py
-#    MAJOR CMAKE_PROJECT_VERSION_MAJOR
-#    MINOR CMAKE_PROJECT_VERSION_MINOR
-#    PATCH CMAKE_PROJECT_VERSION_PATCH
-#    VERSION PROJECT_VERSION
-#    )
-#
-#get_python_version(
-#    ${PROJECT_SOURCE_DIR}/setup.py
-#    MAJOR ${PROJECT_NAME}_VERSION_MAJOR
-#    MINOR ${PROJECT_NAME}_VERSION_MINOR
-#    PATCH ${PROJECT_NAME}_VERSION_PATCH
-#    VERSION ${PROJECT_NAME}_VERSION
-#    )
 
 # if build_number is set. make that the PROJECT_VERSION tweak
 if(DEFINED ENV{build_number})
@@ -137,10 +121,9 @@ add_custom_target(wheel
         )
 
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/speedwagon-${SPEEDWAGON_VERSION}-py3-none-any.whl
-        COMMAND ${VENV_PYTHON} setup.py build_py --no-compile
-        COMMAND ${VENV_PYTHON} setup.py bdist_wheel --bdist-dir ${PROJECT_BINARY_DIR}/python_build --dist-dir ${PROJECT_BINARY_DIR}
+        COMMAND ${VENV_PYTHON} -m build --wheel --outdir  ${PROJECT_BINARY_DIR}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        MAIN_DEPENDENCY setup.py
+        MAIN_DEPENDENCY pyproject.toml
         )
 
 add_custom_target(docs
@@ -151,8 +134,8 @@ add_custom_target(docs
 add_custom_command(
         OUTPUT
         docs/html/index.html
-        COMMAND ${VENV_PYTHON} setup.py build_sphinx -b html --build-dir=${PROJECT_BINARY_DIR}/docs
-        COMMAND ${VENV_PYTHON} setup.py build_sphinx -b qthelp --build-dir=${PROJECT_BINARY_DIR}/docs
+        COMMAND ${VENV_PYTHON} -m sphinx -b html --build-dir=${PROJECT_BINARY_DIR}/docs
+        COMMAND ${VENV_PYTHON} -m sphinx -b qthelp --build-dir=${PROJECT_BINARY_DIR}/docs
         DEPENDS
         ${PROJECT_SOURCE_DIR}/docs/source/conf.py
         ${PROJECT_SOURCE_DIR}/docs/source/about.rst
@@ -166,7 +149,7 @@ add_custom_command(
 add_custom_command(
         OUTPUT
         docs/qthelp/index.html
-        COMMAND ${VENV_PYTHON} setup.py build_sphinx -b qthelp --build-dir=${PROJECT_BINARY_DIR}/docs
+        COMMAND ${VENV_PYTHON} -m sphinx -b qthelp --build-dir=${PROJECT_BINARY_DIR}/docs
         DEPENDS
         ${PROJECT_SOURCE_DIR}/docs/source/conf.py
         ${PROJECT_SOURCE_DIR}/docs/source/about.rst

@@ -19,20 +19,24 @@
 #
 import os
 import sys
+try:
+    from tomllib import load as load_toml
+except ImportError:
+    from toml import load as load_toml
 
 import re
 
-try:
-    from setuptools.config.setupcfg import read_configuration
-except ModuleNotFoundError:
-    from setuptools.config import read_configuration
-
-
-def get_project_metadata():
-    path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "../../setup.cfg")
+project_file = os.path.normpath(
+    os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "..",
+        "pyproject.toml"
     )
-    return read_configuration(path)["metadata"]
+)
+
+with open(project_file, "rb") as f:
+    metadata = load_toml(f)['project']
 
 
 cwd = os.getcwd()
@@ -75,7 +79,7 @@ napoleon_use_rtype = True
 autosummary_generate = True
 autosummary_imported_members = True
 
-metadata = get_project_metadata()
+# metadata = get_project_metadata()
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -91,8 +95,9 @@ master_doc = 'index'
 
 # General information about the project.
 project = metadata['name']
-copyright = '2017, 2018, 2019, {}'.format(metadata['author'])
-author = metadata['author']
+author = metadata['authors'][0]['name']
+# raise Exception(f"the metadata name is {project_metadata['authors'][0]['name']}")
+copyright = f'2017, 2018, 2019, {author}'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -143,7 +148,6 @@ html_theme_options = {
     'logo_name': True,
     'description': metadata['description']
 }
-
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -181,7 +185,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'speedwagon.tex',
-     '{} Documentation'.format(metadata['name'].title()),
+     f'{project.title()} Documentation',
      "University of Illinois at Urbana Champaign",
      'manual'),
 ]
@@ -192,8 +196,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, metadata['name'], '{} Documentation'.format(metadata['name']),
-     metadata['author'], 1)
+    (master_doc, project, f'{project} Documentation',
+     author, 1)
 ]
 
 
@@ -202,9 +206,10 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
+
 texinfo_documents = [
-    (master_doc, metadata['name'], '{} Documentation'.format(metadata['name']),
-    metadata['author'], 'speedwagon', metadata['description'],
+    (master_doc, project, f'{project.title()} Documentation',
+     author, 'speedwagon', metadata['description'],
      'Miscellaneous'),
 ]
 

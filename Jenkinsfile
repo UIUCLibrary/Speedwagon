@@ -65,7 +65,7 @@ def deployStandalone(glob, url) {
                 throw e;
             }
         }
-    //                                    deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/docs/*.dng', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.Version}/")
+    //                                    deploy_artifacts_to_url('dist/*.msi,dist/*.exe,dist/*.zip,dist/*.tar.gz,dist/docs/*.pdf,dist/docs/*.dng', "https://jenkins.library.illinois.edu/nexus/repository/prescon-beta/speedwagon/${props.version}/")
     }
 }
 def macAppleBundle() {
@@ -86,7 +86,6 @@ def macAppleBundle() {
         sh('venv/bin/pip list')
     }
     stage('Building Apple Application Bundle'){
-        unstash 'DIST-INFO'
         sh(label: 'Running pyinstaller script', script: 'venv/bin/python packaging/create_osx_app_bundle.py')
         findFiles(glob: 'dist/*.dmg').each{
 
@@ -332,29 +331,29 @@ def startup(){
                 mineRepository()
             }
         },
-        'Getting Distribution Info': {
-            node('linux && docker') {
-                timeout(2){
-                    ws{
-                        checkout scm
-                        try{
-                            docker.image('python').inside {
-                                withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                    sh(
-                                       label: 'Running setup.py with dist_info',
-                                       script: 'python setup.py dist_info'
-                                    )
-                                }
-                                stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                                archiveArtifacts artifacts: '*.dist-info/**'
-                            }
-                        } finally{
-                            deleteDir()
-                        }
-                    }
-                }
-            }
-        }
+//        'Getting Distribution Info': {
+//            node('linux && docker') {
+//                timeout(2){
+//                    ws{
+//                        checkout scm
+//                        try{
+//                            docker.image('python').inside {
+//                                withEnv(['PIP_NO_CACHE_DIR=off']) {
+//                                    sh(
+//                                       label: 'Running setup.py with dist_info',
+//                                       script: 'python setup.py dist_info'
+//                                    )
+//                                }
+//                                stash includes: '*.dist-info/**', name: 'DIST-INFO'
+//                                archiveArtifacts artifacts: '*.dist-info/**'
+//                            }
+//                        } finally{
+//                            deleteDir()
+//                        }
+//                    }
+//                }
+//            }
+//        }
     ]
     )
 
@@ -550,25 +549,16 @@ startup()
 
 def get_props(){
     stage('Reading Package Metadata'){
-        node() {
-            try{
-                unstash 'DIST-INFO'
-                def metadataFile = findFiles(excludes: '', glob: '*.dist-info/METADATA')[0]
-                def package_metadata = readProperties interpolate: true, file: metadataFile.path
+        node('docker && linux') {
+            checkout scm
+            docker.image('python').inside {
+                def packageMetadata = readJSON text: sh(returnStdout: true, script: 'python -c \'import tomllib;print(tomllib.load(open("pyproject.toml", "rb"))["project"])\'').trim()
                 echo """Metadata:
 
-    Name      ${package_metadata.Name}
-    Version   ${package_metadata.Version}
+    Name      ${packageMetadata.name}
+    Version   ${packageMetadata.version}
     """
-                return package_metadata
-            } finally {
-                cleanWs(
-                    patterns: [
-                            [pattern: '*.dist-info/**', type: 'INCLUDE'],
-                        ],
-                    notFailBuild: true,
-                    deleteDirs: true
-                )
+                return packageMetadata
             }
         }
     }
@@ -625,7 +615,7 @@ pipeline {
                 }
                 success{
                     stash includes: 'dist/docs/*.pdf', name: 'SPEEDWAGON_DOC_PDF'
-                    zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
+                    zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
                     stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                     archiveArtifacts artifacts: 'dist/docs/*.pdf'
                 }
@@ -636,7 +626,6 @@ pipeline {
                         patterns: [
                             [pattern: 'dist/', type: 'INCLUDE'],
                             [pattern: 'build/', type: 'INCLUDE'],
-                            [pattern: 'speedwagon.dist-info/', type: 'INCLUDE'],
                         ]
                     )
                 }
@@ -810,8 +799,8 @@ pipeline {
                                                 destination: env.BRANCH_NAME,
                                             ],
                                             package: [
-                                                version: props.Version,
-                                                name: props.Name
+                                                version: props.version,
+                                                name: props.name
                                             ],
                                         )
                                     } else {
@@ -819,8 +808,8 @@ pipeline {
                                             artifactStash: 'sonarqube artifacts',
                                             sonarqube: sonarqubeConfig,
                                             package: [
-                                                version: props.Version,
-                                                name: props.Name
+                                                version: props.version,
+                                                name: props.name
                                             ]
                                         )
                                     }
@@ -1038,9 +1027,9 @@ pipeline {
                                                     label: 'Creating new Chocolatey package',
                                                     script: """ci/jenkins/scripts/make_chocolatey.ps1 `
                                                                 -PackageName speedwagon `
-                                                                -PackageSummary \"${props.Summary}\" `
-                                                                -PackageVersion ${props.Version} `
-                                                                -PackageMaintainer \"${props.Maintainer}\" `
+                                                                -PackageSummary \"${props.description}\" `
+                                                                -PackageVersion ${props.version} `
+                                                                -PackageMaintainer \"${props.maintainers[0].name}\" `
                                                                 -Wheel ${it.path} `
                                                                 -DependenciesDir '.\\deps' `
                                                                 -Requirements '.\\requirements\\requirements-gui-freeze.txt' `
@@ -1081,12 +1070,12 @@ pipeline {
                                         stage('Install'){
                                             steps{
                                                 unstash 'CHOCOLATEY_PACKAGE'
-                                                testSpeedwagonChocolateyPkg(props.Version)
+                                                testSpeedwagonChocolateyPkg(props.version)
                                             }
                                         }
                                         stage('Reinstall/Upgrade'){
                                             steps{
-                                                testReinstallSpeedwagonChocolateyPkg(props.Version)
+                                                testReinstallSpeedwagonChocolateyPkg(props.version)
                                             }
                                         }
                                         stage('Uninstall'){
@@ -1147,7 +1136,7 @@ pipeline {
                                                     buildDir: 'build\\cmake_build',
                                                     venvPath: "${WORKSPACE}\\build\\standalone_venv",
                                                     package: [
-                                                        version: props.Version
+                                                        version: props.version
                                                     ],
                                                     testing:[
                                                         ctestLogsFilePath: "${WORKSPACE}\\logs\\ctest.log"
@@ -1272,7 +1261,7 @@ pipeline {
                                 checkout scm
                                 devpi = load('ci/jenkins/scripts/devpi.groovy')
                             }
-                            def macPackages = getMacDevpiTestStages(props.Name, props.Version, SUPPORTED_MAC_VERSIONS, DEVPI_CONFIG.server, DEVPI_CONFIG.credentialsId, DEVPI_CONFIG.stagingIndex)
+                            def macPackages = getMacDevpiTestStages(props.name, props.version, SUPPORTED_MAC_VERSIONS, DEVPI_CONFIG.server, DEVPI_CONFIG.credentialsId, DEVPI_CONFIG.stagingIndex)
                             windowsPackages = [:]
                             SUPPORTED_WINDOWS_VERSIONS.each{pythonVersion ->
                                 if(params.INCLUDE_WINDOWS_X86_64 == true){
@@ -1292,8 +1281,8 @@ pipeline {
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
                                             ],
                                             package:[
-                                                name: props.Name,
-                                                version: props.Version,
+                                                name: props.name,
+                                                version: props.version,
                                                 selector: 'tar.gz'
                                             ],
                                             test:[
@@ -1318,8 +1307,8 @@ pipeline {
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
                                             ],
                                             package:[
-                                                name: props.Name,
-                                                version: props.Version,
+                                                name: props.name,
+                                                version: props.version,
                                                 selector: 'whl'
                                             ],
                                             test:[
@@ -1350,8 +1339,8 @@ pipeline {
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
                                             ],
                                             package:[
-                                                name: props.Name,
-                                                version: props.Version,
+                                                name: props.name,
+                                                version: props.version,
                                                 selector: 'tar.gz'
                                             ],
                                             test:[
@@ -1377,8 +1366,8 @@ pipeline {
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
                                             ],
                                             package:[
-                                                name: props.Name,
-                                                version: props.Version,
+                                                name: props.name,
+                                                version: props.version,
                                                 selector: 'whl'
                                             ],
                                             test:[
@@ -1420,8 +1409,8 @@ pipeline {
                         script{
                             load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                 devpiExec: 'pipx run devpi-client',
-                                pkgName: props.Name,
-                                pkgVersion: props.Version,
+                                pkgName: props.name,
+                                pkgVersion: props.version,
                                 server: DEVPI_CONFIG.server,
                                 indexSource: DEVPI_CONFIG.stagingIndex,
                                 indexDestination: 'production/release',
@@ -1439,9 +1428,9 @@ pipeline {
                                 checkout scm
                                 docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                     load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
-                                        pkgName: props.Name,
+                                        pkgName: props.name,
                                         devpiExec: 'pipx run devpi-client',
-                                        pkgVersion: props.Version,
+                                        pkgVersion: props.version,
                                         server: DEVPI_CONFIG.server,
                                         indexSource: DEVPI_CONFIG.stagingIndex,
                                         indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
@@ -1459,8 +1448,8 @@ pipeline {
                             docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 load('ci/jenkins/scripts/devpi.groovy').removePackage(
                                     devpiExec: 'pipx run devpi-client',
-                                    pkgName: props.Name,
-                                    pkgVersion: props.Version,
+                                    pkgName: props.name,
+                                    pkgVersion: props.version,
                                     index: DEVPI_CONFIG.stagingIndex,
                                     server: DEVPI_CONFIG.server,
                                     credentialsId: DEVPI_CONFIG.credentialsId,
@@ -1630,7 +1619,7 @@ pipeline {
                                 description: 'Url to upload artifact.',
                                 name: 'SERVER_URL'
                             )
-                            string defaultValue: "speedwagon/${props.Version}", description: 'subdirectory to store artifact', name: 'archiveFolder'
+                            string defaultValue: "speedwagon/${props.version}", description: 'subdirectory to store artifact', name: 'archiveFolder'
                         }
                     }
                     options {
