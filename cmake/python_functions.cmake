@@ -1,9 +1,9 @@
 
-function(get_python_version SETUP_PY)
+function(get_python_version)
     cmake_parse_arguments(PYTHON "" "VERSION;MAJOR;MINOR;PATCH" "" ${ARGN})
-
+    # TODO: Make this get version from pyproject.toml
     execute_process(
-        COMMAND ${Python_EXECUTABLE} ${SETUP_PY} --version
+        COMMAND ${Python_EXECUTABLE} -c "import tomllib;print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])"
         OUTPUT_VARIABLE PYTHON_PACKAGE_VERSION
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )

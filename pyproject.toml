@@ -1,3 +1,89 @@
+[project]
+name = "speedwagon"
+version = "0.3.0.dev7"
+description = "Collection of tools and workflows for DS"
+maintainers = [
+    { name="Henry Borchers", email="hborcher@illinois.edu" }
+]
+authors = [
+    {name="University Library at The University of Illinois at Urbana Champaign: Preservation Services", email="prescons@library.illinois.edu"}
+]
+requires-python = ">=3.8"
+license = { file="LICENSE"}
+dependencies =[
+    "HathiZip>=0.1.10",
+    "HathiValidate>=0.3.8",
+    "pyhathiprep>=0.1.10",
+    "pyyaml",
+    "uiucprescon.imagevalidate>=0.1.9",
+    "uiucprescon.ocr>=0.1.4",
+    "uiucprescon.packager[kdu]>=0.2.15",
+    "uiucprescon.images",
+    "pykdu-compress>=0.1.8",
+    'importlib_resources;python_version<"3.9"',
+    'importlib-metadata;python_version<"3.10"',
+    'typing-extensions;python_version<"3.11"',
+    'lxml',
+    "requests",
+    "pluggy>=1.0",
+    "py3exiv2bind>=0.1.11",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: University of Illinois/NCSA Open Source License",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+]
+keywords = ['GUI']
+readme = { file= "README.rst", content-type="text/x-rst" }
+
+[project.urls]
+project = "http://www.library.illinois.edu/dccdocs/speedwagon"
+download = "https://github.com/UIUCLibrary/Speedwagon/releases"
+
+[project.optional-dependencies]
+QT = ["PySide6==6.5.3"]
+
+[project.gui-scripts]
+speedwagon = "speedwagon.__main__:main"
+sw-tab-editor = "speedwagon.startup:standalone_tab_editor"
+
+[tool.setuptools]
+include-package-data = true
+packages=[
+    "speedwagon",
+    "speedwagon.config",
+    "speedwagon.frontend",
+    "speedwagon.frontend.cli",
+    "speedwagon.frontend.qtwidgets",
+    "speedwagon.frontend.qtwidgets.dialog",
+    "speedwagon.frontend.qtwidgets.models",
+    "speedwagon.frontend.qtwidgets.ui",
+    "speedwagon.tasks",
+    "speedwagon.workflows",
+]
+
+[tool.setuptools.package-data]
+speedwagon = ["favicon.ico", "logo.png", 'py.typed']
+"speedwagon.frontend.qtwidgets.ui" = [
+     "console.ui",
+     "main_window3.ui",
+     "main_window_shell.ui",
+     "plugin_settings.ui",
+     "select_workflow_widget.ui",
+     'setup_job.ui',
+     "tab_editor.ui",
+     "workflow_progress.ui",
+     "workspace.ui",
+ ]
+
+
+
 [build-system]
 requires = ["setuptools>=40.8.0", "wheel"]
 build-backend = "setuptools.build_meta"
