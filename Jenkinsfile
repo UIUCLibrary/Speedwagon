@@ -1244,7 +1244,6 @@ pipeline {
                         unstash 'PYTHON_PACKAGES'
                         script{
                             load('ci/jenkins/scripts/devpi.groovy').upload(
-                                    devpiExec: 'pipx run devpi-client',
                                     server: DEVPI_CONFIG.server,
                                     credentialsId: DEVPI_CONFIG.credentialsId,
                                     index: DEVPI_CONFIG.stagingIndex,
@@ -1275,7 +1274,6 @@ pipeline {
                                                 ]
                                             ],
                                             devpi: [
-                                                devpiExec: 'c:\\pipx\\bin\\devpi.exe',
                                                 index: DEVPI_CONFIG.stagingIndex,
                                                 server: DEVPI_CONFIG.server,
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
@@ -1301,7 +1299,6 @@ pipeline {
                                                 ]
                                             ],
                                             devpi: [
-                                                devpiExec: 'c:\\pipx\\bin\\devpi.exe',
                                                 index: DEVPI_CONFIG.stagingIndex,
                                                 server: DEVPI_CONFIG.server,
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
@@ -1333,7 +1330,6 @@ pipeline {
                                                 ]
                                             ],
                                             devpi: [
-                                                devpiExec: 'pipx run devpi-client',
                                                 index: DEVPI_CONFIG.stagingIndex,
                                                 server: DEVPI_CONFIG.server,
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
@@ -1360,7 +1356,6 @@ pipeline {
                                                 ]
                                             ],
                                             devpi: [
-                                                devpiExec: 'pipx run devpi-client',
                                                 index: DEVPI_CONFIG.stagingIndex,
                                                 server: DEVPI_CONFIG.server,
                                                 credentialsId: DEVPI_CONFIG.credentialsId,
@@ -1408,7 +1403,6 @@ pipeline {
                     steps {
                         script{
                             load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
-                                devpiExec: 'pipx run devpi-client',
                                 pkgName: props.name,
                                 pkgVersion: props.version,
                                 server: DEVPI_CONFIG.server,
@@ -1429,7 +1423,6 @@ pipeline {
                                 docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                     load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                         pkgName: props.name,
-                                        devpiExec: 'pipx run devpi-client',
                                         pkgVersion: props.version,
                                         server: DEVPI_CONFIG.server,
                                         indexSource: DEVPI_CONFIG.stagingIndex,
@@ -1447,7 +1440,6 @@ pipeline {
                             checkout scm
                             docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 load('ci/jenkins/scripts/devpi.groovy').removePackage(
-                                    devpiExec: 'pipx run devpi-client',
                                     pkgName: props.name,
                                     pkgVersion: props.version,
                                     index: DEVPI_CONFIG.stagingIndex,
