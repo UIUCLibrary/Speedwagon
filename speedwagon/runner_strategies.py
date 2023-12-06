@@ -81,11 +81,17 @@ class AbsJobCallbacks(abc.ABC):
     def log(self, text: str, level: int = logging.INFO) -> None:
         """Log information."""
 
-    def start(self) -> None:
-        """Start."""
+    def start(self) -> None:  # noqa: B027
+        """Start.
 
-    def refresh(self) -> None:
-        """Refresh."""
+        By default, this is a no-op
+        """
+
+    def refresh(self) -> None:  # noqa: B027
+        """Refresh.
+
+        By default, this is a no-op
+        """
 
     @abc.abstractmethod
     def cancelling_complete(self) -> None:

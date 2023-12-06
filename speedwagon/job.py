@@ -65,12 +65,19 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
         """
 
-    def completion_task(
+    def completion_task(  # noqa: B027
         self, task_builder: TaskBuilder, results, **user_args
     ) -> None:
-        """Last task after Job is completed."""
+        """Last task after Job is completed.
 
-    def initial_task(self, task_builder: TaskBuilder, **user_args) -> None:
+        By default, this method is a no-op unless overridden.
+        """
+
+    def initial_task(  # noqa: B027
+            self,
+            task_builder: TaskBuilder,
+            **user_args
+    ) -> None:
         """Create a task to run before the main tasks start.
 
         The initial task is run prior to the get_additional_info method.
@@ -82,9 +89,15 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
         In general, prefer :py:meth:`discover_task_metadata` if you don't
         need a user's interaction.
+
+        By default, this method is a no-op unless overridden.
         """
 
-    def create_new_task(self, task_builder: TaskBuilder, **job_args) -> None:
+    def create_new_task(  # noqa: B027
+            self,
+            task_builder: TaskBuilder,
+            **job_args
+    ) -> None:
         """Add a new task to be accomplished when the workflow is started.
 
         Use the task_builder parameter's add_subtask method to include a
@@ -100,9 +113,10 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
                 task_builder.add_subtask(
                     subtask=MakeYamlTask(package_id, source, title_page))
 
+        By default, this method is a no-op unless overridden.
         """
 
-    @classmethod
+    @classmethod  # noqa: B027
     def generate_report(
         cls, results: List[Result], **user_args
     ) -> Optional[str]:
@@ -123,6 +137,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
                 return '\\n'.join(report_lines)
 
+        By default, this method is a no-op and returns None unless overridden.
         """
 
     # pylint: disable=unused-argument
