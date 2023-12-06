@@ -58,12 +58,15 @@ class WorkflowItem(QtGui.QStandardItem):
 class AbsWorkflowItemData(abc.ABC):  # pylint: disable=too-few-public-methods
     """Abstract base class for workflow item data."""
 
-    def data(
+    def data(  # noqa: B027
         self,
         workflow: Type[speedwagon.Workflow],
         role: Union[int, QtCore.Qt.ItemDataRole],
     ) -> Any:
-        """Get the data from workflow."""
+        """Get the data from workflow.
+
+        By default, this method is a no-op unless overridden.
+        """
 
 
 WorkflowClassRole = cast(int, QtCore.Qt.ItemDataRole.UserRole) + 1

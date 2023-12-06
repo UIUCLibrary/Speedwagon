@@ -265,8 +265,11 @@ class AbsStarter(metaclass=abc.ABCMeta):
     def run(self) -> int:
         pass
 
-    def initialize(self) -> None:
-        """Initialize startup routine."""
+    def initialize(self) -> None:  # noqa: B027
+        """Initialize startup routine.
+
+        By default, this is a no-op
+        """
 
 
 class SingleWorkflowJSON(AbsStarter):
