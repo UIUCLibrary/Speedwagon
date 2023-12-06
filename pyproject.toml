@@ -43,7 +43,7 @@ keywords = ['GUI']
 readme = { file= "README.rst", content-type="text/x-rst" }
 
 [project.urls]
-project = "http://www.library.illinois.edu/dccdocs/speedwagon"
+project = "https://www.library.illinois.edu/dccdocs/speedwagon"
 download = "https://github.com/UIUCLibrary/Speedwagon/releases"
 
 [project.optional-dependencies]
