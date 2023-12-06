@@ -13,6 +13,15 @@ def getToxEnv(args){
         return "py"
     }
 }
+def getDockerRuntimeArgs(agent){
+    def args
+    if (agent.containsKey("dockerfile")){
+        if (agent.dockerfile.containsKey("args")){
+            return agent.dockerfile.args
+        }
+    }
+    return ""
+}
 
 def getAgent(args){
     if (args.agent.containsKey("label")){
@@ -28,18 +37,34 @@ def getAgent(args){
 
     if (args.agent.containsKey("dockerfile")){
         def nodeLabel = getNodeLabel(args.agent)
+        def dockerArgs = getDockerRuntimeArgs(args.agent)
         return { inner ->
             node(nodeLabel){
                 ws{
                     checkout scm
                     def dockerImage
-                    def dockerImageName = "${currentBuild.fullProjectName}_${getToxEnv(args)}".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
+                    def dockerImageName = "${currentBuild.fullProjectName}_${getToxEnv(args)}_${UUID.randomUUID().toString()}".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
                     lock("docker build-${env.NODE_NAME}"){
                         dockerImage = docker.build(dockerImageName, "-f ${args.agent.dockerfile.filename} ${args.agent.dockerfile.additionalBuildArgs} .")
                     }
-                    def dockerRunArgs = args.agent.dockerfile.get('args', '')
-                    dockerImage.inside(dockerRunArgs){
-                        inner()
+                    try{
+                        dockerImage.inside(dockerArgs){
+                            inner()
+                        }
+                    } finally{
+                        if(isUnix()){
+                            sh(
+                                label: "Untagging Docker Image used",
+                                script: "docker image rm --no-prune ${dockerImage.imageName()}",
+                                returnStatus: true
+                            )
+                        } else {
+                            powershell(
+                                label: "Untagging Docker Image used",
+                                script: "docker image rm --no-prune ${dockerImage.imageName()}",
+                                returnStatus: true
+                            )
+                        }
                     }
                 }
             }
@@ -49,70 +74,76 @@ def getAgent(args){
 }
 
 def testPkg(args = [:]){
-    def tox = args['toxExec'] ? args['toxExec']: "tox"
+    def testCommand = args['testCommand'] ? args['testCommand']: {
+        def distroFiles = findFiles(glob: 'dist/*.tar.gz,dist/*.zip,dist/*.whl')
+        if (distroFiles.size() == 0){
+            error("No files located to test")
+        }
+        distroFiles.each{
+            def toxCommand = "tox --installpkg ${it.path} -e py"
+            if(isUnix()){
+                sh(label: "Testing tox version", script: "tox --version")
+                toxCommand = toxCommand + " --workdir /tmp/tox"
+                sh(label: "Running Tox", script: toxCommand)
+            } else{
+                bat(label: "Testing tox version", script: "tox --version")
+                toxCommand = toxCommand + " --workdir %TEMP%\\tox"
+                bat(label: "Running Tox", script: toxCommand)
+            }
+        }
+    }
     def setup = args['testSetup'] ? args['testSetup']: {
         checkout scm
-        unstash "${args.stash}"
     }
-    def teardown =  args['testTeardown'] ? args['testTeardown']: {}
-    def retries = args.containsKey('retry') ? args.retry : 1
+    def cleanup =  args['post']['cleanup'] ? args['post']['cleanup']: {}
+    def successful = args['post']['success'] ? args['post']['success']: {}
+    def failure = args['post']['failure'] ? args['post']['failure']: {}
+    def dockerImageName = args['dockerImageName'] ? args['dockerImageName']:  "${currentBuild.fullProjectName}_${getToxEnv(args)}_build".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
     def agentRunner = getAgent(args)
-    retry(retries){
-        agentRunner {
-            setup()
-            try{
-                findFiles(glob: args.glob).each{
-                    def toxCommand = "${tox} --installpkg ${it.path} -e ${getToxEnv(args)} -vv"
-                    if(isUnix()){
-                        sh(label: "Testing tox version", script: "${tox} --version")
-                        sh(label: "Running Tox", script: toxCommand)
-                    } else{
-                        bat(label: "Testing tox version", script: "${tox} --version")
-                        toxCommand = toxCommand + " --workdir %TEMP%\\tox"
-                        bat(label: "Running Tox", script: toxCommand)
-                    }
-                }
-            } finally{
-                teardown()
-            }
+    agentRunner {
+        setup()
+        try{
+            testCommand()
+            successful()
+        } catch(e){
+            failure()
+            throw e
+        } finally{
+            cleanup()
         }
     }
 }
 
-
-def testPkg2(args = [:]){
-    def tox = args['toxExec'] ? args['toxExec']: "tox"
-    def setup = args['testSetup'] ? args['testSetup']: {
-        checkout scm
-        unstash "${args.stash}"
-    }
-    def toxEnv = args['toxEnv'] ? args['toxEnv']: "py"
-    def teardown =  args['testTeardown'] ? args['testTeardown']: {}
-    def retries = args.containsKey('retry') ? args.retry : 1
+def buildPkg(args = [:]){
     def agentRunner = getAgent(args)
-    retry(retries){
-        agentRunner {
-            setup()
-            try{
-                findFiles(glob: args.glob).each{
-                    def toxCommand = "${tox} --installpkg ${it.path} -e ${toxEnv} -vv"
-                    if(isUnix()){
-                        sh(label: "Testing tox version", script: "${tox} --version")
-                        sh(label: "Running Tox", script: toxCommand)
-                    } else{
-                        bat(label: "Testing tox version", script: "${tox} --version")
-                        toxCommand = toxCommand + " --workdir %TEMP%\\tox"
-                        bat(label: "Running Tox", script: toxCommand)
-                    }
-                }
-            } finally{
-                teardown()
-            }
+    def setup = args['buildSetup'] ? args['buildSetup']: {
+        checkout scm
+    }
+    def cleanup =  args['post']['cleanup'] ? args['post']['cleanup']: {}
+    def successful = args['post']['success'] ? args['post']['success']: {}
+    def failure = args['post']['failure'] ? args['post']['failure']: {}
+    def buildCmd = args['buildCmd'] ? args['buildCmd']: {
+        if(isUnix()){
+            sh "python -m pip wheel --no-deps -w ./dist ."
+        } else {
+            bat "py -m pip wheel --no-deps -w ./dist ."
+        }
+    }
+    def retries = args['retries'] ? args['retries'] : 1
+    agentRunner {
+        setup()
+        try{
+            buildCmd()
+            successful()
+        } catch(e){
+            failure()
+            throw e
+        } finally{
+            cleanup()
         }
     }
 }
-
 return [
     testPkg: this.&testPkg,
-    testPkg2: this.&testPkg2
+    buildPkg: this.&buildPkg
 ]
