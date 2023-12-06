@@ -614,6 +614,18 @@ def testPythonPackages(){
         parallel(linuxTests + windowsTests + macTests)
     }
 }
+def buildPackages(){
+    timeout(5){
+        withEnv(['PIP_NO_CACHE_DIR=off']) {
+            sh(label: 'Building Python Package',
+               script: '''python -m venv venv --upgrade-deps
+                          venv/bin/pip install build
+                          venv/bin/python -m build .
+                          '''
+               )
+       }
+    }
+}
 
 def buildSphinx(){
     def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
@@ -970,16 +982,7 @@ pipeline {
                                 }
                             }
                             steps{
-                                timeout(5){
-                                    withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                        sh(label: 'Building Python Package',
-                                           script: '''python -m venv venv --upgrade-deps
-                                                      venv/bin/pip install build
-                                                      venv/bin/python -m build .
-                                                      '''
-                                           )
-                                   }
-                                }
+                                buildPackages()
                             }
                             post{
                                 always{
@@ -1518,7 +1521,8 @@ pipeline {
                        script{
                             if (!env.TAG_NAME?.trim()){
                                 checkout scm
-                                docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
+                                def dockerImage = docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .')
+                                dockerImage.inside{
                                     load('ci/jenkins/scripts/devpi.groovy').pushPackageToIndex(
                                         pkgName: props.name,
                                         pkgVersion: props.version,
@@ -1528,6 +1532,7 @@ pipeline {
                                         credentialsId: DEVPI_CONFIG.credentialsId,
                                     )
                                 }
+                                sh script: "docker image rm --no-prune ${dockerImage.imageName()}"
                            }
                        }
                     }
@@ -1536,7 +1541,8 @@ pipeline {
                     node('linux && docker && x86 && devpi-access') {
                        script{
                             checkout scm
-                            docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
+                            def dockerImage = docker.build('speedwagon:devpi','-f ./ci/docker/python/linux/jenkins/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .')
+                            dockerImage.inside{
                                 load('ci/jenkins/scripts/devpi.groovy').removePackage(
                                     pkgName: props.name,
                                     pkgVersion: props.version,
@@ -1546,6 +1552,7 @@ pipeline {
 
                                 )
                             }
+                            sh script: "docker image rm --no-prune ${dockerImage.imageName()}"
                        }
                     }
                 }
