@@ -3,6 +3,8 @@ from __future__ import annotations
 import abc
 import logging
 import logging.handlers
+import os
+import pathlib
 import sys
 import typing
 import warnings
@@ -25,6 +27,7 @@ except ImportError:  # pragma: no cover
 
 import speedwagon
 from speedwagon.reports import ExceptionReport
+from speedwagon.utils import get_desktop_path
 from speedwagon.frontend.qtwidgets import logging_helpers, ui_loader
 import speedwagon.frontend.qtwidgets.ui
 from speedwagon.info import convert_package_metadata_to_string
@@ -163,17 +166,29 @@ class SystemInfoDialog(QtWidgets.QDialog):
 
     def request_export_system_information(
             self,
-            save_dialog_box=QtWidgets.QFileDialog.getSaveFileName
+            *_,
+            save_dialog_box=QtWidgets.QFileDialog.getSaveFileName,
+            **__,
     ) -> None:
         """Request system information be saved to a file."""
         file, file_format = save_dialog_box(
             self,
             "Save File",
-            "speedwagon-info.txt",
+            os.path.join(
+                get_default_export_system_info_path(),
+                "speedwagon-info.txt"
+            ),
             "Text (*.txt)"
         )
         if file:
             self.export_to_file.emit(file, file_format)
+
+
+def get_default_export_system_info_path() -> str:
+    try:
+        return get_desktop_path()
+    except FileNotFoundError:
+        return str(pathlib.Path.home())
 
 
 class AbsWorkflowProgressState(abc.ABC):

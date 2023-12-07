@@ -1,5 +1,6 @@
 """General module for things that don't fit anywhere else."""
-
+import os
+import pathlib
 from typing import Iterator, Callable
 
 import logging
@@ -45,3 +46,15 @@ class CallbackLogHandler(BufferingHandler):
     def emit(self, record: logging.LogRecord) -> None:
         """Emit logged message to callback function."""
         self.callback(logging.Formatter().format(record))
+
+
+def get_desktop_path() -> str:
+    """Locate user's desktop.
+
+    Throws FileNotFoundError if unsuccessful
+    """
+    home = pathlib.Path.home()
+    desktop_path = home / "Desktop"
+    if os.path.exists(desktop_path):
+        return str(desktop_path)
+    raise FileNotFoundError("No Desktop folder located")
