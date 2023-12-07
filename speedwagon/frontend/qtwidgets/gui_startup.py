@@ -4,6 +4,8 @@ from __future__ import annotations
 import abc
 import collections
 import contextlib
+import pathlib
+from functools import partial
 import io
 import json
 import logging
@@ -23,6 +25,7 @@ except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 from PySide6 import QtWidgets
 
+
 import speedwagon
 from speedwagon.workflow import initialize_workflows
 from speedwagon import config
@@ -31,6 +34,7 @@ from speedwagon import plugins, info
 from . import user_interaction
 from . import dialog
 from . import runners
+
 if typing.TYPE_CHECKING:
     from speedwagon import runner_strategies
     from speedwagon.frontend.qtwidgets import gui
@@ -75,9 +79,31 @@ class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
         """Run the gui application."""
 
 
+def qt_process_file(
+    parent: QtWidgets.QWidget,
+    process_callback: Callable[[], None],
+    error_dialog_title: str,
+) -> bool:
+    try:
+        process_callback()
+        return True
+    except OSError as error:
+        message_box = QtWidgets.QMessageBox(parent)
+        message_box.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+        message_box.setText(error_dialog_title)
+        message_box.setDetailedText(str(error))
+        message_box.exec()
+        return False
+
+
+def get_default_workflow_config_path() -> str:
+    home = pathlib.Path.home()
+    return str(home) if os.path.exists(home) else '.'
+
+
 def save_workflow_config(
-    workflow_name,
-    data,
+    workflow_name: str,
+    data: str,
     parent: QtWidgets.QWidget,
     dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
     serialization_strategy: typing.Optional[
@@ -87,18 +113,37 @@ def save_workflow_config(
     serialization_strategy = (
         serialization_strategy or speedwagon.job.ConfigJSONSerialize()
     )
+    default_file_name = f"{workflow_name}.json"
+    while True:
+        dialog_box = dialog_box or QtWidgets.QFileDialog()
+        export_file_name, _ = dialog_box.getSaveFileName(
+            parent,
+            "Export Job Configuration",
+            os.path.join(
+                get_default_workflow_config_path(),
+                default_file_name
+            ),
+            "Job Configuration JSON (*.json)",
+        )
 
-    dialog_box = dialog_box or QtWidgets.QFileDialog()
-    export_file_name, _ = dialog_box.getSaveFileName(
-        parent,
-        "Export Job Configuration",
-        f"{workflow_name}.json",
-        "Job Configuration JSON (*.json)",
-    )
+        if not export_file_name:
+            return
 
-    if export_file_name:
         serialization_strategy.file_name = export_file_name
-        serialization_strategy.save(workflow_name, data)
+        if (
+            qt_process_file(
+                parent=parent,
+                process_callback=partial(
+                    serialization_strategy.save, workflow_name, data
+                ),
+                error_dialog_title="Export Job Configuration Failed",
+            )
+            is True
+        ):
+            confirm_dialog = QtWidgets.QMessageBox(parent)
+            confirm_dialog.setText("Exported Job")
+            confirm_dialog.exec()
+            return
 
 
 class AbsResolveSettingsStrategy(abc.ABC):  # pylint: disable=R0903
@@ -404,28 +449,14 @@ class StartQtThreaded(AbsGuiStarter):
         """Action for user to save logs as a file."""
         data = self._log_data.getvalue()
         epoch_in_minutes = int(time.time() / 60)
-        while True:
-            log_file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
-                parent,
-                "Export Log",
-                f"speedwagon_log_{epoch_in_minutes}.txt",
-                "Text Files (*.txt)",
-            )
 
-            if not log_file_name:
-                return
-            try:
-                with open(log_file_name, "w", encoding="utf-8") as file_handle:
-                    file_handle.write(data)
-            except OSError as error:
-                message_box = QtWidgets.QMessageBox(parent)
-                message_box.setText("Saving Log Failed")
-                message_box.setDetailedText(str(error))
-                message_box.exec_()
-                continue
-
-            self.logger.info("Saved log to %s", log_file_name)
-            break
+        log_saved = export_logs_action(
+            parent,
+            default_file_name=f"speedwagon_log_{epoch_in_minutes}.txt",
+            data=data,
+        )
+        if log_saved:
+            self.logger.info("Saved log to %s", log_saved)
 
     @staticmethod
     def request_system_info(
@@ -433,8 +464,7 @@ class StartQtThreaded(AbsGuiStarter):
     ) -> None:
         """Action to open up system info dialog box."""
         system_info_dialog = dialog.dialogs.SystemInfoDialog(
-            system_info=info.SystemInfo(),
-            parent=parent
+            system_info=info.SystemInfo(), parent=parent
         )
         system_info_dialog.export_to_file.connect(export_system_info_to_file)
         system_info_dialog.exec()
@@ -443,6 +473,7 @@ class StartQtThreaded(AbsGuiStarter):
         self, parent: Optional[QtWidgets.QWidget] = None
     ) -> None:
         """Open dialog box for settings."""
+
         class TabData(typing.NamedTuple):
             name: str
             setup_function: Callable[
@@ -909,3 +940,40 @@ def export_system_info_to_file(
         writer=info.write_system_info_to_file
 ) -> None:
     writer(info.SystemInfo(), file, system_info_report_formatters[file_type])
+
+
+def get_default_log_path() -> str:
+    home = pathlib.Path.home()
+    desktop_path = home / "Desktop"
+    if os.path.exists(desktop_path):
+        return str(desktop_path)
+    return str(pathlib.Path.home())
+
+
+def export_logs_action(
+    parent: QtWidgets.QWidget, default_file_name: str, data: str
+) -> Optional[str]:
+    def save_file(file_name: str) -> None:
+        with open(file_name, "w", encoding="utf-8") as file_handle:
+            file_handle.write(data)
+
+    while True:
+        log_file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
+            parent,
+            "Export Log",
+            os.path.join(get_default_log_path(), default_file_name),
+            "Text Files (*.txt)",
+        )
+
+        if not log_file_name:
+            return None
+
+        if (
+            qt_process_file(
+                parent=parent,
+                process_callback=partial(save_file, log_file_name),
+                error_dialog_title="Saving Log Failed",
+            )
+            is True
+        ):
+            return log_file_name
