@@ -1,4 +1,5 @@
 import os.path
+import pathlib
 from unittest.mock import Mock, MagicMock
 
 import pytest
@@ -58,13 +59,44 @@ class TestMedusaPreingestCuration:
             "directories": ["./some/directory/"],
         }
 
-    def test_discover_task_metadata(self, workflow, default_args):
+    def test_discover_task_metadata(self, workflow, default_args, monkeypatch):
         initial_results = []
+
+        removal_files = ["somefile.txt"]
+        removal_dirs = ["somedir", "nested_path"]
+        nested_dirs = [os.path.join("nested_path", "a")]
+
+        def isfile(path):
+            return path in removal_files
+
+        def isdir(path):
+            return path in removal_dirs
+
+        def iterdir(self):
+            if self.name == "nested_path":
+                return [pathlib.Path(a) for a in nested_dirs]
+            return []
+
+        def is_dir(self):
+            return self.name in removal_dirs or self.name == os.path.join(
+                "nested_path", "a"
+            )
+
+        def is_file(self):
+            return self.name in removal_files + ["a"]
+
+        monkeypatch.setattr(workflow_medusa_preingest.os.path, "isdir", isdir)
+        monkeypatch.setattr(
+            workflow_medusa_preingest.os.path, "isfile", isfile
+        )
+        monkeypatch.setattr(workflow_medusa_preingest.Path, "iterdir", iterdir)
+        monkeypatch.setattr(workflow_medusa_preingest.Path, "is_dir", is_dir)
+        monkeypatch.setattr(workflow_medusa_preingest.Path, "is_file", is_file)
+
         new_tasks = workflow.discover_task_metadata(
             initial_results,
             additional_data={
-                "files": ["somefile.txt"],
-                "directories": ["somedir"],
+                "to remove": removal_files + removal_dirs + nested_dirs
             },
             **default_args,
         )
@@ -252,18 +284,20 @@ class TestFindOffendingFiles:
     def offending_files(self):
         def _make_mock_offending_files(search_path):
             ds_store_file = Mock(
-                os.DirEntry,
-                name=".DS_Store",
-                path=os.path.join(search_path, ".DS_Store"),
-                is_file=Mock(return_value=True),
-                is_dir=Mock(return_value=False),
+                spec_set=pathlib.Path,
+                parts=(search_path, ".DS_Store"),
+                is_dir=Mock(return_value=True),
+                is_file=Mock(return_value=False),
             )
             ds_store_file.name = ".DS_Store"
 
             dot_under_score_file = Mock(
-                path=os.path.join(search_path, "._cache"),
+                spec_set=pathlib.Path,
+                parts=(search_path, "._cache"),
+                is_dir=Mock(return_value=False),
                 is_file=Mock(return_value=True),
             )
+
             dot_under_score_file.name = "._cache"
 
             return [ds_store_file, dot_under_score_file]
@@ -304,9 +338,13 @@ class TestFindOffendingFiles:
         )
 
         task.filesystem_locator_strategy.locate = Mock(
-            return_value=[i.path for i in offending_files(search_path)]
+            return_value=[
+                os.path.join(*i.parts) for i in offending_files(search_path)
+            ]
         )
-
+        monkeypatch.setattr(
+            workflow_medusa_preingest.os.path, "exists", lambda: True
+        )
         if expected_file:
             assert os.path.join(search_path, expected_file) in list(
                 task.locate_results()
@@ -384,64 +422,31 @@ def test_find_capture_one_data_found(monkeypatch):
 class TestFilesystemItemLocator:
     def test_locate_contents_order(self, monkeypatch):
         files = {
-            os.path.join("."): [
-                Mock(
-                    spec_set=os.DirEntry,
-                    path=os.path.join(".", "starting_point"),
-                    is_dir=Mock(return_value=True),
-                )
-            ],
-            os.path.join(".", "starting_point", "empty_path"): [],
-            os.path.join(".", "starting_point", "nested_path"): [
-                Mock(
-                    spec_set=os.DirEntry,
-                    path=os.path.join(
-                        ".", "starting_point", "nested_path", "file1.txt"
-                    ),
-                    is_dir=Mock(return_value=False),
-                ),
-                Mock(
-                    spec_set=os.DirEntry,
-                    path=os.path.join(
-                        ".", "starting_point", "nested_path", "file2.txt"
-                    ),
-                    is_dir=Mock(return_value=False),
-                ),
-            ],
-            os.path.join(".", "starting_point"): [
-                Mock(
-                    spec_set=os.DirEntry,
-                    path=os.path.join(".", "starting_point", "empty_path"),
-                    is_dir=Mock(return_value=True),
-                ),
-                Mock(
-                    spec_set=os.DirEntry,
-                    path=os.path.join(".", "starting_point", "dummy.txt"),
-                    is_dir=Mock(return_value=False),
-                ),
-                Mock(
-                    spec_set=os.DirEntry,
-                    path=os.path.join(".", "starting_point", "nested_path"),
-                    is_dir=Mock(return_value=True),
-                ),
+            "starting_point": [
+                pathlib.Path("starting_point/empty_path"),
+                pathlib.Path("starting_point/nested_path/file1.txt"),
+                pathlib.Path("starting_point/nested_path/file2.txt"),
+                pathlib.Path("starting_point/nested_path"),
+                pathlib.Path("starting_point/dummy.txt"),
             ],
         }
 
-        def scandir(path, **kwargs):
-            return files[path]
+        def iterdir(self):
+            return files[str(self)]
 
         monkeypatch.setattr(
             workflow_medusa_preingest.os.path,
             "exists",
             lambda path: path in files,
         )
-        monkeypatch.setattr(workflow_medusa_preingest.os, "scandir", scandir)
+
+        monkeypatch.setattr(workflow_medusa_preingest.Path, "iterdir", iterdir)
         locator = workflow_medusa_preingest.FilesystemItemLocator()
-        assert list(locator.locate(os.path.join(".", "starting_point"))) == [
+        assert set(locator.locate("starting_point")) == {
             "empty_path",
-            os.path.join("nested_path", "file1.txt"),
             os.path.join("nested_path", "file2.txt"),
+            os.path.join("nested_path", "file1.txt"),
             "nested_path",
             "dummy.txt",
             os.path.join("."),
-        ]
+        }
