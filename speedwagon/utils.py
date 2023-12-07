@@ -49,6 +49,10 @@ class CallbackLogHandler(BufferingHandler):
 
 
 def get_desktop_path() -> str:
+    """Locate user's desktop.
+
+    Throws FileNotFoundError if unsuccessful
+    """
     home = pathlib.Path.home()
     desktop_path = home / "Desktop"
     if os.path.exists(desktop_path):
