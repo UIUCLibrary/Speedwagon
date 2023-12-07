@@ -449,6 +449,27 @@ def testPythonPackages(){
             if(params.INCLUDE_LINUX_ARM == true){
                 architectures.add('arm')
             }
+            // As of 12/7/2023 there are no prebuilt binary wheel on ARM64 for
+            // Python versions prior to 3.11 so there is no reason to run
+            // tox tests that have a GUI.
+            def linuxToxEnvironments = [
+                "3.8": [
+                    "x86_64": "py38-PySide6",
+                    "arm": "py38"
+                ],
+                "3.9": [
+                    "x86_64": "py39-PySide6",
+                    "arm": "py39"
+                ],
+                "3.10": [
+                    "x86_64": "py310-PySide6",
+                    "arm": "py310"
+                ],
+                "3.11": [
+                    "x86_64": "py311-PySide6",
+                    "arm": "py311-PySide6"
+                ],
+            ]
             architectures.each{ processorArchitecture ->
                 linuxTests["Linux-${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
                     packages.testPkg(
@@ -469,7 +490,7 @@ def testPythonPackages(){
                             findFiles(glob: 'dist/*.tar.gz').each{
                                 sh(
                                     label: 'Running Tox',
-                                    script: "tox --installpkg ${it.path} --workdir /tmp/tox -e py${pythonVersion.replace('.', '')}-PySide6"
+                                    script: "tox --installpkg ${it.path} --workdir /tmp/tox -e ${linuxToxEnvironments[pythonVersion][processorArchitecture]}"
                                     )
                             }
                         },
@@ -506,7 +527,7 @@ def testPythonPackages(){
                             findFiles(glob: 'dist/*.whl').each{
                                 sh(
                                     label: 'Running Tox',
-                                    script: "tox --installpkg ${it.path} --workdir /tmp/tox -e py${pythonVersion.replace('.', '')}-PySide6"
+                                    script: "tox --installpkg ${it.path} --workdir /tmp/tox -e ${linuxToxEnvironments[pythonVersion][processorArchitecture]}"
                                     )
                             }
                         },
