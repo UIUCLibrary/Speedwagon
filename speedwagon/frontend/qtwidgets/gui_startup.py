@@ -29,6 +29,7 @@ from PySide6 import QtWidgets
 import speedwagon
 from speedwagon.workflow import initialize_workflows
 from speedwagon import config
+from speedwagon.utils import get_desktop_path
 from speedwagon.tasks import system as system_tasks
 from speedwagon import plugins, info
 from . import user_interaction
@@ -943,11 +944,10 @@ def export_system_info_to_file(
 
 
 def get_default_log_path() -> str:
-    home = pathlib.Path.home()
-    desktop_path = home / "Desktop"
-    if os.path.exists(desktop_path):
-        return str(desktop_path)
-    return str(pathlib.Path.home())
+    try:
+        return get_desktop_path()
+    except FileNotFoundError:
+        return str(pathlib.Path.home())
 
 
 def export_logs_action(
