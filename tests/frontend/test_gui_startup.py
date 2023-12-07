@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+import pathlib
 
 import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
@@ -296,7 +297,7 @@ class TestStartQtThreaded:
         monkeypatch.setattr(
             speedwagon.config.config.pathlib.Path,
             "home",
-            lambda *_: "/usr/home"
+            lambda *_: pathlib.Path("/usr/home")
         )
 
         app = Mock()
@@ -326,11 +327,11 @@ class TestStartQtThreaded:
             startup.windows.close()
         startup.app.closeAllWindows()
 
-    def test_save_workflow_config(self, qtbot, starter):
+    def test_save_workflow_config(self, qtbot, starter, monkeypatch):
         dialog = Mock()
         parent = QtWidgets.QWidget()
         dialog.getSaveFileName = MagicMock(return_value=("make_jp2.json", ""))
-
+        monkeypatch.setattr(QtWidgets.QMessageBox, "exec", Mock(name="exec"))
         serialization_strategy = Mock()
         save_workflow_config(
             workflow_name="Spam",
@@ -340,6 +341,48 @@ class TestStartQtThreaded:
             serialization_strategy=serialization_strategy
         )
         assert serialization_strategy.save.called is True
+
+    def test_save_workflow_cancel(self, qtbot, starter):
+        dialog = Mock()
+        parent = QtWidgets.QWidget()
+        dialog.getSaveFileName = MagicMock(return_value=(None, ""))
+
+        serialization_strategy = Mock(spec_set=speedwagon.job.AbsJobConfigSerializationStrategy)
+        serialization_strategy.save = Mock(side_effect=Exception("Should not be run"))
+        save_workflow_config(
+            workflow_name="Spam",
+            data={},
+            parent=parent,
+            dialog_box=dialog,
+            serialization_strategy=serialization_strategy
+        )
+        assert serialization_strategy.save.called is False
+
+    def test_save_workflow_config_os_error(self, qtbot, starter, monkeypatch):
+        dialog = Mock()
+        parent = QtWidgets.QWidget()
+
+        dialog.getSaveFileName = MagicMock(return_value=("make_jp2.json", ""))
+        attempts_to_save = 0
+
+        def save(*_, **__):
+            nonlocal attempts_to_save
+            if attempts_to_save == 0:
+                attempts_to_save += 1
+                raise OSError("Read only file system")
+
+        serialization_strategy = Mock(save=save)
+
+        q_message_box_exec = Mock()
+        monkeypatch.setattr(QtWidgets.QMessageBox, "exec", q_message_box_exec)
+        save_workflow_config(
+            workflow_name="Spam",
+            data={},
+            parent=parent,
+            dialog_box=dialog,
+            serialization_strategy=serialization_strategy
+        )
+        assert q_message_box_exec.called is True
 
     def test_load_workflow_config(self, qtbot, starter):
         dialog = Mock()
@@ -473,7 +516,7 @@ class TestStartQtThreaded:
         monkeypatch.setattr(
             speedwagon.config.config.pathlib.Path,
             "home",
-            lambda *_: "/usr/home"
+            lambda *_: pathlib.Path("/usr/home")
         )
 
         monkeypatch.setattr(
