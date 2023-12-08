@@ -1188,6 +1188,9 @@ pipeline {
                                         equals expected: true, actual: params.TEST_STANDALONE_PACKAGE_DEPLOYMENT
                                         beforeAgent true
                                     }
+                                    options {
+                                        timeout(time: 2, unit: 'HOURS')
+                                    }
                                     stages{
                                         stage('Install'){
                                             steps{
