@@ -20,6 +20,24 @@ class MissingConfiguration(SpeedwagonException):
 
     description = "Missing required configuration settings"
 
+    def __init__(
+        self,
+        message: Optional[str] = None,
+        workflow: Optional[str] = None,
+        key: Optional[str] = None
+    ):
+        """Create a new exception.
+
+        Args:
+            message: Message presented by exception
+            workflow: Name of the workflow that contains the missing value
+            key:  Config key that is missing
+        """
+        super().__init__(message)
+        self.message = message
+        self.workflow = workflow
+        self.key = key
+
 
 class JobCancelled(Exception):
     """Job cancelled exception."""

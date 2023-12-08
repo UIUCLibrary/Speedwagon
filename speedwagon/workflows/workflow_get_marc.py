@@ -89,6 +89,7 @@ UserArgs = typing.TypedDict(
         "Identifier type": str,
     },
 )
+GETMARC_SERVER_URL_CONFIG = "Getmarc server url"
 
 
 class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
@@ -164,7 +165,7 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         """Get the server url from the configuration."""
         return typing.cast(
             Optional[str],
-            self.get_workflow_configuration_value("Getmarc server url"),
+            self.get_workflow_configuration_value(GETMARC_SERVER_URL_CONFIG),
         )
 
     def discover_task_metadata(
@@ -187,7 +188,10 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         _user_args = cast(UserArgs, user_args)
         server_url = self.get_marc_server()
         if server_url is None:
-            raise MissingConfiguration("Getmarc server url is not set")
+            raise MissingConfiguration(
+                workflow=self.name,
+                key=GETMARC_SERVER_URL_CONFIG
+            )
 
         search_path = _user_args["Input"]
         jobs: List[Dict[str, Union[str, Collection[str]]]] = [

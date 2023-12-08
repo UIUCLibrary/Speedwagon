@@ -705,10 +705,29 @@ class BackgroundJobManager(AbsJobManager2):
                         total=task_scheduler.total_tasks,
                     )
                 liaison.callbacks.finished(JobSuccess.SUCCESS)
+
             except speedwagon.exceptions.JobCancelled as job_cancelled:
                 liaison.callbacks.finished(JobSuccess.ABORTED)
                 logging.debug("Job canceled: %s", job_cancelled)
 
+            except speedwagon.exceptions.MissingConfiguration as config_error:
+                liaison.callbacks.finished(JobSuccess.ABORTED)
+                if config_error.key and config_error.workflow:
+                    logging.debug(
+                        'Unable to start job with missing configurations: '
+                        '"%s" from "%s". '
+                        '\nCheck the Workflow Settings section in '
+                        'Speedwagon settings.',
+                        config_error.key, config_error.workflow
+                    )
+                else:
+                    logging.debug(
+                        'Unable to start job with missing configurations. '
+                        '\nReason: %s'
+                        '\nCheck the Workflow Settings section in '
+                        'Speedwagon settings.',
+                        config_error
+                    )
             except BaseException as exception_thrown:
                 traceback_info = traceback.format_exc()
 
