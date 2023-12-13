@@ -85,7 +85,10 @@ def test_missing_workflow(monkeypatch, capsys):
     load.__class__ = dict
     monkeypatch.setattr(yaml, "load", load)
     def read_file(*args, **kwargs):
-        return ""
+        return """
+current:
+- Medusa Preingest Curation
+"""
     monkeypatch.setattr(
         speedwagon.config.tabs.TabsYamlFileReader,
         "read_file",
@@ -116,10 +119,12 @@ def test_get_custom_tabs_loads_workflows_from_file(monkeypatch):
         ]
     }
     load = Mock(name="load", return_value=tabs_config_data)
-    load.__class__ = dict
     monkeypatch.setattr(yaml, "load", load)
     def read_file(*args, **kwargs):
-        return ""
+        return """
+my workflow:
+- spam
+"""
     monkeypatch.setattr(
         speedwagon.config.tabs.TabsYamlFileReader,
         "read_file",

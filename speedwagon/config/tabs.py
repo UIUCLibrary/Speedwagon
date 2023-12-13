@@ -20,7 +20,7 @@ class AbsTabsConfigDataManagement(abc.ABC):
         """Get the data for custom tabs."""
 
     @abc.abstractmethod
-    def save(self, tabs: List[CustomTabData]):
+    def save(self, tabs: List[CustomTabData]) -> None:
         """Get the data for custom tabs."""
 
 
@@ -55,6 +55,8 @@ class TabsYamlFileReader(AbsTabsYamlFileReader):
 
     def decode_tab_settings_yml_data(self, data: str) -> Dict[str, List[str]]:
         """Decode tab settings yml data."""
+        if len(data) == 0:
+            return {}
         tabs_config_data = yaml.load(data, Loader=yaml.SafeLoader)
         if not isinstance(tabs_config_data, dict):
             raise speedwagon.exceptions.FileFormatError("Failed to parse file")
@@ -105,7 +107,7 @@ class CustomTabsYamlConfig(AbsTabsConfigDataManagement):
             for tab_name, workflow_names in yml_data.items()
         ]
 
-    def save(self, tabs: List[CustomTabData]):
+    def save(self, tabs: List[CustomTabData]) -> None:
         """Write tabs to a yaml file."""
         self.file_writer_strategy.save(self.yaml_file, tabs)
 
