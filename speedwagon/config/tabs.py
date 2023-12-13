@@ -55,6 +55,8 @@ class TabsYamlFileReader(AbsTabsYamlFileReader):
 
     def decode_tab_settings_yml_data(self, data: str) -> Dict[str, List[str]]:
         """Decode tab settings yml data."""
+        if len(data) == 0:
+            return {}
         tabs_config_data = yaml.load(data, Loader=yaml.SafeLoader)
         if not isinstance(tabs_config_data, dict):
             raise speedwagon.exceptions.FileFormatError("Failed to parse file")

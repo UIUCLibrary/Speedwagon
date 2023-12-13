@@ -28,7 +28,7 @@ class TestCustomTabsYamlConfig:
 
     def test_yaml_errors_throws_tab_load_failure(self, monkeypatch):
         def data_reader():
-            return ""
+            return "garblygoock"
 
         config_loader = \
             speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
@@ -39,7 +39,7 @@ class TestCustomTabsYamlConfig:
 
     def test_file_format_error_throws_tab_load_failure(self, monkeypatch):
         def data_reader():
-            return ""
+            return "garblygoock"
 
         config_loader = \
             speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="myfaketabs.yml")
@@ -95,6 +95,11 @@ class TestCustomTabsYamlConfig:
         config_loader.save([])
         assert config_loader.file_writer_strategy.save.called is True
 
+    def test_load_empty_file(self):
+        config_loader = \
+            speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file="tabs.yml")
+        config_loader.file_reader_strategy.read_file = Mock(return_value="")
+        assert config_loader.data() == []
 
 class TestTabsWriteStrategy:
     def test_write_data_is_called(self, monkeypatch):
