@@ -555,3 +555,30 @@ def test_tasks_have_description():
         package_format="HathiTrust jp2"
     )
     assert task.task_description() is not None
+
+
+class TestCaptureOneToDlCompoundAndDLWorkflow:
+    def test_finding_no_jobs_raises_job_cancel_exception(self, monkeypatch):
+        workflow = ht_wf.CaptureOneToDlCompoundAndDLWorkflow()
+        PackageFactory = Mock(
+            spec_set=packager.PackageFactory,
+            locate_packages=lambda *_: []
+        )
+        monkeypatch.setattr(
+            ht_wf.packager,
+            "PackageFactory",
+            lambda *_: PackageFactory
+        )
+        with pytest.raises(speedwagon.JobCancelled) as e:
+            workflow.discover_task_metadata(
+                [],
+                additional_data={},
+                **{
+                    "Input": "somepath",
+                    "Output Digital Library": None,
+                    "Output HathiTrust": "someoutpath",
+                    "Package Type": "Archival collections/Non EAS"
+                }
+            )
+
+        assert "No packages located" in str(e)
