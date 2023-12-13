@@ -20,7 +20,7 @@ class AbsTabsConfigDataManagement(abc.ABC):
         """Get the data for custom tabs."""
 
     @abc.abstractmethod
-    def save(self, tabs: List[CustomTabData]):
+    def save(self, tabs: List[CustomTabData]) -> None:
         """Get the data for custom tabs."""
 
 
@@ -107,7 +107,7 @@ class CustomTabsYamlConfig(AbsTabsConfigDataManagement):
             for tab_name, workflow_names in yml_data.items()
         ]
 
-    def save(self, tabs: List[CustomTabData]):
+    def save(self, tabs: List[CustomTabData]) -> None:
         """Write tabs to a yaml file."""
         self.file_writer_strategy.save(self.yaml_file, tabs)
 
