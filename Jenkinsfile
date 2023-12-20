@@ -648,6 +648,19 @@ def buildPackages(){
     }
 }
 
+def testChocolateyPackage(){
+    stage('Install'){
+        unstash 'CHOCOLATEY_PACKAGE'
+        testSpeedwagonChocolateyPkg(props.version)
+    }
+    stage('Reinstall/Upgrade'){
+        testReinstallSpeedwagonChocolateyPkg(props.version)
+    }
+    stage('Uninstall'){
+        bat 'choco uninstall speedwagon --confirm'
+    }
+}
+
 def buildSphinx(){
     def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
     sh(script: '''mkdir -p logs
@@ -1035,10 +1048,13 @@ pipeline {
                     parallel{
                         stage('Mac Application Bundle x86_64'){
                             agent{
-                                label 'mac && python3 && x86'
+                                label 'mac && python3 && x86_64'
                             }
                             when{
-                                equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
+                                allOf{
+                                    equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
+                                    expression {return nodesByLabel('mac && x86_64 && python3').size() > 0}
+                                }
                                 beforeInput true
                             }
                             steps{
@@ -1065,11 +1081,12 @@ pipeline {
                         }
                         stage('Mac Application Bundle M1'){
                             agent{
-                                label 'mac && python3 && m1'
+                                label 'mac && python3 && arm64'
                             }
                             when{
-                                anyOf{
+                                allOf{
                                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
+                                    expression {return nodesByLabel('mac && arm64 && python3').size() > 0}
                                 }
                                 beforeInput true
                             }
@@ -1191,23 +1208,8 @@ pipeline {
                                     options {
                                         timeout(time: 2, unit: 'HOURS')
                                     }
-                                    stages{
-                                        stage('Install'){
-                                            steps{
-                                                unstash 'CHOCOLATEY_PACKAGE'
-                                                testSpeedwagonChocolateyPkg(props.version)
-                                            }
-                                        }
-                                        stage('Reinstall/Upgrade'){
-                                            steps{
-                                                testReinstallSpeedwagonChocolateyPkg(props.version)
-                                            }
-                                        }
-                                        stage('Uninstall'){
-                                            steps{
-                                                bat 'choco uninstall speedwagon --confirm'
-                                            }
-                                        }
+                                    steps{
+                                        testChocolateyPackage()
                                     }
                                     post{
                                         failure{
