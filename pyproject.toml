@@ -19,7 +19,7 @@ dependencies =[
     "uiucprescon.ocr>=0.1.4",
     "uiucprescon.packager[kdu]>=0.2.15",
     "uiucprescon.images",
-    "pykdu-compress>=0.1.8",
+    "pykdu-compress>=0.1.9",
     'importlib_resources;python_version<"3.9"',
     'importlib-metadata;python_version<"3.10"',
     'typing-extensions;python_version<"3.11"',
