@@ -8,6 +8,11 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
 
+try:  # pragma: no cover
+    from importlib.metadata import PackageMetadata
+except ImportError:  # pragma: no cover
+    from importlib_metadata import PackageMetadata  # type: ignore
+
 import speedwagon.config
 gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
@@ -705,13 +710,10 @@ class TestStartQtThreaded:
         starter.run()
         open_new = Mock()
 
-        def metadata(*args, **kwargs):
-            return {'Home-page': "https://www.fake.com"}
-
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui_startup.metadata,
-            "metadata",
-            metadata
+            speedwagon.frontend.qtwidgets.gui_startup,
+            "get_help_url",
+            lambda: "https://www.fake.com"
         )
 
         monkeypatch.setattr(
@@ -1221,3 +1223,51 @@ def test_export_system_info_to_file():
         writer=writer
     )
     writer.assert_called_once()
+
+
+def test_get_help_url(monkeypatch):
+    pkg_metadata = Mock(
+        get_all=Mock(
+            return_value=["project, https://www.fake.com"]
+        )
+    )
+    monkeypatch.setattr(
+        gui_startup.metadata, "metadata",
+        Mock(
+            spec_set=PackageMetadata,
+            return_value=pkg_metadata
+        )
+    )
+    assert gui_startup.get_help_url() == "https://www.fake.com"
+
+
+def test_get_help_url_nothing_on_missing(monkeypatch):
+    pkg_metadata = Mock(
+        get_all=Mock(return_value=[])
+    )
+    monkeypatch.setattr(
+        gui_startup.metadata, "metadata",
+        Mock(
+            spec_set=PackageMetadata,
+            return_value=pkg_metadata
+        )
+    )
+    assert gui_startup.get_help_url() is None
+
+
+def test_get_help_url_malformed_data(monkeypatch):
+    pkg_metadata = Mock(
+        get_all=Mock(
+            return_value=["bad data"]
+        )
+    )
+    monkeypatch.setattr(
+        gui_startup.metadata, "metadata",
+        Mock(
+            spec_set=PackageMetadata,
+            return_value=pkg_metadata
+        )
+    )
+    with pytest.raises(ValueError) as error:
+        gui_startup.get_help_url()
+    assert "malformed" in str(error)

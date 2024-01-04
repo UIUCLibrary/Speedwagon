@@ -274,6 +274,22 @@ def _setup_plugins_tab(
     return plugins_tab
 
 
+def get_help_url() -> Optional[str]:
+    pkg_metadata: metadata.PackageMetadata = metadata.metadata(
+        speedwagon.__name__
+    )
+    urls = pkg_metadata.get_all("Project-URL")
+    if urls:
+        for value in urls:
+            try:
+                url_type, url_value = value.split(', ')
+            except ValueError as error:
+                raise ValueError("malformed entry for Project-URL") from error
+            if url_type == "project":
+                return url_value.strip()
+    return None
+
+
 class StartQtThreaded(AbsGuiStarter):
     """Start a Qt Widgets base app using threads for job workers."""
 
@@ -339,10 +355,15 @@ class StartQtThreaded(AbsGuiStarter):
 
     def _load_help(self) -> None:
         try:
-            pkg_metadata: metadata.PackageMetadata = metadata.metadata(
-                speedwagon.__name__
-            )
-            webbrowser.open_new(pkg_metadata["Home-page"])
+            home_page = get_help_url()
+            if home_page:
+                webbrowser.open_new(home_page)
+            else:
+                self.logger.warning(
+                    "No help link available. "
+                    "Reason: no project url located in Project-URL package "
+                    "metadata"
+                )
         except metadata.PackageNotFoundError as error:
             self.logger.warning("No help link available. Reason: %s", error)
 
