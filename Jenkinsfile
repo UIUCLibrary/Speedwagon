@@ -1,3 +1,7 @@
+library identifier: 'JenkinsPythonHelperLibrary@2024.1.1', retriever: modernSCM(
+  [$class: 'GitSCMSource',
+   remote: 'https://github.com/UIUCLibrary/JenkinsPythonHelperLibrary.git',
+   ])
 
 // Note:
 // Python version 3.8 testing is not supported on mac because PySide 6.5.3 doesn't work on python 3.8.10 and that's
@@ -138,19 +142,12 @@ def get_build_number(){
 
 def runTox(){
     script{
-        def tox = fileLoader.fromGit(
-            'tox',
-            'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-            '8',
-            null,
-            ''
-        )
         def windowsJobs = [:]
         def linuxJobs = [:]
         stage('Scanning Tox Environments'){
             parallel(
                 'Linux':{
-                    linuxJobs = tox.getToxTestsParallel(
+                    linuxJobs = getToxTestsParallel(
                             envNamePrefix: 'Tox Linux',
                             label: 'linux && docker && x86',
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
@@ -160,7 +157,7 @@ def runTox(){
                         )
                 },
                 'Windows':{
-                    windowsJobs = tox.getToxTestsParallel(
+                    windowsJobs = getToxTestsParallel(
                             envNamePrefix: 'Tox Windows',
                             label: 'windows && docker && x86',
                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
@@ -331,29 +328,6 @@ def startup(){
                 mineRepository()
             }
         },
-//        'Getting Distribution Info': {
-//            node('linux && docker') {
-//                timeout(2){
-//                    ws{
-//                        checkout scm
-//                        try{
-//                            docker.image('python').inside {
-//                                withEnv(['PIP_NO_CACHE_DIR=off']) {
-//                                    sh(
-//                                       label: 'Running setup.py with dist_info',
-//                                       script: 'python setup.py dist_info'
-//                                    )
-//                                }
-//                                stash includes: '*.dist-info/**', name: 'DIST-INFO'
-//                                archiveArtifacts artifacts: '*.dist-info/**'
-//                            }
-//                        } finally{
-//                            deleteDir()
-//                        }
-//                    }
-//                }
-//            }
-//        }
     ]
     )
 
@@ -362,16 +336,11 @@ def startup(){
 
 def testPythonPackages(){
     script{
-        def packages
-        node(){
-            checkout scm
-            packages = load 'ci/jenkins/scripts/packaging.groovy'
-        }
         def windowsTests = [:]
         SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
             if(params.INCLUDE_WINDOWS_X86_64 == true){
                 windowsTests["Windows - Python ${pythonVersion}-x86: sdist"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             dockerfile: [
                                 label: 'windows && docker && x86',
@@ -405,7 +374,7 @@ def testPythonPackages(){
                     )
                 }
                 windowsTests["Windows - Python ${pythonVersion}-x86: wheel"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             dockerfile: [
                                 label: 'windows && docker && x86',
@@ -472,7 +441,7 @@ def testPythonPackages(){
             ]
             architectures.each{ processorArchitecture ->
                 linuxTests["Linux-${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             dockerfile: [
                                 label: "linux && docker && ${processorArchitecture}",
@@ -509,7 +478,7 @@ def testPythonPackages(){
                     )
                 }
                 linuxTests["Linux-${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             dockerfile: [
                                 label: "linux && docker && ${processorArchitecture}",
@@ -559,7 +528,7 @@ def testPythonPackages(){
             }
             architectures.each{ processorArchitecture ->
                 macTests["Mac - ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             label: "mac && python${pythonVersion} && ${processorArchitecture}",
                         ],
@@ -595,7 +564,7 @@ def testPythonPackages(){
                     )
                 }
                 macTests["Mac - ${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
-                    packages.testPkg(
+                    testPythonPkg(
                         agent: [
                             label: "mac && python${pythonVersion} && ${processorArchitecture}",
                         ],
@@ -1617,20 +1586,11 @@ pipeline {
                     }
                     steps{
                         unstash 'PYTHON_PACKAGES'
-                        script{
-                            def pypi = fileLoader.fromGit(
-                                    'pypi',
-                                    'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-                                    '2',
-                                    null,
-                                    ''
-                                )
-                            pypi.pypiUpload(
-                                credentialsId: 'jenkins-nexus',
-                                repositoryUrl: SERVER_URL,
-                                glob: 'dist/*'
-                                )
-                        }
+                        pypiUpload(
+                            credentialsId: 'jenkins-nexus',
+                            repositoryUrl: SERVER_URL,
+                            glob: 'dist/*'
+                        )
                     }
                     post{
                         cleanup{
