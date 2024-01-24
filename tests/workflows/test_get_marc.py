@@ -853,6 +853,7 @@ def test_filter_bib_id_folders_no_files():
     entry.name = "12345.tif"
     assert workflow.filter_bib_id_folders(entry) is False
 
+
 def test_failing_to_parse_provides_input(monkeypatch):
 
     def mock_parse(filename):
