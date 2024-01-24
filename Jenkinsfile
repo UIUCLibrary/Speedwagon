@@ -16,44 +16,52 @@ DOCKER_PLATFORM_BUILD_ARGS = [
 ]
 
 def getPypiConfig() {
-    node(){
-        configFileProvider([configFile(fileId: 'pypi_config', variable: 'CONFIG_FILE')]) {
-            def config = readJSON( file: CONFIG_FILE)
-            return config['deployment']['indexes']
+    retry(conditions: [agent()], count: 3) {
+        node(){
+            configFileProvider([configFile(fileId: 'pypi_config', variable: 'CONFIG_FILE')]) {
+                def config = readJSON( file: CONFIG_FILE)
+                return config['deployment']['indexes']
+            }
         }
     }
 }
 def getChocolateyServers() {
+    retry(conditions: [agent()], count: 3) {
         node(){
             configFileProvider([configFile(fileId: 'deploymentStorageConfig', variable: 'CONFIG_FILE')]) {
                 def config = readJSON( file: CONFIG_FILE)
                 return config['chocolatey']['sources']
             }
         }
+    }
 }
 
 def getStandAloneStorageServers(){
-    node(){
-        configFileProvider([configFile(fileId: 'deploymentStorageConfig', variable: 'CONFIG_FILE')]) {
-            def config = readJSON( file: CONFIG_FILE)
-            return config['publicReleases']['urls']
+    retry(conditions: [agent()], count: 3) {
+        node(){
+            configFileProvider([configFile(fileId: 'deploymentStorageConfig', variable: 'CONFIG_FILE')]) {
+                def config = readJSON( file: CONFIG_FILE)
+                return config['publicReleases']['urls']
+            }
         }
     }
 }
 
 
 def getDevpiConfig() {
-    node(){
-        configFileProvider([configFile(fileId: 'devpi_config', variable: 'CONFIG_FILE')]) {
-            def configProperties = readProperties(file: CONFIG_FILE)
-            configProperties.stagingIndex = {
-                if (env.TAG_NAME?.trim()){
-                    return 'tag_staging'
-                } else{
-                    return "${env.BRANCH_NAME}_staging"
-                }
-            }()
-            return configProperties
+    retry(conditions: [agent()], count: 3) {
+        node(){
+            configFileProvider([configFile(fileId: 'devpi_config', variable: 'CONFIG_FILE')]) {
+                def configProperties = readProperties(file: CONFIG_FILE)
+                configProperties.stagingIndex = {
+                    if (env.TAG_NAME?.trim()){
+                        return 'tag_staging'
+                    } else{
+                        return "${env.BRANCH_NAME}_staging"
+                    }
+                }()
+                return configProperties
+            }
         }
     }
 }
