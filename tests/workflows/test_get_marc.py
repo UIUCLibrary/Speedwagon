@@ -14,7 +14,9 @@ from speedwagon.workflows import workflow_get_marc
 @pytest.fixture
 def unconfigured_workflow():
     workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow()
-    options_backend = Mock(get=lambda key: {"Getmarc server url": "http://fake.com"}.get(key))
+    options_backend = Mock(
+        get=lambda key: {"Getmarc server url": "http://fake.com"}.get(key)
+    )
     workflow.set_options_backend(options_backend)
     user_options = {i.label: i.value for i in workflow.job_options()}
     user_options['Identifier type'] = "Bibid"
@@ -809,6 +811,48 @@ def test_discover_task_metadata(monkeypatch, unconfigured_workflow, arg_subdir,
         f"Expected {expected}, Got {actual}"
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        "123v0123",
+        "123",
+    ]
+)
+def test_filter_bib_id_folders(name):
+    workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow()
+    entry = Mock(spec_set=os.DirEntry, is_dir=Mock(return_value=True))
+    entry.name = name
+    assert workflow.filter_bib_id_folders(entry) is True
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "0123",
+        "0308_01",
+        "badspam",
+    ]
+)
+def test_filter_bib_id_folders_error(name):
+    workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow()
+    entry = Mock(
+        spec_set=os.DirEntry,
+        is_dir=Mock(return_value=True),
+        path=os.path.join("somepath", name)
+    )
+    entry.name = name
+    with pytest.raises(workflow_get_marc.BadNamingError) as error:
+        workflow.filter_bib_id_folders(entry)
+    assert error.value.path == os.path.join("somepath", name)
+    assert error.value.name == name
+
+
+def test_filter_bib_id_folders_no_files():
+    workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow()
+    entry = Mock(spec_set=os.DirEntry, is_dir=Mock(return_value=False))
+    entry.name = "12345.tif"
+    assert workflow.filter_bib_id_folders(entry) is False
+
 def test_failing_to_parse_provides_input(monkeypatch):
 
     def mock_parse(filename):
@@ -846,6 +890,48 @@ def test_reflow(monkeypatch):
     task.work()
     data = task.write_file.call_args[1]['data']
     ET.fromstring(data)
+
+
+def test_bad_naming_error_throws_job_cancel(monkeypatch):
+    workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow()
+    monkeypatch.setattr(
+        workflow_get_marc.os,
+        "scandir",
+        lambda *args: ["dummy"]
+    )
+    workflow.filter_bib_id_folders = Mock(
+        side_effect=workflow_get_marc.BadNamingError(
+            "not good",
+            "name",
+            "somepath"
+        )
+    )
+    workflow.get_marc_server = lambda: "dummy"
+    user_args = {
+        "Input": "dummy"
+    }
+    with pytest.raises(speedwagon.exceptions.JobCancelled) as e:
+        workflow.discover_task_metadata([], {}, **user_args)
+    assert "invalid naming convention" in str(e.value)
+
+
+def test_no_jobs_raises_job_cancel(monkeypatch):
+    workflow = workflow_get_marc.GenerateMarcXMLFilesWorkflow()
+    monkeypatch.setattr(workflow_get_marc.os, "scandir", lambda *args: [])
+    workflow.filter_bib_id_folders = Mock(
+        side_effect=workflow_get_marc.BadNamingError(
+            "not good",
+            "name",
+            "somepath"
+        )
+    )
+    workflow.get_marc_server = lambda: "dummy"
+    user_args = {
+        "Input": "dummy"
+    }
+    with pytest.raises(speedwagon.exceptions.JobCancelled) as e:
+        workflow.discover_task_metadata([], {}, **user_args)
+    assert "No directories containing" in str(e.value)
 
 
 def test_catching_unicode_error(monkeypatch):
