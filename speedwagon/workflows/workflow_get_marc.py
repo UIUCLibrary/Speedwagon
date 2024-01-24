@@ -48,6 +48,15 @@ if TYPE_CHECKING:
 __all__ = ["GenerateMarcXMLFilesWorkflow"]
 
 
+class BadNamingError(SpeedwagonException):
+    """Bad file naming. Does not match expected value."""
+
+    def __init__(self, msg, name, path, *args):
+        super().__init__(msg, *args)
+        self.path = path
+        self.name = name
+
+
 # =========================== USER OPTIONS CONSTANTS ======================== #
 OPTION_955_FIELD: Final[str] = "Add 955 field"
 OPTION_035_FIELD: Final[str] = "Add 035 field"
@@ -156,9 +165,23 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         if not item.is_dir():
             return False
 
-        if "v" not in item.name and not isinstance(eval(item.name), int):
-            return False
-
+        if "v" not in item.name:
+            if item.name.startswith("0"):
+                raise BadNamingError(
+                    f"Directory naming is an invalid format. "
+                    f"Contains leading zero: {item.name}",
+                    name=item.name,
+                    path=item.path
+                )
+            try:
+                if not isinstance(eval(item.name), int):
+                    return False
+            except NameError as error:
+                raise BadNamingError(
+                    f"Directory naming is an invalid format. {item.name}",
+                    name=item.name,
+                    path=item.path
+                ) from error
         return True
 
     def get_marc_server(self) -> Optional[str]:
@@ -177,9 +200,9 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         """Create a list of metadata that the jobs will need in order to work.
 
         Args:
-            initial_results:
-            additional_data:
-            **user_args:
+            initial_results: Not used here
+            additional_data: Not used here
+            **user_args:  User defined settings.
 
         Returns:
             list of dictionaries of job metadata
@@ -194,23 +217,29 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
             )
 
         search_path = _user_args["Input"]
-        jobs: List[Dict[str, Union[str, Collection[str]]]] = [
-            {
-                "directory": {
-                    "value": folder.name,
-                    "type": _user_args["Identifier type"],
-                },
-                "enhancements": {
-                    "955": _user_args.get(OPTION_955_FIELD, False),
-                    "035": _user_args.get(OPTION_035_FIELD, False),
-                },
-                "api_server": server_url,
-                "path": folder.path,
-            }
-            for folder in filter(
-                self.filter_bib_id_folders, os.scandir(search_path)
-            )
-        ]
+        try:
+            jobs: List[Dict[str, Union[str, Collection[str]]]] = [
+                {
+                    "directory": {
+                        "value": folder.name,
+                        "type": _user_args["Identifier type"],
+                    },
+                    "enhancements": {
+                        "955": _user_args.get(OPTION_955_FIELD, False),
+                        "035": _user_args.get(OPTION_035_FIELD, False),
+                    },
+                    "api_server": server_url,
+                    "path": folder.path,
+                }
+                for folder in filter(
+                    self.filter_bib_id_folders, os.scandir(search_path)
+                )
+            ]
+        except BadNamingError as error:
+            raise JobCancelled(
+                f"Unable to locate marc record due to invalid naming "
+                f"convention. {error.path}"
+            ) from error
         if not jobs:
             raise JobCancelled(
                 f"No directories containing packages located inside "
@@ -269,8 +298,8 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         """Create the task to be run.
 
         Args:
-            task_builder:
-            **job_args:
+            task_builder: task builder
+            **job_args: single item info determined by discover_task_metadata
 
         """
         _job_args = cast(JobArgs, job_args)
@@ -318,8 +347,8 @@ class GenerateMarcXMLFilesWorkflow(speedwagon.Workflow):
         """Generate a simple home-readable report from the job results.
 
         Args:
-            results:
-            **user_args:
+            results: results of completed tasks
+            **user_args: user defined settings
 
         Returns:
             str: optional report as a string

@@ -97,7 +97,7 @@ class CaptureOneToDlCompoundAndDLWorkflow(Workflow):
     name = "Convert CaptureOne TIFF to Digital Library Compound Object and " \
            "HathiTrust"
     description = "Input is a path to a folder of TIFF files all named with " \
-                  "a bibid as a prefacing identifier, a final delimiting " \
+                  "an object identifier sequence, a final delimiting" \
                   "dash, and a sequence consisting of " \
                   "padded zeroes and a number." \
                   "\n" \
