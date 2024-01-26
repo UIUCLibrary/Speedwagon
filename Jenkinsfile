@@ -1117,11 +1117,7 @@ pipeline {
                                                 '''
                                             )
                                         }
-                                    }
-                                    post{
-                                        success{
-                                            stash includes: 'deps/*.whl', name: 'VENDORED_WHEELS_FOR_CHOCOLATEY'
-                                        }
+                                        stash includes: 'deps/*.whl', name: 'VENDORED_WHEELS_FOR_CHOCOLATEY'
                                     }
                                 }
                                 stage('Package for Chocolatey'){
