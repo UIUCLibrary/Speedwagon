@@ -1,1 +1,0 @@
-pdflatex build\docs\latex\speedwagon.tex -halt-on-error -interaction=nonstopmode -include-directory build\docs\latex -output-directory=build\docs\pdf
