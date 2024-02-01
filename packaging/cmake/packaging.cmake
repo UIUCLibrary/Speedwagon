@@ -13,10 +13,10 @@ if(SPEEDWAGON_DOC_PDF)
     set(CPACK_WIX_PDF_COMPONENTREF "<ComponentRef Id=\"DocumentationShortcut\"/>")
  endif()
 
-configure_file(templates/shortcuts.wxs.in configs/install/shortcuts.wxs @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/packaging/cmake/templates/shortcuts.wxs.in configs/install/shortcuts.wxs @ONLY)
 list(APPEND CPACK_WIX_EXTRA_SOURCES ${PROJECT_BINARY_DIR}/configs/install/shortcuts.wxs)
 
-set(CPACK_WIX_PATCH_FILE ${PROJECT_SOURCE_DIR}/cmake/patch_wix.xml)
+set(CPACK_WIX_PATCH_FILE ${PROJECT_SOURCE_DIR}/packaging/cmake/patch_wix.xml)
 
 set(CPACK_NSIS_MENU_LINKS
     "http://www.library.illinois.edu/dccdocs/speedwagon;Documentation"
@@ -58,5 +58,5 @@ if(DEFINED ENV{build_number})
     set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}-$ENV{build_number}-${PROCESSOR_TYPE})
 endif()
 
-configure_file(templates/wix_start_menu.wvs.in configs/install/wix_start_menu.wxs @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/packaging/cmake/templates/wix_start_menu.wvs.in configs/install/wix_start_menu.wxs @ONLY)
 
