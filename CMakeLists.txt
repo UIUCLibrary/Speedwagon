@@ -16,13 +16,13 @@ set(SPEEDWAGON_PYTHON_DEPENDENCY_CACHE ${CMAKE_CURRENT_BINARY_DIR}/_deps/python_
 set(SPEEDWAGON_VENV_PATH ${CMAKE_CURRENT_BINARY_DIR}/venv CACHE PATH "Location for Python virtual environment needed for building")
 set(SPEEDWAGON_REQUIREMENTS_FILE "" CACHE FILEPATH "requirements file to package with standalone build")
 if(WIN32)
-    include(cmake/standalone.cmake)
+    include(packaging/cmake/standalone.cmake)
 endif()
 
 if(UNIX)
 #   This needs the bind the docker socket to work which doesn't work on Windows to
 #   my as far as I know
     if(SPEEDWAGON_TESTCI)
-        include(cmake/jenkins.cmake)
+        include(packaging/cmake/jenkins.cmake)
     endif()
 endif()

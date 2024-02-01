@@ -1,4 +1,4 @@
-include(cmake/python_functions.cmake)
+include(packaging/cmake/python_functions.cmake)
 
 get_python_version(
         MAJOR SPEEDWAGON_VERSION_MAJOR
@@ -203,11 +203,11 @@ set(SPEEDWAGON_PYTHON_INTERP python.exe)
 
 include(CTest)
 if(WIN32)
-    list(APPEND TOP_LEVEL_FILES ${PROJECT_SOURCE_DIR}/cmake/speedwagon.vbs)
-    configure_file(templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
+    list(APPEND TOP_LEVEL_FILES ${PROJECT_SOURCE_DIR}/packaging/cmake/speedwagon.vbs)
+    configure_file(${PROJECT_SOURCE_DIR}/packaging/cmake/templates/speedwagon.bat.in ${PROJECT_BINARY_DIR}/speedwagon.bat @ONLY)
     list(APPEND TOP_LEVEL_FILES ${PROJECT_BINARY_DIR}/speedwagon.bat)
 
-    configure_file(templates/README.txt.in ${PROJECT_BINARY_DIR}/README.txt @ONLY)
+    configure_file(packaging/cmake/templates/README.txt.in ${PROJECT_BINARY_DIR}/README.txt @ONLY)
     list(APPEND TOP_LEVEL_FILES ${PROJECT_BINARY_DIR}/README.txt)
     # install embedded Python to standalone build path
     add_custom_command(TARGET standalone PRE_BUILD
@@ -296,7 +296,7 @@ if(WIN32)
     endforeach()
 
     ###########################################
-    include(cmake/packaging.cmake)
+    include(packaging/cmake/packaging.cmake)
 
     install(DIRECTORY ${PROJECT_BINARY_DIR}/standalone/
             DESTINATION bin
