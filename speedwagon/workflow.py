@@ -17,7 +17,7 @@ class AbsOutputOptionDataType(abc.ABC):
 
     label: str
     widget_name: str
-    setting_name: str
+    setting_name: Optional[str]
     required: bool
 
     def __init_subclass__(cls) -> None:

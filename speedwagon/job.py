@@ -332,7 +332,7 @@ class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
         )
 
     def locate(self) -> Dict[str, Type[Workflow]]:
-        all_workflows = {}
+        all_workflows: Dict[str, Type[Workflow]] = {}
         for plugin_workflows in \
                 self.plugin_manager.hook.registered_workflows():
             all_workflows = {**all_workflows, **plugin_workflows}

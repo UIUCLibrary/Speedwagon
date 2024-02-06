@@ -1,5 +1,5 @@
 """Tasks."""
-
+from __future__ import annotations
 import abc
 import collections
 import enum
@@ -46,7 +46,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
         """Log a message to the console on the main window."""
 
     @property
-    def task_result(self) -> Optional["Result"]:
+    def task_result(self) -> Optional[Result]:
         """Get the results of the subtask."""
         return None
 
