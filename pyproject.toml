@@ -111,8 +111,12 @@ follow_imports_for_stubs=true
 
 [tool.ruff]
 select = ["E", "F", "W", "D", "B"]
+# speedwagon/workflows are excluded because most will be removed in a future version
 exclude = [
-    "windows_build",
+    "packaging",
+    "utils",
+    "docs/source",
+    "speedwagon/workflows",
     "tests",
 ]
 line-length = 79
