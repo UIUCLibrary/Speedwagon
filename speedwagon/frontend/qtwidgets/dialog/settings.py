@@ -13,6 +13,8 @@ from typing import (
     Tuple,
     Callable,
     Iterable,
+    TypedDict,
+    Mapping,
     TYPE_CHECKING,
 )
 import sys
@@ -54,6 +56,10 @@ __all__ = ["GlobalSettingsTab", "TabsConfigurationTab", "TabEditor"]
 SaveCallback = Callable[["SettingsTab"], Dict[str, typing.Any]]
 
 DEFAULT_WINDOW_FLAGS = QtCore.Qt.WindowType(0)
+
+
+class TabsSettingsData(TypedDict):
+    tab_information: List[speedwagon.config.tabs.CustomTabData]
 
 
 class AbsOpenSettings(abc.ABC):
@@ -100,7 +106,7 @@ class SettingsTab(QtWidgets.QWidget):
             f"{self.__class__.__name__}"
         )
 
-    def get_data(self) -> Dict[str, typing.Any]:
+    def get_data(self) -> Mapping[str, typing.Any]:
         return {}
 
 
@@ -346,7 +352,7 @@ class TabsConfigurationTab(SettingsTab):
         """Check if data has changed since originally set."""
         return self.editor.modified
 
-    def get_data(self) -> config.plugins.PluginSettingsData:
+    def get_data(self) -> TabsSettingsData:
         """Get the data the user entered."""
         return {"tab_information": self.editor.model.tab_information()}
 
