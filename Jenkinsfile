@@ -767,6 +767,9 @@ pipeline {
                             args '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache'
                           }
                     }
+                    options {
+                        retry(conditions: [agent()], count: 2)
+                    }
                     stages{
                         stage('Test') {
                             stages{
