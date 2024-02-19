@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 import typing
-from typing import Type, Optional, List, cast, Union, overload, Any
+from typing import (
+    Type,
+    Optional,
+    List,
+    cast,
+    Union,
+    overload,
+    Any,
+)
 
 from PySide6 import QtCore
 

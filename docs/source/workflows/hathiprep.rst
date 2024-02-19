@@ -1,2 +1,0 @@
-.. autoworkflow:: Hathi Prep
-    :description:

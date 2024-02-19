@@ -9,7 +9,7 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
 ARG PIP_INDEX_URL
 
-COPY requirements-dev.txt requirements-gui.txt requirements-vendor.txt /requirements/
+COPY requirements-dev.txt requirements-gui.txt /requirements/
 COPY requirements/ /requirements/requirements/
 
 ARG PIP_FIND_LINKS

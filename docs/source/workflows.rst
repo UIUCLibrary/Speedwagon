@@ -6,6 +6,4 @@ Workflows
 
    workflows/converting_packages
    workflows/generate
-   workflows/hathiprep
    workflows/verifying
-   workflows/zippackages
