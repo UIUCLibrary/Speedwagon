@@ -1108,28 +1108,6 @@ pipeline {
                                 beforeInput true
                             }
                             stages{
-                                stage('Building Python Vendored Wheels'){
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/windows/tox/Dockerfile'
-                                            label 'windows && docker && x86'
-                                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
-                                          }
-                                    }
-                                    steps{
-                                        withEnv(['PY_PYTHON=3.11']) {
-                                            bat(
-                                                label: 'Getting dependencies to vendor',
-                                                script: '''
-                                                    py -m pip install pip --upgrade
-                                                    py -m pip install wheel
-                                                    py -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i %PIP_EXTRA_INDEX_URL%
-                                                '''
-                                            )
-                                        }
-                                        stash includes: 'deps/*.whl', name: 'VENDORED_WHEELS_FOR_CHOCOLATEY'
-                                    }
-                                }
                                 stage('Package for Chocolatey'){
                                     agent {
                                         dockerfile {
@@ -1141,10 +1119,10 @@ pipeline {
                                     steps{
                                         checkout scm
                                         unstash 'PYTHON_PACKAGES'
-                                        unstash 'VENDORED_WHEELS_FOR_CHOCOLATEY'
                                         script {
                                             findFiles(glob: 'dist/*.whl').each{
                                                 unstash 'SPEEDWAGON_DOC_PDF'
+                                                powershell(script: 'New-Item -Name "deps" -ItemType "directory"')
                                                 powershell(
                                                     label: 'Creating new Chocolatey package',
                                                     script: """ci/jenkins/scripts/make_chocolatey.ps1 `

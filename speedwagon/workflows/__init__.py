@@ -48,9 +48,7 @@ Changes:
     .. versionadded:: 0.1.5
        Generate MARC.XML Files supports MMSID and bibid id type
 
-"""
-from .workflow_completeness import CompletenessWorkflow
+    .. versionchanged:: 0.4.0
+        Removed all built in workflows
 
-__all__ = [
-    "CompletenessWorkflow"
-]
+"""

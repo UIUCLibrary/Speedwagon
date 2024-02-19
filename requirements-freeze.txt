@@ -1,5 +1,7 @@
 -r requirements.txt
--r requirements/requirements-vendor.txt
 -r requirements/requirements-gui.txt
 -r requirements/requirements-gui-freeze.txt
+jinja2
+PyInstaller
+cmake
 -r requirements/requirements-freeze.txt
