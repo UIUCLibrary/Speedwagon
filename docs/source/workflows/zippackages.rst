@@ -1,2 +1,0 @@
-.. autoworkflow:: Zip Packages
-    :description:

@@ -11,21 +11,14 @@ authors = [
 requires-python = ">=3.8"
 license = { file="LICENSE"}
 dependencies =[
-    "HathiZip>=0.1.10",
-    "HathiValidate>=0.3.8",
-    "pyhathiprep>=0.1.10",
     "pyyaml",
-    "uiucprescon.imagevalidate>=0.1.9",
-    "uiucprescon.ocr>=0.1.4",
-    "uiucprescon.packager[kdu]>=0.2.15",
-    "uiucprescon.images",
-    "pykdu-compress>=0.1.9",
     'importlib_resources;python_version<"3.9"',
     'importlib-metadata;python_version<"3.10"',
     'typing-extensions;python_version<"3.11"',
     'lxml',
     "requests",
     "pluggy>=1.0",
+    "uiucprescon.packager[kdu]>=0.2.15",
     "py3exiv2bind>=0.1.11",
 ]
 classifiers = [
@@ -119,7 +112,8 @@ follow_imports_for_stubs=true
 #incremental=false
 
 [tool.ruff]
-line-length = 79
+select = ["E", "F", "W", "D", "B"]
+# speedwagon/workflows are excluded because most will be removed in a future version
 exclude = [
     "packaging",
     "utils",
@@ -129,8 +123,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "D", "B"]
-# speedwagon/workflows are excluded because most will be removed in a future version
+line-length = 79
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

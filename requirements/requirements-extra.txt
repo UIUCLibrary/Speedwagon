@@ -1,3 +1,2 @@
-HathiValidate>=0.3.4
 six>=1.11
 pydocstyle
