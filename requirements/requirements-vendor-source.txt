@@ -1,9 +1,0 @@
-git+https://github.com/UIUCLibrary/HathiValidate.git@v0.3.8
-git+https://github.com/UIUCLibrary/HathiZip.git@0.1.11
-git+https://github.com/UIUCLibrary/pyhathiprep.git@0.1.10
-# git+https://github.com/UIUCLibrary/pykdu_compress.git@0.1.9
-git+https://github.com/UIUCLibrary/Packager.git@0.2.15
-git+https://github.com/UIUCLibrary/uiucprescon.images.git@v0.0.5
-git+https://github.com/UIUCLibrary/pyexiv2bind.git@0.1.11
-git+https://github.com/UIUCLibrary/imagevalidate.git@0.1.9.post3
-git+https://github.com/UIUCLibrary/Tesseract_Glue.git@0.1.4.post2

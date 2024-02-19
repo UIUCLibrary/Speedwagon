@@ -4,7 +4,6 @@ from __future__ import annotations
 import dataclasses
 import threading
 import typing
-import warnings
 from typing import (
     Dict,
     Any,
@@ -25,18 +24,13 @@ except ImportError:  # pragma: no cover
 
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtGui import Qt
-from uiucprescon.packager import Metadata
 
 import speedwagon.exceptions
 from speedwagon.frontend import interaction
 from speedwagon.frontend.qtwidgets.models.common import ItemTableModel
 from speedwagon.frontend.qtwidgets.dialog.dialogs import TableEditDialog
-from speedwagon.frontend.qtwidgets.dialog.title_page_selection import (
-    PackageBrowser
-)
 
 if typing.TYPE_CHECKING:
-    from uiucprescon.packager.packages import collection
     from speedwagon.job import Workflow
 
 DEFAULT_WINDOW_FLAGS = Qt.WindowType(0)
@@ -61,27 +55,11 @@ class QtWidgetFactory(interaction.UserRequestFactory):
         super().__init__()
         self.parent = parent
 
-    def package_browser(self) -> interaction.AbstractPackageBrowser:
-        """Generate widget for browsing packages."""
-        return QtWidgetPackageBrowserWidget(self.parent)
-
     def confirm_removal(
         self,
     ) -> interaction.AbstractConfirmFilesystemItemRemoval:
         """Generate widget for selecting which files or folders to remove."""
         return QtWidgetConfirmFileSystemRemoval(parent=self.parent)
-
-    def package_title_page_selection(
-        self,
-    ) -> interaction.AbstractPackageTitlePageSelection:
-        """Generate widget for selecting title pages from a package."""
-        warnings.warn(
-            "Use QtWidgetFactory.table_data_editor() instead",
-            DeprecationWarning,
-            stacklevel=2
-        )
-
-        return QtWidgetTitlePageSelection(parent=self.parent)
 
     def table_data_editor(
         self,
@@ -334,42 +312,6 @@ class QtWidgetConfirmFileSystemRemoval(
         return dialog.data()
 
 
-class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
-    """QtWidget-based widget for selecting packages title pages."""
-
-    def __init__(self, parent: Optional[QtWidgets.QWidget]) -> None:
-        """Create a new package browser."""
-        super().__init__()
-        self.parent = parent
-
-    def get_user_response(
-        self, options: dict, pretask_results: list
-    ) -> Dict[str, Any]:
-        """Generate the dialog for selecting title pages."""
-        return {
-            "packages": self.get_data_with_dialog_box(
-                options["input"],
-                self.image_str_to_enum(options["Image File Type"]),
-            )
-        }
-
-    def get_data_with_dialog_box(
-        self,
-        root_dir: str,
-        image_type: interaction.SupportedImagePackageFormats,
-        dialog_box: typing.Type[PackageBrowser] = PackageBrowser,
-    ) -> List[collection.Package]:
-        """Open a Qt dialog box for selecting package title pages."""
-        browser = dialog_box(
-            self.get_packages(root_dir, image_type), self.parent
-        )
-        browser.exec()
-        results = browser.result()
-        if results == QtWidgets.QDialog.DialogCode.Rejected:
-            raise speedwagon.exceptions.JobCancelled()
-        return browser.data()
-
-
 class TableSelectDialog(Generic[T, TableReportFormat]):
     """TableSelectDialog for displaying and editing tabular data."""
 
@@ -502,44 +444,6 @@ class QtWidgetTableEditWidget(
         dialog = self.get_dialog_box(selections)
         dialog.exec()
         return dialog.data() or {}
-
-
-class QtWidgetTitlePageSelection(
-    interaction.AbstractPackageTitlePageSelection
-):
-    """Qt widget for selection of a title page."""
-
-    def __init__(self, parent: Optional[QtWidgets.QWidget]) -> None:
-        """Create a title page selection widget."""
-        super().__init__()
-        self.parent = parent
-        self.browser_widget = PackageBrowser
-
-    def get_user_response(
-        self, options: dict, pretask_results: list
-    ) -> Dict[str, Any]:
-        """Show the user the packages and ask for a title page."""
-        results = pretask_results[0]
-        packages = results.data
-
-        title_pages: Dict[str, str] = {}
-        extra_data: Dict[str, Dict[str, str]] = {}
-        browser = self.browser_widget(packages, self.parent)
-        browser.exec()
-
-        if browser.result() != QtWidgets.QDialog.DialogCode.Accepted:
-            raise speedwagon.exceptions.JobCancelled()
-        data = browser.data()
-        for package in data:
-            bib_id = typing.cast(str, package.metadata[Metadata.ID])
-
-            title_page = typing.cast(
-                str, package.metadata[Metadata.TITLE_PAGE]
-            )
-
-            title_pages[bib_id] = title_page
-        extra_data["title_pages"] = title_pages
-        return extra_data
 
 
 class QtRequestMoreInfo(QtCore.QObject):

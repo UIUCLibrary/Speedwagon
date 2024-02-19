@@ -15,7 +15,6 @@ pytest-xvfb
 types-PyYAML
 types-requests
 paramiko
-pykdu_compress >= 0.1.8
 ruff
 sphinx>=6
 sphinx-argparse

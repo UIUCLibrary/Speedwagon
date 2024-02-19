@@ -21,6 +21,7 @@ from typing import (
 from copy import deepcopy
 
 from PySide6 import QtGui, QtCore
+
 if TYPE_CHECKING:
     from speedwagon.job import Workflow
 

@@ -1,5 +1,0 @@
-# The following dependencies are not accessible on PyPi. Add the following
-# with distribution.
-
-py3exiv2bind==0.1.11
-uiucprescon.packager==0.2.15

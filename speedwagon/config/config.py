@@ -286,7 +286,7 @@ def ensure_keys(config_file: str, keys: Iterable[str]) -> Optional[Set[str]]:
     return added or None
 
 
-class AbsSetting(metaclass=abc.ABCMeta):  # pylint: disable=R0903
+class AbsSetting(metaclass=abc.ABCMeta):  # noqa: B024 pylint: disable=R0903
     def update(
         self, settings: Optional[FullSettingsData] = None
     ) -> FullSettingsData:
