@@ -1,6 +1,6 @@
 [project]
 name = "speedwagon"
-version = "0.3.0.dev16"
+version = "0.3.1.dev1"
 description = "Collection of tools and workflows for DS"
 maintainers = [
     { name="Henry Borchers", email="hborcher@illinois.edu" }
@@ -82,7 +82,16 @@ speedwagon = ["favicon.ico", "logo.png", 'py.typed']
      "workspace.ui",
  ]
 
-
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+version_provider = "pep621"
+update_changelog_on_bump = true
+major_version_zero = true
+changelog_start_rev = "0.2.2"
+changelog_file="CHANGELOG.rst"
+template="contrib/CHANGELOG.rst.jinja"
 
 [build-system]
 requires = ["setuptools>=40.8.0", "wheel"]

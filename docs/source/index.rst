@@ -23,7 +23,7 @@ This documented is for version |version|.
    faq
    vendor_specs
    development
-   history
+   changelog
 
 
 
