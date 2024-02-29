@@ -885,6 +885,13 @@ class TestStartQtThreaded:
         main_window = Mock('MainWindow3', add_tab=Mock())
         loaded_workflows = {}
         start.load_all_workflows_tab(main_window, loaded_workflows)
+
+        # Flushing because qt quits before the logging qt signals are
+        # propagated to the log widget. This should be fixed but for now,
+        # it's managed here in the tests
+        for handler in start.logger.handlers:
+            handler.flush()
+
         main_window.add_tab.assert_called_with("All", {})
     def test_ensure_settings_files(self, qtbot, monkeypatch):
         start = gui_startup.StartQtThreaded(Mock())
