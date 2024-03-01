@@ -12,7 +12,6 @@ from speedwagon.workflows import workflow_get_marc
 import os
 from uiucprescon.packager.common import Metadata as PackageMetadata
 
-
 @pytest.mark.parametrize("index,label", [
     (0, "Input"),
     (1, "Output"),

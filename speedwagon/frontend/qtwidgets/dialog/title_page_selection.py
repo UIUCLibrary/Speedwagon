@@ -1,9 +1,7 @@
 """Selection of title page widget."""
-
 import os
 import typing
-from typing import NamedTuple, Any, Union
-
+from typing import NamedTuple, Any, Union, TypeVar
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import Qt
 from uiucprescon.packager.packages import collection
@@ -77,6 +75,10 @@ class FileSelectDelegate(QtWidgets.QStyledItemDelegate):
         model.setData(
             index, record, role=typing.cast(int, Qt.ItemDataRole.UserRole)
         )
+        model.dataChanged.emit(index, index)
+
+
+T = TypeVar("T")
 
 
 class PackagesModel(QtCore.QAbstractTableModel):
