@@ -1,3 +1,4 @@
+import warnings
 from typing import Sequence, Dict, List
 from unittest.mock import Mock, MagicMock
 
@@ -17,7 +18,9 @@ import speedwagon
 
 class TestCLIPackageBrowserWidget:
     def test_get_package_files(self):
-        package_widget = cli.user_interaction.CLIPackageBrowserWidget()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore",category=DeprecationWarning)
+            package_widget = cli.user_interaction.CLIPackageBrowserWidget()
 
         package_object = MagicMock()
         item = MagicMock()
@@ -36,7 +39,9 @@ class TestCLIPackageBrowserWidget:
         ]
 
     def test_ask_user_to_select_title_page(self):
-        package_widget = cli.user_interaction.CLIPackageBrowserWidget()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore",category=DeprecationWarning)
+            package_widget = cli.user_interaction.CLIPackageBrowserWidget()
         files = [
             "file1.jp2",
             "file2.jp2",
@@ -48,7 +53,9 @@ class TestCLIPackageBrowserWidget:
         assert title_page == "file1.jp2"
 
     def test_ask_user_to_select_title_cancels(self):
-        package_widget = cli.user_interaction.CLIPackageBrowserWidget()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore",category=DeprecationWarning)
+            package_widget = cli.user_interaction.CLIPackageBrowserWidget()
         files = [
             "file1.jp2",
             "file2.jp2",
@@ -64,7 +71,9 @@ class TestCLIPackageBrowserWidget:
             )
 
     def test_ask_user_to_select_title_zero(self):
-        package_widget = cli.user_interaction.CLIPackageBrowserWidget()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore",category=DeprecationWarning)
+            package_widget = cli.user_interaction.CLIPackageBrowserWidget()
         files = [
             "file1.jp2",
             "file2.jp2",
@@ -82,7 +91,9 @@ class TestCLIPackageBrowserWidget:
         assert title_page == "file1.jp2"
 
     def test_get_user_response(self, monkeypatch):
-        package_widget = cli.user_interaction.CLIPackageBrowserWidget()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore",category=DeprecationWarning)
+            package_widget = cli.user_interaction.CLIPackageBrowserWidget()
         package_data = MagicMock()
 
         monkeypatch.setattr(
@@ -103,7 +114,9 @@ class TestCLIPackageBrowserWidget:
         assert "packages" in response
 
     def test_sort_packages(self):
-        package_widget = cli.user_interaction.CLIPackageBrowserWidget()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore",category=DeprecationWarning)
+            package_widget = cli.user_interaction.CLIPackageBrowserWidget()
         package = uiucprescon.packager.packages.collection.PackageObject()
         should_be_first = uiucprescon.packager.packages.collection.Item(
             package
@@ -290,9 +303,11 @@ def test_user_confirm_removal_stdin(key_press, expected_response):
 @pytest.mark.parametrize("method_name", ["package_browser", "confirm_removal"])
 def test_factor_produce_user_widget(method_name):
     factory = cli.user_interaction.CLIFactory()
-    assert isinstance(
-        getattr(factory, method_name)(), interaction.AbsUserWidget
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore",category=DeprecationWarning)
+        assert isinstance(
+            getattr(factory, method_name)(), interaction.AbsUserWidget
+        )
 
 
 def test_table_data_editor():
