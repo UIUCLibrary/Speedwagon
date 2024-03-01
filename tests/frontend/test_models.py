@@ -24,6 +24,7 @@ from speedwagon.frontend.qtwidgets.models.settings import (
     WorkflowSettingsModel,
 )
 
+
 def test_build_setting_model_missing_file(tmpdir):
     dummy = str(os.path.join(tmpdir, "config.ini"))
     with pytest.raises(FileNotFoundError):
@@ -33,24 +34,30 @@ def test_build_setting_model_missing_file(tmpdir):
 class TestSettingsModel:
     @pytest.fixture()
     def model(self):
-        return  models.SettingsModel(None)
+        return models.SettingsModel(None)
 
-    @pytest.mark.parametrize("role", [
-        QtCore.Qt.DisplayRole,
-        QtCore.Qt.EditRole,
-    ])
+    @pytest.mark.parametrize(
+        "role",
+        [
+            QtCore.Qt.DisplayRole,
+            QtCore.Qt.EditRole,
+        ],
+    )
     def test_data(self, role, model):
         model.add_setting("spam", "eggs")
         assert model.data(model.index(0, 0), role=role) == "spam"
 
-    @pytest.mark.parametrize("index, expected", [
-        (0, "Key"),
-        (1, "Value"),
-    ])
+    @pytest.mark.parametrize(
+        "index, expected",
+        [
+            (0, "Key"),
+            (1, "Value"),
+        ],
+    )
     def test_header_data(self, index, expected, model):
-        value = model.headerData(index,
-                                 QtCore.Qt.Horizontal,
-                                 role=QtCore.Qt.DisplayRole)
+        value = model.headerData(
+            index, QtCore.Qt.Horizontal, role=QtCore.Qt.DisplayRole
+        )
 
         assert value == expected
 
@@ -59,10 +66,13 @@ class TestSettingsModel:
         model.setData(model.index(0, 0), data="dumb")
         assert model._data[0][1] == "dumb"
 
-    @pytest.mark.parametrize("column, expected", [
-        (0, QtCore.Qt.NoItemFlags),
-        (1, QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable),
-    ])
+    @pytest.mark.parametrize(
+        "column, expected",
+        [
+            (0, QtCore.Qt.NoItemFlags),
+            (1, QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable),
+        ],
+    )
     def test_flags(self, column, expected, model):
         model.add_setting("spam", "eggs")
         flags = model.flags(model.index(0, column))
@@ -140,33 +150,29 @@ class TestToolOptionsModel4:
 
     @pytest.fixture
     def data(self):
-        checksum_select = workflow.FileSelectData('Checksum File')
+        checksum_select = workflow.FileSelectData("Checksum File")
         checksum_select.filter = "Checksum files (*.md5)"
 
-        options = workflow.ChoiceSelection('Order')
+        options = workflow.ChoiceSelection("Order")
         options.add_selection("Bacon")
         options.add_selection("Bacon eggs")
         options.add_selection("Spam")
 
-        return [
-            checksum_select,
-            options,
-            workflow.DirectorySelect('Eggs')
-        ]
+        return [checksum_select, options, workflow.DirectorySelect("Eggs")]
 
     def test_headings(self, qtbot, data):
         model = models.ToolOptionsModel4(data)
-        heading = model.headerData(0,
-                                   QtCore.Qt.Vertical,
-                                   QtCore.Qt.DisplayRole)
+        heading = model.headerData(
+            0, QtCore.Qt.Vertical, QtCore.Qt.DisplayRole
+        )
 
         assert heading == data[0].label
 
     def test_horizontal_heading_are_empty(self, data):
         model = models.ToolOptionsModel4(data)
-        heading = model.headerData(0,
-                                   QtCore.Qt.Horizontal,
-                                   QtCore.Qt.DisplayRole)
+        heading = model.headerData(
+            0, QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole
+        )
         assert heading is None
 
     def test_rows_match_data_size(self, qtbot, data):
@@ -178,8 +184,7 @@ class TestToolOptionsModel4:
         index = model.index(0, 0)
 
         json_string = model.data(
-            index,
-            role=models.ToolOptionsModel4.JsonDataRole
+            index, role=models.ToolOptionsModel4.JsonDataRole
         )
 
         assert "widget_type" in json.loads(json_string)
@@ -227,7 +232,9 @@ class TestPluginActivationModel:
         plugin_entry = Mock(spec=metadata.EntryPoint)
         plugin_entry.name = "spam"
         plugin_model.add_entry_point(plugin_entry)
-        value = plugin_model.data(plugin_model.index(0), QtCore.Qt.ItemDataRole.DisplayRole)
+        value = plugin_model.data(
+            plugin_model.index(0), QtCore.Qt.ItemDataRole.DisplayRole
+        )
         assert "spam" in value
 
     @pytest.mark.parametrize(
@@ -236,7 +243,7 @@ class TestPluginActivationModel:
             QtCore.Qt.ItemFlag.ItemIsUserCheckable,
             QtCore.Qt.ItemFlag.ItemIsSelectable,
             QtCore.Qt.ItemFlag.ItemIsEnabled,
-         ]
+        ],
     )
     def test_flags(self, expected_flag):
         plugin_model = models.PluginActivationModel()
@@ -250,18 +257,20 @@ class TestPluginActivationModel:
         plugin_entry = Mock(spec=metadata.EntryPoint)
         plugin_entry.name = "spam"
         plugin_model.add_entry_point(plugin_entry)
-        assert \
+        assert (
             plugin_model.data(
                 plugin_model.index(0),
-                role=QtCore.Qt.ItemDataRole.CheckStateRole
-            ) == QtCore.Qt.CheckState.Unchecked
+                role=QtCore.Qt.ItemDataRole.CheckStateRole,
+            )
+            == QtCore.Qt.CheckState.Unchecked
+        )
 
     @pytest.mark.parametrize(
         "role, attribute",
         [
             (models.PluginActivationModel.ModuleRole, "module"),
             (QtCore.Qt.ItemDataRole.DisplayRole, "name"),
-        ]
+        ],
     )
     def test_data_role(self, role, attribute):
         plugin_model = models.PluginActivationModel()
@@ -274,6 +283,8 @@ class TestPluginActivationModel:
                 plugin_model.index(0),
                 role=role
             ) == getattr(plugin_entry, attribute)
+        assert plugin_model.data(plugin_model.index(0), role=role) == getattr(
+        )
 
 
 class TestTabsTreeModel:
@@ -295,13 +306,10 @@ class TestTabsTreeModel:
         starting_amount = model.rowCount()
         model.append_workflow_tab("tab_name")
         ending_amount = model.rowCount()
-        assert all(
-            (
-                starting_amount == 0,
-                ending_amount == 1
-            )
-        ), f"Should start with 0, got {starting_amount}. " \
-           f"Should end with 1, got {ending_amount}"
+        assert all((starting_amount == 0, ending_amount == 1)), (
+            f"Should start with 0, got {starting_amount}. "
+            f"Should end with 1, got {ending_amount}"
+        )
 
     def test_add_workflow_tab_with_list_workflows(self, qtbot, model):
         starting_workflow_row_count = model.rowCount(model.index(0, 0))
@@ -310,7 +318,7 @@ class TestTabsTreeModel:
             [
                 TestTabsTreeModel.SpamWorkflow,
                 TestTabsTreeModel.BaconWorkflow,
-            ]
+            ],
         )
         ending_workflow_row_count = model.rowCount(model.index(0, 0))
         assert all(
@@ -318,8 +326,12 @@ class TestTabsTreeModel:
                 starting_workflow_row_count == 0,
                 ending_workflow_row_count == 2,
             )
-        ), f"Expected starting workflow row 0, got {starting_workflow_row_count}. " \
-           f"Expected workflows in tab after adding 2, got{ending_workflow_row_count}"
+        ), (
+            f"Expected starting workflow row 0, "
+            f"got {starting_workflow_row_count}. "
+            f"Expected workflows in tab after adding 2, "
+            f"got{ending_workflow_row_count}"
+        )
 
     def test_get_tab_missing_returns_none(self, qtbot):
         model = models.TabsTreeModel()
@@ -330,7 +342,7 @@ class TestTabsTreeModel:
             "Dummy tab",
             [
                 TestTabsTreeModel.SpamWorkflow,
-            ]
+            ],
         )
         assert model.get_tab("Dummy tab").name == "Dummy tab"
 
@@ -338,8 +350,7 @@ class TestTabsTreeModel:
         model.append_workflow_tab("Dummy tab")
         assert model.rowCount(model.index(0, 0)) == 0
         model.append_workflow_to_tab(
-            "Dummy tab",
-            TestTabsTreeModel.SpamWorkflow
+            "Dummy tab", TestTabsTreeModel.SpamWorkflow
         )
         assert model.rowCount(model.index(0, 0)) == 1
 
@@ -355,7 +366,7 @@ class TestTabsTreeModel:
             [
                 TestTabsTreeModel.SpamWorkflow,
                 TestTabsTreeModel.BaconWorkflow,
-            ]
+            ],
         )
         assert model.rowCount() == 1
         model.removeRow(0)
@@ -367,34 +378,30 @@ class TestTabsTreeModel:
             [
                 TestTabsTreeModel.SpamWorkflow,
                 TestTabsTreeModel.BaconWorkflow,
-            ]
+            ],
         )
         tab_item: models.TabStandardItem = model.get_item(model.index(0, 0))
         assert all(
-         [
-             tab_item.child(0).name == "spam",
-             tab_item.child(1).name == "bacon"
-         ]
-        ), f'Expected child 0 to be "spam", got "{tab_item.child(0).name}". ' \
-           f'Expected child 1 to be "bacon", got "{tab_item.child(1).name}".'
+            [
+                tab_item.child(0).name == "spam",
+                tab_item.child(1).name == "bacon",
+            ]
+        ), (
+            f'Expected child 0 to be "spam", got "{tab_item.child(0).name}". '
+            f'Expected child 1 to be "bacon", got "{tab_item.child(1).name}".'
+        )
 
     def test_modified(self, model):
         model.append_workflow_tab(
             "Dummy tab",
-            [
-                TestTabsTreeModel.SpamWorkflow,
-                TestTabsTreeModel.BaconWorkflow
-            ]
+            [TestTabsTreeModel.SpamWorkflow, TestTabsTreeModel.BaconWorkflow],
         )
         assert model.data_modified is True
 
     def test_reset_modified(self, model):
         model.append_workflow_tab(
             "Dummy tab",
-            [
-                TestTabsTreeModel.SpamWorkflow,
-                TestTabsTreeModel.BaconWorkflow
-            ]
+            [TestTabsTreeModel.SpamWorkflow, TestTabsTreeModel.BaconWorkflow],
         )
         model.reset_modified()
         assert model.data_modified is False
@@ -402,20 +409,14 @@ class TestTabsTreeModel:
     def test_len_tabs(self, model):
         model.append_workflow_tab(
             "Dummy tab",
-            [
-                TestTabsTreeModel.SpamWorkflow,
-                TestTabsTreeModel.BaconWorkflow
-            ]
+            [TestTabsTreeModel.SpamWorkflow, TestTabsTreeModel.BaconWorkflow],
         )
         assert len(model) == 1
 
     def test_index(self, model):
         model.append_workflow_tab(
             "Dummy tab",
-            [
-                TestTabsTreeModel.SpamWorkflow,
-                TestTabsTreeModel.BaconWorkflow
-            ]
+            [TestTabsTreeModel.SpamWorkflow, TestTabsTreeModel.BaconWorkflow],
         )
         assert model[0].name == "Dummy tab"
 
@@ -429,7 +430,7 @@ class TestTabsTreeModel:
             "Dummy tab",
             [
                 TestTabsTreeModel.SpamWorkflow,
-            ]
+            ],
         )
         model.reset_modified()
         dummy_tab = model[0]
@@ -441,7 +442,7 @@ class TestTabsTreeModel:
             "Dummy tab",
             [
                 TestTabsTreeModel.SpamWorkflow,
-            ]
+            ],
         )
         assert model.tab_information()[0].tab_name == "Dummy tab"
 
@@ -451,7 +452,7 @@ class TestTabsTreeModel:
             (0, 0, 0, "spam"),
             (0, 1, 0, "bacon"),
             (0, 1, 1, "bacon description"),
-        ]
+        ],
     )
     def test_data(self, top_row, sub_row, sub_column, expected_value, model):
         model.append_workflow_tab(
@@ -459,11 +460,16 @@ class TestTabsTreeModel:
             [
                 TestTabsTreeModel.SpamWorkflow,
                 TestTabsTreeModel.BaconWorkflow,
-            ]
+            ],
         )
-        assert model.data(
-            model.index(sub_row, sub_column, parent=model.index(top_row, 0)),
-        ) == expected_value
+        assert (
+            model.data(
+                model.index(
+                    sub_row, sub_column, parent=model.index(top_row, 0)
+                ),
+            )
+            == expected_value
+        )
 
     def test_data_with_invalid_index_get_none(self, model):
         assert model.data(model.index(-1)) is None
@@ -474,33 +480,38 @@ class TestTabsTreeModel:
             [
                 TestTabsTreeModel.SpamWorkflow,
                 TestTabsTreeModel.BaconWorkflow,
-            ]
+            ],
         )
-        assert model.data(
-            model.index(0, 0, parent=model.index(0, 0)),
-            role=models.WorkflowClassRole
-        ) == TestTabsTreeModel.SpamWorkflow
+        assert (
+            model.data(
+                model.index(0, 0, parent=model.index(0, 0)),
+                role=models.WorkflowClassRole,
+            )
+            == TestTabsTreeModel.SpamWorkflow
+        )
 
     @pytest.mark.parametrize(
         "section, expected_value",
         [
             (0, "Name"),
             (1, "Description"),
-        ]
+        ],
     )
     def test_header_data(self, section, expected_value, model):
         model.append_workflow_tab(
             "Dummy tab",
             [
                 TestTabsTreeModel.SpamWorkflow,
-            ]
+            ],
         )
-        assert \
+        assert (
             model.headerData(
                 section,
                 QtCore.Qt.Orientation.Horizontal,
-                QtCore.Qt.ItemDataRole.DisplayRole
-            ) == expected_value
+                QtCore.Qt.ItemDataRole.DisplayRole,
+            )
+            == expected_value
+        )
 
     def test_parent_no_child(self, model):
         assert model.parent().isValid() is False
@@ -520,36 +531,43 @@ class TestTabsTreeModel:
             "Dummy tab",
             [
                 TestTabsTreeModel.SpamWorkflow,
-            ]
+            ],
         )
         assert model.rowCount() == 1
         model.clear()
         assert model.rowCount() == 0
 
     def test_parent_not_valid_child(self, model):
-        assert model.parent(model.index(-1,-1)).isValid() is False
+        assert model.parent(model.index(-1, -1)).isValid() is False
 
     def test_set_data(self, model):
         index = model.index(0)
-        assert model.setData(
-            index,
-            value=self.SpamWorkflow,
-            role=models.common.WorkflowClassRole
-        ) is True
+        assert (
+            model.setData(
+                index,
+                value=self.SpamWorkflow,
+                role=models.common.WorkflowClassRole,
+            )
+            is True
+        )
 
     def test_set_data_text(self, model):
         index = model.index(0)
-        assert model.setData(
-            index,
-            value="Invalid data for this role",
-            role=QtGui.Qt.ItemDataRole.CheckStateRole
-        ) is False
+        assert (
+            model.setData(
+                index,
+                value="Invalid data for this role",
+                role=QtGui.Qt.ItemDataRole.CheckStateRole,
+            )
+            is False
+        )
 
     def test_row_count_higher_column_parent(self, model):
         index = Mock(
             isValid=Mock(return_value=True), column=Mock(return_value=3)
         )
         assert model.rowCount(index) == 0
+
 
 class TestTabStandardItem:
     class SpamWorkflow(speedwagon.Workflow):
@@ -593,7 +611,6 @@ class TestWorkflowListProxyModel:
     class SpamWorkflow(speedwagon.Workflow):
         name = "Span"
 
-
     def test_name_no_model(self, qtbot):
         proxy_model = models.WorkflowListProxyModel()
         assert proxy_model.current_tab_name is None
@@ -605,15 +622,7 @@ class TestWorkflowListProxyModel:
         with pytest.raises(ValueError):
             proxy_model.set_by_name("not a valid tab")
 
-    @pytest.mark.parametrize(
-        "tab_name",
-        (
-            [
-                "Spam tab",
-                "Bacon tab"
-            ]
-        )
-    )
+    @pytest.mark.parametrize("tab_name", (["Spam tab", "Bacon tab"]))
     def test_set_by_name(self, qtbot, tab_name):
         base_model = models.TabsTreeModel()
 
@@ -621,13 +630,13 @@ class TestWorkflowListProxyModel:
             "Spam tab",
             [
                 TestWorkflowListProxyModel.DummyWorkflow,
-            ]
+            ],
         )
         base_model.append_workflow_tab(
             "Bacon tab",
             [
                 TestWorkflowListProxyModel.DummyWorkflow,
-            ]
+            ],
         )
         proxy_model = models.WorkflowListProxyModel()
         proxy_model.setSourceModel(base_model)
@@ -641,9 +650,9 @@ class TestWorkflowListProxyModel:
             [
                 TestWorkflowListProxyModel.DummyWorkflow,
                 TestWorkflowListProxyModel.SpamWorkflow,
-            ]
+            ],
         )
-        item_index = base_model.index(0,0, parent=base_model.index(0,0))
+        item_index = base_model.index(0, 0, parent=base_model.index(0, 0))
         workflow_item: models.WorkflowItem = base_model.get_item(item_index)
         assert workflow_item.name == "dummy 1"
 
@@ -656,8 +665,8 @@ class TestWorkflowListProxyModel:
     def test_map_to_source_with_no_model_produces_index(self):
         proxy_model = models.WorkflowListProxyModel()
         assert isinstance(
-            proxy_model.mapToSource(proxy_model.index(0,0)),
-            QtCore.QModelIndex
+            proxy_model.mapToSource(proxy_model.index(0, 0)),
+            QtCore.QModelIndex,
         )
 
     def test_map_from_source_with_invalid_index_produces_index(self):
@@ -665,8 +674,7 @@ class TestWorkflowListProxyModel:
         proxy_index = Mock()
         proxy_index.isValid = Mock(return_value=False)
         assert isinstance(
-            proxy_model.mapFromSource(proxy_index),
-            QtCore.QModelIndex
+            proxy_model.mapFromSource(proxy_index), QtCore.QModelIndex
         )
 
     def test_index_invalid_parent(self):
@@ -680,12 +688,9 @@ class TestWorkflowListProxyModel:
         base_model = models.TabsTreeModel()
         base_model.append_workflow_tab(
             "Dummy tab",
-            [
-                TestTabProxyModel.DummyWorkflow,
-                TestTabProxyModel.SpamWorkflow
-            ]
+            [TestTabProxyModel.DummyWorkflow, TestTabProxyModel.SpamWorkflow],
         )
-        item_index = base_model.index(1,0, parent=base_model.index(0,0))
+        item_index = base_model.index(1, 0, parent=base_model.index(0, 0))
         workflow_item: models.WorkflowItem = base_model.get_item(item_index)
         assert workflow_item.name == "Spam"
 
@@ -701,7 +706,7 @@ class TestWorkflowListProxyModel:
             "Dummy tab",
             [
                 TestTabProxyModel.DummyWorkflow,
-            ]
+            ],
         )
 
         proxy_model = models.WorkflowListProxyModel()
@@ -721,25 +726,26 @@ class TestWorkflowListProxyModel:
             "Dummy tab",
             [
                 TestWorkflowListProxyModel.DummyWorkflow,
-            ]
+            ],
         )
 
         proxy_model = models.WorkflowListProxyModel()
         proxy_model.setSourceModel(base_model)
         proxy_model.set_by_name("Dummy tab")
 
-        starting_row_count = base_model.rowCount(base_model.index(0,0)) == 1
+        starting_row_count = base_model.rowCount(base_model.index(0, 0)) == 1
         proxy_model.add_workflow(TestWorkflowListProxyModel.SpamWorkflow)
-        after_appending_row_count = base_model.rowCount(base_model.index(0,0))
+        after_appending_row_count = base_model.rowCount(base_model.index(0, 0))
 
         expected = {
             "start row count": 1,
-            "row count after proxy appends workflow": 2
+            "row count after proxy appends workflow": 2,
         }
 
         actual = {
             "start row count": starting_row_count,
-            "row count after proxy appends workflow": after_appending_row_count
+            "row count after proxy appends workflow":
+                after_appending_row_count,
         }
         assert expected == actual
 
@@ -749,7 +755,7 @@ class TestWorkflowListProxyModel:
             "Dummy tab",
             [
                 TestWorkflowListProxyModel.DummyWorkflow,
-            ]
+            ],
         )
 
         proxy_model = models.WorkflowListProxyModel()
@@ -800,7 +806,9 @@ class TestWorkflowListProxyModel:
     def test_remove_workflow_without_a_model_is_a_runtime_error(self):
         proxy_model = models.WorkflowListProxyModel()
         with pytest.raises(RuntimeError):
-            proxy_model.remove_workflow(TestWorkflowListProxyModel.DummyWorkflow)
+            proxy_model.remove_workflow(
+                TestWorkflowListProxyModel.DummyWorkflow
+            )
 
 
 class TestTabProxyModel:
@@ -808,10 +816,8 @@ class TestTabProxyModel:
     class DummyWorkflow(speedwagon.Workflow):
         name = "Dummy 1"
 
-
     class SpamWorkflow(speedwagon.Workflow):
         name = "Spam"
-
 
     @pytest.fixture()
     def base_model(self):
@@ -823,7 +829,7 @@ class TestTabProxyModel:
             "Dummy tab",
             [
                 TestTabProxyModel.DummyWorkflow,
-            ]
+            ],
         )
         tab_model = models.TabProxyModel()
 
@@ -834,31 +840,27 @@ class TestTabProxyModel:
 
     def test_mapFromSource(self, base_model):
         base_model.append_workflow_tab(
-            "Dummy tab",
-            [TestTabProxyModel.DummyWorkflow]
+            "Dummy tab", [TestTabProxyModel.DummyWorkflow]
         )
 
         base_model.append_workflow_tab(
-            "Spam tab",
-            [TestTabProxyModel.SpamWorkflow]
+            "Spam tab", [TestTabProxyModel.SpamWorkflow]
         )
         tab_model = models.TabProxyModel()
 
         tab_model.setSourceModel(base_model)
         tab_model.set_source_tab("Spam tab")
-        source_index = base_model.index(0,0, parent=base_model.index(1))
+        source_index = base_model.index(0, 0, parent=base_model.index(1))
         assert tab_model.mapFromSource(source_index).row() == 0
 
     def test_mapFromSource_name(self, base_model):
 
         base_model.append_workflow_tab(
-            "Dummy tab",
-            [TestTabProxyModel.DummyWorkflow]
+            "Dummy tab", [TestTabProxyModel.DummyWorkflow]
         )
 
         base_model.append_workflow_tab(
-            "Spam tab",
-            [TestTabProxyModel.SpamWorkflow]
+            "Spam tab", [TestTabProxyModel.SpamWorkflow]
         )
 
         tab_model = models.TabProxyModel()
@@ -878,8 +880,7 @@ class TestTabProxyModel:
         )
 
         base_model.append_workflow_tab(
-            "Spam tab",
-            [TestTabProxyModel.SpamWorkflow]
+            "Spam tab", [TestTabProxyModel.SpamWorkflow]
         )
         tab_model = models.TabProxyModel()
 
@@ -888,12 +889,11 @@ class TestTabProxyModel:
 
         assert tab_model.mapToSource(
             tab_model.index(0, 0)
-        ) == base_model.index(0,0, parent=base_model.index(1))
+        ) == base_model.index(0, 0, parent=base_model.index(1))
 
     def test_add_workflow(self, base_model):
         base_model.append_workflow_tab(
-            "Dummy tab",
-            [TestTabProxyModel.DummyWorkflow]
+            "Dummy tab", [TestTabProxyModel.DummyWorkflow]
         )
 
         tab_model = models.TabProxyModel()
@@ -902,13 +902,15 @@ class TestTabProxyModel:
         assert base_model.rowCount(base_model.index(0)) == 1
         tab_model.add_workflow(TestTabProxyModel.SpamWorkflow)
         assert base_model.rowCount(base_model.index(0)) == 2
-        assert base_model.data(base_model.index(1, 0, parent=base_model.index(0))) == "Spam"
+        assert (
+            base_model.data(base_model.index(1, 0, parent=base_model.index(0)))
+            == "Spam"
+        )
 
     def test_add_workflow_duplicates_is_noop(self, base_model):
 
         base_model.append_workflow_tab(
-            "Dummy tab",
-            [TestTabProxyModel.DummyWorkflow]
+            "Dummy tab", [TestTabProxyModel.DummyWorkflow]
         )
 
         tab_model = models.TabProxyModel()
@@ -921,13 +923,15 @@ class TestTabProxyModel:
         tab_model.add_workflow(TestTabProxyModel.SpamWorkflow)
         tab_model.add_workflow(TestTabProxyModel.SpamWorkflow)
         assert base_model.rowCount(base_model.index(0)) == 2
-        assert base_model.data(base_model.index(1, 0, parent=base_model.index(0))) == "Spam"
+        assert (
+            base_model.data(base_model.index(1, 0, parent=base_model.index(0)))
+            == "Spam"
+        )
 
     def test_remove_workflow(self, base_model):
 
         base_model.append_workflow_tab(
-            "Dummy tab",
-            [TestTabProxyModel.DummyWorkflow]
+            "Dummy tab", [TestTabProxyModel.DummyWorkflow]
         )
 
         tab_model = models.TabProxyModel()
@@ -940,14 +944,14 @@ class TestTabProxyModel:
 
     def test_get_source_tab_index(self, base_model):
         base_model.append_workflow_tab(
-            "Dummy tab",
-            [TestTabProxyModel.DummyWorkflow]
+            "Dummy tab", [TestTabProxyModel.DummyWorkflow]
         )
         tab_model = models.TabProxyModel()
         tab_model.setSourceModel(base_model)
-        assert base_model.data(
-            tab_model.get_source_tab_index("Dummy tab")
-        ) == "Dummy tab"
+        assert (
+            base_model.data(tab_model.get_source_tab_index("Dummy tab"))
+            == "Dummy tab"
+        )
 
     def test_get_source_tab_index_invalid_index(self, base_model):
         tab_model = models.TabProxyModel()
@@ -965,7 +969,7 @@ class TestTabProxyModel:
             [
                 self.SpamWorkflow,
                 self.DummyWorkflow,
-            ]
+            ],
         )
         tab_model = models.TabProxyModel()
         tab_model.setSourceModel(base_model)
@@ -980,7 +984,7 @@ class TestTabProxyModel:
             [
                 self.SpamWorkflow,
                 self.DummyWorkflow,
-            ]
+            ],
         )
         tab_model = models.TabProxyModel()
         tab_model.setSourceModel(base_model)
@@ -989,7 +993,7 @@ class TestTabProxyModel:
 
     def test_sort_no_base_model(self):
         tab_model = models.TabProxyModel()
-        tab_model.set_source_tab('invalid tab')
+        tab_model.set_source_tab("invalid tab")
         tab_model.sort(0)
 
 
@@ -1029,53 +1033,61 @@ class TestWorkflowList:
         assert model.rowCount() == 0
 
 
-# def sample_model():
-#     return WorkflowSettingsModel2()
-#
-# only_real_model = pytest.mark.skipif(isinstance(sample_model(), WorkflowSettingsStandardModel), reason="wrong model")
-
-
 class TestWorkflowSettingsModel:
     class SpamWorkflow(speedwagon.Workflow):
         name = "Spam"
 
-        def workflow_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        def workflow_options(
+            self,
+        ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
 
             return [
-                speedwagon.workflow.TextLineEditData("Dummy config", required=True)
+                speedwagon.workflow.TextLineEditData(
+                    "Dummy config", required=True
+                )
             ]
 
         def discover_task_metadata(
-                self,
-                initial_results: List[Any],
-                additional_data: Dict[str, Any],
-                **user_args) -> List[dict]:
+            self,
+            initial_results: List[Any],
+            additional_data: Dict[str, Any],
+            **user_args,
+        ) -> List[dict]:
             return []
 
     class BaconWorkflow(speedwagon.Workflow):
         name = "Bacon"
 
-        def workflow_options(self) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
+        def workflow_options(
+            self,
+        ) -> List[speedwagon.workflow.AbsOutputOptionDataType]:
 
             return [
-                speedwagon.workflow.TextLineEditData("Bacon config 1", required=True),
-                speedwagon.workflow.TextLineEditData("Bacon config 2", required=True)
+                speedwagon.workflow.TextLineEditData(
+                    "Bacon config 1", required=True
+                ),
+                speedwagon.workflow.TextLineEditData(
+                    "Bacon config 2", required=True
+                ),
             ]
 
         def discover_task_metadata(
-                self,
-                initial_results: List[Any],
-                additional_data: Dict[str, Any],
-                **user_args) -> List[dict]:
+            self,
+            initial_results: List[Any],
+            additional_data: Dict[str, Any],
+            **user_args,
+        ) -> List[dict]:
             return []
 
     class NoConfigWorkflow(speedwagon.Workflow):
         name = "Workflow that has no config options"
+
         def discover_task_metadata(
-                self,
-                initial_results: List[Any],
-                additional_data: Dict[str, Any],
-                **user_args) -> List[dict]:
+            self,
+            initial_results: List[Any],
+            additional_data: Dict[str, Any],
+            **user_args,
+        ) -> List[dict]:
             return []
 
     @pytest.fixture()
@@ -1096,7 +1108,7 @@ class TestWorkflowSettingsModel:
 
     def test_column_count_child(self, model):
         model.add_workflow(self.SpamWorkflow())
-        assert model.columnCount(model.index(0,0)) == 2
+        assert model.columnCount(model.index(0, 0)) == 2
 
     def test_starting_row_count(self, model):
         assert model.rowCount() == 0
@@ -1116,9 +1128,11 @@ class TestWorkflowSettingsModel:
         [
             (0, 2),
             (1, 2),
-        ]
+        ],
     )
-    def test_column_count_with_parent_after_adding(self, model, row, expected_column_count):
+    def test_column_count_with_parent_after_adding(
+        self, model, row, expected_column_count
+    ):
         model.add_workflow(self.BaconWorkflow())
         model.add_workflow(self.SpamWorkflow())
         parent = model.index(row, 0)
@@ -1127,7 +1141,7 @@ class TestWorkflowSettingsModel:
     def test_column_count_with_parent(self, model):
         model.add_workflow(self.BaconWorkflow())
         model.add_workflow(self.SpamWorkflow())
-        parent = model.index(0,0)
+        parent = model.index(0, 0)
         index = model.index(0, 0, parent=parent)
         assert model.columnCount(index) == 2
 
@@ -1140,7 +1154,7 @@ class TestWorkflowSettingsModel:
             (0, 1, None),
             (1, 1, None),
             (2, 1, None),
-        ]
+        ],
     )
     def test_data_display_top_level(self, model, row, column, expected_text):
         model.add_workflow(self.BaconWorkflow())
@@ -1155,7 +1169,7 @@ class TestWorkflowSettingsModel:
             "child_row",
             "child_column",
             "role",
-            "expected_text"
+            "expected_text",
         ],
         [
             (0, 0, 0, 0, QtCore.Qt.DisplayRole, "Bacon config 1"),
@@ -1163,11 +1177,9 @@ class TestWorkflowSettingsModel:
             (0, 0, 1, 0, QtCore.Qt.DisplayRole, "Bacon config 2"),
             (0, 0, 1, 0, QtCore.Qt.EditRole, "Bacon config 2"),
             (0, 0, 2, 0, QtCore.Qt.DisplayRole, None),
-
             (1, 0, 0, 0, QtCore.Qt.DisplayRole, "Dummy config"),
             (1, 0, 1, 0, QtCore.Qt.DisplayRole, None),
             (1, 0, 1, 0, QtCore.Qt.DisplayRole, None),
-
             (0, 1, 0, 0, QtCore.Qt.DisplayRole, None),
             (0, 1, 0, 1, QtCore.Qt.DisplayRole, None),
             (0, 1, 0, 2, QtCore.Qt.DisplayRole, None),
@@ -1183,50 +1195,69 @@ class TestWorkflowSettingsModel:
             (0, 1, 0, 0, QtCore.Qt.DisplayRole, None),
             (1, 1, 0, 0, QtCore.Qt.DisplayRole, None),
             (2, 1, 0, 0, QtCore.Qt.DisplayRole, None),
-        ]
+        ],
     )
-    def test_data_display_one_level_down(self, model, workflow_row, workflow_column, child_row, child_column, role, expected_text):
+    def test_data_display_one_level_down(
+        self,
+        model,
+        workflow_row,
+        workflow_column,
+        child_row,
+        child_column,
+        role,
+        expected_text,
+    ):
         model.add_workflow(self.BaconWorkflow())
         model.add_workflow(self.SpamWorkflow())
         parent_index = model.index(workflow_row, workflow_column)
         index = model.index(child_row, child_column, parent=parent_index)
-        model.data(index, role=role) ==  expected_text
+        model.data(index, role=role) == expected_text
 
     def test_index_without_anything(self, model):
         index = model.index(0, 0)
         assert index.isValid() is False
 
-    @pytest.mark.parametrize("index_values, expected", [
-        ((0,0), True),
-        ((0,1), True),
-    ])
+    @pytest.mark.parametrize(
+        "index_values, expected",
+        [
+            ((0, 0), True),
+            ((0, 1), True),
+        ],
+    )
     def test_index_workflow_level(self, model, index_values, expected):
         model.add_workflow(self.SpamWorkflow())
         index = model.index(*index_values)
         assert index.isValid() is expected
 
-    @pytest.mark.parametrize("workflow_options_index_values, expected", [
-        ((0, 0), True),
-        ((1, 0), False),
-    ])
-    def test_index_options_level(self, model, workflow_options_index_values, expected):
+    @pytest.mark.parametrize(
+        "workflow_options_index_values, expected",
+        [
+            ((0, 0), True),
+            ((1, 0), False),
+        ],
+    )
+    def test_index_options_level(
+        self, model, workflow_options_index_values, expected
+    ):
         model.add_workflow(self.SpamWorkflow())
         parent_index = model.index(0, 0)
         index = model.index(
             *workflow_options_index_values, parent=parent_index
         )
-        assert index.isValid() is expected, f"data for model = {model.data(index)}"
+        assert (
+            index.isValid() is expected
+        ), f"data for model = {model.data(index)}"
 
-    @pytest.mark.parametrize("column, expected_valid", [
-        (0, True),
-        (1, True),
-        (2, False)
-    ])
+    @pytest.mark.parametrize(
+        "column, expected_valid", [(0, True), (1, True), (2, False)]
+    )
     def test_second_level_index(self, model, column, expected_valid):
         model.add_workflow(self.SpamWorkflow())
         parent = model.index(0, 0)
         index = model.index(0, column, parent=parent)
-        assert index.isValid() is expected_valid, f"data for model = {model.data(index)}"
+        assert (
+            index.isValid() is expected_valid
+        ), f"data for model = {model.data(index)}"
 
     def test_add_workflow(self, model):
         model.add_workflow(self.SpamWorkflow())
@@ -1240,12 +1271,7 @@ class TestWorkflowSettingsModel:
         assert model.rowCount() == 0
 
     @pytest.mark.parametrize(
-        "column,expected_value",
-        [
-            (0, "Spam"),
-            (1, None),
-            (2, None)
-        ]
+        "column,expected_value", [(0, "Spam"), (1, None), (2, None)]
     )
     def test_top_level_data(self, model, column, expected_value):
         model.add_workflow(self.SpamWorkflow())
@@ -1257,15 +1283,18 @@ class TestWorkflowSettingsModel:
             ((0, 0), None, "Spam"),
             ((0, 1), None, None),
             ((0, 2), None, None),
-            ((0, 0), (0, 0), 'Dummy config'),
-        ]
+            ((0, 0), (0, 0), "Dummy config"),
+        ],
     )
-    def test_data(self, model, index_values, parent_index_values, expected_value):
+    def test_data(
+        self, model, index_values, parent_index_values, expected_value
+    ):
         model.add_workflow(self.SpamWorkflow())
-        parent_index = \
-            model.index(*parent_index_values) \
-                if parent_index_values is not None \
+        parent_index = (
+            model.index(*parent_index_values)
+            if parent_index_values is not None
             else QtCore.QModelIndex()
+        )
         index = model.index(*index_values, parent=parent_index)
         assert model.data(index) == expected_value
 
@@ -1276,13 +1305,16 @@ class TestWorkflowSettingsModel:
         assert model.data(workflow_metadata_data_index) == "Dummy config"
 
     def test_setting(self, model):
-        backend = Mock(get=lambda key: "foo" if key == "Dummy config" else None)
+        backend = Mock(
+            get=lambda key: "foo" if key == "Dummy config" else None
+        )
         workflow = self.SpamWorkflow()
         workflow.set_options_backend(backend)
         model.add_workflow(workflow)
         workflow_index = model.index(0, 0)
         workflow_metadata_data_index = model.index(0, 1, parent=workflow_index)
         assert model.data(workflow_metadata_data_index) == "foo"
+
     def test_items_with_settings(self, model):
         assert model.rowCount() == 0
         model.add_workflow(self.SpamWorkflow())
@@ -1292,15 +1324,13 @@ class TestWorkflowSettingsModel:
 
     @pytest.mark.parametrize(
         "workflow, expected",
-        [
-            (SpamWorkflow(), True),
-            (NoConfigWorkflow(), False)
-        ]
+        [(SpamWorkflow(), True), (NoConfigWorkflow(), False)],
     )
     def test_has_children(self, model, workflow, expected):
         model.add_workflow(workflow)
-        assert model.hasChildren(model.index(0,0)) is expected
-        assert model.hasChildren(model.index(0,0)) is expected
+        assert model.hasChildren(model.index(0, 0)) is expected
+        assert model.hasChildren(model.index(0, 0)) is expected
+
     def test_has_children_root(self, model):
         model.add_workflow(self.SpamWorkflow())
         assert model.hasChildren() is True
@@ -1316,8 +1346,8 @@ class TestWorkflowSettingsModel:
         [
             (SpamWorkflow(), "Spam"),
             (NoConfigWorkflow(), "Workflow that has no config options"),
-            (BaconWorkflow(), "Bacon")
-        ]
+            (BaconWorkflow(), "Bacon"),
+        ],
     )
     def test_data_name(self, model, workflow, expected_display):
         model.add_workflow(workflow)
@@ -1332,23 +1362,25 @@ class TestWorkflowSettingsModel:
     @pytest.mark.parametrize(
         "expected_flags, index, parent_index",
         [
-            (Qt.ItemFlag.ItemIsEnabled, (0, 0), None),
-            (Qt.ItemFlag.ItemIsEnabled, (0, 1), None),
+            (QtCore.Qt.ItemFlag.ItemIsEnabled, (0, 0), None),
+            (QtCore.Qt.ItemFlag.ItemIsEnabled, (0, 1), None),
             (
                 (
-                    Qt.ItemFlag.ItemIsEnabled and
-                    Qt.ItemFlag.ItemIsSelectable and
-                    Qt.ItemFlag.ItemIsEditable
+                    QtCore.Qt.ItemFlag.ItemIsEnabled
+                    and QtCore.Qt.ItemFlag.ItemIsSelectable
+                    and QtCore.Qt.ItemFlag.ItemIsEditable
                 ),
-                (0, 1), (0, 0)
+                (0, 1),
+                (0, 0),
             ),
             (
                 (
-                    Qt.ItemFlag.ItemIsEnabled and
-                    Qt.ItemFlag.ItemIsSelectable
+                    QtCore.Qt.ItemFlag.ItemIsEnabled
+                    and QtCore.Qt.ItemFlag.ItemIsSelectable
                 ),
-                (0, 0), (0, 0)
-            )
+                (0, 0),
+                (0, 0),
+            ),
         ],
     )
     def test_flags(self, model, expected_flags, index, parent_index):
@@ -1362,11 +1394,21 @@ class TestWorkflowSettingsModel:
     @pytest.mark.parametrize(
         ["section", "orientation", "role", "expected"],
         [
-            (0, Qt.Orientation.Horizontal, Qt.DisplayRole, 'Property'),
-            (0, Qt.Orientation.Vertical, Qt.DisplayRole, 1),
-            (1, Qt.Orientation.Horizontal, Qt.DisplayRole, 'Value'),
-            (1, Qt.Orientation.Vertical, Qt.DisplayRole, None)
-        ]
+            (
+                0,
+                QtCore.Qt.Orientation.Horizontal,
+                QtCore.Qt.DisplayRole,
+                "Property",
+            ),
+            (0, QtCore.Qt.Orientation.Vertical, QtCore.Qt.DisplayRole, 1),
+            (
+                1,
+                QtCore.Qt.Orientation.Horizontal,
+                QtCore.Qt.DisplayRole,
+                "Value",
+            ),
+            (1, QtCore.Qt.Orientation.Vertical, QtCore.Qt.DisplayRole, None),
+        ],
     )
     def test_header_data(self, model, section, orientation, role, expected):
         model.add_workflow(self.SpamWorkflow())
@@ -1394,15 +1436,17 @@ class TestWorkflowSettingsModel:
             model.setData(index, "new edits")
 
     @pytest.mark.parametrize(
-        'expected_valid, index, parent_index',
+        "expected_valid, index, parent_index",
         [
-            (True,  (0, 1), (0, 0)),
+            (True, (0, 1), (0, 0)),
             (False, (0, 0), (0, 0)),
             (False, (0, 1), None),
             (False, (1, 0), None),
-        ]
+        ],
     )
-    def test_set_data_valid_indexes(self, model, expected_valid, index, parent_index):
+    def test_set_data_valid_indexes(
+        self, model, expected_valid, index, parent_index
+    ):
         model.add_workflow(self.SpamWorkflow())
         if parent_index is None:
             index = model.index(*index)
@@ -1418,11 +1462,7 @@ class TestWorkflowSettingsModel:
         model.add_workflow(self.SpamWorkflow())
         index = model.index(0, 1, parent=model.index(0, 0))
         model.setData(index, "new edits")
-        assert model.results() == {
-            "Spam": {
-                'Dummy config': "new edits"
-            }
-        }
+        assert model.results() == {"Spam": {"Dummy config": "new edits"}}
 
     def test_not_modified_by_default(self, model):
         assert model.modified() is False
@@ -1472,8 +1512,10 @@ class TestWorkflowSettingsMetadata:
 
     def test_child_number(self):
         parent_model = models.settings.WorkflowSettingsItemWorkflow()
-        other_item = models.settings.WorkflowSettingsMetadata(parent=parent_model)
-        model = models.settings.WorkflowSettingsMetadata(parent = parent_model)
+        other_item = models.settings.WorkflowSettingsMetadata(
+            parent=parent_model
+        )
+        model = models.settings.WorkflowSettingsMetadata(parent=parent_model)
         parent_model.child_items.append(other_item)
         parent_model.child_items.append(model)
         assert model.child_number() == 1
@@ -1500,11 +1542,12 @@ class TestWorkflowSettingsRoot:
         assert model.data_column(-1) is None
 
     def test_data_column(self, model):
-        assert model.data_column(0) == 'Property'
+        assert model.data_column(0) == "Property"
 
     def test_flags(self, model):
-        assert \
-            model.flags(Mock(name='index')) == QtCore.Qt.ItemFlag.NoItemFlags
+        assert (
+            model.flags(Mock(name="index")) == QtCore.Qt.ItemFlag.NoItemFlags
+        )
 
     def test_data_invalid_index_is_none(self, model):
         assert model.data(-1) is None
@@ -1526,9 +1569,9 @@ class TestWorkflowSettingsItemWorkflow:
 
     def test_remove_children(self, model):
         model.child_items.append(Mock())
-        model.remove_children(0,1)
+        model.remove_children(0, 1)
         assert len(model.child_items) == 0
 
     def test_remove_children_when_empty_returns_false(self, model):
-        assert model.remove_children(0,1) is False
+        assert model.remove_children(0, 1) is False
 
