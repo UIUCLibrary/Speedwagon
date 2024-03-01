@@ -8,8 +8,10 @@ from uiucprescon.packager.packages import collection
 import speedwagon.exceptions
 from speedwagon.frontend import cli
 from speedwagon.frontend import interaction
-from speedwagon.frontend.cli.user_interaction import \
-    CLIConfirmFilesystemItemRemoval
+from speedwagon.frontend.cli.user_interaction import (
+    CLIConfirmFilesystemItemRemoval,
+    CLIEditTable,
+)
 import speedwagon
 
 
@@ -119,9 +121,62 @@ class TestCLIPackageBrowserWidget:
 
         package.items = [should_be_second, should_be_first]
         result = package_widget.sort_package(package)
-        assert result.items[0].metadata[uiucprescon.packager.Metadata.ITEM_NAME] == '00000008' and \
-               result.items[1].metadata[uiucprescon.packager.Metadata.ITEM_NAME] == '00000009'
+        assert (
+            result.items[0].metadata[uiucprescon.packager.Metadata.ITEM_NAME]
+            == "00000008"
+            and result.items[1].metadata[
+                uiucprescon.packager.Metadata.ITEM_NAME
+            ]
+            == "00000009"
+        )
 
+
+class TestCLIEditTable:
+    def test_data_gathering(self):
+        pretask_results = [Mock(spec=speedwagon.tasks.Result, data=[])]
+
+        def process_data(
+            data: List[Sequence[interaction.DataItem]],
+        ) -> List[Sequence[interaction.DataItem]]:
+            return data
+
+        def data_gathering(*args, **kwargs):
+            return [
+                (
+                    interaction.DataItem("first", "1"),
+                    interaction.DataItem("second", "2"),
+                    interaction.DataItem("third", "3"),
+                )
+            ]
+
+        widget = CLIEditTable[interaction.DataItem, Dict[str, str]](
+            enter_data=data_gathering,
+            process_data=process_data,
+        )
+
+        widget.column_names = ["first", "second", "third"]
+        widget.title = "Select title page"
+        results = widget.get_user_response(
+            options={}, pretask_results=pretask_results
+        )
+        assert results[0][0].value == "1"
+
+    def test_get_user_response(self):
+        pretask_results = [Mock(spec=speedwagon.tasks.Result, data=[])]
+
+        def process_data(data):
+            return {}
+
+        widget = CLIEditTable(
+            enter_data=lambda *args, **kwargs: [],
+            process_data=process_data,
+        )
+        widget.column_names = ["first", "second", "third"]
+        widget.title = "Select title page"
+        results = widget.get_user_response(
+            options={}, pretask_results=pretask_results
+        )
+        assert isinstance(results, dict)
 
 
 class TestCLIConfirmFilesystemItemRemoval:
@@ -232,18 +287,43 @@ def test_user_confirm_removal_stdin(key_press, expected_response):
     assert result == expected_response
 
 
-@pytest.mark.parametrize(
-    "method_name",
-    [
-        'package_browser',
-        'confirm_removal'
-    ]
-)
+@pytest.mark.parametrize("method_name", ["package_browser", "confirm_removal"])
 def test_factor_produce_user_widget(method_name):
     factory = cli.user_interaction.CLIFactory()
     assert isinstance(
-        getattr(factory, method_name)(),
-        interaction.AbsUserWidget
+        getattr(factory, method_name)(), interaction.AbsUserWidget
+    )
+
+
+def test_table_data_editor():
+    factory = cli.user_interaction.CLIFactory()
+    answers = iter(
+        [
+            "1",
+            "2",
+        ]
+    )
+    factory.table_editor.get_selection = lambda: next(answers)
+
+    def process(data):
+        rows = []
+        for row in data:
+            rows.append({row[0].name: row[0].value, row[1].name: row[1].value})
+        return rows
+
+    options = {}
+    pretask_results = []
+
+    row_one_data_point_one = interaction.DataItem(
+        "First", value="Yes", editable=True
+    )
+    row_one_data_point_one.possible_values = ["Yes", "No"]
+    row_one_data_point_two = interaction.DataItem(
+        "Second", value="Yes", editable=False
+    )
+
+    row_two_data_point_one = interaction.DataItem(
+        "First", value="Yes", editable=True
     )
     row_two_data_point_one.possible_values = ["Yes", "No"]
     row_two_data_point_two = interaction.DataItem(

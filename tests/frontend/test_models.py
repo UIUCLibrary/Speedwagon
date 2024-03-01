@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Any, Dict, Optional
+from typing import List, Any, Dict
 from unittest.mock import Mock
 import sys
 
@@ -15,7 +15,6 @@ import pytest
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 QtCore = pytest.importorskip("PySide6.QtCore")
 QtGui = pytest.importorskip("PySide6.QtGui")
-from PySide6.QtCore import Qt
 import speedwagon.config
 from speedwagon import workflow
 from speedwagon.frontend.qtwidgets import models
@@ -139,7 +138,8 @@ class TestToolOptionsModel4:
 
         table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         table.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.Stretch)
+            QtWidgets.QHeaderView.Stretch
+        )
         v_header = table.verticalHeader()
         v_header.setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
         v_header.setSectionsClickable(False)
@@ -278,12 +278,8 @@ class TestPluginActivationModel:
         plugin_entry.name = "spam"
 
         plugin_model.add_entry_point(plugin_entry)
-        assert \
-            plugin_model.data(
-                plugin_model.index(0),
-                role=role
-            ) == getattr(plugin_entry, attribute)
         assert plugin_model.data(plugin_model.index(0), role=role) == getattr(
+            plugin_entry, attribute
         )
 
 
@@ -296,7 +292,6 @@ class TestTabsTreeModel:
     class BaconWorkflow(speedwagon.Workflow):
         name = "bacon"
         description = "bacon description"
-
 
     @pytest.fixture()
     def model(self):
@@ -875,8 +870,7 @@ class TestTabProxyModel:
     def test_mapToSource(self, base_model):
 
         base_model.append_workflow_tab(
-            "Dummy tab",
-            [TestTabProxyModel.DummyWorkflow]
+            "Dummy tab", [TestTabProxyModel.DummyWorkflow]
         )
 
         base_model.append_workflow_tab(
@@ -1575,3 +1569,90 @@ class TestWorkflowSettingsItemWorkflow:
     def test_remove_children_when_empty_returns_false(self, model):
         assert model.remove_children(0, 1) is False
 
+
+class TestItemsModel:
+    @pytest.fixture()
+    def column_names(self):
+        return ["one", "two"]
+
+    @pytest.fixture()
+    def model(self, column_names):
+        return models.ItemTableModel(keys=column_names)
+
+    def test_columns(self, model, column_names):
+        assert model.columnCount() == len(column_names)
+
+    def test_column_names(self, model, column_names):
+        assert (
+            model.headerData(0, QtCore.Qt.Orientation.Horizontal)
+            == column_names[0]
+        )
+
+    def test_row_add(self, model):
+        assert model.rowCount() == 0
+        model.add_item(("A", "B"))
+        assert model.rowCount() == 1
+
+    def test_row_editable(self, model):
+        assert model.rowCount() == 0
+        model.add_item(("A", "B"))
+        model.is_editable_rule = lambda *args: True
+        assert QtCore.Qt.ItemFlag.ItemIsEditable in model.flags(
+            model.index(0, 0)
+        )
+
+    def test_row_not_editable_by_default(self, model):
+        model.add_item(("A", "B"))
+        assert QtCore.Qt.ItemFlag.ItemIsEditable not in model.flags(
+            model.index(0, 0)
+        )
+
+    def test_display_data(self, model):
+        model.add_item(("A", "B"))
+        model.display_role = lambda row, index: row[index.row()]
+        assert model.data(model.index(0, 0)) == "A"
+
+    def test_option_role(self, model):
+        model.add_item(("A", "B"))
+        selections = ["1", "2"]
+        model.options_role = lambda *args: selections
+        assert (
+            model.data(model.index(0, 0), role=model.OptionsRole) == selections
+        )
+
+    def test_set_data(self, model):
+        model.add_item(("A", "B"))
+
+        def update(value, existing_row, index):
+            data = list(existing_row)
+            data[index.row()] = value
+            return tuple(data)
+
+        model.update_data = update
+        model.display_role = lambda item, index: str(item[index.row()])
+
+        index = model.index(0, 0)
+        assert model.data(index) == "A"
+        assert model.setData(index, "C") is True
+        assert model.data(index) == "C"
+
+    def test_set_data_no_change(self, model):
+        model.add_item(("A", "B"))
+
+        def update(value, existing_row, index):
+            data = list(existing_row)
+            data[index.row()] = value
+            return tuple(data)
+
+        model.update_data = update
+        model.display_role = lambda item, index: str(item[index.row()])
+
+        index = model.index(0, 0)
+        assert model.data(index) == "A"
+        assert model.setData(index, "A") is False
+
+    def test_results(self, model):
+        model.add_item(("A", "B"))
+        expected_result = {}
+        model.process_results = lambda *args: expected_result
+        assert model.results() == expected_result

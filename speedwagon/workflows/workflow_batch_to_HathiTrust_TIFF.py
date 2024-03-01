@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import os
 import warnings
-from typing import Dict, Optional, List, Any, Type, Mapping
+from typing import Dict, Optional, List, Any, Type, Mapping, Sequence
 import typing
 from collections.abc import Sized
 
@@ -22,6 +22,11 @@ if typing.TYPE_CHECKING:
     from speedwagon.config import SettingsData
 
 __all__ = ['CaptureOneBatchToHathiComplete']
+
+
+class TitlePageResults(typing.TypedDict):
+    title_pages: Dict[str, Optional[str]]
+    # title_pages: Dict[str, str]
 
 
 class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
@@ -167,20 +172,66 @@ class CaptureOneBatchToHathiComplete(speedwagon.Workflow):
         )
 
     def get_additional_info(
-            self,
-            user_request_factory: interaction.UserRequestFactory,
-            options: dict,
-            pretask_results: list
+        self,
+        user_request_factory: interaction.UserRequestFactory,
+        options: dict,
+        pretask_results: list
     ) -> dict:
         """Request the title page information from the user."""
         if len(pretask_results) != 1:
             return {}
-        package_title_page_selection = \
-            user_request_factory.package_title_page_selection()
-        return package_title_page_selection.get_user_response(
-            options,
+
+        def process_data(
+            data: List[Sequence[interaction.DataItem]]
+        ) -> TitlePageResults:
+            return {
+                "title_pages": {
+                    typing.cast(str, row[0].value): row[1].value
+                    for row in data
+                }
+            }
+
+        def data_gathering_callback(
+            results,  # pylint: disable=unused-argument
             pretask_results
+        ) -> List[Sequence[interaction.DataItem]]:
+            rows: List[Sequence[interaction.DataItem]] = []
+            values = pretask_results[0]
+            for package in values.data:
+                title_page = interaction.DataItem(
+                    name="Title Page",
+                    value=package.metadata[Metadata.TITLE_PAGE]
+                )
+                title_page.editable = True
+                files = []
+                for i in package:
+                    for instance in i.instantiations.values():
+                        files += [os.path.basename(f) for f in instance.files]
+                title_page.possible_values = files
+
+                rows.append(
+                    (
+                        interaction.DataItem(
+                            name="Object",
+                            value=package.metadata[Metadata.ID]
+                        ),
+                        title_page,
+                        interaction.DataItem(
+                            name="Location",
+                            value=package.metadata[Metadata.PATH]
+                        )
+                    )
+                )
+
+            return rows
+
+        selection_editor = user_request_factory.table_data_editor(
+            enter_data=data_gathering_callback,
+            process_data=process_data
         )
+        selection_editor.title = "Title Page Selection"
+        selection_editor.column_names = ["Object", "Title Page", "Location"]
+        return selection_editor.get_user_response(options, pretask_results)
 
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.Result],

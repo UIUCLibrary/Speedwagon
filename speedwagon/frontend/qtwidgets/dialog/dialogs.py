@@ -9,7 +9,15 @@ import sys
 import typing
 import warnings
 import time
-from typing import Optional, TYPE_CHECKING
+from typing import (
+    Optional,
+    TYPE_CHECKING,
+    Generic,
+    Union,
+    Callable,
+    List,
+    TypeVar,
+)
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 
@@ -29,6 +37,7 @@ import speedwagon
 from speedwagon.reports import ExceptionReport
 from speedwagon.utils import get_desktop_path
 from speedwagon.frontend.qtwidgets import logging_helpers, ui_loader
+from speedwagon.frontend.qtwidgets.models import ItemTableModel
 import speedwagon.frontend.qtwidgets.ui
 from speedwagon.info import convert_package_metadata_to_string
 
@@ -205,7 +214,7 @@ class AbsWorkflowProgressState(abc.ABC):
     def __init__(self, context: "WorkflowProgress"):
         self.context: WorkflowProgress = context
 
-    def start(self) -> None:
+    def start(self) -> None:  # noqa: B027
         """Start."""
 
     @abc.abstractmethod
@@ -669,3 +678,136 @@ class SpeedwagonExceptionDialog(QtWidgets.QMessageBox):
         summary = self.report_strategy.summary()
         if summary:
             self.setInformativeText(summary)
+
+
+_T = TypeVar("_T")
+_R = TypeVar("_R")
+
+
+class ItemSelectOptionDelegate(QtWidgets.QStyledItemDelegate):
+    """Item selection delegate widget."""
+
+    delegate_klass = QtWidgets.QComboBox
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.get_choices: Callable[
+            [Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]],
+            List[str],
+        ] = lambda index: []
+
+    def createEditor(  # pylint: disable=C0103,W0613
+        self,
+        parent: QtWidgets.QWidget,
+        item: QtWidgets.QStyleOptionViewItem,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+    ) -> QtWidgets.QWidget:
+        """Create editor widget."""
+        editor = self.delegate_klass(parent)
+
+        def commit_data():
+            self.commitData.emit(editor)
+        editor.currentIndexChanged.connect(commit_data)
+        return editor
+
+    def setEditorData(  # pylint: disable=C0103,W0613
+        self,
+        editor: QtCore.QObject,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+    ) -> None:
+        """Set editor data."""
+        editor = typing.cast(QtWidgets.QComboBox, editor)
+        for i, selection in enumerate(self.get_choices(index)):
+            editor.addItem(selection)
+            if selection == index.data():
+                editor.setCurrentIndex(i)
+
+    def setModelData(  # pylint: disable=C0103
+        self,
+        widget: QtWidgets.QWidget,
+        model: QtCore.QAbstractItemModel,
+        index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex],
+    ) -> None:
+        """Set model data."""
+        widget = typing.cast(QtWidgets.QComboBox, widget)
+        model.setData(
+            index, widget.currentText(), role=QtCore.Qt.ItemDataRole.EditRole
+        )
+
+
+class ItemView(QtWidgets.QTreeView):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setEditTriggers(
+
+            # QtWidgets.QTreeView.EditTrigger.AllEditTriggers
+            QtWidgets.QTreeView.EditTrigger.DoubleClicked
+            | QtWidgets.QTreeView.EditTrigger.EditKeyPressed
+            | QtWidgets.QTreeView.EditTrigger.SelectedClicked
+        )
+        self._item_select_delegate = ItemSelectOptionDelegate(self)
+
+        self.delegate_choices: Callable[
+            [Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]],
+            List[str],
+        ] = lambda index: []
+
+        # pylint: disable=unnecessary-lambda
+        self._item_select_delegate.get_choices = (
+            lambda index: self.delegate_choices(index)
+        )
+        # pylint: enable=unnecessary-lambda
+
+        self.setItemDelegate(self._item_select_delegate)
+
+
+class TableEditDialog(QtWidgets.QDialog, Generic[_T, _R]):
+    """Browser dialog for selecting title page."""
+
+    def __init__(
+        self,
+        model: ItemTableModel[_T, _R],
+        parent: typing.Optional[QtWidgets.QWidget] = None,
+        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
+    ) -> None:
+        """Create a package browser dialog window."""
+        super().__init__(parent, flags)
+        self._parent = parent
+        self._model = model
+
+        self._layout = QtWidgets.QGridLayout(self)
+
+        self.view = ItemView(self)
+        self.view.delegate_choices = self.delegate_selections
+        self.view.setModel(self._model)
+
+        self._buttons = QtWidgets.QButtonGroup(parent=self)
+        self.ok_button = QtWidgets.QPushButton("Done")
+
+        # pylint: disable=no-member
+        self.ok_button.clicked.connect(self.accept)  # type: ignore
+        self.cancel_button = QtWidgets.QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.reject)  # type: ignore
+
+        self._layout.addWidget(self.view, 0, 0, 1, 4)
+
+        self._buttons.addButton(self.ok_button)
+        self._buttons.addButton(self.cancel_button)
+        self._layout.addWidget(self.ok_button, 1, 2)
+        self._layout.addWidget(self.cancel_button, 1, 3)
+        self._layout.setColumnStretch(2, 0)
+        self._layout.setColumnStretch(3, 0)
+        self._layout.setColumnStretch(1, 1)
+
+        # Configure the window settings
+        # self.setWindowTitle("Title Page Selection")
+        self.setMinimumWidth(640)
+        self.setMinimumHeight(240)
+
+    def delegate_selections(self, index):
+        return self._model.data(index, ItemTableModel.OptionsRole)
+
+    def data(self) -> Optional[_R]:
+        """Get the results."""
+        return self._model.results()

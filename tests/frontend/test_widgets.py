@@ -553,3 +553,116 @@ class TestWorkflowSettingsEditor:
             qtbot.keyClicks(delegate_widget, "some data")
             qtbot.keyClick(delegate_widget, QtCore.Qt.Key.Key_Enter)
         assert model.modified() is True
+
+
+class TestQtWidgetTableEditWidget:
+    def test_no_selection_returns_to_existing_value(self, qtbot):
+        def update_data(value, existing_row, index):
+            existing_row[index.column()].value = value
+            return existing_row
+
+        def is_editable_rule(selection, index):
+            return selection[index.column()].editable
+
+        def display_role(selection, index):
+            return selection[index.column()].value
+
+        def options_role(selection, index):
+            return selection[index.column()].possible_values
+
+        def process_data(data: List[Sequence[interaction.DataItem]]):
+            results = []
+            for row in data:
+                results.append({i.name: i.value for i in row})
+
+            return results
+
+        def get_data_callback(
+            *args, **kwargs
+        ) -> List[Sequence[interaction.DataItem]]:
+            second_column = interaction.DataItem(name="two", value="Option 1")
+            second_column.editable = True
+            second_column.possible_values = ["Option 1", "Option 2"]
+
+            return [
+                (interaction.DataItem(name="one", value="1234"), second_column)
+            ]
+
+        table_edit_widget = qt_user_interaction.QtWidgetTableEditWidget[
+            interaction.DataItem,
+            List[TypedDict("Report", {"one": str, "two": str})],
+        ](
+            enter_data=get_data_callback,
+            process_data=process_data,
+            model_mapping_roles=qt_user_interaction.QtModelMappingRoles(
+                is_editable_rule=is_editable_rule,
+                update_data=update_data,
+                display_role=display_role,
+                options_role=options_role,
+            ),
+        )
+        table_edit_widget.column_names = ["one", "two"]
+        old_function = table_edit_widget.get_dialog_box
+
+        def get_dialog_box(selections):
+            dialog = old_function(selections)
+            editable_index = dialog.view.model().index(0, 1)
+            uneditable_index = dialog.view.model().index(0, 0)
+
+            # select the table widget
+            qtbot.mouseClick(
+                dialog.view.viewport(),
+                QtCore.Qt.LeftButton,
+            )
+
+            # Select the editable column
+            qtbot.mouseClick(
+                dialog.view.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=dialog.view.visualRect(editable_index).center(),
+            )
+
+            # Click off of the edit delegate
+            qtbot.mouseClick(
+                dialog.view.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=dialog.view.visualRect(uneditable_index).center(),
+            )
+            dialog.exec = Mock()
+            return dialog
+
+        table_edit_widget.get_dialog_box = get_dialog_box
+
+        table_edit_widget.data_gathering_callback = get_data_callback
+        results = table_edit_widget.get_user_response({}, [])
+        assert (
+            results[0]["two"] == "Option 1"
+        ), f'expected "Option 1" but got {results}'
+
+        table_edit_widget = cli_user_interaction.CLIEditTable[
+            interaction.DataItem,
+            List[TypedDict("Report", {"one": str, "two": str})],
+        ](
+            enter_data=get_data_callback,
+            process_data=process_data,
+        )
+        table_edit_widget.edit_strategy
+        table_edit_widget.edit_strategy = lambda data, title: data
+
+        def get_data_callback(
+            *args, **kwargs
+        ) -> List[Sequence[interaction.DataItem]]:
+            second_column = interaction.DataItem(name="two", value="Option 1")
+            second_column.editable = True
+            second_column.possible_values = ["Option 1", "Option 2"]
+
+            return [
+                (interaction.DataItem(name="one", value="1234"), second_column)
+            ]
+
+        table_edit_widget.data_gathering_callback = get_data_callback
+
+        results = table_edit_widget.get_user_response({}, [])
+        assert (
+            results[0]["two"] == "Option 1"
+        ), f'expected "Option 1" but got {results}'
