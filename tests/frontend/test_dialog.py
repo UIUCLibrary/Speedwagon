@@ -17,13 +17,13 @@ from speedwagon.frontend.qtwidgets.dialog import dialogs
 
 
 def test_about_dialog_box(qtbot, monkeypatch):
-    fake_metadata = {
-        "Summary": "A collection of tools",
-        "Version": "1.1"
-    }
+    fake_metadata = {"Summary": "A collection of tools", "Version": "1.1"}
 
     def mock_about(parent, title, message):
-        assert fake_metadata['Version'] in message and fake_metadata['Summary'] in message
+        assert (
+            fake_metadata["Version"] in message
+            and fake_metadata["Summary"] in message
+        )
 
     def mock_metadata(*args, **kwargs):
         return fake_metadata
@@ -36,7 +36,7 @@ def test_about_dialog_box(qtbot, monkeypatch):
 
 def test_about_dialog_box_no_metadata(qtbot, monkeypatch):
     def mock_about(parent, title, message):
-        assert 'Speedwagon' == message
+        assert "Speedwagon" == message
 
     def mock_metadata(*args, **kwargs):
         raise PackageNotFoundError()
@@ -86,7 +86,7 @@ class TestSaveReportDialogBox:
         monkeypatch.setattr(
             dialogs.QtWidgets.QFileDialog,
             "getSaveFileName",
-            lambda *_, **__: ("bacon.txt", True)
+            lambda *_, **__: ("bacon.txt", True),
         )
         saver.save("spam")
         assert write_data.called is True
@@ -98,7 +98,7 @@ class TestSaveReportDialogBox:
         monkeypatch.setattr(
             dialogs.QtWidgets.QFileDialog,
             "getSaveFileName",
-            lambda *_, **__: (None, False)
+            lambda *_, **__: (None, False),
         )
         saver.save("spam")
         assert write_data.called is False
@@ -111,6 +111,7 @@ class TestSaveReportDialogBox:
         # When the user is prompted again for a file name, they cancel it.
 
         attempts = 0
+
         def _write_data(*args, **kwargs):
             nonlocal attempts
             attempts += 1
@@ -121,16 +122,14 @@ class TestSaveReportDialogBox:
         monkeypatch.setattr(saver, "write_data", write_data)
         getSaveFileName = Mock(return_value=("bacon.txt", True))
         monkeypatch.setattr(
-            dialogs.QtWidgets.QFileDialog,
-            "getSaveFileName",
-            getSaveFileName
+            dialogs.QtWidgets.QFileDialog, "getSaveFileName", getSaveFileName
         )
         saver.save("spam")
         assert write_data.call_count == 2
 
     def test_write_data(self, qtbot, monkeypatch):
         saver = dialogs.SaveReportDialogBox()
-        with patch('builtins.open', mock_open()) as mocked_file:
+        with patch("builtins.open", mock_open()) as mocked_file:
             result = saver.write_data("output.txt", "spam")
             mocked_file().write.assert_called_once_with("spam")
         assert result is True
@@ -141,7 +140,7 @@ class TestSaveReportDialogBox:
         mock_open_data.side_effect = IOError("Failed")
         message_box = Mock(name="QMessageBox")
         monkeypatch.setattr(dialogs.QtWidgets, "QMessageBox", message_box)
-        with patch('builtins.open', mock_open_data) as mocked_file:
+        with patch("builtins.open", mock_open_data):
             result = saver.write_data("output.txt", "spam")
         assert result is False
 
@@ -151,7 +150,7 @@ class TestSystemInfoDialog:
     def test_export_calls_get_export_file_path(self, qtbot):
         system_info = Mock(
             spec=speedwagon.info.SystemInfo,
-            get_installed_packages=Mock(return_value=[])
+            get_installed_packages=Mock(return_value=[]),
         )
         dialog_box = dialogs.SystemInfoDialog(system_info)
         dialog_box.request_export_system_information = Mock()
@@ -161,7 +160,7 @@ class TestSystemInfoDialog:
     def test_get_export_file_path(self, qtbot):
         system_info = Mock(
             spec=speedwagon.info.SystemInfo,
-            get_installed_packages=Mock(return_value=[])
+            get_installed_packages=Mock(return_value=[]),
         )
         dialog_box = dialogs.SystemInfoDialog(system_info)
 
@@ -178,7 +177,7 @@ class TestSystemInfoDialog:
     def test_get_export_file_path_cancel(self, qtbot):
         system_info = Mock(
             spec=speedwagon.info.SystemInfo,
-            get_installed_packages=Mock(return_value=[])
+            get_installed_packages=Mock(return_value=[]),
         )
         dialog_box = dialogs.SystemInfoDialog(system_info)
 
