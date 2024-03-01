@@ -1,9 +1,22 @@
 """User interaction when using a QtWidget backend."""
 from __future__ import annotations
 
+import dataclasses
 import threading
 import typing
-from typing import Dict, Any, Optional, List, Union, Type
+import warnings
+from typing import (
+    Dict,
+    Any,
+    Optional,
+    List,
+    Union,
+    Type,
+    Generic,
+    TypeVar,
+    Callable,
+    Sequence
+)
 
 try:  # pragma: no cover
     from typing import TypedDict
@@ -16,8 +29,10 @@ from uiucprescon.packager import Metadata
 
 import speedwagon.exceptions
 from speedwagon.frontend import interaction
+from speedwagon.frontend.qtwidgets.models.common import ItemTableModel
+from speedwagon.frontend.qtwidgets.dialog.dialogs import TableEditDialog
 from speedwagon.frontend.qtwidgets.dialog.title_page_selection import (
-    PackageBrowser,
+    PackageBrowser
 )
 
 if typing.TYPE_CHECKING:
@@ -32,6 +47,10 @@ class ConfirmItem(TypedDict):
 
     name: str
     checked: Qt.CheckState
+
+
+T = TypeVar("T")
+TableReportFormat = TypeVar("TableReportFormat")
 
 
 class QtWidgetFactory(interaction.UserRequestFactory):
@@ -56,7 +75,56 @@ class QtWidgetFactory(interaction.UserRequestFactory):
         self,
     ) -> interaction.AbstractPackageTitlePageSelection:
         """Generate widget for selecting title pages from a package."""
+        warnings.warn(
+            "Use QtWidgetFactory.table_data_editor() instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
+
         return QtWidgetTitlePageSelection(parent=self.parent)
+
+    def table_data_editor(
+        self,
+        enter_data: typing.Callable[
+            [dict, list],
+            List[Sequence[interaction.DataItem]]
+        ],
+        process_data: Callable[
+            [List[Sequence[interaction.DataItem]]],
+            TableReportFormat
+        ]
+    ) -> interaction.AbstractTableEditData:
+        """Get table data editor."""
+        def update_data(
+            value: str,
+            existing_row: Sequence[interaction.DataItem],
+            index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        ) -> Sequence[interaction.DataItem]:
+            existing_row[index.column()].value = value
+            return existing_row
+
+        model_mapping_roles = QtModelMappingRoles[interaction.DataItem](
+            is_editable_rule=lambda selection, index: selection[
+                index.column()
+            ].editable,
+            display_role=lambda selection, index: selection[
+                index.column()
+            ].value,
+            options_role=lambda selection, index: selection[
+                index.column()
+            ].possible_values,
+            update_data=update_data
+        )
+
+        return QtWidgetTableEditWidget[
+            interaction.DataItem,
+            TableReportFormat
+        ](
+            enter_data=enter_data,
+            process_data=process_data,
+            model_mapping_roles=model_mapping_roles,
+            parent=self.parent
+        )
 
 
 class ConfirmListModel(QtCore.QAbstractListModel):
@@ -300,6 +368,140 @@ class QtWidgetPackageBrowserWidget(interaction.AbstractPackageBrowser):
         if results == QtWidgets.QDialog.DialogCode.Rejected:
             raise speedwagon.exceptions.JobCancelled()
         return browser.data()
+
+
+class TableSelectDialog(Generic[T, TableReportFormat]):
+    """TableSelectDialog for displaying and editing tabular data."""
+
+    def __init__(
+            self,
+            model_mapping_roles: QtModelMappingRoles,
+            process_data: Callable[[List[Sequence[T]]], TableReportFormat],
+            parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
+        """Create a new TableSelectDialog object."""
+        super().__init__()
+        self.parent = parent
+        self.display_role = model_mapping_roles.display_role
+        self.options_role = model_mapping_roles.options_role
+        self.is_editable_rule = model_mapping_roles.is_editable_rule
+        self.update_data = model_mapping_roles.update_data
+        self.process_data = process_data
+
+    def create_model(
+            self,
+            column_names: Sequence[str],
+            selections: List[Sequence[T]]
+    ) -> ItemTableModel:
+        """Create a new Qt table model."""
+        model = ItemTableModel[T, TableReportFormat](keys=column_names)
+        model.display_role = self.display_role
+        model.options_role = self.options_role
+        model.is_editable_rule = self.is_editable_rule
+        model.update_data = self.update_data
+
+        model.process_results = self.process_data
+
+        for row in selections:
+            model.add_item(row)
+        return model
+
+    def get_dialog(
+            self,
+            column_names: Sequence[str],
+            selections: List[Sequence[T]],
+            title: str = ""
+    ) -> TableEditDialog:
+        """Get dialog box for working with editable tabular data."""
+        model = self.create_model(column_names, selections=selections)
+        dialog = TableEditDialog(parent=self.parent, model=model)
+        dialog.setWindowTitle(title)
+        return dialog
+
+
+_RetVal = typing.TypeVar("_RetVal")
+
+
+@dataclasses.dataclass
+class QtModelMappingRoles(Generic[T]):
+    """Map Qt Model roles to table view."""
+
+    is_editable_rule: Callable[
+        [
+            Sequence[T],
+            Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        ],
+        bool
+    ]
+    display_role: Callable[
+        [
+            Sequence[T],
+            Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        ],
+        Optional[str]
+    ]
+    options_role: Callable[
+        [
+            Sequence[T],
+            Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        ],
+        Sequence[str]
+    ]
+    update_data: Callable[
+        [
+            str,
+            Sequence[T],
+            Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        ],
+        Sequence[T]
+    ]
+
+
+class QtWidgetTableEditWidget(
+    interaction.AbstractTableEditData,
+    typing.Generic[T, _RetVal]
+):
+    """QtWidget-based widget for selecting packages title pages."""
+
+    def __init__(
+            self,
+            enter_data: typing.Callable[[dict, list], List[Sequence[T]]],
+            process_data: typing.Callable[[List[Sequence[T]]], _RetVal],
+            model_mapping_roles: QtModelMappingRoles,
+            parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Create a new package browser."""
+        super().__init__(enter_data, process_data)
+        self.parent = parent
+        self.item_browser = TableSelectDialog[T, _RetVal](
+            process_data=process_data,
+            model_mapping_roles=model_mapping_roles,
+            parent=parent
+        )
+
+    def get_user_response(
+        self, options: dict, pretask_results: list
+    ) -> Dict[str, Any]:
+        """Generate the dialog for selecting title pages."""
+        return self.get_data_with_dialog_box(
+            self.gather_data(options, pretask_results)
+        )
+
+    def get_dialog_box(self, selections: List[Sequence[T]]) -> TableEditDialog:
+        """Get dialog box object."""
+        return self.item_browser.get_dialog(
+            self.column_names,
+            selections,
+            title=self.title
+        )
+
+    def get_data_with_dialog_box(
+            self,
+            selections: List[Sequence[T]]
+    ) -> Dict[str, Any]:
+        """Open dialog box."""
+        dialog = self.get_dialog_box(selections)
+        dialog.exec()
+        return dialog.data() or {}
 
 
 class QtWidgetTitlePageSelection(

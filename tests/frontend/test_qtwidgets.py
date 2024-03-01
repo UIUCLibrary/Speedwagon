@@ -328,13 +328,13 @@ def test_get_additional_info_opens_dialog():
         workflow = wf.CaptureOneBatchToHathiComplete()
 
     user_request_factory = Mock(spec=interaction.UserRequestFactory)
-    user_request_factory.package_title_page_selection = MagicMock()
+    user_request_factory.table_data_editor = MagicMock()
     workflow.get_additional_info(
         user_request_factory=user_request_factory,
         options={},
         pretask_results=[MagicMock()]
     )
-    assert user_request_factory.package_title_page_selection.called is True
+    assert user_request_factory.table_data_editor.called is True
 
 
 class TestSelectWorkflow:
