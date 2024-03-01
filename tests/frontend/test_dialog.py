@@ -14,6 +14,7 @@ except ImportError:
     from importlib_metadata import PackageNotFoundError
 
 from speedwagon.frontend.qtwidgets.dialog import dialogs
+from speedwagon.frontend.qtwidgets.models import ItemTableModel
 
 
 def test_about_dialog_box(qtbot, monkeypatch):
@@ -188,3 +189,69 @@ class TestSystemInfoDialog:
             dialog_box.request_export_system_information(
                 save_dialog_box=save_dialog_box_gets_canceled
             )
+
+
+class TestItemView:
+    @pytest.fixture()
+    def model(self):
+        m = ItemTableModel(keys=["one", "two"])
+        m.add_item(("1", "2"))
+        m.display_role = lambda row, index: row[index.column()]
+        return m
+
+    @pytest.mark.parametrize(
+        "column, expected",
+        [
+            (1, True),
+            (0, False),
+        ],
+    )
+    def test_opens_delegate_if_rule_is_valid(
+        self, qtbot, model, column, expected
+    ):
+        view = dialogs.ItemView()
+        view.setModel(model)
+
+        def rule(item, index):
+            return index.column() == 1
+
+        model.is_editable_rule = rule
+
+        index = model.index(0, column)
+        # simulate the click into the view point.
+        # else it won't work for testing
+        qtbot.mouseClick(
+            view.viewport(),
+            QtCore.Qt.LeftButton,
+            pos=view.visualRect(index).center(),
+        )
+        qtbot.mouseDClick(
+            view.viewport(),
+            QtCore.Qt.LeftButton,
+            pos=view.visualRect(index).center(),
+        )
+        assert (
+            type(view.indexWidget(view.currentIndex()))
+            == dialogs.ItemSelectOptionDelegate.delegate_klass
+        ) is expected
+
+
+class TestTableEditDialog:
+
+    @pytest.fixture()
+    def model(self):
+        m = ItemTableModel(keys=["one", "two"])
+        m.add_item(("1", "2"))
+        m.display_role = lambda row, index: row[index.column()]
+        return m
+
+    def test_accepted(self, qtbot, model):
+        dialog = dialogs.TableEditDialog(model=model)
+        with qtbot.waitSignal(dialog.accepted):
+            dialog.ok_button.click()
+
+    def test_data_get_from_model(self, qtbot, model):
+        return_data = "some_data"
+        model.results = Mock(return_value=return_data)
+        dialog = dialogs.TableEditDialog(model=model)
+        assert dialog.data() == return_data

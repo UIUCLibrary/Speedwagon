@@ -4,7 +4,7 @@ from .tabs import TabsTreeModel, TabStandardItem, TabProxyModel
 from .workflows import WorkflowListProxyModel, WorkflowList
 from .plugins import PluginActivationModel
 from .settings import SettingsModel, WorkflowSettingsModel
-from .common import WorkflowItem, WorkflowClassRole
+from .common import WorkflowItem, WorkflowClassRole, ItemTableModel
 
 __all__ = [
     "TabsTreeModel",
@@ -18,4 +18,5 @@ __all__ = [
     "WorkflowList",
     "WorkflowListProxyModel",
     "WorkflowSettingsModel",
+    "ItemTableModel"
 ]
