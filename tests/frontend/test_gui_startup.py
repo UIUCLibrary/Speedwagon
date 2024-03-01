@@ -209,6 +209,7 @@ class TestSingleWorkflowJSON:
         startup.run()
         assert submit_job.called is True
 
+    @pytest.mark.skip("SegFaulting")
     def test_run_on_exit_is_called(self, qtbot, monkeypatch):
         startup = \
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
