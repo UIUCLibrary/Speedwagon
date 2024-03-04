@@ -148,6 +148,7 @@ class QtSignalLogHandler(BufferingHandler):
 
     # This needs of be an inner class because Qt/PySide does not like mixing
     # Qt parent classes with Python ones.
+    signals: Optional[Signals]
 
     def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
         """Create a new QtSignalLogHandler object.
@@ -157,10 +158,21 @@ class QtSignalLogHandler(BufferingHandler):
                 deleted too early.
         """
         super().__init__(capacity=100)
-        self.signals = self.Signals(parent)
+        self._parent = parent
+        self.signals = None
+        self._register()
+        if self._parent:
+            self._parent.destroyed.connect(lambda: self._unregister)
+
         self.flush_timer = QtCore.QTimer(parent)
         self.flush_timer.timeout.connect(self.flush)
         self.flush_timer.start(100)
+
+    def _register(self) -> None:
+        self.signals = self.Signals(self._parent)
+
+    def _unregister(self) -> None:
+        self.signals = None
 
     def flush(self) -> None:
         """Flush log buffer.
@@ -168,7 +180,7 @@ class QtSignalLogHandler(BufferingHandler):
         Notes:
             If the buffer is empty, no signal with be emitted.
         """
-        if len(self.buffer) > 0:
+        if self.signals and len(self.buffer) > 0:
             results = [self.format(log).strip() for log in self.buffer]
             self.signals.messageSent.emit("".join(results))
         super().flush()
