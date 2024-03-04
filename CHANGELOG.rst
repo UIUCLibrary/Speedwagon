@@ -8,6 +8,16 @@ Change Log
 Unreleased
 ==========
 
+Feat
+----
+
+- Added table_data_editor to UserRequestFactory
+
+Fix
+---
+
+- Fixed Internal C++ object (Signals) already deleted on exit.
+
 v0.3.0 (2024-02-19)
 ===================
 
