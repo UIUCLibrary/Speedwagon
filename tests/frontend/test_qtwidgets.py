@@ -253,6 +253,7 @@ class TestQtWidgetConfirmFileSystemRemoval:
 
 
 class TestQtWidgetTitlePageSelection:
+    @pytest.mark.xfail(reason="importing a file that is being removed")
     def test_selection(self, monkeypatch, qtbot):
         from speedwagon.workflows.workflow_batch_to_HathiTrust_TIFF \
             import FindCaptureOnePackageTask
@@ -321,6 +322,7 @@ def test_package_browser(qtbot):
            "99423682912205899_0001.tif"
 
 
+@pytest.mark.skip("requires workflow_batch_to_HathiTrust_TIFF")
 def test_get_additional_info_opens_dialog():
     from speedwagon.workflows import workflow_batch_to_HathiTrust_TIFF as wf
     with warnings.catch_warnings():
