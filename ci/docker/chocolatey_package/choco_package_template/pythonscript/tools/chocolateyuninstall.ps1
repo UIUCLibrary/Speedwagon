@@ -83,3 +83,4 @@ if ($key.Count -eq 1) {
 #Uninstall-BinFile # Only needed if you used Install-BinFile - see https://chocolatey.org/docs/helpers-uninstall-bin-file
 ## Remove any shortcuts you added in the chocolateyInstall.ps1 script.
 Uninstall-BinFile -Name speedwagon
+Remove-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Speedwagon\speedwagon.lnk"
