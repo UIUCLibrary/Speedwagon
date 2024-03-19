@@ -3,6 +3,26 @@
 Release History
 ---------------
 
+Version 0.3.1 (2024-02-19)
+++++++++++++++++++++++++++
+
+Fix
+___
+
+- Fixed uninstalling from Chocolatey not removing start menu shortcut on Windows
+- Fixed Internal C++ object (Signals) already deleted errors on exit.
+
+
+
+Version 0.3.0 (2024-02-19)
+++++++++++++++++++++++++++
+
+Fix
+___
+
+- help url crashing when missing package metadata
+
+
 Version 0.2.2
 +++++++++++++
 

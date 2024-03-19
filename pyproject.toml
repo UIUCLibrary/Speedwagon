@@ -1,6 +1,6 @@
 [project]
 name = "speedwagon"
-version = "0.3.1.dev1"
+version = "0.3.1"
 description = "Collection of tools and workflows for DS"
 maintainers = [
     { name="Henry Borchers", email="hborcher@illinois.edu" }
