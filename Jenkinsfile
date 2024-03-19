@@ -834,6 +834,13 @@ pipeline {
                                                 }
                                             }
                                         }
+                                        stage('Run Ruff Static Analysis') {
+                                            steps{
+                                                catchError(buildResult: 'SUCCESS', message: 'Ruff found issues', stageResult: 'UNSTABLE') {
+                                                    sh( label: 'Running Ruff', script: 'ruff check --config=pyproject.toml -o reports/ruffoutput.json --output-format json')
+                                                }
+                                            }
+                                        }
                                         stage('Run Pylint Static Analysis') {
                                             steps{
                                                 run_pylint()
