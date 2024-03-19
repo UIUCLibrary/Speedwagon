@@ -5,8 +5,8 @@ docopt==0.6.2
 HathiValidate==0.3.8
 HathiZip==0.1.11
 idna==3.6
-importlib-metadata==7.0.1
-importlib_resources==6.1.2
+importlib_metadata==7.0.2
+importlib_resources==6.3.1
 lxml==5.1.0
 multidict==6.0.5
 pluggy==1.4.0
@@ -33,4 +33,4 @@ uiucprescon.ocr==0.1.4.post2
 uiucprescon.packager==0.2.15
 urllib3==2.2.1
 yarl==1.9.4
-zipp==3.17.0
+zipp==3.18.1

@@ -119,6 +119,9 @@ follow_imports_for_stubs=true
 #incremental=false
 
 [tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "D", "B"]
 # speedwagon/workflows are excluded because most will be removed in a future version
 exclude = [
@@ -128,9 +131,8 @@ exclude = [
     "speedwagon/workflows",
     "tests",
 ]
-line-length = 79
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
 #match = "((?!test).*)(^(?!.*(ui)).*)\\.py"
