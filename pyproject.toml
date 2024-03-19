@@ -18,8 +18,6 @@ dependencies =[
     'lxml',
     "requests",
     "pluggy>=1.0",
-    "uiucprescon.packager[kdu]>=0.2.15",
-    "py3exiv2bind>=0.1.11",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
