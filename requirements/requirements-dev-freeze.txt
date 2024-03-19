@@ -6,9 +6,9 @@ astroid==3.1.0
 attrs==23.2.0
 Babel==2.14.0
 bcrypt==4.1.2
-build==1.1.1
-cachetools==5.3.3
-certifi==2024.2.2
+build==1.0.3
+cachetools==5.3.2
+certifi==2023.11.17
 cffi==1.16.0
 chardet==5.2.0
 charset-normalizer==3.3.2
