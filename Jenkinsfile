@@ -837,7 +837,7 @@ pipeline {
                                         stage('Run Ruff Static Analysis') {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Ruff found issues', stageResult: 'UNSTABLE') {
-                                                    sh( label: 'Running Ruff', script: 'ruff check --config=pyproject.toml -o reports/ruffoutput.json --output-format json')
+                                                    sh( label: 'Running Ruff', script: 'mkdir -p reports && ruff check --config=pyproject.toml -o reports/ruffoutput.json --output-format json')
                                                 }
                                             }
                                         }
