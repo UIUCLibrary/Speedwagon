@@ -15,14 +15,14 @@ from typing import (
     Callable,
     List,
     TypeVar,
-    Sequence
+    Sequence,
+    TYPE_CHECKING
 )
 from copy import deepcopy
 
 from PySide6 import QtGui, QtCore
-
-import speedwagon
-from speedwagon.job import Workflow
+if TYPE_CHECKING:
+    from speedwagon.job import Workflow
 
 __all__ = [
     "WorkflowItem",
@@ -39,7 +39,7 @@ class AbsWorkflowList(  # pylint: disable=too-few-public-methods
 ):
     """Abstract workflow list model."""
 
-    def add_workflow(self, workflow: Type[speedwagon.Workflow]) -> None:
+    def add_workflow(self, workflow: Type[Workflow]) -> None:
         """Add a workflow to the model."""
         raise NotImplementedError
 
@@ -73,7 +73,7 @@ class AbsWorkflowItemData(abc.ABC):  # noqa: B024 pylint: disable=R0903
 
     def data(  # noqa: B027
         self,
-        workflow: Type[speedwagon.Workflow],
+        workflow: Type[Workflow],
         role: Union[int, QtCore.Qt.ItemDataRole],
     ) -> Any:
         """Get the data from workflow.
@@ -92,7 +92,7 @@ class WorkflowItemData(  # pylint: disable=too-few-public-methods
 
     def data(
         self,
-        workflow: Type[speedwagon.Workflow],
+        workflow: Type[Workflow],
         role: Union[int, QtCore.Qt.ItemDataRole],
     ) -> Any:
         """Get the data from workflow."""
