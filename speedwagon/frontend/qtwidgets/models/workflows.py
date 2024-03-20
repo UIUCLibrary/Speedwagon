@@ -7,7 +7,7 @@ from typing import Type, Optional, List, cast, Union, overload, Any
 
 from PySide6 import QtCore
 
-import speedwagon
+import speedwagon.job
 from .common import (
     AbsWorkflowItemData,
     WorkflowItemData,
@@ -34,7 +34,7 @@ class WorkflowList(AbsWorkflowList):
             parent: Parent widget to control widget lifespan
         """
         super().__init__(parent)
-        self._workflows: List[Type[speedwagon.Workflow]] = []
+        self._workflows: List[Type[speedwagon.job.Workflow]] = []
         self.data_strategy: AbsWorkflowItemData = WorkflowItemData()
 
     def rowCount(  # pylint: disable=invalid-name
@@ -46,7 +46,7 @@ class WorkflowList(AbsWorkflowList):
         """Get the number of workflows in the list."""
         return len(self._workflows)
 
-    def add_workflow(self, workflow: Type[speedwagon.Workflow]) -> None:
+    def add_workflow(self, workflow: Type[speedwagon.job.Workflow]) -> None:
         """Add workflow to list."""
         self._workflows.append(workflow)
         self.dataChanged.emit(len(self._workflows), len(self._workflows), 0)
@@ -240,7 +240,7 @@ class WorkflowListProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
             else self._current_tab_item.name
         )
 
-    def add_workflow(self, workflow: Type[speedwagon.Workflow]) -> None:
+    def add_workflow(self, workflow: Type[speedwagon.job.Workflow]) -> None:
         """Add workflow to list."""
         if self._current_tab_item is None:
             raise RuntimeError("model not set")
@@ -257,7 +257,7 @@ class WorkflowListProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
         )
         self.endInsertRows()
 
-    def remove_workflow(self, workflow: Type[speedwagon.Workflow]) -> None:
+    def remove_workflow(self, workflow: Type[speedwagon.job.Workflow]) -> None:
         """Remove workflow from list."""
         if self._current_tab_item is None:
             raise RuntimeError("model not set")

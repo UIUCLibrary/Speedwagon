@@ -2,19 +2,22 @@
 from __future__ import annotations
 
 import typing
-from typing import Optional, Type, Dict
+from typing import Optional, Type, Dict, List
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
 
 from speedwagon.frontend.qtwidgets.models import workflows as workflow_models
+from speedwagon.frontend.qtwidgets.models import tabs as tab_models
+from speedwagon.frontend.qtwidgets import ui
 from speedwagon.frontend.qtwidgets.models.common import WorkflowClassRole
-
-import speedwagon
+from speedwagon.frontend.qtwidgets import ui_loader
+from speedwagon.frontend.qtwidgets.models.options import (
+    load_job_settings_model
+)
 from speedwagon.config import StandardConfig, FullSettingsData
-from speedwagon.job import Workflow
-from speedwagon.frontend import qtwidgets
 
 if typing.TYPE_CHECKING:
+    import speedwagon.job
     from speedwagon.frontend.qtwidgets.widgets import (
         Workspace,
         SelectWorkflow,
@@ -45,7 +48,7 @@ class WorkflowsTab3UI(QtWidgets.QWidget):
                 "create_job_tab.ui"
             )
         ) as ui_file:
-            qtwidgets.ui_loader.load_ui(str(ui_file), self)
+            ui_loader.load_ui(str(ui_file), self)
 
 
 class WorkflowsTab3(WorkflowsTab3UI):
@@ -65,7 +68,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
         self.workflow_selector.selected_index_changed.connect(
             self._handle_selector_changed
         )
-        self._workflow_selected: Optional[Type[speedwagon.Workflow]] = None
+        self._workflow_selected: Optional[Type[speedwagon.job.Workflow]] = None
         self.settings_changed.connect(self._update_okay_button)
         self.settings_changed.emit()
 
@@ -100,12 +103,12 @@ class WorkflowsTab3(WorkflowsTab3UI):
         workflow_inst = workflow_klass(
             self.workspace.app_settings_lookup_strategy.settings()
         )
-        qtwidgets.gui.load_job_settings_model(
+        load_job_settings_model(
             data, self.workspace.settings_form, workflow_inst.job_options()
         )
 
     def _handle_workflow_changed(
-        self, workflow_klass: typing.Type[Workflow]
+        self, workflow_klass: typing.Type[speedwagon.job.Workflow]
     ) -> None:
         self._workflow_selected = workflow_klass
         self.workspace.app_settings_lookup_strategy = (
@@ -142,7 +145,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
         )
 
     @property
-    def workflows(self) -> Dict[str, Type[speedwagon.Workflow]]:
+    def workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
         """Get all workflows."""
         workflows = {}
         for row_id in range(self._model.rowCount()):
@@ -153,7 +156,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
             )
         return workflows
 
-    def add_workflow(self, workflow: Type[speedwagon.Workflow]) -> None:
+    def add_workflow(self, workflow: Type[speedwagon.job.Workflow]) -> None:
         """Add a new workflow to the tab."""
         if self._model is None:
             return
@@ -163,4 +166,87 @@ class WorkflowsTab3(WorkflowsTab3UI):
         """Get the name of the current workflow."""
         return self._model.data(
             self.workflow_selector.workflowSelectionView.currentIndex()
+        )
+
+
+class ItemTabsUI(QtWidgets.QWidget):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        with as_file(
+                resources.files(ui).joinpath("setup_job.ui")
+        ) as ui_file:
+            ui_loader.load_ui(str(ui_file), self)
+
+
+class ItemTabsWidget(ItemTabsUI):
+    """Widget to hold all item tabs."""
+
+    tabs: QtWidgets.QTabWidget
+    submit_job = QtCore.Signal(str, dict)
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Create new widget.
+
+        Args:
+            parent: parent widget.
+        """
+        super().__init__(parent)
+        self.layout().addWidget(self.tabs)
+        self._model = workflow_models.TabsTreeModel()
+        self._model.modelReset.connect(self._model_reset)
+
+    def model(self) -> QtCore.QAbstractItemModel:
+        """Get module used by widget."""
+        return self._model
+
+    def _model_reset(self) -> None:
+        self.tabs.clear()
+        tab_count = self._model.rowCount()
+        for tab_row_id in range(tab_count):
+            tab_index = self._model.index(tab_row_id)
+            tab_name = self._model.data(tab_index)
+
+            workflows_tab = WorkflowsTab3(parent=self.tabs)
+            workflows_tab.start_workflow.connect(self.submit_job)
+
+            workflow_klasses = {}
+            for workflow_row_id in range(self._model.rowCount(tab_index)):
+                workflow = self._model.data(
+                    self._model.index(workflow_row_id, parent=tab_index),
+                    role=workflow_models.WorkflowClassRole,
+                )
+
+                workflow_klasses[workflow.name] = workflow
+            tab_model = tab_models.TabProxyModel()
+            tab_model.setSourceModel(self._model)
+            tab_model.set_source_tab(tab_name)
+            workflows_tab.set_model(tab_model)
+
+            self.tabs.addTab(workflows_tab, tab_name)
+
+    def add_tab(self, tab: QtWidgets.QWidget, name: str) -> None:
+        """Add tab widget."""
+        self.tabs.addTab(tab, name)
+
+    def add_workflows_tab(
+            self, name: str, workflows: List[Type[speedwagon.Workflow]]
+    ) -> None:
+        """Add workflow tab."""
+        self._model.append_workflow_tab(name, workflows)
+
+    def clear_tabs(self) -> None:
+        """Clear all tabs."""
+        self._model.clear()
+        self._model_reset()
+
+    def count(self) -> int:
+        """Get the number of tabs."""
+        return self.tabs.count()
+
+    @property
+    def current_tab(self) -> Optional[WorkflowsTab3]:
+        """Return the active tab."""
+        return typing.cast(
+            Optional[WorkflowsTab3],
+            self.tabs.currentWidget()
         )

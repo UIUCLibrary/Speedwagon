@@ -10,7 +10,7 @@ import contextlib
 import logging
 import logging.handlers
 import typing
-from typing import List, Optional, Dict, Type
+from typing import Optional, TYPE_CHECKING
 
 
 try:  # pragma: no cover
@@ -29,17 +29,18 @@ from collections import namedtuple
 
 from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
-import speedwagon
-from speedwagon.frontend import qtwidgets
-from speedwagon.frontend.qtwidgets import widgets, models, logging_helpers
-from speedwagon.frontend.qtwidgets.models import tabs as tab_models
-from speedwagon.frontend.qtwidgets.models import options as option_models
+
+from speedwagon.frontend.qtwidgets import ui_loader, ui
 import speedwagon.runner_strategies
-from speedwagon.job import Workflow
-from speedwagon.workflow import AbsOutputOptionDataType
+
 from speedwagon.config import StandardConfig, FullSettingsData
 
-__all__ = ["MainWindow3", "ToolConsole", "ItemTabsWidget"]
+if TYPE_CHECKING:
+    from speedwagon.job import Workflow
+    from speedwagon.frontend.qtwidgets import widgets
+    from speedwagon.frontend.qtwidgets.tabs import ItemTabsWidget
+
+__all__ = ["MainWindow3"]
 
 DEBUG_LOGGING_FORMAT = logging.Formatter(
     "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -49,169 +50,10 @@ DEBUG_LOGGING_FORMAT = logging.Formatter(
 Setting = namedtuple("Setting", ("installed_packages_title", "widget"))
 
 
-class ToolConsole(QtWidgets.QWidget):
-    """Logging console."""
-
-    _console: QtWidgets.QTextBrowser
-
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
-        """Create a new tool console object.
-
-        Args:
-            parent: Parent widget.
-        """
-        super().__init__(parent)
-
-        self.log_handler = logging_helpers.QtSignalLogHandler(self)
-        self.log_handler.signals.messageSent.connect(self.add_message)
-
-        self.log_formatter = qtwidgets.logging_helpers.ConsoleFormatter()
-        self.log_handler.setFormatter(self.log_formatter)
-
-        with as_file(
-            resources.files(qtwidgets.ui).joinpath("console.ui")
-        ) as ui_file:
-            qtwidgets.ui_loader.load_ui(str(ui_file), self)
-        #
-        # #  Use a monospaced font based on what's on system running
-        monospaced_font = QtGui.QFontDatabase.systemFont(
-            QtGui.QFontDatabase.SystemFont.FixedFont
-        )
-
-        self._log = QtGui.QTextDocument()
-        self._log.setDefaultFont(monospaced_font)
-        # pylint: disable=no-member
-        self._log.contentsChanged.connect(self._follow_text)
-        self._console.setDocument(self._log)
-        self._console.setFont(monospaced_font)
-
-        self._attached_logger: typing.Optional[logging.Logger] = None
-        self.cursor: QtGui.QTextCursor = QtGui.QTextCursor(self._log)
-
-    def _follow_text(self) -> None:
-        cursor = QtGui.QTextCursor(self._log)
-        cursor.movePosition(cursor.MoveOperation.End)
-        self._console.setTextCursor(cursor)
-
-    @QtCore.Slot(str)
-    def add_message(
-        self,
-        message: str,
-    ) -> None:
-        """Add message to console.
-
-        Args:
-            message: message text.
-
-        """
-        self.cursor.beginEditBlock()
-        self.cursor.insertHtml(message)
-        self.cursor.endEditBlock()
-
-    @property
-    def text(self) -> str:
-        """Get the complete text in the console."""
-        return self._log.toPlainText()
-
-    def attach_logger(self, logger: logging.Logger) -> None:
-        """Attach Python logger."""
-        logger.addHandler(self.log_handler)
-        self._attached_logger = logger
-
-    def detach_logger(self) -> None:
-        """Detach Python logger."""
-        if self._attached_logger is not None:
-            self.log_handler.flush()
-            self._attached_logger.removeHandler(self.log_handler)
-            self._attached_logger = None
-
-
-class ItemTabsUI(QtWidgets.QWidget):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
-        super().__init__(parent)
-        with as_file(
-            resources.files(qtwidgets.ui).joinpath("setup_job.ui")
-        ) as ui_file:
-            qtwidgets.ui_loader.load_ui(str(ui_file), self)
-
-
-class ItemTabsWidget(ItemTabsUI):
-    """Widget to hold all item tabs."""
-
-    tabs: QtWidgets.QTabWidget
-    submit_job = QtCore.Signal(str, dict)
-
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
-        """Create new widget.
-
-        Args:
-            parent: parent widget.
-        """
-        super().__init__(parent)
-        self.layout().addWidget(self.tabs)
-        self._model = models.TabsTreeModel()
-        self._model.modelReset.connect(self._model_reset)
-
-    def model(self) -> QtCore.QAbstractItemModel:
-        """Get module used by widget."""
-        return self._model
-
-    def _model_reset(self) -> None:
-        self.tabs.clear()
-        tab_count = self._model.rowCount()
-        for tab_row_id in range(tab_count):
-            tab_index = self._model.index(tab_row_id)
-            tab_name = self._model.data(tab_index)
-
-            workflows_tab = qtwidgets.tabs.WorkflowsTab3(parent=self.tabs)
-            workflows_tab.start_workflow.connect(self.submit_job)
-
-            workflow_klasses = {}
-            for workflow_row_id in range(self._model.rowCount(tab_index)):
-                workflow = self._model.data(
-                    self._model.index(workflow_row_id, parent=tab_index),
-                    role=models.WorkflowClassRole,
-                )
-
-                workflow_klasses[workflow.name] = workflow
-            tab_model = tab_models.TabProxyModel()
-            tab_model.setSourceModel(self._model)
-            tab_model.set_source_tab(tab_name)
-            workflows_tab.set_model(tab_model)
-
-            self.tabs.addTab(workflows_tab, tab_name)
-
-    def add_tab(self, tab: QtWidgets.QWidget, name: str) -> None:
-        """Add tab widget."""
-        self.tabs.addTab(tab, name)
-
-    def add_workflows_tab(
-        self, name: str, workflows: List[Type[speedwagon.Workflow]]
-    ) -> None:
-        """Add workflow tab."""
-        self._model.append_workflow_tab(name, workflows)
-
-    def clear_tabs(self) -> None:
-        """Clear all tabs."""
-        self._model.clear()
-        self._model_reset()
-
-    def count(self) -> int:
-        """Get the number of tabs."""
-        return self.tabs.count()
-
-    @property
-    def current_tab(self) -> Optional[qtwidgets.tabs.WorkflowsTab3]:
-        """Return the active tab."""
-        return typing.cast(
-            Optional[qtwidgets.tabs.WorkflowsTab3], self.tabs.currentWidget()
-        )
-
-
 class MainWindow3UI(QtWidgets.QMainWindow):
     main_splitter: QtWidgets.QSplitter
     main_layout: QtWidgets.QVBoxLayout
-    console: ToolConsole
+    console: widgets.ToolConsole
     tab_widget: ItemTabsWidget
     menu_bar: QtWidgets.QMenuBar
     action_exit: QtGui.QAction
@@ -226,9 +68,9 @@ class MainWindow3UI(QtWidgets.QMainWindow):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         with as_file(
-            resources.files(qtwidgets.ui).joinpath("main_window3.ui")
+            resources.files(ui).joinpath("main_window3.ui")
         ) as ui_file:
-            qtwidgets.ui_loader.load_ui(str(ui_file), self)
+            ui_loader.load_ui(str(ui_file), self)
 
 
 class MainWindow3(MainWindow3UI):
@@ -359,25 +201,5 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
         app.setWindowIcon(QtGui.QIcon(str(favicon_file)))
     with contextlib.suppress(metadata.PackageNotFoundError):
         app.setApplicationVersion(metadata.version(__package__))
-    app.setApplicationDisplayName(f"{speedwagon.__name__.title()}")
+    app.setApplicationDisplayName("Speedwagon")
     QtWidgets.QApplication.processEvents()
-
-
-def load_job_settings_model(
-    data: Dict[str, widgets.UserDataType],
-    settings_widget: widgets.DynamicForm,
-    workflow_options: List[AbsOutputOptionDataType],
-) -> None:
-    model = option_models.ToolOptionsModel4(workflow_options)
-    for key, value in data.items():
-        for i in range(model.rowCount()):
-            index = model.index(i)
-            option_data = typing.cast(
-                AbsOutputOptionDataType,
-                model.data(index, option_models.ToolOptionsModel4.DataRole),
-            )
-
-            if option_data.label == key:
-                model.setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
-    settings_widget.set_model(model)
-    settings_widget.update_widget()

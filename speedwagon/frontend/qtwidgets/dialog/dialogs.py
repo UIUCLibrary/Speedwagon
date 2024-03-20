@@ -25,7 +25,6 @@ except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
     from importlib_resources import as_file  # type: ignore
 
-import speedwagon
 from speedwagon.reports import ExceptionReport
 from speedwagon.utils import get_desktop_path
 from speedwagon.frontend.qtwidgets import logging_helpers, ui_loader

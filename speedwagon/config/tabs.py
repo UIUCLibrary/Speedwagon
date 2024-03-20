@@ -8,8 +8,7 @@ from typing import List, NamedTuple, Dict, Optional, Callable, Iterable
 
 import yaml
 
-import speedwagon
-from speedwagon.exceptions import TabLoadFailure
+import speedwagon.exceptions
 
 
 class AbsTabsConfigDataManagement(abc.ABC):
@@ -93,15 +92,15 @@ class CustomTabsYamlConfig(AbsTabsConfigDataManagement):
                 data
             )
         except yaml.YAMLError as error:
-            raise TabLoadFailure(
+            raise speedwagon.exceptions.TabLoadFailure(
                 f"{self.yaml_file} file failed to load."
             ) from error
         except FileNotFoundError as error:
-            raise TabLoadFailure(
+            raise speedwagon.exceptions.TabLoadFailure(
                 f"Custom tabs file {self.yaml_file} not found"
             ) from error
         except (TypeError, speedwagon.exceptions.FileFormatError) as error:
-            raise TabLoadFailure() from error
+            raise speedwagon.exceptions.TabLoadFailure() from error
         return [
             CustomTabData(tab_name, workflow_names)
             for tab_name, workflow_names in yml_data.items()

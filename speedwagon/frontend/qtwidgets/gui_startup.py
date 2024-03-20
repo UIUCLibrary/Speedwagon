@@ -25,10 +25,12 @@ except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
 from PySide6 import QtWidgets
 
-
-import speedwagon
+import speedwagon.job
+from speedwagon.config.tabs import CustomTabsYamlConfig, TabsYamlWriter
 from speedwagon.workflow import initialize_workflows
-from speedwagon import config
+from speedwagon.config import config
+from speedwagon.config import plugins as plugin_config
+from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
 from speedwagon.utils import get_desktop_path
 from speedwagon.tasks import system as system_tasks
 from speedwagon import plugins, info
@@ -50,7 +52,6 @@ __all__ = [
     'StartQtThreaded',
     'SingleWorkflowJSON'
 ]
-
 
 system_info_report_formatters: DefaultDict[
     str,
@@ -170,7 +171,7 @@ def _setup_config_tab(
         dialog.settings.ConfigFileSaver(
             dialog.settings.SettingsTabSaveStrategy(
                 tabs_config,
-                lambda widget: config.tabs.TabsYamlWriter().serialize(
+                lambda widget: TabsYamlWriter().serialize(
                     filter(
                         lambda tab: tab.tab_name != "All",
                         widget.get_data().get("tab_information", []),
@@ -206,7 +207,7 @@ def _setup_workflow_settings_tab(
             ),
             os.path.join(
                 config_strategy.get_app_data_dir(),
-                config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
+                WORKFLOWS_SETTINGS_YML_FILE_NAME,
             ),
         )
     )
@@ -228,7 +229,7 @@ def _setup_global_settings_tab(
     global_settings_tab = dialog.settings.GlobalSettingsTab()
 
     def serialize(widget):
-        ini_serializer = config.config.IniConfigSaver()
+        ini_serializer = config.IniConfigSaver()
         ini_serializer.parser.read(config_strategy.get_config_file())
         return ini_serializer.serialize(
             {
@@ -261,7 +262,7 @@ def _setup_plugins_tab(
     config_file = config_strategy.get_config_file()
 
     def serializer(widget) -> str:
-        ini_serializer = config.plugins.IniSerializer()
+        ini_serializer = plugin_config.IniSerializer()
         ini_serializer.parser.read(config_file)
         return ini_serializer.serialize(widget.get_data())
 
@@ -369,7 +370,7 @@ class StartQtThreaded(AbsGuiStarter):
 
     def ensure_settings_files(self) -> None:
         """Ensure settings files exists."""
-        config.config.ensure_settings_files(logger=self.logger)
+        config.ensure_settings_files(logger=self.logger)
 
     def resolve_settings(self) -> FullSettingsData:
         """Resolve settings."""
@@ -781,7 +782,7 @@ class TabsEditorApp(QtWidgets.QDialog):
 
     def get_tab_config_strategy(self) -> AbsTabsConfigDataManagement:
         config_strategy = config.StandardConfigFileLocator()
-        return config.tabs.CustomTabsYamlConfig(
+        return CustomTabsYamlConfig(
             config_strategy.get_tabs_file()
         )
 
@@ -824,7 +825,6 @@ def standalone_tab_editor(
 
     print("Loading tab editor")
     dialog_box = TabsEditorApp()
-
     dialog_box.editor.load_data()
 
     print("displaying tab editor")
@@ -952,7 +952,6 @@ class SingleWorkflowJSON(AbsGuiStarter):
         window.job_manager = job_manager
         if title is not None:
             window.setWindowTitle(title)
-
         return window
 
 

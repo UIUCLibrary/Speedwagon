@@ -1,15 +1,10 @@
 """Load Qt widget ui assets."""
 
 import typing
+import importlib
 
 from PySide6.QtUiTools import QUiLoader
 from PySide6 import QtWidgets
-from speedwagon.frontend.qtwidgets.gui import ToolConsole, ItemTabsWidget
-from speedwagon.frontend.qtwidgets.widgets import (
-    DynamicForm,
-    Workspace,
-    SelectWorkflow,
-)
 
 __all__ = ["load_ui"]
 
@@ -55,10 +50,13 @@ def load_ui(
     ui_file: str, base_instance: typing.Optional[QtWidgets.QWidget] = None
 ) -> QtWidgets.QWidget:
     """Load ui file widget and apply it to base instance."""
+    tabs = importlib.import_module("speedwagon.frontend.qtwidgets.tabs")
+    widgets = importlib.import_module("speedwagon.frontend.qtwidgets.widgets")
+
     loader = UiLoader(base_instance)
-    loader.register_custom_widget(ToolConsole)
-    loader.register_custom_widget(ItemTabsWidget)
-    loader.register_custom_widget(DynamicForm)
-    loader.register_custom_widget(SelectWorkflow)
-    loader.register_custom_widget(Workspace)
+    loader.register_custom_widget(widgets.ToolConsole)
+    loader.register_custom_widget(tabs.ItemTabsWidget)
+    loader.register_custom_widget(widgets.DynamicForm)
+    loader.register_custom_widget(widgets.SelectWorkflow)
+    loader.register_custom_widget(widgets.Workspace)
     return loader.load(ui_file)

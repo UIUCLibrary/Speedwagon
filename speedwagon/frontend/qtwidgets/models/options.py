@@ -7,11 +7,11 @@ from collections import namedtuple
 from typing import cast, Optional, List, Union, Any, Dict, TYPE_CHECKING
 
 from PySide6 import QtCore, QtGui
-
+from speedwagon.workflow import AbsOutputOptionDataType
 if TYPE_CHECKING:
     from speedwagon.config import SettingsDataType
-    from speedwagon.workflow import AbsOutputOptionDataType, UserDataType
-
+    from speedwagon.workflow import UserDataType
+    from speedwagon.frontend.qtwidgets.widgets import DynamicForm
 __all__ = ["ToolOptionsModel4"]
 
 OptionPair = namedtuple("OptionPair", ("label", "data"))
@@ -182,3 +182,23 @@ class ModelDataFormatter:
             return formatter(setting)
 
         return None
+
+
+def load_job_settings_model(
+    data: Dict[str, UserDataType],
+    settings_widget: DynamicForm,
+    workflow_options: List[AbsOutputOptionDataType],
+) -> None:
+    model = ToolOptionsModel4(workflow_options)
+    for key, value in data.items():
+        for i in range(model.rowCount()):
+            index = model.index(i)
+            option_data = typing.cast(
+                AbsOutputOptionDataType,
+                model.data(index, ToolOptionsModel4.DataRole),
+            )
+
+            if option_data.label == key:
+                model.setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
+    settings_widget.set_model(model)
+    settings_widget.update_widget()

@@ -21,8 +21,6 @@ import sys
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
 
-import speedwagon
-
 try:  # pragma: no cover
     from importlib.resources import as_file
     from importlib import resources
@@ -31,7 +29,7 @@ except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
 
 from speedwagon import config
-from speedwagon.frontend import qtwidgets
+from speedwagon.frontend.qtwidgets.ui_loader import load_ui
 from speedwagon.frontend.qtwidgets.widgets import (
     PluginConfig,
     WorkflowSettingsEditor,
@@ -45,6 +43,7 @@ from speedwagon.frontend.qtwidgets import models
 
 if TYPE_CHECKING:
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
+    from speedwagon.job import Workflow
 
 if sys.version_info < (3, 10):  # pragma: no cover
     import importlib_metadata as metadata
@@ -59,7 +58,7 @@ DEFAULT_WINDOW_FLAGS = QtCore.Qt.WindowType(0)
 
 
 class TabsSettingsData(TypedDict):
-    tab_information: List[speedwagon.config.tabs.CustomTabData]
+    tab_information: List[config.tabs.CustomTabData]
 
 
 class AbsOpenSettings(abc.ABC):
@@ -403,7 +402,7 @@ class ConfigWorkflowSettingsTab(SettingsTab):
         self.model = models.WorkflowSettingsModel()
         self._editor.model = self.model
 
-    def set_workflows(self, workflows: Iterable[speedwagon.Workflow]):
+    def set_workflows(self, workflows: Iterable[Workflow]):
         self.model.clear()
         for workflow in workflows:
             self.model.add_workflow(workflow)
@@ -676,7 +675,7 @@ class TabEditorWidgetUI(QtWidgets.QWidget):  # pylint: disable=R0903
                 "tab_editor.ui"
             )
         ) as ui_file:
-            qtwidgets.ui_loader.load_ui(str(ui_file), self)
+            load_ui(str(ui_file), self)
 
 
 class TabEditor(TabEditorWidgetUI):

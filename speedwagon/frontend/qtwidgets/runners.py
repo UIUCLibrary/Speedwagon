@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from PySide6 import QtWidgets, QtCore
 
 from speedwagon import runner_strategies
-from speedwagon.frontend import qtwidgets
-from speedwagon.job import AbsWorkflow
+
+if TYPE_CHECKING:
+    from speedwagon.job import AbsWorkflow
+    from speedwagon.frontend import qtwidgets
 
 USER_ABORTED_MESSAGE = "User Aborted"
 
