@@ -5,7 +5,16 @@ import json
 import os.path
 import typing
 from collections import defaultdict
-from typing import Union, Optional, Dict, Any, TypedDict, List, Iterable
+from typing import (
+    Union,
+    Optional,
+    Dict,
+    Any,
+    TypedDict,
+    List,
+    Iterable,
+    TYPE_CHECKING
+)
 
 
 try:  # pragma: no cover
@@ -20,8 +29,7 @@ from speedwagon.workflow import AbsOutputOptionDataType, UserDataType
 from speedwagon import Workflow, exceptions, config
 
 from speedwagon.frontend.qtwidgets.models.workflows import AbsWorkflowList
-
-from speedwagon.frontend.qtwidgets import models
+from speedwagon.frontend.qtwidgets import models, logging_helpers
 
 
 try:  # pragma: no cover
@@ -30,6 +38,9 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     import importlib_resources as resources  # type: ignore
     from importlib_resources import as_file
+
+if TYPE_CHECKING:
+    import logging
 
 
 __all__ = ["Workspace", "DynamicForm", "SelectWorkflow"]
@@ -821,3 +832,80 @@ class WorkflowSettingsEditor(WorkflowSettingsEditorUI):
         self._model = value
         self.workflow_settings_view.setModel(self._model)
         self.model.dataChanged.connect(self.data_changed)
+
+
+class ToolConsole(QtWidgets.QWidget):
+    """Logging console."""
+
+    _console: QtWidgets.QTextBrowser
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        """Create a new tool console object.
+
+        Args:
+            parent: Parent widget.
+        """
+        super().__init__(parent)
+
+        self.log_handler = logging_helpers.QtSignalLogHandler(self)
+        self.log_handler.signals.messageSent.connect(self.add_message)
+
+        self.log_formatter = logging_helpers.ConsoleFormatter()
+        self.log_handler.setFormatter(self.log_formatter)
+
+        with as_file(
+                resources.files(ui).joinpath("console.ui")
+        ) as ui_file:
+            ui_loader.load_ui(str(ui_file), self)
+        #
+        # #  Use a monospaced font based on what's on system running
+        monospaced_font = QtGui.QFontDatabase.systemFont(
+            QtGui.QFontDatabase.SystemFont.FixedFont
+        )
+
+        self._log = QtGui.QTextDocument()
+        self._log.setDefaultFont(monospaced_font)
+        # pylint: disable=no-member
+        self._log.contentsChanged.connect(self._follow_text)
+        self._console.setDocument(self._log)
+        self._console.setFont(monospaced_font)
+
+        self._attached_logger: typing.Optional[logging.Logger] = None
+        self.cursor: QtGui.QTextCursor = QtGui.QTextCursor(self._log)
+
+    def _follow_text(self) -> None:
+        cursor = QtGui.QTextCursor(self._log)
+        cursor.movePosition(cursor.MoveOperation.End)
+        self._console.setTextCursor(cursor)
+
+    @QtCore.Slot(str)
+    def add_message(
+            self,
+            message: str,
+    ) -> None:
+        """Add message to console.
+
+        Args:
+            message: message text.
+
+        """
+        self.cursor.beginEditBlock()
+        self.cursor.insertHtml(message)
+        self.cursor.endEditBlock()
+
+    @property
+    def text(self) -> str:
+        """Get the complete text in the console."""
+        return self._log.toPlainText()
+
+    def attach_logger(self, logger: logging.Logger) -> None:
+        """Attach Python logger."""
+        logger.addHandler(self.log_handler)
+        self._attached_logger = logger
+
+    def detach_logger(self) -> None:
+        """Detach Python logger."""
+        if self._attached_logger is not None:
+            self.log_handler.flush()
+            self._attached_logger.removeHandler(self.log_handler)
+            self._attached_logger = None

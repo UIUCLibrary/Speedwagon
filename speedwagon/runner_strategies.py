@@ -18,7 +18,6 @@ import warnings
 from types import TracebackType
 from typing import List, Any, Dict, Optional, Type
 
-import speedwagon
 import speedwagon.config
 import speedwagon.exceptions
 from speedwagon import runner

@@ -8,8 +8,7 @@ from typing import List, Any, Optional, Iterator, Dict
 import contextlib
 from uiucprescon import ocr
 
-import speedwagon
-import speedwagon.workflow
+import speedwagon.job
 
 from speedwagon.exceptions import \
     MissingConfiguration, \
@@ -42,7 +41,7 @@ def path_contains_traineddata(path: str) -> bool:
     return False
 
 
-class OCRWorkflow(speedwagon.Workflow):
+class OCRWorkflow(speedwagon.job.Workflow):
     """Optical Character Recognition workflow for Speedwagon."""
 
     name = "Generate OCR Files"

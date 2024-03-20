@@ -18,7 +18,9 @@ from typing import (
 
 from PySide6 import QtCore, QtGui
 
-import speedwagon
+import speedwagon.config.tabs as tabs_config
+from speedwagon.config.config import StandardConfigFileLocator
+import speedwagon.job
 from .common import WorkflowItem, WorkflowClassRole, AbsWorkflowList
 if TYPE_CHECKING:
     from speedwagon.config import AbsTabsConfigDataManagement
@@ -44,7 +46,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
     def append_workflow_tab(
         self,
         name: str,
-        workflows: Optional[List[Type[speedwagon.Workflow]]] = None,
+        workflows: Optional[List[Type[speedwagon.job.Workflow]]] = None,
     ) -> None:
         """Add a new tab."""
         new_tab = TabStandardItem(name, workflows or [])
@@ -236,10 +238,10 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
             tab.reset_modified()
         self.dataChanged.emit(self.root_item.index(), [])
 
-    def tab_information(self) -> List[speedwagon.config.tabs.CustomTabData]:
+    def tab_information(self) -> List[tabs_config.CustomTabData]:
         """Get the custom tab data for all the tabs in the model."""
         return [
-            speedwagon.config.tabs.CustomTabData(
+            tabs_config.CustomTabData(
                 tab.name, [work.name or "" for work in tab.workflows]
             )
             for tab in self.tabs
@@ -508,7 +510,7 @@ class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
 class TabDataModelConfigLoader(TabDataModelYAMLLoader):
     def __init__(self) -> None:
         super().__init__()
-        config_strategy = speedwagon.config.StandardConfigFileLocator()
+        config_strategy = StandardConfigFileLocator()
         self.yml_file = config_strategy.get_tabs_file()
 
 

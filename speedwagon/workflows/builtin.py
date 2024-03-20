@@ -6,8 +6,9 @@ import typing
 from typing import Dict, Type, List
 from speedwagon.tasks.system import AbsSystemTask
 
-from speedwagon import hookimpl
-import speedwagon
+from speedwagon.plugin_hook import hookimpl
+import speedwagon.config
+
 from speedwagon.workflows.workflow_ocr import OCRWorkflow
 if typing.TYPE_CHECKING:
     from speedwagon import Workflow

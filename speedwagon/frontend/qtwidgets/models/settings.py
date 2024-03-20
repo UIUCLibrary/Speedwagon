@@ -16,6 +16,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    TYPE_CHECKING
 )
 
 try:
@@ -24,10 +25,10 @@ except ImportError:  # pragma: no cover
     from typing_extensions import Final  # type: ignore
 
 from PySide6 import QtCore
-
-import speedwagon
-
 from speedwagon.config import SettingsData, SettingsDataType
+
+if TYPE_CHECKING:
+    import speedwagon.job
 
 WorkflowsSettings = Dict[str, SettingsData]
 WorkflowDataType = List[Union[str, int, bool, None]]
@@ -221,7 +222,7 @@ class AbsWorkflowSettingItem(abc.ABC):
 class WorkflowSettingsItemWorkflow(AbsWorkflowSettingItem):
     def __init__(
         self,
-        workflow: Optional[speedwagon.Workflow] = None,
+        workflow: Optional[speedwagon.job.Workflow] = None,
         parent: Optional[WorkflowSettingsRoot] = None,
     ) -> None:
         super().__init__()
@@ -230,11 +231,11 @@ class WorkflowSettingsItemWorkflow(AbsWorkflowSettingItem):
         self.child_items: List[WorkflowSettingsMetadata] = []
 
     @property
-    def workflow(self) -> Optional[speedwagon.Workflow]:
+    def workflow(self) -> Optional[speedwagon.job.Workflow]:
         return self._workflow
 
     @workflow.setter
-    def workflow(self, value: speedwagon.Workflow) -> None:
+    def workflow(self, value: speedwagon.job.Workflow) -> None:
         self._workflow = value
         options = value.workflow_options()
         for option in options:
@@ -403,7 +404,7 @@ class WorkflowSettingsRoot(AbsWorkflowSettingItem):
     ) -> None:
         super().__init__()
         self.item_data: WorkflowDataType = ["Property", "Value"]
-        self.workflow: Optional[speedwagon.Workflow] = None
+        self.workflow: Optional[speedwagon.job.Workflow] = None
         self.parent_item = parent
         self.child_items: List[WorkflowSettingsItemWorkflow] = []
 
@@ -577,7 +578,7 @@ class WorkflowSettingsModel(QtCore.QAbstractItemModel):
             return self.createIndex(row, column, child_item)
         return QtCore.QModelIndex()
 
-    def add_workflow(self, workflow: speedwagon.Workflow) -> None:
+    def add_workflow(self, workflow: speedwagon.job.Workflow) -> None:
         self.root_item.insert_children(
             self.root_item.child_count(), 1, self.root_item.column_count()
         )
@@ -592,7 +593,7 @@ class WorkflowSettingsModel(QtCore.QAbstractItemModel):
     def clear(self) -> None:
         self.root_item.remove_children(0, self.rowCount())
 
-    def remove_workflow(self, workflow: speedwagon.Workflow) -> None:
+    def remove_workflow(self, workflow: speedwagon.job.Workflow) -> None:
         for i in range(self.root_item.child_count()):
             child_item = self.root_item.child(i)
             if child_item is None:

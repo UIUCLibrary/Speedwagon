@@ -7,6 +7,7 @@ from .config import (
     generate_default,
     get_platform_settings,
     IniConfigManager,
+    IniConfigSaver,
     NixConfig,
     StandardConfig,
     StandardConfigFileLocator,
@@ -55,4 +56,5 @@ __all__ = [
     "WorkflowSettingsYamlExporter",
     "WorkflowSettingsYAMLResolver",
     "YAMLWorkflowConfigBackend",
+    "IniConfigSaver"
 ]

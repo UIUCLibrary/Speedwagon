@@ -12,15 +12,9 @@ import speedwagon.workflow
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 QtGui = pytest.importorskip("PySide6.QtGui")
 import speedwagon.config
-from speedwagon.frontend.qtwidgets.tabs import WorkflowsTab3
+from speedwagon.frontend.qtwidgets.tabs import WorkflowsTab3, ItemTabsWidget
+from speedwagon.frontend.qtwidgets.models.options import load_job_settings_model
 
-
-class TestToolConsole:
-    def test_add_message(self, qtbot):
-        console = speedwagon.frontend.qtwidgets.gui.ToolConsole(None)
-        qtbot.addWidget(console)
-        console.add_message("I'm a message")
-        assert "I'm a message" in console.text
 
 class TestMainWindow3:
     def test_updated_settings_uses_config_strategy(self, qtbot):
@@ -86,7 +80,7 @@ def test_load_job_settings_model(qtbot):
 
     ]
     form = speedwagon.frontend.qtwidgets.widgets.DynamicForm()
-    speedwagon.frontend.qtwidgets.gui.load_job_settings_model(data, form, workflow_options)
+    load_job_settings_model(data, form, workflow_options)
     assert form._background.widgets['Source'].data == '/Volumes/G-RAID with Thunderbolt/hathi_test/access/'
 
 
@@ -119,7 +113,7 @@ def test_load_items_with_choice(qtbot):
         package_root_option
     ]
 
-    speedwagon.frontend.qtwidgets.gui.load_job_settings_model(data, form, workflow_options)
+    load_job_settings_model(data, form, workflow_options)
     language_widget = form._background.widgets['Language']
     assert language_widget.data == 'English'
     assert language_widget.get_selections() == [
@@ -134,7 +128,7 @@ def test_load_items_with_choice(qtbot):
 class TestItemTabsWidget:
     def test_add_tab(self, qtbot):
 
-        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        tabs_widget = ItemTabsWidget()
         dummy = QtWidgets.QWidget()
         assert tabs_widget.count() == 0
         tabs_widget.add_tab(dummy, "hello")
@@ -143,26 +137,26 @@ class TestItemTabsWidget:
         assert tabs_widget.count() == 1, f"Tabs found: {*text, }"
 
     def test_add_tab_to_model_adds_to_widget(self, qtbot):
-        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        tabs_widget = ItemTabsWidget()
         model = tabs_widget.model()
         assert tabs_widget.count() == 0
         model.append_workflow_tab("Spam", [])
         assert tabs_widget.count() == 1
 
     def test_add_tab_widget(self, qtbot):
-        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        tabs_widget = ItemTabsWidget()
         tabs_widget.add_workflows_tab("hello", [])
         assert tabs_widget.count() == 1
 
     def test_add_tab_widget_and_clear(self, qtbot):
-        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        tabs_widget = ItemTabsWidget()
         tabs_widget.add_workflows_tab("hello", [])
         tabs_widget.clear_tabs()
         names = [tabs_widget.model().data(tabs_widget.model().index(row_id)) for row_id in range(tabs_widget.model().rowCount())]
         assert tabs_widget.count() == 0, f"Found tabs {*names, }"
 
     def test_append_workflow_to_model_and_clear_from_widget(self, qtbot):
-        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        tabs_widget = ItemTabsWidget()
         model = tabs_widget.model()
         model.append_workflow_tab("Spam", [])
         assert tabs_widget.count() == 1
@@ -170,7 +164,7 @@ class TestItemTabsWidget:
         assert tabs_widget.count() == 0
 
     def test_clear(self, qtbot):
-        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        tabs_widget = ItemTabsWidget()
         dummy = QtWidgets.QWidget()
         tabs_widget.add_tab(dummy, "hello")
         assert tabs_widget.count() == 1
@@ -178,5 +172,5 @@ class TestItemTabsWidget:
         assert tabs_widget.count() == 0
 
     def test_empty_current_tab_is_none(self, qtbot):
-        tabs_widget = speedwagon.frontend.qtwidgets.gui.ItemTabsWidget()
+        tabs_widget = ItemTabsWidget()
         assert tabs_widget.current_tab is None

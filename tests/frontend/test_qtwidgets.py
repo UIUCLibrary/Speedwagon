@@ -526,3 +526,10 @@ class TestWorkflowsTab3:
                 ).center()
             )
         assert tab_widget.workspace.name == "dummy 1"
+
+class TestToolConsole:
+    def test_add_message(self, qtbot):
+        console = speedwagon.frontend.qtwidgets.widgets.ToolConsole(None)
+        qtbot.addWidget(console)
+        console.add_message("I'm a message")
+        assert "I'm a message" in console.text

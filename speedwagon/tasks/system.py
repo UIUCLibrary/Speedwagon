@@ -1,7 +1,7 @@
 """System tasks."""
 
 import abc
-import speedwagon
+import speedwagon.config.config
 
 
 class AbsSystemTask(abc.ABC):

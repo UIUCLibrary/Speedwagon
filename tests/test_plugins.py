@@ -1,10 +1,10 @@
 from unittest.mock import Mock
 import pluggy
 from speedwagon import plugins
-import speedwagon
+
 def test_register_whitelisted_plugins(monkeypatch):
 
-    monkeypatch.setattr(speedwagon.config, "get_whitelisted_plugins", lambda: [
+    monkeypatch.setattr(plugins, "get_whitelisted_plugins", lambda: [
         ("root", 'plugin 1')])
     plugin_manager = Mock(
         pluggy.PluginManager,

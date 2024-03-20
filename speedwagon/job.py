@@ -11,8 +11,6 @@ import sys
 import typing
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Type
 
-import speedwagon
-import speedwagon.config
 import speedwagon.plugins
 
 if typing.TYPE_CHECKING:
