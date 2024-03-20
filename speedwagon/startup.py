@@ -18,27 +18,18 @@ import sys
 import typing
 from typing import Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional
 
-import speedwagon
+import speedwagon.job
 import speedwagon.config
 
 from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
 
-try:
-    from typing import Final
-except ImportError:  # pragma: no cover
-    from typing_extensions import Final  # type: ignore
-
 if TYPE_CHECKING:
-    from speedwagon import job
     import speedwagon.frontend.qtwidgets.gui_startup
 
 
 __all__ = [
     "ApplicationLauncher",
 ]
-
-CONFIG_INI_FILE_NAME: Final[str] = "config.ini"
-TABS_YML_FILE_NAME: Final[str] = "tabs.yml"
 
 
 def parse_args() -> argparse.ArgumentParser:
@@ -61,7 +52,7 @@ class CustomTabsFileReader:
 
     def _get_tab_items(
         self, tab: List[str], tab_name: str
-    ) -> Dict[str, Type[job.Workflow]]:
+    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
         new_tab_items = {}
         for item_name in tab:
             try:

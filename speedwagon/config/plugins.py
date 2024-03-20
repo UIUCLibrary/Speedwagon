@@ -10,7 +10,7 @@ except ImportError:  # pragma: no cover
 from configparser import ConfigParser
 import io
 
-import speedwagon
+from speedwagon.config import config
 
 __all__ = ["get_whitelisted_plugins"]
 
@@ -18,13 +18,13 @@ PluginDataType = Dict[str, Dict[str, bool]]
 
 
 def read_settings_file_plugins(settings_file: str) -> PluginDataType:
-    with speedwagon.config.ConfigManager(settings_file) as config:
-        return config.plugins
+    with config.ConfigManager(settings_file) as config_manager:
+        return config_manager.plugins
 
 
 def get_whitelisted_plugins() -> Set[Tuple[str, str]]:
     """Get whitelisted plugins."""
-    config_strategy = speedwagon.config.StandardConfigFileLocator()
+    config_strategy = config.StandardConfigFileLocator()
     plugin_settings = read_settings_file_plugins(
         config_strategy.get_config_file()
     )

@@ -27,9 +27,14 @@ from typing import (
     List,
 )
 
+try:
+    from typing import Final
+except ImportError:  # pragma: no cover
+    from typing_extensions import Final  # type: ignore
+
 from types import TracebackType
 
-import speedwagon
+import speedwagon.job
 
 if typing.TYPE_CHECKING:
     from .common import SettingsData, FullSettingsData, SettingsDataType
@@ -46,6 +51,9 @@ __all__ = [
     "WindowsConfig",
     "NixConfig",
 ]
+
+CONFIG_INI_FILE_NAME: Final[str] = "config.ini"
+TABS_YML_FILE_NAME: Final[str] = "tabs.yml"
 
 
 class AbsConfig(collections.abc.Mapping):
@@ -526,7 +534,7 @@ class StandardConfigFileLocator(AbsSettingLocator):
         """Get config file."""
         return os.path.join(
             self._platform_settings.get_app_data_directory(),
-            speedwagon.startup.CONFIG_INI_FILE_NAME,
+            CONFIG_INI_FILE_NAME,
         )
 
     def get_app_data_dir(self) -> str:
@@ -537,7 +545,7 @@ class StandardConfigFileLocator(AbsSettingLocator):
         """Get tabs file path."""
         return os.path.join(
             self._platform_settings.get_app_data_directory(),
-            speedwagon.startup.TABS_YML_FILE_NAME,
+            TABS_YML_FILE_NAME,
         )
 
 

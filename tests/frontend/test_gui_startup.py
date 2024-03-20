@@ -896,12 +896,12 @@ class TestStartQtThreaded:
     def test_ensure_settings_files(self, qtbot, monkeypatch):
         start = gui_startup.StartQtThreaded(Mock())
         monkeypatch.setattr(
-            gui_startup.config.config,
+            speedwagon.config.config,
             "ensure_settings_files",
             Mock(name="ensure_settings_files")
         )
         start.ensure_settings_files()
-        assert gui_startup.config.config.ensure_settings_files.called is True
+        assert speedwagon.config.config.ensure_settings_files.called is True
 class TestWorkflowProgressCallbacks:
 
     @pytest.fixture()
@@ -1175,12 +1175,12 @@ def test_start_up_tab_editor(monkeypatch):
 class TestResolveSettings:
     def test_get_settings(self, monkeypatch):
         monkeypatch.setattr(
-            gui_startup.config.StandardConfigFileLocator,
+            speedwagon.config.StandardConfigFileLocator,
             "get_config_file",
             lambda _ : "dummy.ini"
         )
         monkeypatch.setattr(
-            gui_startup.config.IniConfigManager,
+            speedwagon.config.IniConfigManager,
             "data",
             lambda _: {}
         )

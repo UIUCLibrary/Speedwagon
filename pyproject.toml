@@ -120,10 +120,6 @@ follow_imports_for_stubs=true
 
 [tool.ruff]
 line-length = 79
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "D", "B"]
-# speedwagon/workflows are excluded because most will be removed in a future version
 exclude = [
     "packaging",
     "utils",
@@ -131,6 +127,10 @@ exclude = [
     "speedwagon/workflows",
     "tests",
 ]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "D", "B"]
+# speedwagon/workflows are excluded because most will be removed in a future version
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

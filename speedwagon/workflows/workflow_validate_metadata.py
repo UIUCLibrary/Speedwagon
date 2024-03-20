@@ -7,7 +7,6 @@ import enum
 
 from uiucprescon import imagevalidate
 
-import speedwagon
 import speedwagon.workflow
 import speedwagon.tasks.validation
 from speedwagon.job import Workflow

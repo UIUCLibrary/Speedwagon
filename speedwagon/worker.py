@@ -14,7 +14,6 @@ import warnings
 from types import TracebackType
 from typing import Optional, Any, Dict, Callable
 from collections import namedtuple
-import speedwagon
 from speedwagon.tasks import QueueAdapter
 
 if typing.TYPE_CHECKING:
@@ -301,7 +300,7 @@ class AbsToolJobManager(
     def __init__(self) -> None:
         """Create a tool job manager."""
         self.settings_path: Optional[str] = None
-        self._job_runtime = speedwagon.worker.JobExecutor()
+        self._job_runtime = JobExecutor()
         self.logger = logging.getLogger(__name__)
         self.user_settings: Optional[AbsConfig] = None
         self.configuration_file: Optional[str] = None
@@ -349,7 +348,7 @@ class AbsToolJobManager(
 
     def add_job(
         self,
-        new_job: speedwagon.worker.ProcessJobWorker,
+        new_job: ProcessJobWorker,
         settings: Dict[str, Any],
     ) -> None:
         """Add job to the run queue."""

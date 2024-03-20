@@ -13,7 +13,6 @@ except ImportError:  # pragma: no cover
 import yaml
 import yaml.emitter
 
-import speedwagon
 from .config import StandardConfigFileLocator
 
 if TYPE_CHECKING:
@@ -33,7 +32,7 @@ __all__ = [
 class AbsSettingsSerializer(abc.ABC):  # pylint: disable=R0903
     @abc.abstractmethod
     def serialize(
-        self, workflow: speedwagon.Workflow, settings: SettingsData
+        self, workflow: Workflow, settings: SettingsData
     ) -> str:
         """Serialize workflow settings."""
 
@@ -271,7 +270,7 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
             return self.settings_resolver
         if self.yaml_file is None:
             raise AttributeError("yaml_file not set")
-        return speedwagon.config.WorkflowSettingsYAMLResolver(self.yaml_file)
+        return WorkflowSettingsYAMLResolver(self.yaml_file)
 
     def get(self, key: str) -> Optional[SettingsDataType]:
         """Get value for key."""

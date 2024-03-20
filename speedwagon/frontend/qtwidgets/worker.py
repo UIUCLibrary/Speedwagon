@@ -20,7 +20,6 @@ import concurrent.futures
 from PySide6 import QtWidgets
 
 import speedwagon.worker
-import speedwagon.workflow
 
 if typing.TYPE_CHECKING:
     import speedwagon.config

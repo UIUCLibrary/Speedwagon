@@ -21,7 +21,6 @@ from typing import (
 
 from uiucprescon.packager.packages import collection
 
-import speedwagon
 import speedwagon.exceptions
 from speedwagon.frontend import interaction
 from speedwagon.frontend.interaction import (
