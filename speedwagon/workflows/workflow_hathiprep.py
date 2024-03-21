@@ -5,14 +5,20 @@ from typing import List, Any, Sequence, Dict, Optional
 import typing
 
 from uiucprescon.packager.packages import collection
+from uiucprescon.packager.common import Metadata
 
 import speedwagon
 import speedwagon.tasks.prep
 import speedwagon.tasks.packaging
 import speedwagon.workflow
-from speedwagon.frontend.interaction import UserRequestFactory
+from speedwagon.frontend.interaction import UserRequestFactory, DataItem
 
 __all__ = ['HathiPrepWorkflow']
+
+
+class TitlePageResults(typing.TypedDict):
+    title_pages: Dict[str, Optional[str]]
+    # title_pages: Dict[str, str]
 
 
 class HathiPrepWorkflow(speedwagon.Workflow):
@@ -139,8 +145,60 @@ class HathiPrepWorkflow(speedwagon.Workflow):
             pretask_results: list
     ) -> dict:
         """Request title pages information for the packages from the user."""
-        package_browser = user_request_factory.package_browser()
-        return package_browser.get_user_response(options, pretask_results)
+        if len(pretask_results) != 1:
+            return {}
+
+        def process_data(
+                data: List[Sequence[DataItem]]
+        ) -> TitlePageResults:
+            return {
+                "title_pages": {
+                    typing.cast(str, row[0].value): row[1].value
+                    for row in data
+                }
+            }
+
+        def data_gathering_callback(
+                results,  # pylint: disable=unused-argument
+                pretask_results
+        ) -> List[Sequence[DataItem]]:
+            rows: List[Sequence[DataItem]] = []
+            values = pretask_results[0]
+            for package in values.data:
+                title_page = DataItem(
+                    name="Title Page",
+                    value=package.metadata[Metadata.TITLE_PAGE]
+                )
+                title_page.editable = True
+                files = []
+                for i in package:
+                    for instance in i.instantiations.values():
+                        files += [os.path.basename(f) for f in instance.files]
+                title_page.possible_values = files
+
+                rows.append(
+                    (
+                        DataItem(
+                            name="Object",
+                            value=package.metadata[Metadata.ID]
+                        ),
+                        title_page,
+                        DataItem(
+                            name="Location",
+                            value=package.metadata[Metadata.PATH]
+                        )
+                    )
+                )
+
+            return rows
+
+        selection_editor = user_request_factory.table_data_editor(
+            enter_data=data_gathering_callback,
+            process_data=process_data
+        )
+        selection_editor.title = "Title Page Selection"
+        selection_editor.column_names = ["Object", "Title Page", "Location"]
+        return selection_editor.get_user_response(options, pretask_results)
 
     @classmethod
     def generate_report(cls, results: List[speedwagon.tasks.tasks.Result],
@@ -191,7 +249,7 @@ class HathiPrepWorkflow(speedwagon.Workflow):
 
 class FindHathiPackagesTask(speedwagon.tasks.packaging.AbsFindPackageTask):
 
-    def find_packages(self, search_path: str):
+    def find_packages(self, search_path: str) -> List[str]:
         def find_dirs(item: os.DirEntry) -> bool:
 
             if not item.is_dir():
