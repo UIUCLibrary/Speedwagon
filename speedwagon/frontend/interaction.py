@@ -147,6 +147,11 @@ class UserRequestFactory(abc.ABC):
     @abc.abstractmethod
     def package_browser(self) -> AbstractPackageBrowser:
         """Select the title page for packages."""
+        warnings.warn(
+            "use table_data_editor instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
 
     @abc.abstractmethod
     def confirm_removal(self) -> AbstractConfirmFilesystemItemRemoval:
