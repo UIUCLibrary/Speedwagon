@@ -214,7 +214,7 @@ def generate_default(config_file: str) -> None:
     }
     with open(config_file, "w", encoding="utf-8") as file:
         config.write(file)
-    ensure_keys(config_file, job.all_required_workflow_keys())
+    ensure_keys(config_file, speedwagon.job.all_required_workflow_keys())
 
 
 def get_platform_settings(
