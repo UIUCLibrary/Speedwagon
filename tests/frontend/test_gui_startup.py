@@ -803,10 +803,10 @@ class TestStartQtThreaded:
         )
 
         starter.submit_job(
+            main_app,
             job_manager,
             workflow_name,
             options,
-            main_app,
         )
         assert gui_startup.report_exception_dialog.called is True
 
@@ -842,6 +842,7 @@ class TestStartQtThreaded:
         )
 
         starter.submit_job(
+            None,
             job_manager,
             workflow_name,
             options
@@ -1278,3 +1279,22 @@ def test_get_help_url_malformed_data(monkeypatch):
     with pytest.raises(ValueError) as error:
         gui_startup.get_help_url()
     assert "malformed" in str(error)
+
+
+class TestMainWindowBuilder:
+    def test_generate_windows_defaults(self, qtbot):
+        builder = gui_startup.MainWindowBuilder()
+        window = builder.build(speedwagon.frontend.qtwidgets.gui.MainWindow3())
+        assert isinstance(window, QtWidgets.QMainWindow)
+
+    def test_assign_trigger(self, qtbot):
+        builder = gui_startup.MainWindowBuilder()
+        call_something = Mock()
+        builder.assign_trigger(
+            signal=lambda w: w.export_job_config,
+            payload=lambda *args, **kwargs: call_something(*args, **kwargs)
+        )
+        window = builder.build(speedwagon.frontend.qtwidgets.gui.MainWindow3())
+        qtbot.addWidget(window)
+        window.export_job_config.emit("", {}, window)
+        call_something.assert_called_with(window, "", {}, window)

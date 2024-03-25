@@ -67,7 +67,7 @@ system_info_report_formatters: DefaultDict[
 class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
     """Abstract base class to starting a gui application."""
 
-    def __init__(self, app) -> None:
+    def __init__(self, app=None) -> None:
         """Create a new gui starter object."""
         super().__init__()
         self.app = app
@@ -573,42 +573,66 @@ class StartQtThreaded(AbsGuiStarter):
         self, job_manager
     ) -> speedwagon.frontend.qtwidgets.gui.MainWindow3:
         """Build main window widget."""
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        window.console.attach_logger(self.logger)
+        window_builder = MainWindowBuilder[
+            speedwagon.frontend.qtwidgets.gui.MainWindow3
+        ]()
 
-        window.action_export_logs.triggered.connect(
-            lambda: self.save_log(window)
+        window_builder.attach_logger(
+            self.logger,
+            lambda window: window.console.attach_logger(self.logger)
         )
 
-        window.export_job_config.connect(save_workflow_config)
-
-        window.action_import_job.triggered.connect(
-            lambda: self.import_workflow_config(window)
+        window_builder.assign_trigger(
+            lambda window: window.action_export_logs.triggered,
+            self.save_log
         )
 
-        window.action_system_info_requested.triggered.connect(
-            lambda: self.request_system_info(window)
+        window_builder.assign_trigger(
+            lambda window: window.action_import_job.triggered,
+            self.import_workflow_config
         )
 
-        window.action_open_application_preferences.triggered.connect(
-            lambda: self.request_settings(window)
+        window_builder.assign_trigger(
+            lambda window: window.export_job_config,
+            lambda window, *args, **kwargs: save_workflow_config(
+                *args,
+                **kwargs
+            )
         )
 
-        window.action_help_requested.triggered.connect(self._load_help)
-
-        window.action_about.triggered.connect(
-            lambda: dialog.about_dialog_box(window)
+        window_builder.assign_trigger(
+            lambda window: window.action_system_info_requested.triggered,
+            self.request_system_info
         )
 
-        window.submit_job.connect(
-            lambda workflow_name, options: self.submit_job(
+        window_builder.assign_trigger(
+            lambda window:
+                window.action_open_application_preferences.triggered,
+            self.request_settings
+        )
+
+        window_builder.assign_trigger(
+            lambda window: window.action_about.triggered,
+            dialog.about_dialog_box
+        )
+
+        window_builder.assign_trigger(
+            lambda window: window.submit_job,
+            lambda window, workflow_name, options: self.submit_job(
+                window,
                 job_manager,
                 workflow_name,
                 options,
-                main_app=self.windows,
             )
         )
-        return window
+
+        window_builder.assign_trigger(
+            lambda window: window.action_help_requested.triggered,
+            self._load_help
+        )
+        return window_builder.build(
+            speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        )
 
     @staticmethod
     def abort_job(
@@ -640,10 +664,10 @@ class StartQtThreaded(AbsGuiStarter):
 
     def submit_job(
         self,
+        main_app: typing.Optional[gui.MainWindow3],
         job_manager: runner_strategies.BackgroundJobManager,
         workflow_name: str,
         options: Dict[str, typing.Any],
-        main_app: typing.Optional[gui.MainWindow3] = None,
     ) -> None:
         """Submit job."""
         workflow_class = speedwagon.job.available_workflows().get(
