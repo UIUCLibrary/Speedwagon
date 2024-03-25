@@ -15,7 +15,17 @@ import threading
 import time
 import types
 import typing
-from typing import Dict, Optional, cast, List, Type, Callable, DefaultDict
+from typing import (
+    Dict,
+    Optional,
+    cast,
+    List,
+    Type,
+    Callable,
+    DefaultDict,
+    Tuple
+)
+
 import traceback as tb
 import webbrowser
 
@@ -23,7 +33,7 @@ try:  # pragma: no cover
     from importlib import metadata
 except ImportError:  # pragma: no cover
     import importlib_metadata as metadata  # type: ignore
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
 
 import speedwagon.job
 from speedwagon.config.tabs import CustomTabsYamlConfig, TabsYamlWriter
@@ -34,6 +44,7 @@ from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
 from speedwagon.utils import get_desktop_path
 from speedwagon.tasks import system as system_tasks
 from speedwagon import plugins, info
+from speedwagon.validators import Validator
 from . import user_interaction
 from . import dialog
 from . import runners
@@ -67,7 +78,7 @@ system_info_report_formatters: DefaultDict[
 class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
     """Abstract base class to starting a gui application."""
 
-    def __init__(self, app) -> None:
+    def __init__(self, app=None) -> None:
         """Create a new gui starter object."""
         super().__init__()
         self.app = app
@@ -291,6 +302,152 @@ def get_help_url() -> Optional[str]:
     return None
 
 
+_T = typing.TypeVar("_T")
+
+
+class MainWindowBuilder(typing.Generic[_T]):
+
+    def __init__(self) -> None:
+        self.logger = logging.getLogger()
+        self.triggers = []
+        self._attach_log_callback: Callable[
+            [_T],
+            Optional[Callable[[logging.Logger], None]]
+        ] = lambda window: None
+
+    def build(self, window: _T) -> _T:
+        attach_logger = self._attach_log_callback(window)
+        if attach_logger:
+            attach_logger(self.logger)
+
+        for signal_callback, payload_callback in self.triggers:
+            signal: Optional[QtCore.SignalInstance] = signal_callback(window)
+            if signal:
+                self._assign(window, signal, payload_callback)
+
+        return window
+
+    def _assign(
+        self,
+        window: _T,
+        signal: QtCore.SignalInstance,
+        payload_callback: Callable
+    ) -> None:
+        signal.connect(
+            lambda *args, **kwargs: payload_callback(
+                window,
+                *args,
+                **kwargs
+            )
+        )
+
+    def assign_trigger(
+        self,
+        signal: Callable[[_T], Optional[QtCore.SignalInstance]],
+        payload: Callable
+    ) -> None:
+        self.triggers.append((signal, payload))
+
+    def attach_logger(
+            self,
+            logger: logging.Logger,
+            attach_log_callback: Callable[
+                [_T],
+                Optional[
+                    Callable[[logging.Logger], None]
+                ]
+            ]
+    ) -> None:
+        self._attach_log_callback = attach_log_callback
+        self.logger = logger
+
+
+class WorkflowTabLoader:
+    def __init__(self, application: gui.MainWindow3) -> None:
+        super().__init__()
+        self.application = application
+
+    def load_workflows_tab(
+        self,
+        name: str,
+        workflows: typing.Dict[str, Type[speedwagon.job.Workflow]],
+    ) -> None:
+        """Load tab that contains all workflows."""
+        self.application.add_tab(
+            name, collections.OrderedDict(sorted(workflows.items()))
+        )
+
+    def load_all_workflows(
+        self,
+        app_settings: Dict[str, typing.Any],
+    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        all_workflows = speedwagon.job.available_workflows()
+        for workflow_name, error in validate_workflows(
+            all_workflows,
+            app_settings
+        ):
+            error_message = (
+                f"Unable to load workflow '{workflow_name}'. Reason: {error}"
+            )
+
+            self.application.logger.error(error_message)
+            self.application.console.console.add_message(error_message)
+            del all_workflows[workflow_name]
+        return all_workflows
+
+
+def check_initialization(
+    candidate: typing.Type[speedwagon.job.Workflow],
+    app_global_settings
+) -> Tuple[bool, List[str]]:
+    try:
+        candidate(global_settings=app_global_settings)
+    except (
+            speedwagon.exceptions.SpeedwagonException,
+            AttributeError,
+    ) as error:
+        return False, [f"Unable to instantiate. Reason {error}"]
+
+    return True, []
+
+
+def validate_workflows(
+    workflows: Dict[str, typing.Type[speedwagon.job.Workflow]],
+    global_settings
+):
+
+    workflow_validator = Validator[typing.Type[speedwagon.job.Workflow]]()
+
+    def _check_initialization(candidate):
+        return check_initialization(candidate, global_settings)
+
+    workflow_validator.add_checks(_check_initialization)
+
+    for title, workflow in workflows.copy().items():
+        valid, findings = workflow_validator.check(workflow)
+        if not valid:
+            yield title, "\n".join(findings)
+
+
+def iter_tab_file_data(
+    tabs_file: str,
+    locate_workflows_strategy: Callable[
+        [],
+        Dict[str, Type[speedwagon.job.Workflow]]
+    ]
+):
+    loaded_workflows = locate_workflows_strategy()
+    tabs_file_size = os.path.getsize(tabs_file)
+    if tabs_file_size > 0:
+        for tab_name, extra_tab in speedwagon.startup.get_custom_tabs(
+                loaded_workflows, tabs_file
+        ):
+            yield (
+                tab_name,
+                collections.OrderedDict(sorted(extra_tab.items()))
+            )
+
+
 class StartQtThreaded(AbsGuiStarter):
     """Start a Qt Widgets base app using threads for job workers."""
 
@@ -354,7 +511,7 @@ class StartQtThreaded(AbsGuiStarter):
         parent.set_active_workflow(workflow_name)
         parent.set_current_workflow_settings(data)
 
-    def _load_help(self) -> None:
+    def _load_help(self, _) -> None:
         try:
             home_page = get_help_url()
             if home_page:
@@ -407,59 +564,24 @@ class StartQtThreaded(AbsGuiStarter):
         self.logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
         self.windows.clear_tabs()
+        workflow_tab_loader = WorkflowTabLoader(self.windows)
         with contextlib.redirect_stderr(loading_workflows_stream):
-            all_workflows = speedwagon.job.available_workflows()
-
-        for workflow_name, error in self._find_invalid(all_workflows):
-            error_message = (
-                f"Unable to load workflow '{workflow_name}'. Reason: {error}"
+            all_workflows = workflow_tab_loader.load_all_workflows(
+                app_settings=self.startup_settings
             )
 
-            self.logger.error(error_message)
-            self.windows.console.add_message(error_message)
-            del all_workflows[workflow_name]
-
-        # Load every user configured tab
-        self.load_custom_tabs(
-            self.windows, config_strategy.get_tabs_file(), all_workflows
-        )
-
-        # All Workflows tab
-        self.load_all_workflows_tab(self.windows, all_workflows)
-
-        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
-        if workflow_errors_msg:
-            for line in workflow_errors_msg.split("\n"):
-                self.logger.warning(line)
-
-    def load_all_workflows_tab(
-        self,
-        application: gui.MainWindow3,
-        loaded_workflows: typing.Dict[str, Type[speedwagon.job.Workflow]],
-    ) -> None:
-        """Load tab that contains all workflows."""
-        print("Loading Tab All")
-        self.logger.debug("Loading Tab All")
-        application.add_tab(
-            "All", collections.OrderedDict(sorted(loaded_workflows.items()))
-        )
-
-    def load_custom_tabs(
-        self,
-        main_window: gui.MainWindow3,
-        tabs_file: str,
-        loaded_workflows: typing.Dict[str, Type[speedwagon.job.Workflow]],
-    ) -> None:
-        """Load custom tabs."""
-        tabs_file_size = os.path.getsize(tabs_file)
-        if tabs_file_size > 0:
+            # Load every user configured tab
+            tabs_file = config_strategy.get_tabs_file()
             try:
-                for tab_name, extra_tab in speedwagon.startup.get_custom_tabs(
-                    loaded_workflows, tabs_file
-                ):
-                    main_window.add_tab(
+                for tab_name, workflows in \
+                        iter_tab_file_data(
+                            tabs_file,
+                            locate_workflows_strategy=lambda: all_workflows
+                        ):
+                    self.logger.debug("Loading Tab %s", tab_name)
+                    workflow_tab_loader.load_workflows_tab(
                         tab_name,
-                        collections.OrderedDict(sorted(extra_tab.items())),
+                        workflows
                     )
             except speedwagon.exceptions.FileFormatError as error:
                 self.logger.warning(
@@ -467,6 +589,15 @@ class StartQtThreaded(AbsGuiStarter):
                     tabs_file,
                     error,
                 )
+
+            # All Workflows tab
+            self.logger.debug("Loading Tab All")
+            workflow_tab_loader.load_workflows_tab("All", all_workflows)
+
+        workflow_errors_msg = loading_workflows_stream.getvalue().strip()
+        if workflow_errors_msg:
+            for line in workflow_errors_msg.split("\n"):
+                self.logger.warning(line)
 
     def save_log(self, parent: QtWidgets.QWidget) -> None:
         """Action for user to save logs as a file."""
@@ -573,42 +704,66 @@ class StartQtThreaded(AbsGuiStarter):
         self, job_manager
     ) -> speedwagon.frontend.qtwidgets.gui.MainWindow3:
         """Build main window widget."""
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        window.console.attach_logger(self.logger)
+        window_builder = MainWindowBuilder[
+            speedwagon.frontend.qtwidgets.gui.MainWindow3
+        ]()
 
-        window.action_export_logs.triggered.connect(
-            lambda: self.save_log(window)
+        window_builder.attach_logger(
+            self.logger,
+            lambda window: window.console.attach_logger(self.logger)
         )
 
-        window.export_job_config.connect(save_workflow_config)
-
-        window.action_import_job.triggered.connect(
-            lambda: self.import_workflow_config(window)
+        window_builder.assign_trigger(
+            lambda window: window.action_export_logs.triggered,
+            self.save_log
         )
 
-        window.action_system_info_requested.triggered.connect(
-            lambda: self.request_system_info(window)
+        window_builder.assign_trigger(
+            lambda window: window.action_import_job.triggered,
+            self.import_workflow_config
         )
 
-        window.action_open_application_preferences.triggered.connect(
-            lambda: self.request_settings(window)
+        window_builder.assign_trigger(
+            lambda window: window.export_job_config,
+            lambda window, *args, **kwargs: save_workflow_config(
+                *args,
+                **kwargs
+            )
         )
 
-        window.action_help_requested.triggered.connect(self._load_help)
-
-        window.action_about.triggered.connect(
-            lambda: dialog.about_dialog_box(window)
+        window_builder.assign_trigger(
+            lambda window: window.action_system_info_requested.triggered,
+            self.request_system_info
         )
 
-        window.submit_job.connect(
-            lambda workflow_name, options: self.submit_job(
+        window_builder.assign_trigger(
+            lambda window:
+                window.action_open_application_preferences.triggered,
+            self.request_settings
+        )
+
+        window_builder.assign_trigger(
+            lambda window: window.action_about.triggered,
+            dialog.about_dialog_box
+        )
+
+        window_builder.assign_trigger(
+            lambda window: window.submit_job,
+            lambda window, workflow_name, options: self.submit_job(
+                window,
                 job_manager,
                 workflow_name,
                 options,
-                main_app=self.windows,
             )
         )
-        return window
+
+        window_builder.assign_trigger(
+            lambda window: window.action_help_requested.triggered,
+            self._load_help
+        )
+        return window_builder.build(
+            speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        )
 
     @staticmethod
     def abort_job(
@@ -640,10 +795,10 @@ class StartQtThreaded(AbsGuiStarter):
 
     def submit_job(
         self,
+        main_app: typing.Optional[gui.MainWindow3],
         job_manager: runner_strategies.BackgroundJobManager,
         workflow_name: str,
         options: Dict[str, typing.Any],
-        main_app: typing.Optional[gui.MainWindow3] = None,
     ) -> None:
         """Submit job."""
         workflow_class = speedwagon.job.available_workflows().get(
@@ -695,20 +850,6 @@ class StartQtThreaded(AbsGuiStarter):
             ),
         )
         threaded_events.started.set()
-
-    def _find_invalid(
-        self, workflows: typing.Dict[str, typing.Type[speedwagon.job.Workflow]]
-    ) -> typing.Iterable[typing.Tuple[str, str]]:
-        for title, workflow in workflows.copy().items():
-            try:
-                workflow(
-                    global_settings=self.startup_settings.get("GLOBAL", {})
-                )
-            except (
-                speedwagon.exceptions.SpeedwagonException,
-                AttributeError,
-            ) as error:
-                yield title, str(error)
 
 
 def report_exception_dialog(
