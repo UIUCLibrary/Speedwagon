@@ -57,7 +57,7 @@ class WorkflowItem(QtGui.QStandardItem):
         super().__init__()
         self.workflow = workflow
         if workflow is not None and workflow.name is not None:
-            self.setText(workflow.name)
+            self.setText(str(workflow.name))
 
     def columnCount(self) -> int:  # pylint: disable=invalid-name
         """Get column count."""

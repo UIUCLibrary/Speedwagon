@@ -2,7 +2,7 @@
 
 import abc
 import os
-from typing import Dict, Any
+from typing import Dict, Any, TypeVar, Generic, List, Callable, Tuple, Sequence
 
 
 class AbsOptionValidator(abc.ABC):
@@ -88,3 +88,36 @@ class OptionValidator(OptionValidatorFactory):
     def get(self, key: str) -> AbsOptionValidator:
         """Get option validator."""
         return self.create(key)
+
+
+_T = TypeVar("_T")
+
+
+class Validator(Generic[_T]):
+    """Generic validator."""
+
+    def __init__(self) -> None:
+        """Create a new validation object."""
+        self.validation_checks: Sequence[
+            Callable[[_T], Tuple[bool, List[str]]]
+        ] = []
+
+    def check(self, candidate: _T) -> Tuple[bool, List[str]]:
+        """Check candidate against the validation checks.
+
+        Args:
+            candidate: object being validated
+
+        Returns:
+            tuple containing object's validation & list of findings discovered
+
+        """
+        all_findings: List[str] = []
+        is_valid = True
+        for check in self.validation_checks:
+            valid, findings = check(candidate)
+            if not valid:
+                is_valid = False
+                all_findings += findings
+
+        return is_valid, all_findings
