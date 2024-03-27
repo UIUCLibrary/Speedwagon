@@ -421,9 +421,7 @@ def validate_workflows(
     def _check_initialization(candidate):
         return check_initialization(candidate, global_settings)
 
-    workflow_validator.validation_checks = [
-        _check_initialization
-    ]
+    workflow_validator.add_checks(_check_initialization)
 
     for title, workflow in workflows.copy().items():
         valid, findings = workflow_validator.check(workflow)
