@@ -1037,6 +1037,9 @@ pipeline {
                             agent{
                                 label 'mac && python3 && x86_64'
                             }
+                            options {
+                                retry(count: 2)
+                            }
                             when{
                                 allOf{
                                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
@@ -1045,9 +1048,7 @@ pipeline {
                                 beforeInput true
                             }
                             steps{
-                                script{
-                                    macAppleBundle()
-                                }
+                                macAppleBundle()
                             }
                             post{
                                 success{
@@ -1070,6 +1071,9 @@ pipeline {
                             agent{
                                 label 'mac && python3 && arm64'
                             }
+                            options {
+                                retry(count: 2)
+                            }
                             when{
                                 allOf{
                                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
@@ -1078,9 +1082,7 @@ pipeline {
                                 beforeInput true
                             }
                             steps{
-                                script{
-                                    macAppleBundle()
-                                }
+                                macAppleBundle()
                             }
                             post{
                                 success{
