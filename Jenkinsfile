@@ -684,7 +684,16 @@ def get_props(){
         }
     }
 }
-
+def hasSonarCreds(credentialsId){
+    try{
+        withCredentials([string(credentialsId: credentialsId, variable: 'dddd')]) {
+            echo 'Found credentials for sonarqube'
+        }
+    } catch(e){
+        return false
+    }
+    return true
+}
 props = get_props()
 pipeline {
     agent none
@@ -902,14 +911,7 @@ pipeline {
                                 allOf{
                                     equals expected: true, actual: params.USE_SONARQUBE
                                     expression{
-                                        try{
-                                            withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'dddd')]) {
-                                                echo 'Found credentials for sonarqube'
-                                            }
-                                        } catch(e){
-                                            return false
-                                        }
-                                        return true
+                                        return hasSonarCreds(params.SONARCLOUD_TOKEN)
                                     }
                                 }
                             }
@@ -1037,9 +1039,6 @@ pipeline {
                             agent{
                                 label 'mac && python3 && x86_64'
                             }
-                            options {
-                                retry(count: 2)
-                            }
                             when{
                                 allOf{
                                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
@@ -1048,7 +1047,9 @@ pipeline {
                                 beforeInput true
                             }
                             steps{
-                                macAppleBundle()
+                                script{
+                                    macAppleBundle()
+                                }
                             }
                             post{
                                 success{
@@ -1071,9 +1072,6 @@ pipeline {
                             agent{
                                 label 'mac && python3 && arm64'
                             }
-                            options {
-                                retry(count: 2)
-                            }
                             when{
                                 allOf{
                                     equals expected: true, actual: params.PACKAGE_MAC_OS_STANDALONE_DMG
@@ -1082,7 +1080,9 @@ pipeline {
                                 beforeInput true
                             }
                             steps{
-                                macAppleBundle()
+                                script{
+                                    macAppleBundle()
+                                }
                             }
                             post{
                                 success{
@@ -1110,28 +1110,6 @@ pipeline {
                                 beforeInput true
                             }
                             stages{
-                                stage('Building Python Vendored Wheels'){
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/windows/tox/Dockerfile'
-                                            label 'windows && docker && x86'
-                                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
-                                          }
-                                    }
-                                    steps{
-                                        withEnv(['PY_PYTHON=3.11']) {
-                                            bat(
-                                                label: 'Getting dependencies to vendor',
-                                                script: '''
-                                                    py -m pip install pip --upgrade
-                                                    py -m pip install wheel
-                                                    py -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i %PIP_EXTRA_INDEX_URL%
-                                                '''
-                                            )
-                                        }
-                                        stash includes: 'deps/*.whl', name: 'VENDORED_WHEELS_FOR_CHOCOLATEY'
-                                    }
-                                }
                                 stage('Package for Chocolatey'){
                                     agent {
                                         dockerfile {
@@ -1143,10 +1121,10 @@ pipeline {
                                     steps{
                                         checkout scm
                                         unstash 'PYTHON_PACKAGES'
-                                        unstash 'VENDORED_WHEELS_FOR_CHOCOLATEY'
                                         script {
                                             findFiles(glob: 'dist/*.whl').each{
                                                 unstash 'SPEEDWAGON_DOC_PDF'
+                                                powershell(script: 'New-Item -Name "deps" -ItemType "directory"')
                                                 powershell(
                                                     label: 'Creating new Chocolatey package',
                                                     script: """ci/jenkins/scripts/make_chocolatey.ps1 `
