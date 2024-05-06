@@ -98,6 +98,8 @@ def install_chocolatey_package(args=[:]){
             powershell(
                 label: "Installing Chocolatey Package",
                 script: """\$ErrorActionPreference=\"Stop\"
+                            Remove-Item Env:\\PIP_EXTRA_INDEX_URL
+                            Remove-Item Env:\\PIP_INDEX_URL
                             try
                             {
                                \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"install ${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress\"
@@ -129,6 +131,8 @@ def reinstall_chocolatey_package(args=[:]){
             powershell(
                 label: "Installing Chocolatey Package",
                 script: """\$ErrorActionPreference=\"Stop\"
+                            Remove-Item Env:\\PIP_EXTRA_INDEX_URL
+                            Remove-Item Env:\\PIP_INDEX_URL
                             try
                             {
                                \$process = start-process -NoNewWindow -PassThru -Wait -FilePath C:\\ProgramData\\chocolatey\\bin\\choco.exe -ArgumentList \"install ${packageName} -y -dv  --version=${version} -s \'${source}\' --no-progress --force\"

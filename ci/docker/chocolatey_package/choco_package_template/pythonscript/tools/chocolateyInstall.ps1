@@ -24,8 +24,14 @@ If(test-path -PathType container $venvDir){
 Write-Host "Creating Python virtualenv at $venvDir"
 & "C:\Windows\py.exe" -3.11 -m venv $venvDir --upgrade-deps
 
-Write-Host "Installing Speedwagon"
+If(test-path -PathType container $dependenciesLocation){
 & "$venvDir\Scripts\python.exe" -m pip install --no-deps --no-cache-dir --find-link $dependenciesLocation $requirementSpecifier -r $requirements
+Write-Host "Installing Speedwagon. Vendored dependencies are located in $dependenciesLocation."
+} Else {
+Write-Host "Installing Speedwagon"
+& "$venvDir\Scripts\python.exe" -m pip install --no-deps --no-cache-dir $requirementSpecifier -r $requirements
+
+}
 
 $files = get-childitem $installDir -include *.exe -recurse
 foreach ($file in $files) {
