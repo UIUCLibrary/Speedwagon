@@ -2,7 +2,7 @@
 
 import abc
 import os
-from typing import Dict, Any
+from typing import Dict, Any, TypeVar, Generic, List, Callable, Tuple
 
 
 class AbsOptionValidator(abc.ABC):
@@ -88,3 +88,54 @@ class OptionValidator(OptionValidatorFactory):
     def get(self, key: str) -> AbsOptionValidator:
         """Get option validator."""
         return self.create(key)
+
+
+_T = TypeVar("_T")
+
+
+class Validator(Generic[_T]):
+    """Generic validator."""
+
+    def __init__(self) -> None:
+        """Create a new validation object."""
+        self.validation_checks: List[
+            Callable[[_T], Tuple[bool, List[str]]]
+        ] = []
+
+    def check(self, candidate: _T) -> Tuple[bool, List[str]]:
+        """Check candidate against the validation checks.
+
+        Args:
+            candidate: object being validated
+
+        Returns:
+            tuple containing object's validation & list of findings discovered
+
+        """
+        all_findings: List[str] = []
+        is_valid = True
+        for check in self.validation_checks:
+            valid, findings = check(candidate)
+            if not valid:
+                is_valid = False
+                all_findings += findings
+
+        return is_valid, all_findings
+
+    def add_checks(
+        self,
+        *check: Callable[[_T], Tuple[bool, List[str]]]
+    ) -> None:
+        """Add check to list of validations.
+
+        Args:
+            *check: callbacks that return 2 length Tuple.
+                Index 0 is True if check produced is valid & False if not
+                Index 1 contains findings in the form of a list of strings.
+
+        """
+        self.validation_checks += check
+
+    def reset(self) -> None:
+        """Remove any existing checks from the validation."""
+        self.validation_checks.clear()

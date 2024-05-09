@@ -415,13 +415,6 @@ class TestStartQtThreaded:
         )
         assert serialization_strategy.load.called is False
 
-    def test_load_workflows_no_window(self, starter, monkeypatch):
-        load_custom_tabs = Mock()
-        starter.windows = None
-        monkeypatch.setattr(starter, "load_custom_tabs", load_custom_tabs)
-        starter.load_workflows()
-        assert load_custom_tabs.called is False
-
     def test_save_log_opens_dialog(self, qtbot, monkeypatch, starter):
         from PySide6 import QtWidgets
         getSaveFileName = Mock(
@@ -589,36 +582,13 @@ class TestStartQtThreaded:
             'get_tabs_file',
             lambda *_: 'dummy.yml'
         )
-        starter.run()
-        assert main_window3.show.called is True
-
-    def test_load_custom_tabs(self, qtbot, monkeypatch, starter):
-        tabs_file = "somefile.yml"
-
-        loaded_workflows = Mock()
-
         monkeypatch.setattr(
             os.path,
             "getsize",
             Mock(return_value=10)
         )
-
-        monkeypatch.setattr(
-            speedwagon.startup,
-            "get_custom_tabs",
-            Mock(return_value=[
-                ("dummy", {})
-            ])
-        )
-        main_window = Mock()
-
-        starter.load_custom_tabs(
-            main_window=main_window,
-            tabs_file=tabs_file,
-            loaded_workflows=loaded_workflows
-        )
-
-        main_window.add_tab.assert_called_with("dummy", ANY)
+        starter.run()
+        assert main_window3.show.called is True
 
     def test_load_help_no_package_info(
             self,
@@ -659,6 +629,11 @@ class TestStartQtThreaded:
             speedwagon.config.StandardConfigFileLocator,
             'get_tabs_file',
             lambda *_: 'dummy.yml'
+        )
+        monkeypatch.setattr(
+            os.path,
+            "getsize",
+            Mock(return_value=10)
         )
         starter.run()
 
@@ -706,6 +681,11 @@ class TestStartQtThreaded:
             speedwagon.config.StandardConfigFileLocator,
             'get_tabs_file',
             lambda *_: 'dummy.yml'
+        )
+        monkeypatch.setattr(
+            os.path,
+            "getsize",
+            Mock(return_value=10)
         )
         starter.run()
         open_new = Mock()
@@ -803,10 +783,10 @@ class TestStartQtThreaded:
         )
 
         starter.submit_job(
+            main_app,
             job_manager,
             workflow_name,
             options,
-            main_app,
         )
         assert gui_startup.report_exception_dialog.called is True
 
@@ -842,6 +822,7 @@ class TestStartQtThreaded:
         )
 
         starter.submit_job(
+            None,
             job_manager,
             workflow_name,
             options
@@ -880,19 +861,6 @@ class TestStartQtThreaded:
         }
         assert actual == expected
 
-    def test_load_all_workflows_tab(self, qtbot):
-        start = gui_startup.StartQtThreaded(Mock())
-        main_window = Mock('MainWindow3', add_tab=Mock())
-        loaded_workflows = {}
-        start.load_all_workflows_tab(main_window, loaded_workflows)
-
-        # Flushing because qt quits before the logging qt signals are
-        # propagated to the log widget. This should be fixed but for now,
-        # it's managed here in the tests
-        for handler in start.logger.handlers:
-            handler.flush()
-
-        main_window.add_tab.assert_called_with("All", {})
     def test_ensure_settings_files(self, qtbot, monkeypatch):
         start = gui_startup.StartQtThreaded(Mock())
         monkeypatch.setattr(
@@ -1278,3 +1246,22 @@ def test_get_help_url_malformed_data(monkeypatch):
     with pytest.raises(ValueError) as error:
         gui_startup.get_help_url()
     assert "malformed" in str(error)
+
+
+class TestMainWindowBuilder:
+    def test_generate_windows_defaults(self, qtbot):
+        builder = gui_startup.MainWindowBuilder()
+        window = builder.build(speedwagon.frontend.qtwidgets.gui.MainWindow3())
+        assert isinstance(window, QtWidgets.QMainWindow)
+
+    def test_assign_trigger(self, qtbot):
+        builder = gui_startup.MainWindowBuilder()
+        call_something = Mock()
+        builder.assign_trigger(
+            signal=lambda w: w.export_job_config,
+            payload=lambda *args, **kwargs: call_something(*args, **kwargs)
+        )
+        window = builder.build(speedwagon.frontend.qtwidgets.gui.MainWindow3())
+        qtbot.addWidget(window)
+        window.export_job_config.emit("", {}, window)
+        call_something.assert_called_with(window, "", {}, window)
