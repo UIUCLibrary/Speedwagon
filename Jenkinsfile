@@ -72,8 +72,8 @@ def deployStandalone(glob, url) {
         findFiles(glob: glob).each{
             try{
                 def put_response = httpRequest authentication: NEXUS_CREDS, httpMode: 'PUT', uploadFile: it.path, url: "${url}/${it.name}", wrapAsMultipart: false
-            } catch(Exception e){
                 echo "http request response: ${put_response.content}"
+            } catch(Exception e){
                 throw e;
             }
         }
@@ -159,8 +159,8 @@ def runTox(){
                             envNamePrefix: 'Tox Linux',
                             label: 'linux && docker && x86',
                             dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                            dockerRunArgs: '-v pipcache_speedwagon:/.cache/pip',
+                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_EXTRA_INDEX_URL --build-arg UV_CACHE_DIR=/.cache/uv',
+                            dockerRunArgs: '-v pipcache_speedwagon:/.cache/pip -v uvcache_speedwagon:/.cache/uv',
                             retry: 2
                         )
                 },
@@ -169,8 +169,9 @@ def runTox(){
                             envNamePrefix: 'Tox Windows',
                             label: 'windows && docker && x86',
                             dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
-                            dockerRunArgs: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip',
+                            dockerArgs:  '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg UV_EXTRA_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv'
+,
+                            dockerRunArgs: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip -v uvcache_speedwagon:c:/users/containeradministrator/appdata/local/uv',
                             retry: 2
                      )
                 },
@@ -353,7 +354,8 @@ def testPythonPackages(){
                             dockerfile: [
                                 label: 'windows && docker && x86',
                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                additionalBuildArgs:  '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg UV_EXTRA_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv',
+                                args: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip -v uvcache_speedwagon:c:/users/containeradministrator/appdata/local/uv'
                             ]
                         ],
                         retries: 3,
@@ -387,7 +389,8 @@ def testPythonPackages(){
                             dockerfile: [
                                 label: 'windows && docker && x86',
                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                additionalBuildArgs:  '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg UV_EXTRA_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv',
+                                args: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip -v uvcache_speedwagon:c:/users/containeradministrator/appdata/local/uv'
                             ]
                         ],
                         retries: 3,
@@ -454,8 +457,8 @@ def testPythonPackages(){
                             dockerfile: [
                                 label: "linux && docker && ${processorArchitecture}",
                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                args: '-v pipcache_speedwagon:/.cache/pip'
+                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_EXTRA_INDEX_URL --build-arg UV_CACHE_DIR=/.cache/uv',
+                                args: '-v pipcache_speedwagon:/.cache/pip -v uvcache_speedwagon:/.cache/uv'
                             ]
                         ],
                         retries: 3,
@@ -491,8 +494,8 @@ def testPythonPackages(){
                             dockerfile: [
                                 label: "linux && docker && ${processorArchitecture}",
                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                args: '-v pipcache_speedwagon:/.cache/pip'
+                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_EXTRA_INDEX_URL --build-arg UV_CACHE_DIR=/.cache/uv',
+                                args: '-v pipcache_speedwagon:/.cache/pip -v uvcache_speedwagon:/.cache/uv'
                             ]
                         ],
                         retries: 3,
@@ -549,9 +552,10 @@ def testPythonPackages(){
                             findFiles(glob: 'dist/*.whl').each{
                                 sh(label: 'Running Tox',
                                    script: """python${pythonVersion} -m venv venv
-                                   ./venv/bin/python -m pip install --upgrade pip
-                                   ./venv/bin/pip install -r requirements/requirements_tox.txt
-                                   ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}-PySide6"""
+                                   . ./venv/bin/activate
+                                   python -m pip install --upgrade pip uv
+                                   UV_INDEX_STRATEGY=unsafe-best-match uv pip install -r requirements/requirements_tox.txt tox-uv
+                                   UV_INDEX_STRATEGY=unsafe-best-match tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}-PySide6"""
                                 )
                             }
 
@@ -585,9 +589,10 @@ def testPythonPackages(){
                             findFiles(glob: 'dist/*.tar.gz').each{
                                 sh(label: 'Running Tox',
                                    script: """python${pythonVersion} -m venv venv
-                                   ./venv/bin/python -m pip install --upgrade pip
-                                   ./venv/bin/pip install -r requirements/requirements_tox.txt
-                                   ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}-PySide6"""
+                                              . ./venv/bin/activate
+                                              python -m pip install --upgrade pip uv
+                                              UV_INDEX_STRATEGY=unsafe-best-match uv pip install -r requirements/requirements_tox.txt tox-uv
+                                              UV_INDEX_STRATEGY=unsafe-best-match tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}-PySide6"""
                                 )
                             }
 
@@ -1359,7 +1364,7 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg UV_EXTRA_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv',
                                                     label: 'windows && docker && x86 && devpi-access'
                                                 ]
                                             ],
@@ -1384,7 +1389,7 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg UV_EXTRA_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv',
                                                     label: 'windows && docker && x86 && devpi-access'
                                                 ]
                                             ],
@@ -1414,9 +1419,9 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_EXTRA_INDEX_URL --build-arg UV_CACHE_DIR=/.cache/uv',
                                                     label: 'linux && docker && x86 && devpi-access',
-                                                    args: '-v pipcache_speedwagon:/.cache/pip'
+                                                    args: '-v pipcache_speedwagon:/.cache/pip -v uvcache_speedwagon:/.cache/uv'
                                                 ]
                                             ],
                                             devpi: [
@@ -1440,9 +1445,9 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_EXTRA_INDEX_URL --build-arg UV_CACHE_DIR=/.cache/uv',
                                                     label: 'linux && docker && x86 && devpi-access',
-                                                    args: '-v pipcache_speedwagon:/.cache/pip'
+                                                    args: '-v pipcache_speedwagon:/.cache/pip -v uvcache_speedwagon:/.cache/uv'
                                                 ]
                                             ],
                                             devpi: [
