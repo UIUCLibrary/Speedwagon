@@ -68,7 +68,7 @@ class MainWindow3UI(QtWidgets.QMainWindow):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         with as_file(
-            resources.files(ui).joinpath("main_window3.ui")
+            resources.files(ui).joinpath("main_window.ui")
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
 
