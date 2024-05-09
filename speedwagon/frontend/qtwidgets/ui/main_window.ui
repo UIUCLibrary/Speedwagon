@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>631</width>
-    <height>739</height>
+    <width>546</width>
+    <height>607</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -17,551 +17,143 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Speedwagon</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3">
-    <property name="leftMargin">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>0</number>
-    </property>
-    <property name="bottomMargin">
-     <number>0</number>
-    </property>
+   <layout class="QVBoxLayout" name="main_layout">
     <item>
-     <widget class="QWidget" name="widget" native="true">
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item>
-        <widget class="QFrame" name="frame">
-         <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout">
-          <item>
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Logo</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>logo text</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTabWidget" name="tabWidget">
-         <property name="currentIndex">
-          <number>0</number>
-         </property>
-         <widget class="QWidget" name="tab_tools">
-          <attribute name="title">
-           <string>Tools</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_6">
-           <item>
-            <widget class="QGroupBox" name="groupBox_2">
-             <property name="title">
-              <string/>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_8">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <property name="leftMargin">
-               <number>0</number>
-              </property>
-              <property name="topMargin">
-               <number>0</number>
-              </property>
-              <property name="rightMargin">
-               <number>0</number>
-              </property>
-              <property name="bottomMargin">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QScrollArea" name="scrollArea">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                  <horstretch>0</horstretch>
-                  <verstretch>1</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>75</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>100</height>
-                 </size>
-                </property>
-                <property name="horizontalScrollBarPolicy">
-                 <enum>Qt::ScrollBarAlwaysOff</enum>
-                </property>
-                <property name="widgetResizable">
-                 <bool>false</bool>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                </property>
-                <widget class="QWidget" name="scrollAreaWidgetContents">
-                 <property name="geometry">
-                  <rect>
-                   <x>0</x>
-                   <y>0</y>
-                   <width>620</width>
-                   <height>98</height>
-                  </rect>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_4">
-                  <property name="spacing">
-                   <number>0</number>
-                  </property>
-                  <property name="topMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="bottomMargin">
-                   <number>0</number>
-                  </property>
-                  <item>
-                   <widget class="QRadioButton" name="radioButton">
-                    <property name="text">
-                     <string>Verify checksum batch</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="radioButton_3">
-                    <property name="text">
-                     <string>Make Checksum Batch</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="radioButton_4">
-                    <property name="text">
-                     <string>Convert CaptureOne Tiff Batch to HathiTiff packages</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="radioButton_2">
-                    <property name="text">
-                     <string>Convert tiif to Hathi jp2</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </widget>
-              </item>
-              <item>
-               <widget class="QGroupBox" name="groupBox">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="title">
-                 <string/>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_5">
-                 <property name="leftMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>0</number>
-                 </property>
-                 <item>
-                  <widget class="QSplitter" name="splitter">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="childrenCollapsible">
-                    <bool>false</bool>
-                   </property>
-                   <widget class="QFrame" name="frame_script_setup">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                      <horstretch>0</horstretch>
-                      <verstretch>1</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>200</height>
-                     </size>
-                    </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
-                    </property>
-                    <property name="frameShape">
-                     <enum>QFrame::StyledPanel</enum>
-                    </property>
-                    <property name="frameShadow">
-                     <enum>QFrame::Raised</enum>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_7">
-                     <property name="leftMargin">
-                      <number>9</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QFrame" name="frame_tool_options">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                         <horstretch>0</horstretch>
-                         <verstretch>2</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="frameShape">
-                        <enum>QFrame::StyledPanel</enum>
-                       </property>
-                       <property name="frameShadow">
-                        <enum>QFrame::Raised</enum>
-                       </property>
-                       <layout class="QFormLayout" name="formLayout">
-                        <property name="labelAlignment">
-                         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-                        </property>
-                        <property name="formAlignment">
-                         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                        </property>
-                        <property name="horizontalSpacing">
-                         <number>6</number>
-                        </property>
-                        <property name="leftMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="topMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="rightMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="bottomMargin">
-                         <number>0</number>
-                        </property>
-                        <item row="2" column="0">
-                         <widget class="QLabel" name="label_3">
-                          <property name="text">
-                           <string>Tool Selected</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="2" column="1">
-                         <widget class="QLineEdit" name="lineEdit">
-                          <property name="text">
-                           <string>Verify Checksum Batch</string>
-                          </property>
-                          <property name="readOnly">
-                           <bool>true</bool>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="3" column="0">
-                         <widget class="QLabel" name="label_4">
-                          <property name="text">
-                           <string>Usage Notes:</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="3" column="1">
-                         <widget class="QTextEdit" name="textEdit">
-                          <property name="sizePolicy">
-                           <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-                            <horstretch>0</horstretch>
-                            <verstretch>1</verstretch>
-                           </sizepolicy>
-                          </property>
-                          <property name="maximumSize">
-                           <size>
-                            <width>16777215</width>
-                            <height>16777215</height>
-                           </size>
-                          </property>
-                          <property name="readOnly">
-                           <bool>true</bool>
-                          </property>
-                          <property name="html">
-                           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:15px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; background-color:#ffffff;&quot;&gt;&lt;a name=&quot;lipsum&quot;&gt;&lt;/a&gt;&lt;span style=&quot; font-family:'Open Sans,Arial,sans-serif'; font-size:8pt; color:#000000;&quot;&gt;L&lt;/span&gt;&lt;span style=&quot; font-family:'Open Sans,Arial,sans-serif'; font-size:8pt; color:#000000;&quot;&gt;orem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur enim risus, sodales at velit non, vulputate ultrices nibh. Vestibulum nisl neque, porta id magna sed, venenatis eleifend velit. Etiam accumsan felis faucibus lorem gravida, et convallis lorem finibus. Nunc a quam vulputate, cursus enim ac, vulputate metus. Duis nisi tellus, ultrices vitae tincidunt at, interdum vitae urna. Aliquam lobortis consequat dignissim. Integer lobortis dolor facilisis mi viverra luctus. Sed sollicitudin molestie ultricies&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                          </property>
-                          <property name="placeholderText">
-                           <string/>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="4" column="0">
-                         <widget class="QLabel" name="label_5">
-                          <property name="text">
-                           <string>Input:</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="4" column="1">
-                         <widget class="QFrame" name="frame_2">
-                          <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
-                          </property>
-                          <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
-                          </property>
-                          <layout class="QHBoxLayout" name="horizontalLayout">
-                           <property name="leftMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="topMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="rightMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="bottomMargin">
-                            <number>0</number>
-                           </property>
-                           <item>
-                            <widget class="QLineEdit" name="lineEdit_2"/>
-                           </item>
-                           <item>
-                            <widget class="QPushButton" name="pushButton">
-                             <property name="text">
-                              <string>Browse</string>
-                             </property>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                        <item row="5" column="0">
-                         <widget class="QLabel" name="label_6">
-                          <property name="text">
-                           <string>Output:</string>
-                          </property>
-                         </widget>
-                        </item>
-                        <item row="5" column="1">
-                         <widget class="QFrame" name="frame_3">
-                          <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
-                          </property>
-                          <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
-                          </property>
-                          <layout class="QHBoxLayout" name="horizontalLayout_3">
-                           <property name="leftMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="topMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="rightMargin">
-                            <number>0</number>
-                           </property>
-                           <property name="bottomMargin">
-                            <number>0</number>
-                           </property>
-                           <item>
-                            <widget class="QLineEdit" name="lineEdit_4"/>
-                           </item>
-                           <item>
-                            <widget class="QPushButton" name="pushButton_3">
-                             <property name="text">
-                              <string>Browse</string>
-                             </property>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                       </layout>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QFrame" name="frame_5">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="frameShape">
-                        <enum>QFrame::StyledPanel</enum>
-                       </property>
-                       <property name="frameShadow">
-                        <enum>QFrame::Raised</enum>
-                       </property>
-                       <layout class="QHBoxLayout" name="horizontalLayout_2">
-                        <property name="leftMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="topMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="rightMargin">
-                         <number>0</number>
-                        </property>
-                        <property name="bottomMargin">
-                         <number>0</number>
-                        </property>
-                        <item>
-                         <spacer name="horizontalSpacer">
-                          <property name="orientation">
-                           <enum>Qt::Horizontal</enum>
-                          </property>
-                          <property name="sizeHint" stdset="0">
-                           <size>
-                            <width>506</width>
-                            <height>20</height>
-                           </size>
-                          </property>
-                         </spacer>
-                        </item>
-                        <item>
-                         <widget class="QPushButton" name="pushButton_2">
-                          <property name="text">
-                           <string>Start</string>
-                          </property>
-                         </widget>
-                        </item>
-                       </layout>
-                      </widget>
-                     </item>
-                    </layout>
-                   </widget>
-                   <widget class="QTextBrowser" name="textBrowser_consolue">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-                      <horstretch>0</horstretch>
-                      <verstretch>1</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>50</height>
-                     </size>
-                    </property>
-                    <property name="font">
-                     <font>
-                      <family>Consolas</family>
-                     </font>
-                    </property>
-                    <property name="autoFormatting">
-                     <set>QTextEdit::AutoNone</set>
-                    </property>
-                    <property name="lineWrapMode">
-                     <enum>QTextEdit::NoWrap</enum>
-                    </property>
-                    <property name="html">
-                     <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Consolas'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; font-family:'Open Sans,Arial,sans-serif'; font-size:8pt; color:#000000;&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14px;&quot;&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit.&lt;/span&gt;&lt;/li&gt;
-&lt;li style=&quot; font-family:'Open Sans,Arial,sans-serif'; font-size:8pt; color:#000000;&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14px;&quot;&gt;Donec non metus sed elit tempor vestibulum.&lt;/span&gt;&lt;/li&gt;
-&lt;li style=&quot; font-family:'Open Sans,Arial,sans-serif'; font-size:8pt; color:#000000;&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14px;&quot;&gt;Nam varius orci vitae nibh placerat, luctus consequat justo lobortis.&lt;/span&gt;&lt;/li&gt;
-&lt;li style=&quot; font-family:'Open Sans,Arial,sans-serif'; font-size:8pt; color:#000000;&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14px;&quot;&gt;Suspendisse id massa varius, pulvinar mi et, volutpat arcu.&lt;/span&gt;&lt;/li&gt;
-&lt;li style=&quot; font-family:'Open Sans,Arial,sans-serif'; font-size:8pt; color:#000000;&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14px;&quot;&gt;Ut a mi ut urna aliquam luctus eu ut sem.&lt;/span&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                    </property>
-                    <property name="acceptRichText">
-                     <bool>false</bool>
-                    </property>
-                    <property name="placeholderText">
-                     <string notr="true"/>
-                    </property>
-                   </widget>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-         <widget class="QWidget" name="tab_workflow">
-          <attribute name="title">
-           <string>Workflows</string>
-          </attribute>
-         </widget>
-        </widget>
-       </item>
-      </layout>
+     <widget class="QSplitter" name="main_splitter">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
+      <widget class="ItemTabsWidget" name="tab_widget">
+      </widget>
+      <widget class="ToolConsole" name="console">
+      </widget>
      </widget>
     </item>
    </layout>
   </widget>
+  <widget class="QMenuBar" name="menu_bar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>546</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="action_export_logs"/>
+    <addaction name="separator"/>
+    <addaction name="action_exit"/>
+   </widget>
+   <widget class="QMenu" name="menuJob">
+    <property name="title">
+     <string>Job</string>
+    </property>
+    <addaction name="action_export_job"/>
+    <addaction name="action_import_job"/>
+   </widget>
+   <widget class="QMenu" name="menuSystem">
+    <property name="title">
+     <string>System</string>
+    </property>
+    <addaction name="action_system_info_requested"/>
+    <addaction name="action_open_application_preferences"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="action_help_requested"/>
+    <addaction name="action_about"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuJob"/>
+   <addaction name="menuSystem"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <action name="action_export_logs">
+   <property name="icon">
+    <iconset>
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string> &amp;Export Log</string>
+   </property>
+  </action>
+  <action name="action_exit">
+   <property name="text">
+    <string> &amp;Exit</string>
+   </property>
+  </action>
+  <action name="action_export_job">
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
+  <action name="action_import_job">
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="action_system_info_requested">
+   <property name="text">
+    <string>System Info</string>
+   </property>
+  </action>
+  <action name="action_help_requested">
+   <property name="text">
+    <string> &amp;Help</string>
+   </property>
+  </action>
+  <action name="action_about">
+   <property name="text">
+    <string> &amp;About</string>
+   </property>
+  </action>
+  <action name="action_open_application_preferences">
+   <property name="text">
+    <string>Settings</string>
+   </property>
+  </action>
  </widget>
- <tabstops>
-  <tabstop>tabWidget</tabstop>
-  <tabstop>scrollArea</tabstop>
-  <tabstop>radioButton</tabstop>
-  <tabstop>radioButton_3</tabstop>
-  <tabstop>radioButton_4</tabstop>
-  <tabstop>radioButton_2</tabstop>
-  <tabstop>lineEdit</tabstop>
-  <tabstop>textEdit</tabstop>
-  <tabstop>lineEdit_2</tabstop>
-  <tabstop>pushButton</tabstop>
-  <tabstop>lineEdit_4</tabstop>
-  <tabstop>pushButton_3</tabstop>
-  <tabstop>pushButton_2</tabstop>
-  <tabstop>textBrowser_consolue</tabstop>
- </tabstops>
+ <customwidgets>
+  <customwidget>
+   <class>ToolConsole</class>
+   <extends>QWidget</extends>
+   <header>speedwagon.frontend.qtwidgets.gui</header>
+  </customwidget>
+  <customwidget>
+   <class>ItemTabsWidget</class>
+   <extends>QWidget</extends>
+   <header>speedwagon.frontend.qtwidgets.gui</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>action_exit</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>272</x>
+     <y>303</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
