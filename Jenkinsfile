@@ -1120,7 +1120,8 @@ pipeline {
                                         dockerfile {
                                             filename 'ci/docker/python/windows/tox/Dockerfile'
                                             label 'windows && docker && x86'
-                                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg UV_EXTRA_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv'
+                                            args '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip -v uvcache_speedwagon:c:/users/containeradministrator/appdata/local/uv'
                                           }
                                     }
                                     steps{
