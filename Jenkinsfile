@@ -689,7 +689,16 @@ def get_props(){
         }
     }
 }
-
+def hasSonarCreds(credentialsId){
+    try{
+        withCredentials([string(credentialsId: credentialsId, variable: 'dddd')]) {
+            echo 'Found credentials for sonarqube'
+        }
+    } catch(e){
+        return false
+    }
+    return true
+}
 props = get_props()
 pipeline {
     agent none
@@ -907,14 +916,7 @@ pipeline {
                                 allOf{
                                     equals expected: true, actual: params.USE_SONARQUBE
                                     expression{
-                                        try{
-                                            withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'dddd')]) {
-                                                echo 'Found credentials for sonarqube'
-                                            }
-                                        } catch(e){
-                                            return false
-                                        }
-                                        return true
+                                        return hasSonarCreds(params.SONARCLOUD_TOKEN)
                                     }
                                 }
                             }
