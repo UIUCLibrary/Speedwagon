@@ -1,18 +1,41 @@
 """Toolkit for generating new workflows."""
 from __future__ import annotations
 import abc
+import dataclasses
 import json
 import os
-from typing import Any, Dict, List, Optional, Union
+import typing
+from typing import (
+    Any, Dict, List, Optional, Union, TYPE_CHECKING, Callable, TypeVar
+)
 
 import speedwagon.config
 import speedwagon.job
+if TYPE_CHECKING:
+    from speedwagon.validators import AbsOutputValidation
 
 UserDataType = Union[str, bool, int, None]
 UserData = Dict[str, UserDataType]
 
+_T = TypeVar('_T')
 
-class AbsOutputOptionDataType(abc.ABC):
+__all__ = [
+    'AbsOutputOptionDataType',
+    "ChoiceSelection",
+    "FileSelectData",
+    "TextLineEditData",
+    "DirectorySelect",
+    "BooleanSelect"
+]
+
+
+@dataclasses.dataclass
+class ValidationRequirement(typing.Generic[_T]):
+    validation: AbsOutputValidation[_T, str]
+    condition: Callable[[Optional[_T], UserData], bool]
+
+
+class AbsOutputOptionDataType(abc.ABC, typing.Generic[_T]):
     """Base case for generating user option types."""
 
     label: str
@@ -33,11 +56,12 @@ class AbsOutputOptionDataType(abc.ABC):
         """Create a new output time with a given label."""
         super().__init__()
         self.label = label
-        self.value: Optional[Union[str, int, bool]] = None
+        self.value: Optional[_T] = None
         self.placeholder_text: Optional[str] = None
         self.required = required
         self.setting_name: Optional[str] = None
-        self.default_value: Optional[Union[str, int, bool]] = None
+        self.default_value: Optional[_T] = None
+        self._validators: List[ValidationRequirement[_T]] = []
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the data."""
@@ -57,6 +81,38 @@ class AbsOutputOptionDataType(abc.ABC):
     def build_json_data(self) -> str:
         """Serialize to a JSON string."""
         return json.dumps(self.serialize())
+
+    def add_validation(
+        self,
+        validator: AbsOutputValidation[_T, str],
+        condition: Optional[Callable[[Optional[_T], UserData], bool]] = None
+    ) -> None:
+        """Include a validation for the value of this object."""
+        def default_condition(_: Optional[_T], __: UserData) -> bool:
+            return True
+
+        self._validators.append(
+            ValidationRequirement(validator, condition or default_condition)
+        )
+
+    def get_findings(self, job_args: Optional[UserData] = None) -> List[str]:
+        """Get findings from the data using the assigned validators.
+
+        Args:
+            job_args: All job argument values.
+
+        Returns: Returns a list of findings discovered by the validator.
+
+        """
+        findings: List[str] = []
+        for validator in self._validators:
+            if not validator.condition(self.value, (job_args or {})):
+                continue
+            validator.validation.candidate = self.value
+            validator.validation.validate(job_args)
+            findings += validator.validation.findings
+            validator.validation.reset()
+        return findings
 
 
 class ChoiceSelection(AbsOutputOptionDataType):

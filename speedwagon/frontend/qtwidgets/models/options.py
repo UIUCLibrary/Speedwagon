@@ -4,7 +4,17 @@ from __future__ import annotations
 
 import typing
 from collections import namedtuple
-from typing import cast, Optional, List, Union, Any, Dict, TYPE_CHECKING
+from typing import (
+    cast,
+    Optional,
+    List,
+    Union,
+    Any,
+    Dict,
+    TYPE_CHECKING,
+    Callable,
+    TypeVar
+)
 
 from PySide6 import QtCore, QtGui
 from speedwagon.workflow import AbsOutputOptionDataType
@@ -15,6 +25,8 @@ if TYPE_CHECKING:
 __all__ = ["ToolOptionsModel4"]
 
 OptionPair = namedtuple("OptionPair", ("label", "data"))
+
+_T = TypeVar("_T")
 
 
 class ToolOptionsModel4(QtCore.QAbstractListModel):
@@ -123,6 +135,13 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
     def serialize(self) -> Dict[str, UserDataType]:
         """Serialize model data to a dictionary."""
         return {data.label: data.value for data in self._data}
+
+    def get_as(
+        self,
+        formating_function: Callable[[List[AbsOutputOptionDataType]], _T]
+    ) -> _T:
+        """Get formated data using a callable function."""
+        return formating_function(self._data)
 
     def get(self) -> Dict[str, UserDataType]:
         """Access the key value settings for all options."""

@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Optional
 from unittest.mock import Mock
 import sys
 
@@ -203,6 +203,18 @@ class TestToolOptionsModel4:
         model.setData(index, "spam")
         changed_value = model.data(index)
         assert starting_value is None and changed_value == "spam"
+
+    def test_serialize_as(self, data):
+        model = models.ToolOptionsModel4(data)
+
+        def standard_serialize_function(
+                model_data: Optional[List[workflow.AbsOutputOptionDataType]]
+        ) -> Dict[str, str]:
+            return (
+                    {d.label: d.value for d in model_data}
+                    if model_data is not None else {}
+            )
+        assert "Checksum File" in model.get_as(standard_serialize_function)
 
 
 def test_build_setting_model(tmpdir):
@@ -804,8 +816,6 @@ class TestWorkflowListProxyModel:
             proxy_model.remove_workflow(
                 TestWorkflowListProxyModel.DummyWorkflow
             )
-
-
 class TestTabProxyModel:
 
     class DummyWorkflow(speedwagon.Workflow):
