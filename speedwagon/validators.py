@@ -17,6 +17,7 @@ from typing import (
     Union,
     Callable, TYPE_CHECKING, Tuple
 )
+
 try:
     from typing import TypeAlias
 except ImportError:
@@ -31,6 +32,8 @@ __all__ = [
     'IsDirectory',
     "CustomValidation",
 ]
+
+NO_CANDIDATE_MESSAGE = "No candidate given to investigate"
 
 if sys.version_info >= (3, 9):
     FilePath: TypeAlias = Union[
@@ -248,7 +251,7 @@ class ExistsOnFileSystem(AbsOutputValidation[FilePath, str]):
         string explains that.
         """
         if candidate is None:
-            raise ValueError("No candidate given to investigate")
+            raise ValueError(NO_CANDIDATE_MESSAGE)
         if not self.path_exists(candidate):
             return [self.file_not_exist_message.format(candidate)]
         return []
@@ -279,7 +282,7 @@ class IsDirectory(AbsOutputValidation[FilePath, str]):
     ) -> List[str]:
         """Validate the candidate is a directory."""
         if candidate is None:
-            raise ValueError("No candidate given to investigate")
+            raise ValueError(NO_CANDIDATE_MESSAGE)
         if not self.is_dir(candidate):
             return [self.invalid_input_message_template.format(candidate)]
         return []
@@ -360,7 +363,7 @@ class IsFile(AbsOutputValidation[FilePath, str]):
         job_options: Dict[str, UserDataType]
     ) -> List[str]:
         if candidate is None:
-            raise ValueError("No candidate given to investigate")
+            raise ValueError(NO_CANDIDATE_MESSAGE)
         if not self.is_file(candidate):
             return [self.invalid_input_message_template.format(candidate)]
         return []
