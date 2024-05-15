@@ -13,7 +13,7 @@ from typing import (
     TypedDict,
     List,
     Iterable,
-    TYPE_CHECKING
+    TYPE_CHECKING,
 )
 
 
@@ -580,10 +580,19 @@ class DynamicForm(QtWidgets.QScrollArea):
         """Get the model used by the widget."""
         return self._background.model
 
-    def get_configuration(self) -> Dict[str, UserDataType]:
+    def get_configuration(self) -> Dict[str, AbsOutputOptionDataType]:
         """Get the configuration as a dictionary."""
         self.update_model()
-        return self._background.model.get()
+
+        def with_instance(
+                model_data: List[AbsOutputOptionDataType]
+        ) -> Dict[str, AbsOutputOptionDataType]:
+            return {
+                option.setting_name if option.setting_name else option.label:
+                    option
+                for option in model_data
+            }
+        return self._background.model.get_as(with_instance)
 
 
 class Workspace(QtWidgets.QWidget):
@@ -635,7 +644,7 @@ class Workspace(QtWidgets.QWidget):
         """Check if the workflow configured is valid."""
         return self.settings_form.is_valid()
 
-    def _get_configuration(self) -> Dict[str, UserDataType]:
+    def _get_configuration(self) -> Dict[str, AbsOutputOptionDataType]:
         return self.settings_form.get_configuration()
 
     @property

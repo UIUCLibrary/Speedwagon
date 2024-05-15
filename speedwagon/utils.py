@@ -1,11 +1,15 @@
 """General module for things that don't fit anywhere else."""
+from __future__ import annotations
+
 import os
 import pathlib
-from typing import Iterator, Callable
+from typing import Iterator, Callable, Dict, List, TYPE_CHECKING
 
 import logging
 from logging.handlers import BufferingHandler
 from contextlib import contextmanager
+if TYPE_CHECKING:
+    from speedwagon.workflow import AbsOutputOptionDataType, UserDataType
 
 
 @contextmanager
@@ -58,3 +62,35 @@ def get_desktop_path() -> str:
     if os.path.exists(desktop_path):
         return str(desktop_path)
     raise FileNotFoundError("No Desktop folder located")
+
+
+def validate_user_input(
+    options: Dict[str, AbsOutputOptionDataType]
+) -> Dict[str, List[str]]:
+    """Validate all user inputs and generate a dictionary of findings."""
+    all_findings = {}
+    for key, v in options.items():
+        findings = (
+            v.get_findings(
+                job_args={
+                    key: option.value
+                    for key, option in options.items()
+                }
+            )
+        )
+        if findings:
+            all_findings[key] = findings
+    return all_findings
+
+
+def assign_values_to_job_options(
+        job_params: List[AbsOutputOptionDataType],
+        **option_values: UserDataType
+) -> List[AbsOutputOptionDataType]:
+    """Assign values to a list of job args."""
+    for option in job_params:
+        if option.setting_name in option_values:
+            option.value = option_values[option.setting_name]
+        elif option.label in option_values:
+            option.value = option_values[option.label]
+    return job_params

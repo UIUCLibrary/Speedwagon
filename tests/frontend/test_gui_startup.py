@@ -24,7 +24,7 @@ from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, Tabs
 from speedwagon.frontend.qtwidgets.models import tabs as tab_models
 from speedwagon.config import StandardConfigFileLocator
 import speedwagon.workflows.builtin
-# from pytestqt.qt_compat import qt_api
+
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
 
@@ -893,6 +893,7 @@ class TestStartQtThreaded:
             handler.flush()
 
         main_window.add_tab.assert_called_with("All", {})
+
     def test_ensure_settings_files(self, qtbot, monkeypatch):
         start = gui_startup.StartQtThreaded(Mock())
         monkeypatch.setattr(
@@ -902,6 +903,8 @@ class TestStartQtThreaded:
         )
         start.ensure_settings_files()
         assert speedwagon.config.config.ensure_settings_files.called is True
+
+
 class TestWorkflowProgressCallbacks:
 
     @pytest.fixture()

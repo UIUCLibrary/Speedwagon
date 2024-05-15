@@ -11,6 +11,7 @@ API Reference
     speedwagon.runner_strategies
     speedwagon.startup
     speedwagon.tasks
+    speedwagon.validators
     speedwagon.worker
     speedwagon.workflows
 
@@ -23,4 +24,5 @@ API Reference
     speedwagon/speedwagon.reports
     speedwagon/speedwagon.startup
     speedwagon/speedwagon.tasks
+    speedwagon/speedwagon.validators
     speedwagon/speedwagon.workflows

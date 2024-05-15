@@ -31,7 +31,7 @@ from speedwagon.workflow import initialize_workflows
 from speedwagon.config import config
 from speedwagon.config import plugins as plugin_config
 from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
-from speedwagon.utils import get_desktop_path
+from speedwagon.utils import get_desktop_path, validate_user_input
 from speedwagon.tasks import system as system_tasks
 from speedwagon import plugins, info
 from . import user_interaction
@@ -45,6 +45,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.job import AbsWorkflow, AbsJobConfigSerializationStrategy
     from speedwagon.config import FullSettingsData
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
+    from speedwagon.workflow import AbsOutputOptionDataType
     import pluggy
 
 __all__ = [
@@ -642,17 +643,29 @@ class StartQtThreaded(AbsGuiStarter):
         self,
         job_manager: runner_strategies.BackgroundJobManager,
         workflow_name: str,
-        options: Dict[str, typing.Any],
+        options: Dict[str, AbsOutputOptionDataType],
         main_app: typing.Optional[gui.MainWindow3] = None,
     ) -> None:
         """Submit job."""
         workflow_class = speedwagon.job.available_workflows().get(
             workflow_name
         )
+
+        def serialize_options(options):
+            return {
+                option.setting_name if option.setting_name
+                else option.label: option.value
+                for option in options.values()
+            }
+
         try:
             if workflow_class is None:
                 raise ValueError(f"Unknown workflow: '{workflow_name}'")
-            workflow_class.validate_user_options(**options)
+
+            if findings := validate_user_input(options):
+                raise ValueError(generate_findings_report(findings))
+
+            workflow_class.validate_user_options(**serialize_options(options))
         except ValueError as user_option_error:
             report_exception_dialog(
                 exc=user_option_error,
@@ -688,7 +701,7 @@ class StartQtThreaded(AbsGuiStarter):
         job_manager.request_more_info = self.request_more_info
         job_manager.submit_job(
             workflow_name=workflow_name,
-            options=options,
+            options=serialize_options(options),
             app=self,
             liaison=speedwagon.runner_strategies.JobManagerLiaison(
                 callbacks=callbacks, events=threaded_events
@@ -997,3 +1010,11 @@ def export_logs_action(
             is True
         ):
             return log_file_name
+
+
+def generate_findings_report(findings: Dict[str, List[str]]) -> str:
+    error_lines = ["errors with the following options"]
+    error_lines += [
+        f"{key}: {', '.join(value)}" for key, value in findings.items()
+    ]
+    return "\n".join(error_lines)
