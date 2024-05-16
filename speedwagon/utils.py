@@ -1,4 +1,5 @@
 """General module for things that don't fit anywhere else."""
+
 from __future__ import annotations
 
 import os
@@ -8,6 +9,7 @@ from typing import Iterator, Callable, Dict, List, TYPE_CHECKING
 import logging
 from logging.handlers import BufferingHandler
 from contextlib import contextmanager
+
 if TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType, UserDataType
 
@@ -70,22 +72,26 @@ def validate_user_input(
     """Validate all user inputs and generate a dictionary of findings."""
     all_findings = {}
     for key, v in options.items():
-        findings = (
-            v.get_findings(
-                job_args={
-                    key: option.value
-                    for key, option in options.items()
-                }
+        findings = []
+        if v.required is True and any(
+            [
+                v.value is None,
+                (isinstance(v.value, str) and v.value.strip() == ""),
+            ]
+        ):
+            findings.append("Required value missing")
+        else:
+            findings += v.get_findings(
+                job_args={key: option.value for key, option in options.items()}
             )
-        )
+
         if findings:
             all_findings[key] = findings
     return all_findings
 
 
 def assign_values_to_job_options(
-        job_params: List[AbsOutputOptionDataType],
-        **option_values: UserDataType
+    job_params: List[AbsOutputOptionDataType], **option_values: UserDataType
 ) -> List[AbsOutputOptionDataType]:
     """Assign values to a list of job args."""
     for option in job_params:

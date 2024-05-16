@@ -32,7 +32,7 @@ __all__ = [
 @dataclasses.dataclass
 class ValidationRequirement(typing.Generic[_T]):
     validation: AbsOutputValidation[_T, str]
-    condition: Callable[[Optional[_T], UserData], bool]
+    condition: Callable[[_T, UserData], bool]
 
 
 class AbsOutputOptionDataType(abc.ABC, typing.Generic[_T]):
@@ -56,12 +56,22 @@ class AbsOutputOptionDataType(abc.ABC, typing.Generic[_T]):
         """Create a new output time with a given label."""
         super().__init__()
         self.label = label
-        self.value: Optional[_T] = None
+        self._value_has_been_set = False
+        self._value: Optional[_T] = None
         self.placeholder_text: Optional[str] = None
         self.required = required
         self.setting_name: Optional[str] = None
         self.default_value: Optional[_T] = None
         self._validators: List[ValidationRequirement[_T]] = []
+
+    @property
+    def value(self) -> Optional[_T]:  # noqa: D102
+        return self._value
+
+    @value.setter
+    def value(self, value: _T) -> None:
+        self._value = value
+        self._value_has_been_set = True
 
     def serialize(self) -> Dict[str, Any]:
         """Serialize the data."""
@@ -85,7 +95,7 @@ class AbsOutputOptionDataType(abc.ABC, typing.Generic[_T]):
     def add_validation(
         self,
         validator: AbsOutputValidation[_T, str],
-        condition: Optional[Callable[[Optional[_T], UserData], bool]] = None
+        condition: Optional[Callable[[_T, UserData], bool]] = None
     ) -> None:
         """Include a validation for the value of this object."""
         def default_condition(_: Optional[_T], __: UserData) -> bool:
@@ -106,9 +116,14 @@ class AbsOutputOptionDataType(abc.ABC, typing.Generic[_T]):
         """
         findings: List[str] = []
         for validator in self._validators:
-            if not validator.condition(self.value, (job_args or {})):
+            if (
+                    self._value_has_been_set and
+                    not validator.condition(
+                        typing.cast(_T, self._value), (job_args or {})
+                    )
+            ):
                 continue
-            validator.validation.candidate = self.value
+            validator.validation.candidate = self._value
             validator.validation.validate(job_args)
             findings += validator.validation.findings
             validator.validation.reset()

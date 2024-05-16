@@ -54,7 +54,10 @@ class AbsOptionValidator(abc.ABC):
     """Base class for option validators."""
 
     def __init__(self):
-        warnings.warn("Use AbsOutputValidation instead", stacklevel=1)
+        warnings.warn(
+            "Use AbsOutputValidation instead",
+            DeprecationWarning,
+            stacklevel=1)
         super().__init__()
 
     @abc.abstractmethod
