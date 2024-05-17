@@ -211,6 +211,8 @@ Build New Speedwagon Workflow
 
     .. code-block:: python
 
+    class DirectoryContentWorkflow(speedwagon.Workflow):
+            ...
             def job_options(self):
                 return [
                     speedwagon.workflow.DirectorySelect("input"),
@@ -223,7 +225,7 @@ Build New Speedwagon Workflow
 
     .. code-block:: python
 
-        class GetFileInformation(speedwagon.tasks.Subtask):
+    class DirectoryContentWorkflow(speedwagon.Workflow):
             ...
             def discover_task_metadata(self, initial_results, additional_data, **user_args)
                 my_input = user_args['input']
@@ -231,8 +233,7 @@ Build New Speedwagon Workflow
                     {
                         "path": file.path,
                         "name": file.name
-                    }
-                    for file in os.scandir(my_input)
+                    } for file in os.scandir(my_input)
                 ]
 
 6) Generate a SubTask
