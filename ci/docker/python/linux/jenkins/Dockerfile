@@ -39,7 +39,10 @@ RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
 #==============================================================================
 FROM base_image
 
-RUN apt-get update &&  \
+RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
+    --mount=target=/var/cache/apt,type=cache,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    apt-get update &&  \
     DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install --no-install-recommends tzdata && \
     apt-get install -y --no-install-recommends \
       libxkbcommon-x11-0 \
@@ -51,8 +54,8 @@ RUN apt-get update &&  \
       libegl-dev \
       libdbus-1-3 \
       texlive-formats-extra \
-      xvfb && \
-    rm -rf  /root/.cache
+      xvfb
+
 RUN mkdir -p /.cache/pip && \
     chmod -R 777 /.cache
 
