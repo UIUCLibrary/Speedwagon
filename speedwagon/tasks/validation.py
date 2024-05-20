@@ -32,7 +32,17 @@ def calculate_md5_hash(file_path: str) -> str:
     return hash_value
 
 
-class MakeChecksumTask(speedwagon.tasks.Subtask):
+MakeChecksumTaskResult = typing.TypedDict(
+    "MakeChecksumTaskResult",
+    {
+        "source_filename": str,
+        "checksum_hash": str,
+        "checksum_file": str
+    }
+)
+
+
+class MakeChecksumTask(speedwagon.tasks.Subtask[MakeChecksumTaskResult]):
     """Create a make checksum task."""
 
     name = "Create Checksum"
@@ -58,12 +68,10 @@ class MakeChecksumTask(speedwagon.tasks.Subtask):
         self.log(f"Calculated the checksum for {item_file_name}")
 
         file_to_calculate = os.path.join(item_path, item_file_name)
-        result = {
-            ResultsValues.SOURCE_FILE: item_file_name,
-            ResultsValues.SOURCE_HASH: calculate_md5_hash(
-                file_to_calculate
-            ),
-            ResultsValues.CHECKSUM_FILE: report_path_to_save_to,
+        result: MakeChecksumTaskResult = {
+            "source_filename": item_file_name,
+            "checksum_hash": calculate_md5_hash(file_to_calculate),
+            "checksum_file": report_path_to_save_to,
         }
         self.set_results(result)
 

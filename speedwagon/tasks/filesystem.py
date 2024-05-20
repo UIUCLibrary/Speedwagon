@@ -7,7 +7,7 @@ from typing import Optional
 import speedwagon
 
 
-class DeleteFileSystemItem(speedwagon.tasks.Subtask, abc.ABC):
+class DeleteFileSystemItem(speedwagon.tasks.Subtask[str]):
     """Base class for removing an item from a file system."""
 
     def __init__(self, path: str) -> None:

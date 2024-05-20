@@ -26,7 +26,7 @@ class TestMakeChecksumTask:
 
         assert \
             task.work() is True and \
-            task.results[validation.ResultsValues.SOURCE_HASH] == hash_value
+            task.results["checksum_hash"] == hash_value
 
 
 def test_create_checksum(tmpdir_factory):
