@@ -4,15 +4,12 @@ Welcome to Speedwagon's documentation!
 This documented is for version |version|.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Contents:
 
    overview
-   getting_started
-   use_cases
-   workflows
-   uiuc_workflows
-   advanced
+   user
+   development
 
 
 .. toctree::
@@ -22,7 +19,6 @@ This documented is for version |version|.
    glossary
    faq
    vendor_specs
-   development
    changelog
 
 

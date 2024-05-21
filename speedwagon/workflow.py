@@ -158,11 +158,22 @@ class ChoiceSelection(AbsOutputOptionDataType):
 
 
 class FileSelectData(AbsOutputOptionDataType):
-    """File selection."""
+    r"""File selection.
+
+    Attributes:
+        filter:
+            File selection type filter. This uses the same convention used
+            by Qt
+
+            See https://doc.qt.io/qt-6/qfiledialog.html for more info.
+
+            For example: "Checksum files (\*.md5)"
+    """
 
     widget_name: str = "FileSelect"
+    filter: Optional[str]
 
-    def __init__(self, label: str, required=True) -> None:
+    def __init__(self, label: str, required: bool = True) -> None:
         """Select a file."""
         super().__init__(label, required)
         self.filter: Optional[str] = None

@@ -13,6 +13,7 @@ API Reference
     speedwagon.tasks
     speedwagon.validators
     speedwagon.worker
+    speedwagon.workflow
     speedwagon.workflows
 
 
@@ -25,4 +26,5 @@ API Reference
     speedwagon/speedwagon.startup
     speedwagon/speedwagon.tasks
     speedwagon/speedwagon.validators
+    speedwagon/speedwagon.workflow
     speedwagon/speedwagon.workflows

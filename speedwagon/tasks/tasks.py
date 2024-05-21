@@ -91,7 +91,12 @@ class AbsSubtask(Generic[_T], metaclass=abc.ABCMeta):
 
 @dataclass
 class Result(Generic[_T]):
-    """Subtask result."""
+    """Subtask result.
+
+    Attributes:
+        source: Class Type used to provide the results
+        data: Payload of the result data.
+    """
 
     source: Type[AbsSubtask]
     data: _T

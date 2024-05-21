@@ -2,7 +2,7 @@ Developer’s Guide
 =================
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
    plugin_development/develop_plugins
    build_installer/build_installer
