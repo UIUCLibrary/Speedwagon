@@ -8,7 +8,8 @@ import sys
 import queue
 import pickle
 import typing
-from typing import Optional, Any, Deque, NamedTuple, Type, List
+from typing import Optional, Any, Deque, Type, List, Generic, TypeVar
+from dataclasses import dataclass
 
 __all__ = [
     "QueueAdapter",
@@ -32,7 +33,10 @@ class TaskStatus(enum.IntEnum):
     FAILED = 3
 
 
-class AbsSubtask(metaclass=abc.ABCMeta):
+_T = TypeVar("_T")
+
+
+class AbsSubtask(Generic[_T], metaclass=abc.ABCMeta):
     """Abstract subclass for subtasks."""
 
     name: Optional[str] = None
@@ -46,12 +50,12 @@ class AbsSubtask(metaclass=abc.ABCMeta):
         """Log a message to the console on the main window."""
 
     @property
-    def task_result(self) -> Optional[Result]:
+    def task_result(self) -> Optional[Result[_T]]:
         """Get the results of the subtask."""
         return None
 
     @property
-    def results(self) -> Optional[Any]:
+    def results(self) -> Optional[_T]:
         """Get the results of the subtask."""
         return None
 
@@ -76,7 +80,7 @@ class AbsSubtask(metaclass=abc.ABCMeta):
 
     @property  # type: ignore
     @abc.abstractmethod
-    def parent_task_log_q(self) -> Deque[str]:
+    def parent_task_log_q(self) -> Deque[str]:  # noqa: D102
         pass
 
     @parent_task_log_q.setter  # type: ignore
@@ -85,14 +89,15 @@ class AbsSubtask(metaclass=abc.ABCMeta):
         pass
 
 
-class Result(NamedTuple):
+@dataclass
+class Result(Generic[_T]):
     """Subtask result."""
 
     source: Type[AbsSubtask]
-    data: Any
+    data: _T
 
 
-class Subtask(AbsSubtask):
+class Subtask(AbsSubtask, Generic[_T]):
     """Base class for defining a new task for a :py:class:`Workflow` to create.
 
     Subclass this generate a new task
@@ -104,7 +109,7 @@ class Subtask(AbsSubtask):
 
     def __init__(self) -> None:
         """Create a new sub-task."""
-        self._result: Optional[Result] = None
+        self._result: Optional[Result[_T]] = None
         # TODO: refactor into state machine
         self._status = TaskStatus.IDLE
         self._working_dir = ""
@@ -140,7 +145,7 @@ class Subtask(AbsSubtask):
         self._parent_task_log_q = value
 
     @property
-    def task_result(self) -> Optional[Result]:
+    def task_result(self) -> Optional[Result[_T]]:
         """Get the result of the subtask."""
         return self._result
 
@@ -167,11 +172,13 @@ class Subtask(AbsSubtask):
         raise NotImplementedError()
 
     @property
-    def results(self):
+    def results(self) -> Optional[_T]:
         """Get the results of the subtask."""
+        if self._result is None:
+            return None
         return self._result.data
 
-    def set_results(self, results) -> None:
+    def set_results(self, results: _T) -> None:
         """Set the results of the subtask."""
         self._result = Result(self.__class__, results)
 

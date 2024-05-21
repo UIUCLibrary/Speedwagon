@@ -78,12 +78,12 @@ Set up the Development Environment
 
         @speedwagon.hookimpl
         def registered_workflows() -> Dict[str, Type[speedwagon.workflow]]:
-        """Register workflows with the plugin.
+            """Register workflows with the plugin.
 
-        Returns:
-            Returns a dictionary with the name of the workflow for the key and the
-            class of the workflow for the value.
-        """
+            Returns:
+                Returns a dictionary with the name of the workflow for the key and the
+                class of the workflow for the value.
+            """
             return {}
 
 
@@ -211,7 +211,7 @@ Build New Speedwagon Workflow
 
     .. code-block:: python
 
-    class DirectoryContentWorkflow(speedwagon.Workflow):
+        class DirectoryContentWorkflow(speedwagon.Workflow):
             ...
             def job_options(self):
                 return [
@@ -225,7 +225,7 @@ Build New Speedwagon Workflow
 
     .. code-block:: python
 
-    class DirectoryContentWorkflow(speedwagon.Workflow):
+        class DirectoryContentWorkflow(speedwagon.Workflow):
             ...
             def discover_task_metadata(self, initial_results, additional_data, **user_args)
                 my_input = user_args['input']
