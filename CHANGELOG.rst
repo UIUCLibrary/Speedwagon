@@ -8,6 +8,23 @@ Change Log
 Unreleased
 ==========
 
+BREAKING CHANGE
+---------------
+
+- removed Convert CaptureOne TIFF to Digital Library Compound Object, Convert CaptureOne TIFF to Digital Library Compound Object and HathiTrust, Convert HathiTrust limited view to Digital library, & Hathi prep
+
+Feat
+----
+
+- AbsOutputOptionDataType gains add_validation() and get_findings()
+- remove internal workflows
+
+v0.4.0a2 (2024-03-21)
+=====================
+
+v0.3.1 (2024-03-19)
+===================
+
 Feat
 ----
 
@@ -16,6 +33,7 @@ Feat
 Fix
 ---
 
+- Uninstalling from Chocolatey removes shortcut
 - Fixed Internal C++ object (Signals) already deleted on exit.
 
 v0.3.0 (2024-02-19)
