@@ -2,9 +2,8 @@ Developer’s Guide
 =================
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
-   create_workflow
    plugin_development/develop_plugins
    build_installer/build_installer
    api_reference
