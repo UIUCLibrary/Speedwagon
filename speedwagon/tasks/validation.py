@@ -122,7 +122,7 @@ class ChecksumReport(AbsChecksumBuilder):
         return "{}\n".format("\n".join(lines))
 
 
-class MakeCheckSumReportTask(speedwagon.tasks.Subtask):
+class MakeCheckSumReportTask(speedwagon.tasks.Subtask[str]):
     """Generate a checksum report.
 
     This normally an .md5 file.

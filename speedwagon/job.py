@@ -9,7 +9,10 @@ import logging
 import os
 import sys
 import typing
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Type
+from typing import (
+    Any, Dict, Iterable, List, Optional, Set, Tuple, Type, Mapping, Sequence,
+    TypeVar, Generic
+)
 
 import speedwagon.plugins
 
@@ -30,8 +33,10 @@ __all__ = [
     "AbsJobConfigSerializationStrategy",
 ]
 
+_T = TypeVar("_T", bound=Mapping[str, object])
 
-class AbsWorkflow(metaclass=abc.ABCMeta):
+
+class AbsWorkflow(Generic[_T], metaclass=abc.ABCMeta):
     """Base class for workflows."""
 
     active = True
@@ -49,10 +54,10 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def discover_task_metadata(
         self,
-        initial_results: List[Any],
-        additional_data: Dict[str, Any],
-        **user_args,
-    ) -> List[dict]:
+        initial_results: List[Result],
+        additional_data: Mapping[str, Any],
+        user_args: _T,
+    ) -> Sequence[Mapping[str, object]]:
         """Generate data or parameters needed for upcoming tasks.
 
         Generate data or parameters needed for task to complete based on
@@ -64,7 +69,10 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         """
 
     def completion_task(  # noqa: B027
-        self, task_builder: TaskBuilder, results, **user_args
+        self,
+        task_builder: TaskBuilder,
+        results: List[Result],
+        user_args: _T
     ) -> None:
         """Last task after Job is completed.
 
@@ -72,9 +80,9 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         """
 
     def initial_task(  # noqa: B027
-            self,
-            task_builder: TaskBuilder,
-            **user_args
+        self,
+        task_builder: TaskBuilder,
+        user_args: _T
     ) -> None:
         """Create a task to run before the main tasks start.
 
@@ -92,9 +100,9 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         """
 
     def create_new_task(  # noqa: B027
-            self,
-            task_builder: TaskBuilder,
-            **job_args
+        self,
+        task_builder: TaskBuilder,
+        job_args
     ) -> None:
         """Add a new task to be accomplished when the workflow is started.
 
@@ -116,7 +124,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
 
     @classmethod  # noqa: B027
     def generate_report(
-        cls, results: List[Result], **user_args
+        cls, results: List[Result], user_args: _T
     ) -> Optional[str]:
         r"""Generate a text report for the results of the workflow.
 
@@ -157,7 +165,7 @@ class AbsWorkflow(metaclass=abc.ABCMeta):
         return True
 
 
-class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
+class Workflow(AbsWorkflow[_T]):  # pylint: disable=abstract-method
     """Base class for defining a new workflow item.
 
     Subclass this class to generate a new workflow.
@@ -179,9 +187,9 @@ class Workflow(AbsWorkflow):  # pylint: disable=abstract-method
     def get_additional_info(
         self,
         user_request_factory: UserRequestFactory,
-        options: dict,
-        pretask_results: list,
-    ) -> dict:
+        options: _T,
+        pretask_results: List[Result],
+    ) -> Mapping[str, Any]:
         """Request additional information from the user.
 
         If a user needs to be prompted for more information, run this
@@ -231,7 +239,7 @@ class NullWorkflow(Workflow):
     description = ""
 
     def discover_task_metadata(
-        self, initial_results: List[Any], additional_data, **user_args
+        self, initial_results: List[Any], additional_data, user_args: _T
     ) -> List[dict]:
         """Discover task metadata."""
         return []
@@ -373,7 +381,7 @@ def all_required_workflow_keys(
 class AbsJobConfigSerializationStrategy(abc.ABC):
     """Base class for serializing job configurations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create a new job serialization strategy."""
         self.file_name: typing.Optional[str] = None
 

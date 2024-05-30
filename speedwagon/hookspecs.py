@@ -9,6 +9,8 @@ if TYPE_CHECKING:
 
 hookspec = pluggy.HookspecMarker("speedwagon")
 
+# mypy: disable-error-code="empty-body"
+
 
 @hookspec
 def registered_workflows() -> Dict[str, Type[Workflow]]:
