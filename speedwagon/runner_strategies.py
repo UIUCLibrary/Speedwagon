@@ -16,15 +16,18 @@ import traceback
 import typing
 import warnings
 from types import TracebackType
-from typing import List, Any, Dict, Optional, Type
-
+from typing import List, Any, Dict, Optional, Type, TypeVar, Mapping, Callable
+import functools
 import speedwagon.config
 import speedwagon.exceptions
 from speedwagon import runner
 
+_T = TypeVar("_T", bound=Mapping[str, object])
+
 if typing.TYPE_CHECKING:
     from speedwagon.job import AbsWorkflow, Workflow
     from speedwagon.config import SettingsData
+    import speedwagon.tasks
 
 __all__ = [
     "RunRunner",
@@ -116,7 +119,7 @@ class RunRunner:
     def run(
         self,
         tool: AbsWorkflow,
-        options: typing.Dict[str, Any],
+        options: typing.Mapping[str, object],
         logger: logging.Logger,
         completion_callback=None,
     ) -> None:
@@ -145,16 +148,15 @@ class TaskGenerator:
         return self.workflow.generate_report(results, **self.options)
 
     def tasks(self) -> typing.Iterable[speedwagon.tasks.Subtask]:
-        pretask_results = []
+        pretask_results: List[speedwagon.tasks.Result[Any]] = []
 
         results = []
 
-        for pre_task in self.get_pre_tasks(
-            self.working_directory, **self.options
-        ):
+        for pre_task in self.get_pre_tasks(self.working_directory):
             yield pre_task
-            pretask_results.append(pre_task.task_result)
-            results.append(pre_task.task_result)
+            if pre_task.task_result:
+                results.append(pre_task.task_result)
+
         if self.caller is not None:
             additional_data = self.caller.request_more_info(
                 self.workflow, self.options, pretask_results
@@ -167,25 +169,27 @@ class TaskGenerator:
             self.working_directory,
             pretask_results=pretask_results,
             additional_data=additional_data,
-            **self.options,
         ):
             yield task
-            results.append(task.task_result)
+            if task.task_result:
+                results.append(task.task_result)
 
         yield from self.get_post_tasks(
             working_directory=self.working_directory,
             results=results,
-            **self.options,
         )
 
     def get_pre_tasks(
-        self, working_directory: str, **options: typing.Any
+        self, working_directory: str
     ) -> typing.Iterable[speedwagon.tasks.Subtask]:
         task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory,
         )
-        self.workflow.initial_task(task_builder=task_builder, **options)
+        self.workflow.initial_task(
+            task_builder=task_builder,
+            user_args=self.options
+        )
         yield from task_builder.build_task().main_subtasks
 
     def get_main_tasks(
@@ -193,11 +197,10 @@ class TaskGenerator:
         working_directory: str,
         pretask_results,
         additional_data,
-        **options: typing.Any,
     ) -> typing.Iterable[speedwagon.tasks.Subtask]:
         metadata_tasks = (
             self.workflow.discover_task_metadata(
-                pretask_results, additional_data, **options
+                pretask_results, additional_data, user_args=self.options
             )
             or []
         )
@@ -221,14 +224,16 @@ class TaskGenerator:
     def get_post_tasks(
         self,
         working_directory: str,
-        results: typing.Iterable[typing.Optional[speedwagon.tasks.Result]],
-        **options: typing.Any,
+        results: typing.List[speedwagon.tasks.Result],
     ) -> typing.Iterable[speedwagon.tasks.Subtask]:
         task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory,
         )
-        self.workflow.completion_task(task_builder, results, **options)
+        self.workflow.completion_task(
+            task_builder, results,
+            user_args=self.options
+        )
         yield from task_builder.build_task().main_subtasks
 
 
@@ -448,7 +453,7 @@ class TaskGeneratorStrategy(AbsTaskGeneratorStrategy):
         options: typing.Mapping[str, Any],
         results: List[Any],
     ) -> Optional[str]:
-        return workflow.generate_report(results, **options)
+        return workflow.generate_report(results, user_args=options)
 
     def iterate_tasks(
         self,
@@ -491,14 +496,24 @@ class TaskScheduler:
         self._task_queue: "queue.Queue" = queue.Queue(maxsize=1)
 
         self._request_more_info: typing.Callable[
-            [Workflow, Any, Any], typing.Optional[Dict[str, Any]]
+            [
+                Workflow,
+                Mapping[str, object],
+                List[speedwagon.tasks.Result[Any]],
+            ],
+            typing.Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
 
     @property
     def request_more_info(
         self,
     ) -> typing.Callable[
-        [Workflow, Any, Any], typing.Optional[Dict[str, Any]]
+        [
+            Workflow,
+            Mapping[str, object],
+            List[speedwagon.tasks.Result[Any]],
+        ],
+        typing.Optional[Mapping[str, Any]]
     ]:
         """Request more info from the user about the task."""
         return self._request_more_info
@@ -507,7 +522,12 @@ class TaskScheduler:
     def request_more_info(
         self,
         value: typing.Callable[
-            [Workflow, Any, Any], typing.Optional[Dict[str, Any]]
+            [
+                Workflow,
+                Mapping[str, object],
+                List[speedwagon.tasks.Result[Any]],
+            ],
+            typing.Optional[Mapping[str, Any]]
         ],
     ) -> None:
         self._request_more_info = value
@@ -644,7 +664,15 @@ class BackgroundJobManager(AbsJobManager2):
         self._exec: Optional[BaseException] = None
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
-        self.request_more_info = lambda *args, **kwargs: None
+        self.request_more_info: Callable[
+            [
+                Workflow[Any],
+                Mapping[str, object],
+                List[speedwagon.tasks.Result[Any]],
+                Optional[threading.Condition]
+            ],
+            Optional[Mapping[str, Any]]
+        ] = lambda *args, **kwargs: None
         self.global_settings: Optional[SettingsData] = None
 
     def __enter__(self) -> "BackgroundJobManager":
@@ -661,7 +689,9 @@ class BackgroundJobManager(AbsJobManager2):
         with tempfile.TemporaryDirectory() as tmp_dir:
             try:
                 task_scheduler = Run(tmp_dir)
-                task_scheduler.request_more_info = self.request_more_info
+                task_scheduler.request_more_info = functools.partial(
+                    self.request_more_info
+                )
 
                 # Makes testing easier
                 if self.valid_workflows is not None:
@@ -838,10 +868,10 @@ def simple_api_run_workflow(
         task_scheduler.logger.setLevel(logging.INFO)
 
         def request_more_info(
-            workflow: Workflow,
-            options: Dict[str, Any],
-            pretask_results: List[Any],
-        ) -> typing.Optional[Dict[str, Any]]:
+            workflow: Workflow[_T],
+            options: _T,
+            pretask_results: List[speedwagon.tasks.Result[Any]],
+        ) -> typing.Optional[Mapping[str, Any]]:
             factory = (
                 request_factory
                 or speedwagon.frontend.cli.user_interaction.CLIFactory()

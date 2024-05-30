@@ -6,16 +6,19 @@ from dataclasses import dataclass, field
 import typing
 from abc import ABC
 from typing import (
-    Dict,
-    Any,
     List,
     Optional,
     TypeVar,
     Generic,
     Callable,
-    Sequence
+    Sequence,
+    Mapping, TYPE_CHECKING
 )
+if TYPE_CHECKING:
+    import speedwagon.tasks
 import enum
+
+T = TypeVar('T')
 
 
 class SupportedImagePackageFormats(enum.Enum):
@@ -30,8 +33,10 @@ class AbsUserWidget(abc.ABC):
 
     @abc.abstractmethod
     def get_user_response(
-        self, options: dict, pretask_results: list
-    ) -> Dict[str, Any]:
+        self,
+        options: Mapping[str, object],
+        pretask_results: List[speedwagon.tasks.Result[object]]
+    ) -> Mapping[str, object]:
         """Get response from the user."""
 
 
@@ -53,15 +58,19 @@ class DataItem:
 
 TableReportFormat = TypeVar('TableReportFormat')
 
-T = TypeVar('T')
-
 
 class AbstractTableEditData(AbsUserWidget, ABC, Generic[T, TableReportFormat]):
     """Base class for generating table data."""
 
     def __init__(
         self,
-        enter_data: typing.Callable[[dict, list], List[Sequence[T]]],
+        enter_data: typing.Callable[
+            [
+                Mapping[str, object],
+                List[speedwagon.tasks.Result]
+            ],
+            List[Sequence[T]]
+        ],
         process_data: typing.Callable[
             [
                 List[Sequence[T]]
@@ -76,7 +85,11 @@ class AbstractTableEditData(AbsUserWidget, ABC, Generic[T, TableReportFormat]):
         self._data_gathering_callback = enter_data
         self.process_data_callback = process_data
 
-    def gather_data(self, options, pretask_results):
+    def gather_data(
+        self,
+        options: Mapping[str, object],
+        pretask_results: List[speedwagon.tasks.Result]
+    ) -> List[Sequence[T]]:
         """Get data from user using the method provided in the constructor."""
         return self._data_gathering_callback(options, pretask_results)
 
@@ -92,7 +105,10 @@ class UserRequestFactory(abc.ABC):
     def table_data_editor(
             self,
             enter_data: typing.Callable[
-                [dict, list], List[Sequence[DataItem]]
+                [
+                    Mapping[str, object],
+                    List[speedwagon.tasks.Result]
+                ], List[Sequence[DataItem]]
             ],
             process_data: Callable[
                 [List[Sequence[DataItem]]], TableReportFormat

@@ -13,7 +13,8 @@ from typing import (
     Callable,
     Sequence,
     TypeVar,
-    Generic
+    Generic,
+    Mapping
 )
 
 import speedwagon.exceptions
@@ -37,8 +38,10 @@ class CLIConfirmFilesystemItemRemoval(
         YES_ALL = 2
 
     def get_user_response(
-        self, options: dict, pretask_results: list
-    ) -> Dict[str, Any]:
+        self,
+        options: Mapping[str, object],
+        pretask_results: List[speedwagon.tasks.Result]
+    ) -> Mapping[str, Any]:
         """Request user input for deletion."""
         data: List[str] = pretask_results[0].data
 
@@ -139,18 +142,24 @@ class CLIEditTable(AbstractTableEditData, Generic[T, TableReportFormat]):
     """Edit tabular data via a cli."""
 
     def __init__(
-            self,
-            enter_data: typing.Callable[[dict, list], List[Sequence[T]]],
-            process_data: typing.Callable[
-                [List[Sequence[T]]], TableReportFormat
+        self,
+        enter_data: typing.Callable[
+            [
+                Mapping[str, object],
+                List[speedwagon.tasks.Result]
             ],
-            edit_data: Callable[
-                [
-                    List[Sequence[T]],
-                    Optional[str]
-                ],
-                List[Sequence[T]]
-            ] = print_table_rows_no_edits
+            List[Sequence[T]]
+        ],
+        process_data: typing.Callable[
+            [List[Sequence[T]]], TableReportFormat
+        ],
+        edit_data: Callable[
+            [
+                List[Sequence[T]],
+                Optional[str]
+            ],
+            List[Sequence[T]]
+        ] = print_table_rows_no_edits
     ) -> None:
         """Create a new CLIEditTable object.
 
@@ -164,10 +173,10 @@ class CLIEditTable(AbstractTableEditData, Generic[T, TableReportFormat]):
         self.edit_strategy = edit_data
 
     def get_user_response(
-            self,
-            options: dict,
-            pretask_results: list
-    ) -> Dict[str, Any]:
+        self,
+        options: Mapping[str, object],
+        pretask_results: List[speedwagon.tasks.Result]
+    ) -> Mapping[str, Any]:
         """Get user response."""
         selections = self.gather_data(options, pretask_results)
         return self.process_data_callback(self.edit_data(selections))
@@ -326,7 +335,10 @@ class CLIFactory(interaction.UserRequestFactory):
     def table_data_editor(
         self,
         enter_data: typing.Callable[
-            [dict, list],
+            [
+                Mapping[str, object],
+                List[speedwagon.tasks.Result]
+            ],
             List[Sequence[interaction.DataItem]]
         ],
         process_data: Callable[

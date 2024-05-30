@@ -15,7 +15,9 @@ import threading
 import time
 import types
 import typing
-from typing import Dict, Optional, cast, List, Type, Callable, DefaultDict
+from typing import (
+    Dict, Optional, cast, List, Type, Callable, DefaultDict, Mapping
+)
 import traceback as tb
 import webbrowser
 
@@ -623,10 +625,10 @@ class StartQtThreaded(AbsGuiStarter):
     def request_more_info(
         self,
         workflow: speedwagon.job.Workflow,
-        options: Dict[str, typing.Any],
-        pre_results: List[typing.Any],
+        options: Mapping[str, object],
+        pre_results: List[speedwagon.tasks.Result[typing.Any]],
         wait_condition: Optional[threading.Condition] = None,
-    ) -> Optional[Dict[str, typing.Any]]:
+    ) -> Optional[Mapping[str, typing.Any]]:
         """Request more information from the user."""
         self._request_window.exc = None
         waiter = wait_condition or threading.Condition()

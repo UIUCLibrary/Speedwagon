@@ -61,7 +61,7 @@ class AbsWorkflowSettingsResolver(abc.ABC):  # pylint: disable=R0903
         """Get settings data from workflow."""
 
 
-class AbsYamlConfigFileManager(abc.ABC):  # pylint: disable=R0903
+class AbsYamlConfigFileManager(abc.ABC):  # pylint: disable=R0903 noqa: B024
     def __init__(self, yaml_file: str) -> None:
         super().__init__()
         self.yaml_file = yaml_file
@@ -274,7 +274,7 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
 
     def get(self, key: str) -> Optional[SettingsDataType]:
         """Get value for key."""
-        if any([self.yaml_file is None, self.workflow is None]):
+        if self.yaml_file is None or self.workflow is None:
             return None
         return self.get_yaml_strategy().get_response(self.workflow).get(key)
 

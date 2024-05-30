@@ -15,7 +15,7 @@ class AbsRunner2(metaclass=abc.ABCMeta):
     def run(
         self,
         job: AbsWorkflow,
-        options: dict,
+        options: typing.Mapping[str, object],
         logger: logging.Logger,
         completion_callback=None,
     ) -> None:

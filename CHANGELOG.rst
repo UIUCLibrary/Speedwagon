@@ -11,11 +11,20 @@ Unreleased
 BREAKING CHANGE
 ---------------
 
+- Workflow class has job_args and user_args arguments
+
+v0.4.0b4 (2024-05-24)
+=====================
+
+BREAKING CHANGE
+---------------
+
 - removed Convert CaptureOne TIFF to Digital Library Compound Object, Convert CaptureOne TIFF to Digital Library Compound Object and HathiTrust, Convert HathiTrust limited view to Digital library, & Hathi prep
 
 Feat
 ----
 
+- AbsOutputOptionDataType gains add_validation() and get_findings()
 - AbsOutputOptionDataType gains add_validation() and get_findings()
 - remove internal workflows
 

@@ -14,7 +14,8 @@ from typing import (
     Generic,
     TypeVar,
     Callable,
-    Sequence
+    Sequence,
+    Mapping
 )
 
 try:  # pragma: no cover
@@ -64,7 +65,7 @@ class QtWidgetFactory(interaction.UserRequestFactory):
     def table_data_editor(
         self,
         enter_data: typing.Callable[
-            [dict, list],
+            [Mapping[str, object], list],
             List[Sequence[interaction.DataItem]]
         ],
         process_data: Callable[
@@ -288,7 +289,7 @@ class QtWidgetConfirmFileSystemRemoval(
         self.parent = parent
 
     def get_user_response(
-        self, options: dict, pretask_results: list
+        self, options: Mapping[str, object], pretask_results: list
     ) -> Dict[str, Any]:
         """Request confirmation about which files should be removed."""
         return {
@@ -406,11 +407,14 @@ class QtWidgetTableEditWidget(
     """QtWidget-based widget for selecting packages title pages."""
 
     def __init__(
-            self,
-            enter_data: typing.Callable[[dict, list], List[Sequence[T]]],
-            process_data: typing.Callable[[List[Sequence[T]]], _RetVal],
-            model_mapping_roles: QtModelMappingRoles,
-            parent: Optional[QtWidgets.QWidget] = None) -> None:
+        self,
+        enter_data: typing.Callable[
+            [Mapping[str, object], list], List[Sequence[T]]
+        ],
+        process_data: typing.Callable[[List[Sequence[T]]], _RetVal],
+        model_mapping_roles: QtModelMappingRoles,
+        parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
         """Create a new package browser."""
         super().__init__(enter_data, process_data)
         self.parent = parent
@@ -421,7 +425,7 @@ class QtWidgetTableEditWidget(
         )
 
     def get_user_response(
-        self, options: dict, pretask_results: list
+        self, options: Mapping[str, object], pretask_results: list
     ) -> Dict[str, Any]:
         """Generate the dialog for selecting title pages."""
         return self.get_data_with_dialog_box(
@@ -454,7 +458,7 @@ class QtRequestMoreInfo(QtCore.QObject):
     def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
         """Create a new qt object."""
         super().__init__(parent)
-        self.results: Optional[Dict[str, typing.Any]] = None
+        self.results: Optional[Mapping[str, typing.Any]] = None
         self._parent = parent
         self.exc: Optional[BaseException] = None
         self.request.connect(self.request_more_info)
@@ -462,8 +466,8 @@ class QtRequestMoreInfo(QtCore.QObject):
     def request_more_info(
         self,
         user_is_interacting: threading.Condition,
-        workflow: Workflow,
-        options: Dict[str, typing.Any],
+        workflow: Workflow[Any],
+        options: Mapping[str, object],
         pre_results: List[typing.Any],
     ) -> None:
         """Open new request widget."""

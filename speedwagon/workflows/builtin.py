@@ -48,7 +48,7 @@ class EnsureBuiltinWorkflowConfigFiles(AbsSystemTask):
         """Get human-readable information about current task."""
         return "Ensure builtin workflow configs"
 
-    def get_config_file(self):
+    def get_config_file(self) -> str:
         """Get config file path."""
         return os.path.join(
             self.config_file_location_strategy.get_app_data_dir(),
