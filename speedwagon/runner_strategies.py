@@ -211,7 +211,7 @@ class TaskGenerator:
                 speedwagon.tasks.MultiStageTaskBuilder(working_directory),
                 working_directory,
             )
-            self.workflow.create_new_task(task_builder, **task_metadata)
+            self.workflow.create_new_task(task_builder, task_metadata)
             subtasks = task_builder.build_task()
             subtasks_generated += subtasks.main_subtasks
 

@@ -3,8 +3,8 @@ import logging
 import os
 
 import pytest
-from unittest.mock import Mock, MagicMock
-from typing import List, Any, Dict, TYPE_CHECKING
+from unittest.mock import Mock, MagicMock, create_autospec
+from typing import List, Any, Dict, TYPE_CHECKING, Mapping
 
 import speedwagon.exceptions
 from speedwagon import runner_strategies, tasks
@@ -484,7 +484,10 @@ class TestTaskScheduler:
         monkeypatch.setattr(
             runner_strategies.TaskGenerator,
             "get_main_tasks",
-            lambda *args, **kwargs: [subtask]
+            create_autospec(
+                runner_strategies.TaskGenerator.get_main_tasks,
+                return_value=[subtask]
+            )
         )
         scheduler.run(
             workflow,
@@ -517,8 +520,8 @@ class SpamTask(speedwagon.tasks.Subtask):
         return True
 
     def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data: Dict[str, Any],
-                               **user_args) -> List[dict]:
+                               additional_data: Mapping[str, Any],
+                               user_args) -> List[dict]:
         return [
             {"dummy": "yes"},
             {"dummy": "yes"},
@@ -529,12 +532,12 @@ class SpamWorkflow(speedwagon.Workflow):
     name = "spam"
 
     def create_new_task(self, task_builder: speedwagon.tasks.TaskBuilder,
-                        **job_args) -> None:
+                        job_args) -> None:
         task_builder.add_subtask(SpamTask())
 
     def discover_task_metadata(self, initial_results: List[Any],
-                               additional_data: Dict[str, Any],
-                               **user_args) -> List[dict]:
+                               additional_data: Mapping[str, Any],
+                               user_args) -> List[dict]:
         return [
             {"dummy": "yes"},
             {"dummy": "yes"},
@@ -582,12 +585,12 @@ class TestBackgroundJobManager:
             name = "bacon"
 
             def create_new_task(self, task_builder: tasks.TaskBuilder,
-                                **job_args) -> None:
+                                job_args) -> None:
                 task_builder.add_subtask(BadTask())
 
             def discover_task_metadata(self, initial_results: List[Any],
-                                       additional_data: Dict[str, Any],
-                                       **user_args) -> List[dict]:
+                                       additional_data: Mapping[str, Any],
+                                       user_args) -> List[dict]:
                 return [
                     {"dummy": "yes"}
                 ]
@@ -662,7 +665,10 @@ def test_simple_api_calls_exec_on_task(monkeypatch):
     monkeypatch.setattr(
         runner_strategies.TaskGenerator,
         "get_main_tasks",
-        lambda self, task_builder, **job_args: [mock_task]
+        create_autospec(
+            runner_strategies.TaskGenerator.get_main_tasks, 
+            return_value=[mock_task]
+        )
     )
 
     runner_strategies.simple_api_run_workflow(

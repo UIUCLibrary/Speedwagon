@@ -39,7 +39,7 @@ class CLIConfirmFilesystemItemRemoval(
 
     def get_user_response(
         self,
-        options: Mapping[str, object],
+        options: Mapping[str, Any],
         pretask_results: List[speedwagon.tasks.Result]
     ) -> Mapping[str, Any]:
         """Request user input for deletion."""
@@ -174,7 +174,7 @@ class CLIEditTable(AbstractTableEditData, Generic[T, TableReportFormat]):
 
     def get_user_response(
         self,
-        options: Mapping[str, object],
+        options: Mapping[str, Any],
         pretask_results: List[speedwagon.tasks.Result]
     ) -> Mapping[str, Any]:
         """Get user response."""

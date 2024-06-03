@@ -12,6 +12,7 @@ from typing import (
     Generic,
     Callable,
     Sequence,
+    Any,
     Mapping, TYPE_CHECKING
 )
 if TYPE_CHECKING:
@@ -34,9 +35,9 @@ class AbsUserWidget(abc.ABC):
     @abc.abstractmethod
     def get_user_response(
         self,
-        options: Mapping[str, object],
-        pretask_results: List[speedwagon.tasks.Result[object]]
-    ) -> Mapping[str, object]:
+        options: Mapping[str, Any],
+        pretask_results: List[speedwagon.tasks.Result[Any]]
+    ) -> Mapping[str, Any]:
         """Get response from the user."""
 
 

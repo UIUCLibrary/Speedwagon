@@ -425,7 +425,7 @@ class QtWidgetTableEditWidget(
         )
 
     def get_user_response(
-        self, options: Mapping[str, object], pretask_results: list
+        self, options: Mapping[str, Any], pretask_results: list
     ) -> Dict[str, Any]:
         """Generate the dialog for selecting title pages."""
         return self.get_data_with_dialog_box(
