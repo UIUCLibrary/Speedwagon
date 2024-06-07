@@ -155,7 +155,7 @@ class TaskGenerator:
         for pre_task in self.get_pre_tasks(self.working_directory):
             yield pre_task
             if pre_task.task_result:
-                results.append(pre_task.task_result)
+                pretask_results.append(pre_task.task_result)
 
         if self.caller is not None:
             additional_data = self.caller.request_more_info(
