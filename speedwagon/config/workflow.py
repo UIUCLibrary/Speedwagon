@@ -61,7 +61,7 @@ class AbsWorkflowSettingsResolver(abc.ABC):  # pylint: disable=R0903
         """Get settings data from workflow."""
 
 
-class AbsYamlConfigFileManager(abc.ABC):  # pylint: disable=R0903 noqa: B024
+class AbsYamlConfigFileManager:
     def __init__(self, yaml_file: str) -> None:
         super().__init__()
         self.yaml_file = yaml_file

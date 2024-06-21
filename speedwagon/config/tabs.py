@@ -114,6 +114,7 @@ class CustomTabsYamlConfig(AbsTabsConfigDataManagement):
 class AbsTabWriter(abc.ABC):  # pylint: disable=R0903
     """Abstract base class for writing tab data."""
 
+    @abc.abstractmethod
     def save(self, file_name: str, tabs: List[CustomTabData]) -> None:
         """Save tabs data to a file format."""
 
