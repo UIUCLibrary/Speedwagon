@@ -18,20 +18,20 @@ from typing import (
     List,
     TypeVar,
 )
+# pylint: disable=wrong-import-position
+if sys.version_info >= (3, 9):
+    from importlib import resources
+    from importlib.resources import as_file
+else:
+    import importlib_resources as resources
+    from importlib_resources import as_file
+
+if sys.version_info >= (3, 10):
+    from importlib import metadata
+else:
+    import importlib_metadata as metadata
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
-
-try:  # pragma: no cover
-    from importlib import metadata
-except ImportError:  # pragma: no cover
-    import importlib_metadata as metadata  # type: ignore
-
-try:  # pragma: no cover
-    from importlib.resources import as_file
-    from importlib import resources
-except ImportError:  # pragma: no cover
-    import importlib_resources as resources  # type: ignore
-    from importlib_resources import as_file  # type: ignore
 
 from speedwagon.reports import ExceptionReport
 from speedwagon.utils import get_desktop_path

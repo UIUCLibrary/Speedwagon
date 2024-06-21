@@ -15,9 +15,9 @@ from typing import (
     Any,
     Mapping, TYPE_CHECKING
 )
+import enum
 if TYPE_CHECKING:
     import speedwagon.tasks
-import enum
 
 T = TypeVar('T')
 

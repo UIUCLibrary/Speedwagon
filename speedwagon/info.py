@@ -2,11 +2,11 @@
 from __future__ import annotations
 from typing import Sequence, TypeVar, Callable, Union, TypedDict
 import platform
-
-try:  # pragma: no cover
+import sys
+if sys.version_info >= (3, 10):
     from importlib import metadata
-except ImportError:  # pragma: no cover
-    import importlib_metadata as metadata  # type: ignore
+else:
+    import importlib_metadata as metadata
 
 __all__ = [
     'SystemInfo',

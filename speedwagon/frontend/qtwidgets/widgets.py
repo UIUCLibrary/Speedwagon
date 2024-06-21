@@ -16,12 +16,14 @@ from typing import (
     TYPE_CHECKING,
 )
 
-
-try:  # pragma: no cover
-    from typing import NotRequired
-except ImportError:  # pragma: no cover
-    from typing_extensions import NotRequired
-
+import sys
+# pylint: disable=wrong-import-position
+if sys.version_info >= (3, 9):
+    from importlib import resources
+    from importlib.resources import as_file
+else:
+    import importlib_resources as resources
+    from importlib_resources import as_file
 
 from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets import ui_loader, ui
@@ -32,14 +34,11 @@ from speedwagon.frontend.qtwidgets.models.workflows import AbsWorkflowList
 from speedwagon.frontend.qtwidgets import models, logging_helpers
 
 
-try:  # pragma: no cover
-    from importlib.resources import as_file
-    from importlib import resources
-except ImportError:  # pragma: no cover
-    import importlib_resources as resources  # type: ignore
-    from importlib_resources import as_file
-
 if TYPE_CHECKING:
+    if sys.version_info >= (3, 11):
+        from typing import NotRequired
+    else:
+        from typing_extensions import NotRequired
     import logging
 
 

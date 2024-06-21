@@ -18,13 +18,13 @@ from typing import (
     Callable, TYPE_CHECKING, Tuple
 )
 
-try:
-    from typing import TypeAlias
-except ImportError:
-    from typing_extensions import TypeAlias
-
 if TYPE_CHECKING:
     from speedwagon.workflow import UserDataType
+    if sys.version_info >= (3, 10):
+        from typing import TypeAlias
+    else:
+        from typing_extensions import TypeAlias
+
 
 __all__ = [
     'AbsOutputValidation',

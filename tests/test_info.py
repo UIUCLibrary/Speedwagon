@@ -1,9 +1,10 @@
 from unittest.mock import Mock, mock_open, patch
 
-try:  # pragma: no cover
+import sys
+if sys.version_info >= (3, 10):
     from importlib import metadata
-except ImportError:  # pragma: no cover
-    import importlib_metadata as metadata  # type: ignore
+else:
+    import importlib_metadata as metadata
 
 import speedwagon.info
 

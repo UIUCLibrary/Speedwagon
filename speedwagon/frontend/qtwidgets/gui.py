@@ -11,18 +11,18 @@ import logging
 import logging.handlers
 import typing
 from typing import Optional, TYPE_CHECKING
+import sys
 
-
-try:  # pragma: no cover
+# pylint: disable=wrong-import-position
+if sys.version_info < (3, 10):  # pragma: no cover
+    import importlib_metadata as metadata
+else:
     from importlib import metadata
-except ImportError:  # pragma: no cover
-    import importlib_metadata as metadata  # type: ignore
-
-try:  # pragma: no cover
-    from importlib.resources import as_file
+if sys.version_info >= (3, 9):
     from importlib import resources
-except ImportError:  # pragma: no cover
-    import importlib_resources as resources  # type: ignore
+    from importlib.resources import as_file
+else:
+    import importlib_resources as resources
     from importlib_resources import as_file
 
 from collections import namedtuple

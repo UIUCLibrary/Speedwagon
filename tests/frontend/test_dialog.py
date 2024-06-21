@@ -1,17 +1,15 @@
 import pytest
 from unittest.mock import Mock, patch, mock_open
+import sys
+if sys.version_info >= (3, 10):
+    from importlib import metadata
+else:
+    import importlib_metadata as metadata
 
 import speedwagon.info
 
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 QtCore = pytest.importorskip("PySide6.QtCore")
-
-try:
-    from importlib import metadata
-    from importlib.metadata import PackageNotFoundError
-except ImportError:
-    import importlib_metadata as metadata  # type: ignore
-    from importlib_metadata import PackageNotFoundError
 
 from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.models import ItemTableModel
@@ -40,7 +38,7 @@ def test_about_dialog_box_no_metadata(qtbot, monkeypatch):
         assert "Speedwagon" == message
 
     def mock_metadata(*args, **kwargs):
-        raise PackageNotFoundError()
+        raise metadata.PackageNotFoundError()
 
     with monkeypatch.context() as mp:
         mp.setattr(QtWidgets.QMessageBox, "about", mock_about)

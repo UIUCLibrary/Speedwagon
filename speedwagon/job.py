@@ -15,6 +15,7 @@ from typing import (
 )
 
 import speedwagon.plugins
+import speedwagon.workflows
 
 if typing.TYPE_CHECKING:
     from speedwagon.workflow import AbsOutputOptionDataType

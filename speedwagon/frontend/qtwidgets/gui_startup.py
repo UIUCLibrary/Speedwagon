@@ -20,11 +20,12 @@ from typing import (
 )
 import traceback as tb
 import webbrowser
-
-try:  # pragma: no cover
+# pylint: disable=wrong-import-position
+if sys.version_info >= (3, 10):
     from importlib import metadata
-except ImportError:  # pragma: no cover
-    import importlib_metadata as metadata  # type: ignore
+else:
+    import importlib_metadata as metadata
+
 from PySide6 import QtWidgets
 
 import speedwagon.job
