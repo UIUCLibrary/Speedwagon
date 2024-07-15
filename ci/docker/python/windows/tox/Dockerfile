@@ -1,10 +1,17 @@
 # escape=`
+ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
+
+ARG UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv
+ARG UV_EXTRA_INDEX_URL
+
 ARG PIPX_HOME=c:\pipx
 
-ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
-ARG UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv
 ARG PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip
-ARG UV_EXTRA_INDEX_URL
+
+ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
+ARG ChocolateyEnvironmentDebug=false
+ARG chocolateyVersion
+
 
 FROM ${FROM_IMAGE} AS certsgen
 RUN certutil -generateSSTFromWU roots.sst
@@ -12,17 +19,18 @@ RUN certutil -generateSSTFromWU roots.sst
 FROM ${FROM_IMAGE} AS BASE_BUILDER
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
-
-ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
-ARG ChocolateyEnvironmentDebug=false
-COPY ci/docker/shared/chocolatey/install_choco.ps1 choco/install_choco.ps1
+ARG CHOCOLATEY_SOURCE
+ARG ChocolateyEnvironmentDebug
+ARG chocolateyVersion
+COPY ci/docker/shared/chocolatey/install.ps1 c:/choco/install.ps1
+COPY ci/docker/shared/chocolatey/get_latest_chocolatey_url.ps1 c:/choco/get_latest_chocolatey_url.ps1
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
-    ./choco/install_choco.ps1 ; `
+    $chocolateyDownloadUrl = c:/choco/get_latest_chocolatey_url.ps1 -packageRepo $env:CHOCOLATEY_SOURCE; `
+    c:/choco/install.ps1 -ChocolateyDownloadUrl $chocolateyDownloadUrl;`
     if( -not ([string]::IsNullOrEmpty($Env:CHOCOLATEY_SOURCE ))) `
     { `
         Write-Host "Adding $env:CHOCOLATEY_SOURCE to chocolatey sources" ; `
-        choco source add -n=CHOCOLATEY_SOURCE --priority=1 -s=\"$env:CHOCOLATEY_SOURCE\"; `
-        choco source remove -n=chocolatey ;`
+        choco source add -n=CHOCOLATEY_SOURCE --priority=1 -s=\"${env:CHOCOLATEY_SOURCE}\"; `
     }; `
     Write-Host "Disabling Showing Download Progress" ; `
     choco feature disable -n=showDownloadProgress ; `
