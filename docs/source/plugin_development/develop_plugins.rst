@@ -5,7 +5,6 @@ Develop Speedwagon Plugins
    :caption: Contents:
 
    getting_started
-   arguments
+   configuration
    tasks
-   getting_user_input_once_started
    reports
