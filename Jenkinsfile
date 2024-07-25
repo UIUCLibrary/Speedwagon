@@ -812,7 +812,7 @@ pipeline {
                                         stage('Audit Requirement Freeze File'){
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'pip-audit found issues', stageResult: 'UNSTABLE') {
-                                                    sh 'pip-audit -r requirements/requirements-gui-freeze.txt --cache-dir=/tmp/pip-audit-cache'
+                                                    sh 'pip-audit -r requirements-gui.txt --cache-dir=/tmp/pip-audit-cache'
                                                 }
                                             }
                                         }
@@ -1139,7 +1139,7 @@ pipeline {
                                                                 -PackageMaintainer \"${props.maintainers[0].name}\" `
                                                                 -Wheel ${it.path} `
                                                                 -DependenciesDir '.\\deps' `
-                                                                -Requirements '.\\requirements\\requirements-gui-freeze.txt' `
+                                                                -Requirements '.\\requirements-freeze.txt' `
                                                                 -DocsDir '.\\dist\\docs'
                                                             """
                                                 )
@@ -1227,7 +1227,7 @@ pipeline {
                                                         nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
                                                         zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
                                                     ],
-                                                    vendoredPythonRequirementsFile: 'requirements/requirements-gui-freeze.txt',
+                                                    vendoredPythonRequirementsFile: 'requirements-freeze.txt',
                                                     buildDir: 'build\\cmake_build',
                                                     venvPath: "${WORKSPACE}\\build\\standalone_venv",
                                                     package: [

@@ -1,3 +1,5 @@
-Do not install these requirement files directly untless you have a very
-specific reasion to do so. Use the requirements files found on the root of this
-repo instead.
+Use the requirements files found on the root of this
+to install dependencies.
+
+Do not install these requirement.txt files directly untless you have a very
+specific reasion to do so.

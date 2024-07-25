@@ -20,8 +20,7 @@ ENV QT_QPA_PLATFORM="offscreen"
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
-COPY requirements/ /tmp/python_requirements/requirements/
-COPY requirements-dev.txt /tmp/python_requirements
+COPY requirements-dev.txt /tmp/python_requirements/requirements-dev.txt
 ARG UV_EXTRA_INDEX_URL
 ENV UV_INDEX_STRATEGY=unsafe-best-match
 RUN --mount=type=cache,target=/.cache/python \

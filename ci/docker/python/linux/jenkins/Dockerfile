@@ -10,7 +10,6 @@ ARG PIP_TRUSTED_HOST
 ARG PIP_INDEX_URL
 
 COPY requirements-dev.txt requirements-gui.txt /requirements/
-COPY requirements/ /requirements/requirements/
 
 ARG PIP_FIND_LINKS
 RUN mkdir -p ${PIP_FIND_LINKS} &&  \
