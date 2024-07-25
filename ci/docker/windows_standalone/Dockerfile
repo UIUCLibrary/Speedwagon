@@ -110,7 +110,6 @@ RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.208 -Force ;`
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ADD requirements.txt requirements-dev.txt c:\temp\
-COPY requirements/ c:/temp/requirements
 RUN python -m pip install --upgrade pip ; `
     pip install wheel ; `
     pip install --upgrade setuptools ;`
