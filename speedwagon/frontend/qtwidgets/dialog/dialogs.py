@@ -271,9 +271,7 @@ class WorkflowProgressStateIdle(AbsWorkflowProgressState):
             QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
         cancel_button.setEnabled(False)
-        self.context.rejected.connect(  # type: ignore
-            self.context.button_box.rejected  # type: ignore
-        )
+        self.context.button_box.rejected.connect(self.context.rejected)
 
     def start(self) -> None:
         self.context.state = WorkflowProgressStateWorking(self.context)
@@ -524,6 +522,8 @@ class WorkflowProgress(WorkflowProgressGui):
         self.setModal(True)
         # =====================================================================
         self.state: AbsWorkflowProgressState = WorkflowProgressStateIdle(self)
+        # self.rejected.disconnect(self.button_box.rejected)
+
         # =====================================================================
 
         self.finished.connect(self.remove_log_handles)  # type: ignore
