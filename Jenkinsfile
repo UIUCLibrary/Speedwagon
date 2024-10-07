@@ -675,10 +675,20 @@ startup()
 
 def get_props(){
     stage('Reading Package Metadata'){
-        node('docker && linux') {
+        node('docker') {
             checkout scm
             docker.image('python').inside {
-                def packageMetadata = readJSON text: sh(returnStdout: true, script: 'python -c \'import tomllib;print(tomllib.load(open("pyproject.toml", "rb"))["project"])\'').trim()
+                def packageMetadata = readJSON(
+                    text: {
+                        if (isUnix()){
+                            return sh(returnStdout: true, script: 'python -c \'import tomllib;print(tomllib.load(open("pyproject.toml", "rb"))["project"])\'').trim()    
+                        } else {
+                            return bat(returnStdout: true, script: '@python -c "import tomllib;print(tomllib.load(open(\'pyproject.toml\', \'rb\'))[\'project\'])').trim()
+                        }
+                        
+
+                    }()
+                    )
                 echo """Metadata:
 
     Name      ${packageMetadata.name}
