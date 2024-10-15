@@ -129,40 +129,6 @@ def get_build_number(){
     }
 }
 
-def runTox(){
-    script{
-        def windowsJobs = [:]
-        def linuxJobs = [:]
-        stage('Scanning Tox Environments'){
-            parallel(
-                'Linux':{
-                    linuxJobs = getToxTestsParallel(
-                            envNamePrefix: 'Tox Linux',
-                            label: 'linux && docker && x86',
-                            dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_EXTRA_INDEX_URL --build-arg UV_CACHE_DIR=/.cache/uv',
-                            dockerRunArgs: '-v pipcache_speedwagon:/.cache/pip -v uvcache_speedwagon:/.cache/uv',
-                            retry: 2
-                        )
-                },
-                'Windows':{
-                    windowsJobs = getToxTestsParallel(
-                            envNamePrefix: 'Tox Windows',
-                            label: 'windows && docker && x86',
-                            dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                            dockerArgs:  '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg UV_EXTRA_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv'
-,
-                            dockerRunArgs: '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip -v uvcache_speedwagon:c:/users/containeradministrator/appdata/local/uv',
-                            retry: 2
-                     )
-                },
-                failFast: true
-            )
-        }
-        parallel(windowsJobs + linuxJobs)
-    }
-}
-
 def testSpeedwagonChocolateyPkg(version){
     script{
         def chocolatey = load('ci/jenkins/scripts/chocolatey.groovy')
@@ -869,9 +835,48 @@ pipeline {
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
-                    steps {
-                        runTox()
+                    parallel{
+                        stage('Linux'){
+                            when{
+                                expression {return nodesByLabel('linux && docker && x86').size() > 0}
+                            }
+                            steps{
+                                script{
+                                    parallel(
+                                        getToxTestsParallel(
+                                            envNamePrefix: 'Tox Linux',
+                                            label: 'linux && docker && x86',
+                                            dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
+                                            dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_EXTRA_INDEX_URL --build-arg UV_CACHE_DIR=/.cache/uv',
+                                            dockerRunArgs: '-v pipcache_speedwagon:/.cache/pip -v uvcache_speedwagon:/.cache/uv',
+                                            retry: 2
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                        stage('Windows'){
+                            when{
+                                expression {return nodesByLabel('windows && docker && x86').size() > 0}
+                            }
+                            steps{
+                                script{
+                                    parallel(
+                                        getToxTestsParallel(
+                                                envNamePrefix: 'Tox Windows',
+                                                label: 'windows && docker && x86',
+                                                dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE',
+                                                retry: 2
+                                         )
+                                    )
+                                }
+                            }
+                        }
                     }
+//                    steps {
+//                        runTox()
+//                    }
                 }
             }
         }
