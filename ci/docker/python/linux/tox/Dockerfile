@@ -44,8 +44,6 @@ RUN --mount=type=cache,target=/.cache/python \
     pipx ensurepath && \
     mkdir -p $PIPX_HOME  && chmod -R 777 $PIPX_HOME
 
-RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install 'devpi-client<7.0'
-
 ARG UV_CACHE_DIR
 ARG PIP_DOWNLOAD_CACHE
 ENV UV_CACHE_DIR=${UV_CACHE_DIR}
