@@ -75,8 +75,7 @@ ENV PIPX_BIN_DIR=${PIPX_HOME}/bin
 RUN pip install --no-cache-dir pipx && \
     pipx ensurepath && \
     mkdir -p $PIPX_HOME  && chmod -R 777 $PIPX_HOME
-RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install 'devpi-client<7.0' &&  \
-    PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install pip-audit
+RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install pip-audit
 
 COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
 ARG SONAR_SCANNER_VERSION
