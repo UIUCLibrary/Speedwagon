@@ -527,6 +527,17 @@ def get_props(){
         }
     }
 }
+def get_sonarqube_unresolved_issues(report_task_file){
+    script{
+
+        def props = readProperties  file: '.scannerwork/report-task.txt'
+        def response = httpRequest url : props['serverUrl'] + "/api/issues/search?componentKeys=" + props['projectKey'] + "&resolved=no"
+        def outstandingIssues = readJSON text: response.content
+        return outstandingIssues
+    }
+}
+
+
 def hasSonarCreds(credentialsId){
     try{
         withCredentials([string(credentialsId: credentialsId, variable: 'dddd')]) {
@@ -637,12 +648,6 @@ pipeline {
                         label 'linux && docker && x86'
                         args '--mount source=python-tmp-speedwagon,target=/tmp'
                       }
-//                        additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-//                        docker{
-//                            image 'python'
-//                            label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
-//                            args '--mount source=python-tmp-speedwagon,target=/tmp'
-//                        }
                     }
                     environment{
                         PIP_CACHE_DIR='/tmp/pipcache'
@@ -650,16 +655,9 @@ pipeline {
                         UV_TOOL_DIR='/tmp/uvtools'
                         UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
                         UV_CACHE_DIR='/tmp/uvcache'
-                        UV_PYTHON = '3.11'
+                        UV_PYTHON='3.11'
+                        QT_QPA_PLATFORM='offscreen'
                     }
-//                    agent {
-//                        dockerfile {
-//                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
-//                            label 'linux && docker && x86'
-//                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-//                            args '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache'
-//                          }
-//                    }
                     options {
                         retry(conditions: [agent()], count: 2)
                     }
@@ -700,7 +698,7 @@ pipeline {
                                                 catchError(buildResult: 'UNSTABLE', message: 'Did not pass all pytest tests', stageResult: 'UNSTABLE') {
                                                     sh(
                                                         script: '''. ./venv/bin/activate
-                                                                   QT_QPA_PLATFORM=offscreen PYTHONFAULTHANDLER=1 coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml --capture=no
+                                                                   PYTHONFAULTHANDLER=1 coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml --capture=no
                                                                '''
                                                     )
                                                 }
@@ -839,38 +837,36 @@ pipeline {
                                     }
                                 }
                             }
+                            environment{
+                                VERSION="${readTOML( file: 'pyproject.toml')['project'].version}"
+                                SONAR_USER_HOME='/tmp/sonar'
+                            }
                             steps{
-                                script{
-                                    def sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                    def sonarqubeConfig = [
-                                                installationName: 'sonarcloud',
-                                                credentialsId: params.SONARCLOUD_TOKEN,
-                                            ]
-                                    milestone label: 'sonarcloud'
-                                    if (env.CHANGE_ID){
-                                        sonarqube.submitToSonarcloud(
-                                            artifactStash: 'sonarqube artifacts',
-                                            sonarqube: sonarqubeConfig,
-                                            pullRequest: [
-                                                source: env.CHANGE_ID,
-                                                destination: env.BRANCH_NAME,
-                                            ],
-                                            package: [
-                                                version: props.version,
-                                                name: props.name
-                                            ],
-                                        )
-                                    } else {
-                                        sonarqube.submitToSonarcloud(
-                                            artifactStash: 'sonarqube artifacts',
-                                            sonarqube: sonarqubeConfig,
-                                            package: [
-                                                version: props.version,
-                                                name: props.name
-                                            ]
-                                        )
-                                    }
-                                }
+                               script{
+                                   withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
+                                       def sourceInstruction
+                                       if (env.CHANGE_ID){
+                                           sourceInstruction = '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME'
+                                       } else{
+                                           sourceInstruction = '-Dsonar.branch.name=$BRANCH_NAME'
+                                       }
+                                       sh(
+                                           label: 'Running Sonar Scanner',
+                                           script: """. ./venv/bin/activate
+                                                       uv tool run pysonar-scanner -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}
+                                                   """
+                                       )
+                                   }
+                                   timeout(time: 1, unit: 'HOURS') {
+                                       def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                                       if (sonarqube_result.status != 'OK') {
+                                           unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                                       }
+                                       def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
+                                       writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+                                   }
+                                   milestone label: 'sonarcloud'
+                               }
                             }
                             post {
                                 always{
@@ -882,6 +878,7 @@ pipeline {
                     post{
                         cleanup{
                             cleanWs(patterns: [
+                                    [pattern: 'venv/', type: 'INCLUDE'],
                                     [pattern: 'logs/*', type: 'INCLUDE'],
                                     [pattern: 'reports/', type: 'INCLUDE'],
                                     [pattern: '.coverage', type: 'INCLUDE']
