@@ -92,13 +92,17 @@ def macAppleBundle() {
 def run_pylint(){
     def MAX_TIME = 10
     withEnv(['PYLINTHOME=.']) {
-        sh 'pylint --version'
+        sh '''. ./venv/bin/activate
+              pylint --version
+           '''
         catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
             timeout(MAX_TIME){
                 tee('reports/pylint_issues.txt'){
                     sh(
                         label: 'Running pylint',
-                        script: 'pylint speedwagon -j 2 -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
+                        script: '''. ./venv/bin/activate
+                                   pylint speedwagon -j 2 -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
+                                ''',
                     )
                 }
             }
@@ -106,7 +110,9 @@ def run_pylint(){
         timeout(MAX_TIME){
             sh(
                 label: 'Running pylint for sonarqube',
-                script: 'pylint speedwagon -j 2 -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
+                script: '''. ./venv/bin/activate
+                           pylint speedwagon -j 2 -d duplicate-code --output-format=parseable | tee reports/pylint.txt
+                        ''',
                 returnStatus: true
             )
         }
@@ -493,34 +499,6 @@ def testChocolateyPackage(){
     }
 }
 
-def buildSphinx(){
-    def sphinx  = load('ci/jenkins/scripts/sphinx.groovy')
-    sh(script: '''mkdir -p logs
-                  '''
-      )
-
-    sphinx.buildSphinxDocumentation(
-        sourceDir: 'docs/source',
-        outputDir: 'build/docs/html',
-        doctreeDir: 'build/docs/.doctrees',
-        builder: 'html',
-        writeWarningsToFile: 'logs/build_sphinx_html.log'
-        )
-    sphinx.buildSphinxDocumentation(
-        sourceDir: 'docs/source',
-        outputDir: 'build/docs/latex',
-        doctreeDir: 'build/docs/.doctrees',
-        builder: 'latex'
-        )
-
-    sh(label: 'Building PDF docs',
-       script: '''make -C build/docs/latex
-                  mkdir -p dist/docs
-                  mv build/docs/latex/*.pdf dist/docs/
-                  '''
-    )
-}
-
 startup()
 
 def get_props(){
@@ -588,18 +566,38 @@ pipeline {
     stages {
         stage('Build Sphinx Documentation'){
             agent {
-                dockerfile {
-                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                    label 'linux && docker && x86'
-                    additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                  }
+                    docker{
+                        image 'sphinxdoc/sphinx-latexpdf'
+                        label 'linux && docker && x86'
+                    }
             }
             options {
                 retry(conditions: [agent()], count: 2)
             }
+            environment{
+                PIP_CACHE_DIR='/tmp/pipcache'
+                UV_INDEX_STRATEGY='unsafe-best-match'
+                UV_TOOL_DIR='/tmp/uvtools'
+                UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
+                UV_CACHE_DIR='/tmp/uvcache'
+                UV_PYTHON = '3.11'
+            }
             steps {
                 catchError(buildResult: 'UNSTABLE', message: 'Sphinx has warnings', stageResult: 'UNSTABLE') {
-                    buildSphinx()
+                    sh(label: 'Build docs in html and Latex formats',
+                       script:'''python3 -m venv venv
+                          trap "rm -rf venv" EXIT
+                          . ./venv/bin/activate
+                          pip install uv
+                          uvx --from sphinx --with-editable . --with-requirements requirements-dev.txt sphinx-build -W --keep-going -b html -d build/docs/.doctrees -w logs/build_sphinx_html.log docs/source build/docs/html
+                          uvx --from sphinx --with-editable . --with-requirements requirements-dev.txt sphinx-build -W --keep-going -b latex -d build/docs/.doctrees docs/source build/docs/latex
+                          ''')
+                    sh(label: 'Building PDF docs',
+                       script: '''make -C build/docs/latex
+                                    mkdir -p dist/docs
+                                    mv build/docs/latex/*.pdf dist/docs/
+                                    '''
+                    )
                 }
             }
             post{
@@ -617,6 +615,8 @@ pipeline {
                         notFailBuild: true,
                         deleteDirs: true,
                         patterns: [
+                            [pattern: 'logs/', type: 'INCLUDE'],
+                            [pattern: 'venv/', type: 'INCLUDE'],
                             [pattern: 'dist/', type: 'INCLUDE'],
                             [pattern: 'build/', type: 'INCLUDE'],
                         ]
@@ -633,25 +633,75 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker && x86'
-                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                            args '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache'
-                          }
+                        filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                        label 'linux && docker && x86'
+                        args '--mount source=python-tmp-speedwagon,target=/tmp'
+                      }
+//                        additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+//                        docker{
+//                            image 'python'
+//                            label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
+//                            args '--mount source=python-tmp-speedwagon,target=/tmp'
+//                        }
                     }
+                    environment{
+                        PIP_CACHE_DIR='/tmp/pipcache'
+                        UV_INDEX_STRATEGY='unsafe-best-match'
+                        UV_TOOL_DIR='/tmp/uvtools'
+                        UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
+                        UV_CACHE_DIR='/tmp/uvcache'
+                        UV_PYTHON = '3.11'
+                    }
+//                    agent {
+//                        dockerfile {
+//                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
+//                            label 'linux && docker && x86'
+//                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+//                            args '--mount source=sonar-cache-speedwagon,target=/opt/sonar/.sonar/cache'
+//                          }
+//                    }
                     options {
                         retry(conditions: [agent()], count: 2)
                     }
                     stages{
                         stage('Test') {
                             stages{
+                                stage('Configuring Testing Environment'){
+                                    steps{
+                                        sh(
+                                            label: 'Create virtual environment',
+                                            script: '''python3 -m venv bootstrap_uv
+                                                       bootstrap_uv/bin/pip install uv
+                                                       bootstrap_uv/bin/uv venv venv
+                                                       . ./venv/bin/activate
+                                                       bootstrap_uv/bin/uv pip install uv
+                                                       rm -rf bootstrap_uv
+                                                       uv pip install -r requirements-dev.txt -r requirements-gui.txt
+                                                       '''
+                                                   )
+                                        sh(
+                                            label: 'Install package in development mode',
+                                            script: '''. ./venv/bin/activate
+                                                       uv pip install -e .
+                                                    '''
+                                            )
+                                        sh(
+                                            label: 'Creating logging and report directories',
+                                            script: '''mkdir -p logs
+                                                       mkdir -p reports
+                                                    '''
+                                        )
+                                    }
+                                }
                                 stage('Run Tests'){
                                     parallel {
                                         stage('Run PyTest Unit Tests'){
                                             steps{
                                                 catchError(buildResult: 'UNSTABLE', message: 'Did not pass all pytest tests', stageResult: 'UNSTABLE') {
                                                     sh(
-                                                        script: 'PYTHONFAULTHANDLER=1 coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml --capture=no'
+                                                        script: '''. ./venv/bin/activate
+                                                                   QT_QPA_PLATFORM=offscreen PYTHONFAULTHANDLER=1 coverage run --parallel-mode --source=speedwagon -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml --capture=no
+                                                               '''
                                                     )
                                                 }
                                             }
@@ -670,7 +720,8 @@ pipeline {
                                         stage('Audit Requirement Freeze File'){
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'pip-audit found issues', stageResult: 'UNSTABLE') {
-                                                    sh 'pip-audit -r requirements/requirements-gui-freeze.txt --cache-dir=/tmp/pip-audit-cache'
+                                                    sh './venv/bin/uvx --python-preference=only-managed --with-requirements requirements-gui.txt pip-audit --cache-dir=/tmp/pip-audit-cache --local'
+
                                                 }
                                             }
                                         }
@@ -678,7 +729,7 @@ pipeline {
                                             steps {
                                                 sh(
                                                     label: 'Running Doctest Tests',
-                                                    script: '''mkdir -p logs
+                                                    script: '''. ./venv/bin/activate
                                                                coverage run --parallel-mode --source=speedwagon -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color -w logs/doctest.txt
                                                                '''
                                                     )
@@ -694,7 +745,9 @@ pipeline {
                                                 catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
                                                     tee('logs/mypy.log'){
                                                         sh(label: 'Running MyPy',
-                                                           script: 'mypy -p speedwagon --html-report reports/mypy/html'
+                                                           script: '''. ./venv/bin/activate
+                                                                      mypy -p speedwagon --html-report reports/mypy/html
+                                                                   '''
                                                         )
                                                     }
                                                 }
@@ -709,7 +762,11 @@ pipeline {
                                         stage('Run Ruff Static Analysis') {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Ruff found issues', stageResult: 'UNSTABLE') {
-                                                    sh( label: 'Running Ruff', script: 'mkdir -p reports && ruff check --config=pyproject.toml -o reports/ruffoutput.json --output-format json')
+                                                    sh(label: 'Running Ruff',
+                                                       script: '''. ./venv/bin/activate
+                                                                   mkdir -p reports && ruff check --config=pyproject.toml -o reports/ruffoutput.json --output-format json
+                                                                '''
+                                                    )
                                                 }
                                             }
                                         }
@@ -727,7 +784,9 @@ pipeline {
                                         stage('Run Flake8 Static Analysis') {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Flake8 found issues', stageResult: 'UNSTABLE') {
-                                                    sh script: 'flake8 speedwagon -j 1 --tee --output-file=logs/flake8.log'
+                                                    sh script: '''. ./venv/bin/activate
+                                                                  flake8 speedwagon -j 1 --tee --output-file=logs/flake8.log
+                                                               '''
                                                 }
                                             }
                                             post {
@@ -742,7 +801,7 @@ pipeline {
                                                 catchError(buildResult: 'SUCCESS', message: 'Did not pass all pyDocStyle tests', stageResult: 'UNSTABLE') {
                                                     sh(
                                                         label: 'Run pydocstyle',
-                                                        script: '''mkdir -p reports
+                                                        script: '''. ./venv/bin/activate
                                                                    pydocstyle speedwagon > reports/pydocstyle-report.txt
                                                                    '''
                                                     )
@@ -757,7 +816,9 @@ pipeline {
                                     }
                                     post{
                                         always{
-                                            sh 'coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage'
+                                            sh '''. ./venv/bin/activate
+                                                  coverage combine && coverage xml -o reports/coverage.xml && coverage html -d reports/coverage
+                                               '''
                                             stash includes: 'reports/coverage.xml', name: 'COVERAGE_REPORT_DATA'
                                             recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
                                         }
