@@ -586,11 +586,11 @@ pipeline {
                 retry(conditions: [agent()], count: 2)
             }
             environment{
-                PIP_CACHE_DIR='/tmp/pipcache'
-                UV_INDEX_STRATEGY='unsafe-best-match'
-                UV_TOOL_DIR='/tmp/uvtools'
-                UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
-                UV_CACHE_DIR='/tmp/uvcache'
+                PIP_CACHE_DIR = '/tmp/pipcache'
+                UV_INDEX_STRATEGY = 'unsafe-best-match'
+                UV_TOOL_DIR = '/tmp/uvtools'
+                UV_PYTHON_INSTALL_DIR = '/tmp/uvpython'
+                UV_CACHE_DIR = '/tmp/uvcache'
                 UV_PYTHON = '3.11'
             }
             steps {
@@ -932,9 +932,6 @@ pipeline {
                             }
                         }
                     }
-//                    steps {
-//                        runTox()
-//                    }
                 }
             }
         }
