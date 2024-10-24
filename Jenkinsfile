@@ -2,7 +2,12 @@ library identifier: 'JenkinsPythonHelperLibrary@2024.1.2', retriever: modernSCM(
   [$class: 'GitSCMSource',
    remote: 'https://github.com/UIUCLibrary/JenkinsPythonHelperLibrary.git',
    ])
-
+def getVersion(){
+    node(){
+        def props = readTOML( file: 'pyproject.toml')['project']
+        return props.version
+    }
+}
 
 def getPypiConfig() {
     retry(conditions: [agent()], count: 3) {
@@ -190,6 +195,7 @@ def startup(){
 
 
 def testChocolateyPackage(){
+    def props = readTOML( file: 'pyproject.toml')['project']
     stage('Install'){
         unstash 'CHOCOLATEY_PACKAGE'
         testSpeedwagonChocolateyPkg(props.version)
@@ -204,32 +210,6 @@ def testChocolateyPackage(){
 
 startup()
 
-def get_props(){
-    stage('Reading Package Metadata'){
-        node('docker') {
-            checkout scm
-            docker.image('python').inside {
-                def packageMetadata = readJSON(
-                    text: {
-                        if (isUnix()){
-                            return sh(returnStdout: true, script: 'python -c \'import tomllib;print(tomllib.load(open("pyproject.toml", "rb"))["project"])\'').trim()
-                        } else {
-                            return bat(returnStdout: true, script: '@python -c "import tomllib;print(tomllib.load(open(\'pyproject.toml\', \'rb\'))[\'project\'])').trim()
-                        }
-
-
-                    }()
-                    )
-                echo """Metadata:
-
-    Name      ${packageMetadata.name}
-    Version   ${packageMetadata.version}
-    """
-                return packageMetadata
-            }
-        }
-    }
-}
 def get_sonarqube_unresolved_issues(report_task_file){
     script{
 
@@ -278,7 +258,6 @@ def hasSonarCreds(credentialsId){
     }
     return true
 }
-props = get_props()
 pipeline {
     agent none
     parameters {
@@ -347,7 +326,10 @@ pipeline {
                 }
                 success{
                     stash includes: 'dist/docs/*.pdf', name: 'SPEEDWAGON_DOC_PDF'
-                    zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
+                    script{
+                        def props = readTOML( file: 'pyproject.toml')['project']
+                        zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
+                    }
                     stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                     archiveArtifacts artifacts: 'dist/docs/*.pdf'
                 }
@@ -1094,6 +1076,7 @@ pipeline {
                                         checkout scm
                                         unstash 'PYTHON_PACKAGES'
                                         script {
+                                            def props = readTOML( file: 'pyproject.toml')['project']
                                             findFiles(glob: 'dist/*.whl').each{
                                                 unstash 'SPEEDWAGON_DOC_PDF'
                                                 powershell(script: 'New-Item -Name "deps" -ItemType "directory"')
@@ -1187,6 +1170,7 @@ pipeline {
                                     steps {
                                         unstash 'SPEEDWAGON_DOC_PDF'
                                         script{
+                                            def props = readTOML( file: 'pyproject.toml')['project']
                                             withEnv(["build_number=${get_build_number()}"]) {
                                                 load('ci/jenkins/scripts/standalone.groovy').build_standalone(
                                                     packageFormat: [
@@ -1452,7 +1436,7 @@ pipeline {
                                 description: 'Url to upload artifact.',
                                 name: 'SERVER_URL'
                             )
-                            string defaultValue: "speedwagon/${props.version}", description: 'subdirectory to store artifact', name: 'archiveFolder'
+                            string defaultValue: "speedwagon/${getVersion()}", description: 'subdirectory to store artifact', name: 'archiveFolder'
                         }
                     }
                     options {
