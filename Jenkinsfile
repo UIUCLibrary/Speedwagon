@@ -4,6 +4,7 @@ library identifier: 'JenkinsPythonHelperLibrary@2024.1.2', retriever: modernSCM(
    ])
 def getVersion(){
     node(){
+        checkout scm
         def props = readTOML( file: 'pyproject.toml')['project']
         return props.version
     }
