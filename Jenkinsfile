@@ -914,19 +914,16 @@ pipeline {
                                                        )
                                                    } else {
                                                        installMSVCRuntime('c:\\msvc_runtime\\')
-                                                       bat(
-                                                           label: 'Install uv',
-                                                           script: '''python -m venv venv
-                                                                      call venv\\Scripts\\activate.bat
-                                                                      pip install uv
-                                                                   '''
-                                                       )
                                                        script{
                                                            retry(3){
                                                                bat(
                                                                    label: 'Testing with tox',
-                                                                   script: '''call venv\\Scripts\\activate.bat
+                                                                   script: '''python -m venv venv
+                                                                              call venv\\Scripts\\activate.bat
+                                                                              pip install uv
                                                                               uvx --with tox-uv tox
+                                                                              rmdir /S /Q .tox
+                                                                              rmdir /S /Q venv
                                                                            '''
                                                                )
                                                            }
