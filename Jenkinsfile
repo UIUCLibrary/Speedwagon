@@ -1064,24 +1064,28 @@ pipeline {
                             stages{
                                 stage('Building Python Vendored Wheels'){
                                     agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/windows/tox/Dockerfile'
+                                        docker{
+                                            image 'python'
                                             label 'windows && docker && x86'
-                                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg UV_EXTRA_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv'
-                                            args '-v pipcache_speedwagon:c:/users/containeradministrator/appdata/local/pip -v uvcache_speedwagon:c:/users/containeradministrator/appdata/local/uv'
-                                          }
+                                            args '--mount source=python-tmp-speedwagon,target=C:\\Users\\ContainerUser\\Documents'
+                                        }
+                                    }
+                                    environment{
+                                         UV_INDEX_STRATEGY='unsafe-best-match'
+                                         PIP_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\pipcache'
+                                         UV_TOOL_DIR='C:\\Users\\ContainerUser\\Documents\\uvtools'
+                                         UV_PYTHON_INSTALL_DIR='C:\\Users\\ContainerUser\\Documents\\uvpython'
+                                         UV_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\uvcache'
+                                         VC_RUNTIME_INSTALLER_LOCATION='c:\\msvc_runtime\\'
                                     }
                                     steps{
-                                        withEnv(['PY_PYTHON=3.11']) {
-                                            bat(
-                                                label: 'Getting dependencies to vendor',
-                                                script: '''
-                                                    py -m pip install pip --upgrade
-                                                    py -m pip install wheel
-                                                    py -m pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i %PIP_EXTRA_INDEX_URL%
-                                                '''
-                                            )
-                                        }
+                                        bat(
+                                            label: 'Getting dependencies to vendor',
+                                            script: '''python -m venv venv && venv\\Scripts\\pip install uv
+                                                       venv\\Scripts\\uvx --index-strategy=unsafe-best-match --python 3.11 --with wheel pip wheel -r requirements-vendor.txt --no-deps -w .\\deps\\ -i %PIP_EXTRA_INDEX_URL%
+                                                       rmdir /S /Q venv
+                                            '''
+                                        )
                                         stash includes: 'deps/*.whl', name: 'VENDORED_WHEELS_FOR_CHOCOLATEY'
                                     }
                                 }
