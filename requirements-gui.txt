@@ -12,11 +12,11 @@ lxml==5.3.0
     # via speedwagon (pyproject.toml)
 pluggy==1.5.0
     # via speedwagon (pyproject.toml)
-pyside6==6.5.3
+pyside6==6.8.0.2
     # via speedwagon (pyproject.toml)
-pyside6-addons==6.5.3
+pyside6-addons==6.8.0.2
     # via pyside6
-pyside6-essentials==6.5.3
+pyside6-essentials==6.8.0.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -24,7 +24,7 @@ pyyaml==6.0.2
     # via speedwagon (pyproject.toml)
 requests==2.32.3
     # via speedwagon (pyproject.toml)
-shiboken6==6.5.3
+shiboken6==6.8.0.2
     # via
     #   pyside6
     #   pyside6-addons

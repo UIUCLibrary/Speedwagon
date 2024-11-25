@@ -37,7 +37,7 @@ project = "https://www.library.illinois.edu/dccdocs/speedwagon"
 download = "https://github.com/UIUCLibrary/Speedwagon/releases"
 
 [project.optional-dependencies]
-QT = ["PySide6==6.5.3"]
+QT = ["PySide6~=6.8"]
 
 [project.gui-scripts]
 speedwagon = "speedwagon.__main__:main"
@@ -96,6 +96,10 @@ markers=[
     "adapter",
     "slow: mark test as slow.",
     "model_data"
+]
+filterwarnings = [
+    # https://github.com/pytest-dev/pytest-qt/issues/558
+    "ignore:Failed to disconnect .* from signal:RuntimeWarning",
 ]
 
 [tool.pydocstyle]

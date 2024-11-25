@@ -190,13 +190,13 @@ pyproject-hooks==1.2.0
     # via build
 pyqt-distutils==0.7.3
     # via -r requirements/requirements-dev.in
-pyside6==6.5.3
+pyside6==6.8.0
     # via
     #   -r requirements/requirements-dev.in
     #   speedwagon (pyproject.toml)
-pyside6-addons==6.5.3
+pyside6-addons==6.8.0
     # via pyside6
-pyside6-essentials==6.5.3
+pyside6-essentials==6.8.0
     # via
     #   pyside6
     #   pyside6-addons
@@ -242,7 +242,7 @@ ruff==0.8.0
     # via -r requirements/requirements-dev.in
 secretstorage==3.3.3 ; sys_platform == 'linux'
     # via keyring
-shiboken6==6.5.3
+shiboken6==6.8.0
     # via
     #   pyside6
     #   pyside6-addons

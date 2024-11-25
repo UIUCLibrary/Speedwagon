@@ -14,7 +14,7 @@ pyqt-distutils>=0.7.3
 pycodestyle>=2.5.0
 pydocstyle
 pylint
-PySide6~=6.5
+PySide6~=6.8
 pytest
 pytest-mock>=3.10.0
 pytest-qt>=3.3.0
