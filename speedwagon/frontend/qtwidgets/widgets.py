@@ -856,6 +856,8 @@ class ToolConsole(QtWidgets.QWidget):
         super().__init__(parent)
 
         self.log_handler = logging_helpers.QtSignalLogHandler(self)
+        if self.log_handler.signals is None:
+            raise RuntimeError("attach_logger failed to connect signals")
         self.log_handler.signals.messageSent.connect(self.add_message)
 
         self.log_formatter = logging_helpers.ConsoleFormatter()

@@ -470,6 +470,8 @@ class WorkflowProgressGui(QtWidgets.QDialog):
     def attach_logger(self, logger: logging.Logger) -> None:
         self._parent_logger = logger
         self._log_handler = logging_helpers.QtSignalLogHandler(self)
+        if self._log_handler.signals is None:
+            raise RuntimeError("attach_logger failed to connect signals")
         self._log_handler.signals.messageSent.connect(
             self.write_html_block_to_console
         )
