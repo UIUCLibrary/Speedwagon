@@ -110,14 +110,10 @@ RUN Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.208 -Force ;`
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 ADD requirements.txt requirements-dev.txt c:\temp\
-RUN python -m pip install --upgrade pip ; `
-    pip install wheel ; `
-    pip install --upgrade setuptools ;`
-    python -m pip wheel -r c:\temp\requirements.txt -r c:\temp\requirements-dev.txt --wheel-dir c:\wheels
-
-RUN pip install --no-index --find-links=c:\wheels\ `
-        -r c:\temp\requirements.txt `
-        -r c:\temp\requirements-dev.txt
+RUN python -m pip install --no-cache-dir --upgrade pip ; `
+    pip install --no-cache-dir wheel ; `
+    pip install --no-cache-dir --upgrade setuptools ;`
+    pip install --no-cache-dir -r c:\temp\requirements-dev.txt
 
 ENV PIP_FIND_LINKS=c:\wheels\
 COPY ci/docker/windows_standalone/build_standalone.ps1 c:/scripts/build_standalone.ps1

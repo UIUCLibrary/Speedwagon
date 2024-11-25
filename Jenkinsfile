@@ -65,7 +65,7 @@ def macAppleBundle() {
             script: '''python3 -m venv --upgrade-deps venv
                        . ./venv/bin/activate
                        pip install wheel
-                       pip install -r requirements-freeze.txt
+                       pip install -r requirements-gui.txt cmake Jinja2 pyinstaller
             '''
             )
         findFiles(glob: 'dist/speedwagon*.whl').each{ wheel ->
@@ -387,7 +387,7 @@ pipeline {
                                                        . ./venv/bin/activate
                                                        bootstrap_uv/bin/uv pip install uv
                                                        rm -rf bootstrap_uv
-                                                       uv pip install -r requirements-dev.txt -r requirements-gui.txt
+                                                       uv pip install -r requirements-dev.txt
                                                        '''
                                                    )
                                         sh(
@@ -1087,7 +1087,7 @@ pipeline {
                                                                 -PackageMaintainer \"${props.maintainers[0].name}\" `
                                                                 -Wheel ${it.path} `
                                                                 -DependenciesDir '.\\deps' `
-                                                                -Requirements '.\\requirements-freeze.txt' `
+                                                                -Requirements '.\\requirements-gui.txt' `
                                                                 -DocsDir '.\\dist\\docs'
                                                             """
                                                 )
@@ -1176,7 +1176,7 @@ pipeline {
                                                         nsis: params.PACKAGE_WINDOWS_STANDALONE_NSIS,
                                                         zipFile: params.PACKAGE_WINDOWS_STANDALONE_ZIP,
                                                     ],
-                                                    vendoredPythonRequirementsFile: 'requirements-freeze.txt',
+                                                    vendoredPythonRequirementsFile: 'requirements-gui.txt',
                                                     buildDir: 'build\\cmake_build',
                                                     venvPath: "${WORKSPACE}\\build\\standalone_venv",
                                                     package: [

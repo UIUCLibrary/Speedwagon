@@ -1,5 +1,0 @@
--r requirements.txt
--r requirements-gui.txt
-jinja2
-PyInstaller
-cmake

@@ -25,7 +25,7 @@ jobs:
       - name: Install requirements
         run: |
           pip install wheel uv
-          uv pip install --system -r requirements/requirements_tox.txt tox-uv
+          uv pip install --system -r requirements-dev.txt tox-uv
       - uses: actions/github-script@v6
         id: tox-env
         with:

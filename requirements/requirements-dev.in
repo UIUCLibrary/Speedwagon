@@ -1,4 +1,40 @@
--r requirements.txt
--r requirements_tox.txt
--r requirements-dev.txt
--r requirements-extra.txt
+attrs>=19.3.0
+build
+coverage>=4.5.3
+commitizen
+flake8
+flake8-bugbear
+importlib-metadata>=1.6.1
+importlib-resources>=1.5.0
+lxml>=4.5.1
+mypy>=0.701
+mypy-extensions>=1.0.0
+pluggy>=1.0
+pyqt-distutils>=0.7.3
+pycodestyle>=2.5.0
+pydocstyle
+pylint
+PySide6~=6.5
+pytest
+pytest-mock>=3.10.0
+pytest-qt>=3.3.0
+pytest-xvfb
+PyYAML
+requests>=2.25.0
+types-PyYAML
+types-requests
+typing-extensions;python_version<"3.11"
+paramiko
+ruff
+six>=1.11
+sphinx>=6
+sphinx-argparse
+sphinxcontrib-applehelp
+sphinxcontrib-devhelp
+sphinxcontrib-htmlhelp
+sphinxcontrib-jsmath
+sphinxcontrib-qthelp
+tox
+twine
+yarl>=1.4.2
+
