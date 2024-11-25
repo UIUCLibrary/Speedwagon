@@ -171,30 +171,6 @@ def testReinstallSpeedwagonChocolateyPkg(version){
 }
 
 
-def startup(){
-
-    parallel(
-    [
-        failFast: true,
-        'Loading Reference Build Information': {
-            node(){
-                checkout scm
-                discoverGitReferenceBuild(latestBuildIfNotFound: true)
-            }
-        },
-        'Enable Git Forensics': {
-            node(){
-                checkout scm
-                mineRepository()
-            }
-        },
-    ]
-    )
-
-}
-
-
-
 def testChocolateyPackage(){
     def props = readTOML( file: 'pyproject.toml')['project']
     stage('Install'){
@@ -209,7 +185,6 @@ def testChocolateyPackage(){
     }
 }
 
-startup()
 
 def get_sonarqube_unresolved_issues(report_task_file){
     script{
@@ -379,6 +354,8 @@ pipeline {
                             stages{
                                 stage('Configuring Testing Environment'){
                                     steps{
+                                        discoverGitReferenceBuild(latestBuildIfNotFound: true)
+                                        mineRepository()
                                         sh(
                                             label: 'Create virtual environment',
                                             script: '''python3 -m venv bootstrap_uv
