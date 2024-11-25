@@ -204,13 +204,13 @@ class WorkflowListProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
         )
 
     @overload
-    def parent(self) -> QtCore.QObject:
-        ...
-
-    @overload
     def parent(
         self, index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> QtCore.QModelIndex:
+        ...
+
+    @overload
+    def parent(self) -> QtCore.QObject:
         ...
 
     def parent(

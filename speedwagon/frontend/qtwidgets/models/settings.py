@@ -615,13 +615,13 @@ class WorkflowSettingsModel(QtCore.QAbstractItemModel):
         return item.data_column(index.column(), role)
 
     @typing.overload
-    def parent(self) -> QtCore.QObject:
-        ...
-
-    @typing.overload
     def parent(
         self, child: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> QtCore.QModelIndex:
+        ...
+
+    @typing.overload
+    def parent(self) -> QtCore.QObject:
         ...
 
     def parent(
