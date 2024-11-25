@@ -35,19 +35,12 @@ __all__ = [
 
 NO_CANDIDATE_MESSAGE = "No candidate given to investigate"
 
-if sys.version_info >= (3, 9):
-    FilePath: TypeAlias = Union[
-        str,
-        bytes,
-        os.PathLike[str],
-        os.PathLike[bytes]
-    ]
-else:
-    FilePath: TypeAlias = Union[
-        str,
-        bytes,
-        os.PathLike,
-    ]
+FilePath: TypeAlias = Union[
+    str,
+    bytes,
+    os.PathLike[str],
+    os.PathLike[bytes]
+]
 
 
 class AbsOptionValidator(abc.ABC):

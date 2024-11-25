@@ -18,12 +18,8 @@ if sys.version_info < (3, 10):  # pragma: no cover
     import importlib_metadata as metadata
 else:
     from importlib import metadata
-if sys.version_info >= (3, 9):
-    from importlib import resources
-    from importlib.resources import as_file
-else:
-    import importlib_resources as resources
-    from importlib_resources import as_file
+from importlib import resources
+from importlib.resources import as_file
 
 from collections import namedtuple
 
