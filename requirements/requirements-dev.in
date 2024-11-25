@@ -10,6 +10,7 @@ lxml>=4.5.1
 mypy>=0.701
 mypy-extensions>=1.0.0
 pluggy>=1.0
+pre_commit
 pyqt-distutils>=0.7.3
 pycodestyle>=2.5.0
 pydocstyle

@@ -26,6 +26,8 @@ cffi==1.17.1
     # via
     #   cryptography
     #   pynacl
+cfgv==3.4.0
+    # via pre-commit
 chardet==5.2.0
     # via tox
 charset-normalizer==3.4.0
@@ -72,6 +74,8 @@ flake8==7.1.1
     #   flake8-bugbear
 flake8-bugbear==24.10.31
     # via -r requirements/requirements-dev.in
+identify==2.6.2
+    # via pre-commit
 idna==3.10
     # via
     #   requests
@@ -137,6 +141,8 @@ mypy-extensions==1.0.0
     #   mypy
 nh3==0.2.18
     # via readme-renderer
+nodeenv==1.9.1
+    # via pre-commit
 packaging==24.2
     # via
     #   build
@@ -161,6 +167,8 @@ pluggy==1.5.0
     #   pytest
     #   pytest-qt
     #   tox
+pre-commit==4.0.1
+    # via -r requirements/requirements-dev.in
 prompt-toolkit==3.0.36
     # via questionary
 propcache==0.2.0
@@ -190,13 +198,13 @@ pyproject-hooks==1.2.0
     # via build
 pyqt-distutils==0.7.3
     # via -r requirements/requirements-dev.in
-pyside6==6.8.0
+pyside6==6.8.0.2
     # via
     #   -r requirements/requirements-dev.in
     #   speedwagon (pyproject.toml)
-pyside6-addons==6.8.0
+pyside6-addons==6.8.0.2
     # via pyside6
-pyside6-essentials==6.8.0
+pyside6-essentials==6.8.0.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -221,6 +229,7 @@ pyyaml==6.0.2
     #   -r requirements/requirements-dev.in
     #   speedwagon (pyproject.toml)
     #   commitizen
+    #   pre-commit
 questionary==2.0.1
     # via commitizen
 readme-renderer==44.0
@@ -242,7 +251,7 @@ ruff==0.8.0
     # via -r requirements/requirements-dev.in
 secretstorage==3.3.3 ; sys_platform == 'linux'
     # via keyring
-shiboken6==6.8.0
+shiboken6==6.8.0.2
     # via
     #   pyside6
     #   pyside6-addons
@@ -320,7 +329,9 @@ urllib3==2.2.3
     #   twine
     #   types-requests
 virtualenv==20.27.1
-    # via tox
+    # via
+    #   pre-commit
+    #   tox
 wcwidth==0.2.13
     # via prompt-toolkit
 yarl==1.18.0
