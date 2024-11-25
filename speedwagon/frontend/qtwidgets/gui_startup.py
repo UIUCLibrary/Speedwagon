@@ -109,7 +109,7 @@ def get_default_workflow_config_path() -> str:
 
 def save_workflow_config(
     workflow_name: str,
-    data: str,
+    data: Dict[str, AbsOutputOptionDataType],
     parent: QtWidgets.QWidget,
     dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
     serialization_strategy: typing.Optional[
@@ -140,7 +140,9 @@ def save_workflow_config(
             qt_process_file(
                 parent=parent,
                 process_callback=partial(
-                    serialization_strategy.save, workflow_name, data
+                    serialization_strategy.save,
+                    workflow_name,
+                    {k: v.value for k, v in data.items()}
                 ),
                 error_dialog_title="Export Job Configuration Failed",
             )

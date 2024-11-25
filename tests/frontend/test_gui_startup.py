@@ -13,6 +13,7 @@ try:  # pragma: no cover
 except ImportError:  # pragma: no cover
     from importlib_metadata import PackageMetadata  # type: ignore
 
+from speedwagon.workflow import FileSelectData
 import speedwagon.config
 gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
@@ -338,14 +339,17 @@ class TestStartQtThreaded:
         dialog.getSaveFileName = MagicMock(return_value=("make_jp2.json", ""))
         monkeypatch.setattr(QtWidgets.QMessageBox, "exec", Mock(name="exec"))
         serialization_strategy = Mock()
+        spam_file_select = FileSelectData(label="spam")
+        spam_file_select.value = "Spam.txt"
         save_workflow_config(
             workflow_name="Spam",
-            data={},
+            data={"dummy": spam_file_select},
             parent=parent,
             dialog_box=dialog,
             serialization_strategy=serialization_strategy
         )
         assert serialization_strategy.save.called is True
+        serialization_strategy.save.assert_called_with("Spam", {'dummy': 'Spam.txt'})
 
     def test_save_workflow_cancel(self, qtbot, starter):
         dialog = Mock()
