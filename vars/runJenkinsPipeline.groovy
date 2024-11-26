@@ -571,14 +571,12 @@ def call(){
                                                             docker.image('python').inside('--mount source=python-tmp-speedwagon,target=C:\\Users\\ContainerUser\\Documents --mount source=msvc-runtime,target=$VC_RUNTIME_INSTALLER_LOCATION'){
                                                                 checkout scm
                                                                 try{
-                                                                    bat(label: 'Install uv',
-                                                                        script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv'
-                                                                    )
                                                                     retry(3){
                                                                         bat(label: 'Running Tox',
-                                                                            script: """call venv\\Scripts\\activate.bat
-                                                                                       uv python install cpython-${version}
-                                                                                       uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                            script: """python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv
+                                                                                       venv\\Scripts\\uv python install cpython-${version}
+                                                                                       venv\\Scripts\\uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                                       rmdir /S /Q venv
                                                                                     """
                                                                         )
                                                                     }
