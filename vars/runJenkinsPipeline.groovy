@@ -569,7 +569,6 @@ def call(){
                                                     {
                                                         node('docker && windows'){
                                                             docker.image('python').inside('--mount source=python-tmp-speedwagon,target=C:\\Users\\ContainerUser\\Documents --mount source=msvc-runtime,target=$VC_RUNTIME_INSTALLER_LOCATION'){
-                                                                installMSVCRuntime(env.VC_RUNTIME_INSTALLER_LOCATION)
                                                                 checkout scm
                                                                 try{
                                                                     bat(label: 'Install uv',
