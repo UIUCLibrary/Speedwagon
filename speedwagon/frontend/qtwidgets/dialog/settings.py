@@ -770,6 +770,7 @@ class TabEditor(TabEditorWidgetUI):
                 self.changes_made
             )
         self._tabs_model = value
+        self._tabs_model.setParent(self)
         self._tabs_model.dataChanged.connect(self.changes_made)  # type: ignore
         self.selected_tab_combo_box.setModel(self._tabs_model)
 
