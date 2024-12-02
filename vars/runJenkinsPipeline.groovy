@@ -288,6 +288,18 @@ def call(){
                                                     }
                                                 }
                                             }
+                                            stage('Run Docs linkcheck'){
+                                                steps {
+                                                    catchError(buildResult: 'SUCCESS', message: 'Sphinx docs linkcheck', stageResult: 'UNSTABLE') {
+                                                        sh(
+                                                            label: 'Running Sphinx docs linkcheck',
+                                                            script: '''. ./venv/bin/activate
+                                                                       python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees --no-color --builder=linkcheck --fail-on-warning
+                                                                       '''
+                                                            )
+                                                    }
+                                                }
+                                            }
                                             stage('Run MyPy Static Analysis') {
                                                 steps{
                                                     catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
