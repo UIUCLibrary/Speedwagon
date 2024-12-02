@@ -568,9 +568,9 @@ def call(){
                                                     "Tox Environment: ${toxEnv}",
                                                     {
                                                         node('docker && windows'){
-                                                            docker.image('python').inside('--mount source=python-tmp-speedwagon,target=C:\\Users\\ContainerUser\\Documents --mount source=msvc-runtime,target=$VC_RUNTIME_INSTALLER_LOCATION'){
-                                                                checkout scm
-                                                                try{
+                                                            try{
+                                                                docker.image('python').inside('--mount source=python-tmp-speedwagon,target=C:\\Users\\ContainerUser\\Documents --mount source=msvc-runtime,target=$VC_RUNTIME_INSTALLER_LOCATION'){
+                                                                    checkout scm
                                                                     retry(3){
                                                                         bat(label: 'Running Tox',
                                                                             script: """python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv
@@ -580,15 +580,15 @@ def call(){
                                                                                     """
                                                                         )
                                                                     }
-                                                                } finally{
-                                                                    cleanWs(
-                                                                        patterns: [
-                                                                            [pattern: 'venv/', type: 'INCLUDE'],
-                                                                            [pattern: '.tox', type: 'INCLUDE'],
-                                                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                                        ]
-                                                                    )
                                                                 }
+                                                            } finally{
+                                                                cleanWs(
+                                                                    patterns: [
+                                                                        [pattern: 'venv/', type: 'INCLUDE'],
+                                                                        [pattern: '.tox', type: 'INCLUDE'],
+                                                                        [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                                                    ]
+                                                                )
                                                             }
                                                         }
                                                     }
