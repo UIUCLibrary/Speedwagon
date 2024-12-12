@@ -547,7 +547,7 @@ def call(){
                                     script{
                                         def envs = []
                                         node('docker && windows'){
-                                            docker.image('python').inside('--mount source=python-tmp-speedwagon,target=C:\\Users\\ContainerUser\\Documents'){
+                                            docker.image('python').inside("--mount source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
                                                 try{
                                                     checkout scm
                                                     bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
@@ -575,7 +575,7 @@ def call(){
                                                     {
                                                         node('docker && windows'){
                                                             try{
-                                                                docker.image('python').inside('--mount source=python-tmp-speedwagon,target=C:\\Users\\ContainerUser\\Documents --mount source=msvc-runtime,target=$VC_RUNTIME_INSTALLER_LOCATION'){
+                                                                docker.image('python').inside("--mount source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
                                                                     checkout scm
                                                                     retry(3){
                                                                         bat(label: 'Running Tox',
@@ -733,7 +733,7 @@ def call(){
                                                docker {
                                                    image 'python'
                                                    label "${OS} && ${ARCHITECTURE} && docker"
-                                                   args "--mount source=python-tmp-speedwagon,target=${['windows'].contains(OS) ? 'C:\\Users\\ContainerUser\\Documents': '/tmp'} ${['windows'].contains(OS) ? '--mount source=msvc-runtime,target=c:\\msvc_runtime\\': ''}"
+                                                   args "--mount source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR} ${['windows'].contains(OS) ? '--mount source=msvc-runtime,target=c:\\msvc_runtime\\': ''}"
                                                }
                                            }
                                            steps {
