@@ -19,3 +19,7 @@ delme/
 .eggs/
 dist/
 venv/
+.coverage*
+**/*.tif
+**/*.jp2
+
