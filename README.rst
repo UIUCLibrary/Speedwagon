@@ -4,7 +4,7 @@ About Speedwagon
 Collection of tools and workflows for DS
 
 
-`Documentation <https://www.library.illinois.edu/dccdocs/speedwagon/>`_
+`Documentation <https://uiuclibrary.github.io/Speedwagon/>`_
 
 `Download <https://nexus.library.illinois.edu/service/rest/repository/browse/prescon-dist/speedwagon/>`_
 
