@@ -8,6 +8,8 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
 
+from speedwagon.frontend.qtwidgets.gui import MainWindow3
+
 try:  # pragma: no cover
     from importlib.metadata import PackageMetadata
 except ImportError:  # pragma: no cover
@@ -907,6 +909,18 @@ class TestStartQtThreaded:
         )
         start.ensure_settings_files()
         assert speedwagon.config.config.ensure_settings_files.called is True
+
+    def test_set_application_name(self, qtbot):
+        start = gui_startup.StartQtThreaded(Mock())
+        start.set_application_name("new app")
+        main_window = MainWindow3()
+        qtbot.addWidget(main_window)
+        main_window.show = Mock()
+        main_window.update_settings = Mock()
+        start.build_main_window = lambda *_: main_window
+        # start.build_main_window = lambda *_: MainWindow3()
+        start.start_gui(Mock())
+        assert main_window.windowTitle() == "new app"
 
 
 class TestWorkflowProgressCallbacks:
