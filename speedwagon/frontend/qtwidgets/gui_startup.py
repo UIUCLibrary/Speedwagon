@@ -26,7 +26,7 @@ if sys.version_info >= (3, 10):
 else:
     import importlib_metadata as metadata
 
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
 
 import speedwagon.job
 from speedwagon.config.tabs import CustomTabsYamlConfig, TabsYamlWriter
@@ -303,6 +303,7 @@ class StartQtThreaded(AbsGuiStarter):
     def __init__(self, app: Optional[QtWidgets.QApplication] = None) -> None:
         """Create a new starter object."""
         super().__init__(app)
+        self._application_name: Optional[str] = None
         self.settings_resolver: AbsResolveSettingsStrategy = ResolveSettings()
         self.startup_settings: FullSettingsData = {"GLOBAL": {"debug": False}}
 
@@ -359,6 +360,10 @@ class StartQtThreaded(AbsGuiStarter):
         parent.logger.debug(f"Loading {workflow_name}")
         parent.set_active_workflow(workflow_name)
         parent.set_current_workflow_settings(data)
+
+    def set_application_name(self, name: str) -> None:
+        """Set the Qt application name and the window matching."""
+        self._application_name = name
 
     def _load_help(self) -> None:
         try:
@@ -559,6 +564,7 @@ class StartQtThreaded(AbsGuiStarter):
                     cls, exception, traceback, self.app, self.windows
                 )
             )
+
             with speedwagon.runner_strategies.BackgroundJobManager() as \
                     job_manager:
                 job_manager.global_settings = \
@@ -571,6 +577,13 @@ class StartQtThreaded(AbsGuiStarter):
                 self.load_workflows()
                 self.windows.update_settings()
                 self.windows.show()
+                if self._application_name is not None:
+                    QtCore.QCoreApplication.setApplicationName(
+                        self._application_name
+                    )
+                    self.windows.setWindowTitle(
+                        QtCore.QCoreApplication.applicationName()
+                    )
                 return self.app.exec()
         finally:
             sys.excepthook = original_hook
