@@ -8,6 +8,7 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
 
+
 try:  # pragma: no cover
     from importlib.metadata import PackageMetadata
 except ImportError:  # pragma: no cover
@@ -15,9 +16,13 @@ except ImportError:  # pragma: no cover
 
 from speedwagon.workflow import FileSelectData
 import speedwagon.config
+
+QtCore = pytest.importorskip('PySide6.QtCore')
+QtWidgets = pytest.importorskip('PySide6.QtWidgets')
+
+MainWindow3 = pytest.importorskip('speedwagon.frontend.qtwidgets.gui.MainWindow3')
 gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
-from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor
 from speedwagon.frontend.qtwidgets.models.tabs import AbsLoadTabDataModelStrategy
@@ -907,6 +912,18 @@ class TestStartQtThreaded:
         )
         start.ensure_settings_files()
         assert speedwagon.config.config.ensure_settings_files.called is True
+
+    def test_set_application_name(self, qtbot):
+        start = gui_startup.StartQtThreaded(Mock())
+        start.set_application_name("new app")
+        main_window = MainWindow3()
+        start.load_workflows = Mock()
+        qtbot.addWidget(main_window)
+        main_window.show = Mock()
+        main_window.update_settings = Mock()
+        start.build_main_window = lambda *_: main_window
+        start.start_gui(Mock())
+        assert main_window.windowTitle() == "new app"
 
 
 class TestWorkflowProgressCallbacks:

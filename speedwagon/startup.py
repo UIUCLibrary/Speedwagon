@@ -150,6 +150,7 @@ class ApplicationLauncher:
             strategy: Starter strategy class.
         """
         super().__init__()
+        self.application_name = "speedwagon"
         try:
             from speedwagon.frontend.qtwidgets.gui_startup import (
                 StartQtThreaded,
@@ -165,6 +166,7 @@ class ApplicationLauncher:
 
     def run(self, app=None) -> int:
         """Run Speedwagon."""
+        self.strategy.set_application_name(self.application_name)
         if app:
             try:
                 from speedwagon.frontend.qtwidgets.gui_startup import (
@@ -252,6 +254,14 @@ def run_command(
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
+    def set_application_name(self, name: str) -> None:  # noqa: B027
+        """Set the application name if environment supports changing name.
+
+        Defaults to no-op.
+
+        This is useful for GUI applications such as ones that based on Qt.
+        """
+
     @abc.abstractmethod
     def run(self) -> int:
         pass
