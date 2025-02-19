@@ -1,4 +1,5 @@
 """Toolkit for generating new workflows."""
+
 from __future__ import annotations
 import abc
 import dataclasses
@@ -6,26 +7,34 @@ import json
 import os
 import typing
 from typing import (
-    Any, Dict, List, Optional, Union, TYPE_CHECKING, Callable, TypeVar
+    Any,
+    Dict,
+    List,
+    Optional,
+    Union,
+    TYPE_CHECKING,
+    Callable,
+    TypeVar,
 )
 
 import speedwagon.config
 import speedwagon.job
+
 if TYPE_CHECKING:
     from speedwagon.validators import AbsOutputValidation
 
 UserDataType = Union[str, bool, int, None]
 UserData = Dict[str, UserDataType]
 
-_T = TypeVar('_T')
+_T = TypeVar("_T")
 
 __all__ = [
-    'AbsOutputOptionDataType',
+    "AbsOutputOptionDataType",
     "ChoiceSelection",
     "FileSelectData",
     "TextLineEditData",
     "DirectorySelect",
-    "BooleanSelect"
+    "BooleanSelect",
 ]
 
 
@@ -95,9 +104,10 @@ class AbsOutputOptionDataType(abc.ABC, typing.Generic[_T]):
     def add_validation(
         self,
         validator: AbsOutputValidation[_T, str],
-        condition: Optional[Callable[[_T, UserData], bool]] = None
+        condition: Optional[Callable[[_T, UserData], bool]] = None,
     ) -> None:
         """Include a validation for the value of this object."""
+
         def default_condition(_: Optional[_T], __: UserData) -> bool:
             return True
 
@@ -116,11 +126,8 @@ class AbsOutputOptionDataType(abc.ABC, typing.Generic[_T]):
         """
         findings: List[str] = []
         for validator in self._validators:
-            if (
-                    self._value_has_been_set and
-                    not validator.condition(
-                        typing.cast(_T, self._value), (job_args or {})
-                    )
+            if self._value_has_been_set and not validator.condition(
+                typing.cast(_T, self._value), (job_args or {})
             ):
                 continue
             validator.validation.candidate = self._value
@@ -226,14 +233,23 @@ class BooleanSelect(AbsOutputOptionDataType):
         return data
 
 
-def initialize_workflows() -> List[speedwagon.job.Workflow]:
-    """Initialize workflow for use."""
-    config_strategy = speedwagon.config.StandardConfigFileLocator()
-    workflows = []
-    backend_yaml = os.path.join(
+def default_back_end_yaml() -> str:
+    config_strategy = speedwagon.config.StandardConfigFileLocator(
+        speedwagon.config.config.DEFAULT_CONFIG_DIRECTORY_NAME
+    )
+    return os.path.join(
         config_strategy.get_app_data_dir(),
         speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
     )
+
+
+def initialize_workflows(
+    backend_yaml_file_locator_strategy: Callable[
+        [], str
+    ] = default_back_end_yaml,
+) -> List[speedwagon.job.Workflow]:
+    """Initialize workflow for use."""
+    workflows = []
     for workflow_klass in sorted(
         speedwagon.job.available_workflows().values(),
         key=lambda workflow: workflow.name,
@@ -241,7 +257,7 @@ def initialize_workflows() -> List[speedwagon.job.Workflow]:
         config_backend = speedwagon.config.YAMLWorkflowConfigBackend()
         workflow = workflow_klass()
         config_backend.workflow = workflow
-        config_backend.yaml_file = backend_yaml
+        config_backend.yaml_file = backend_yaml_file_locator_strategy()
         workflow.set_options_backend(config_backend)
         workflows.append(workflow)
     return workflows

@@ -19,9 +19,13 @@ from typing import (
 from PySide6 import QtCore, QtGui
 
 import speedwagon.config.tabs as tabs_config
-from speedwagon.config.config import StandardConfigFileLocator
+from speedwagon.config.config import (
+    StandardConfigFileLocator,
+    DEFAULT_CONFIG_DIRECTORY_NAME,
+)
 import speedwagon.job
 from .common import WorkflowItem, WorkflowClassRole, AbsWorkflowList
+
 if TYPE_CHECKING:
     from speedwagon.config import AbsTabsConfigDataManagement
 
@@ -106,12 +110,10 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
     @overload
     def parent(
         self, child: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
-    ) -> QtCore.QModelIndex:
-        ...
+    ) -> QtCore.QModelIndex: ...
 
     @overload
-    def parent(self) -> QtCore.QObject:
-        ...
+    def parent(self) -> QtCore.QObject: ...
 
     def parent(
         self,
@@ -436,12 +438,10 @@ class TabProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
     @overload
     def parent(
         self, index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
-    ) -> QtCore.QModelIndex:
-        ...
+    ) -> QtCore.QModelIndex: ...
 
     @overload
-    def parent(self) -> QtCore.QObject:
-        ...
+    def parent(self) -> QtCore.QObject: ...
 
     def parent(
         self,
@@ -508,10 +508,14 @@ class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
 
 
 class TabDataModelConfigLoader(TabDataModelYAMLLoader):
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        yml_file_locator_strategy=lambda: StandardConfigFileLocator(
+            config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+        ).get_tabs_file(),
+    ) -> None:
         super().__init__()
-        config_strategy = StandardConfigFileLocator()
-        self.yml_file = config_strategy.get_tabs_file()
+        self.yml_file = yml_file_locator_strategy()
 
 
 class TabStandardItem(QtGui.QStandardItem):

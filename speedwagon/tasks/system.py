@@ -1,7 +1,9 @@
 """System tasks."""
 
 import abc
-import speedwagon.config.config
+import logging
+
+from speedwagon.config import config
 
 
 class AbsSystemTask(abc.ABC):
@@ -19,18 +21,33 @@ class AbsSystemTask(abc.ABC):
 class EnsureGlobalConfigFiles(AbsSystemTask):
     """Task to ensure all global config files are located on system."""
 
-    def __init__(self, logger) -> None:
+    def __init__(
+        self,
+        logger: logging.Logger,
+            directory_prefix: str = config.DEFAULT_CONFIG_DIRECTORY_NAME
+    ) -> None:
         """Create a new EnsureGlobalConfigFiles object.
 
         Args:
             logger: Used to report files being created.
+            directory_prefix:
+                directory used to hold application config file files
         """
         super().__init__()
         self.logger = logger
+        self.directory_prefix = directory_prefix
 
     def run(self) -> None:
         """Run the ensure settings files task."""
-        speedwagon.config.config.ensure_settings_files(logger=self.logger)
+        config.ensure_settings_files(
+            logger=self.logger,
+            strategy=config.CreateBasicMissingConfigFile(
+                logger=self.logger,
+                config_location_strategy=config.StandardConfigFileLocator(
+                    config_directory_prefix=self.directory_prefix
+                ),
+            ),
+        )
 
     def description(self) -> str:
         """Get human-readable information about current task."""

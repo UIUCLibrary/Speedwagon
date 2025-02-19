@@ -18,7 +18,10 @@ import warnings
 from types import TracebackType
 from typing import List, Any, Dict, Optional, Type, TypeVar, Mapping, Callable
 import functools
+
 import speedwagon.config
+from speedwagon.config import StandardConfigFileLocator
+from speedwagon.config.config import DEFAULT_CONFIG_DIRECTORY_NAME
 import speedwagon.exceptions
 from speedwagon import runner
 
@@ -675,6 +678,8 @@ class BackgroundJobManager(AbsJobManager2):
             Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
         self.global_settings: Optional[SettingsData] = None
+        self.config_file_location_strategy =\
+            lambda: StandardConfigFileLocator(DEFAULT_CONFIG_DIRECTORY_NAME)
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
@@ -702,9 +707,8 @@ class BackgroundJobManager(AbsJobManager2):
                     global_settings=options.get("global_settings")
                 )
                 options_backend = speedwagon.config.YAMLWorkflowConfigBackend()
-                strategy = speedwagon.config.StandardConfigFileLocator()
                 backend_yaml = os.path.join(
-                    strategy.get_app_data_dir(),
+                    self.config_file_location_strategy().get_app_data_dir(),
                     speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
                 )
                 options_backend.workflow = workflow

@@ -615,3 +615,12 @@ class TestYAMLWorkflowConfigBackend:
             )
 
         assert config.get("Tesseract data file location") == "/some/path"
+
+    def test_ensure_settings_files(self):
+        strategy = Mock(spec_set=speedwagon.config.config.AbsEnsureConfigFile)
+        speedwagon.config.config.ensure_settings_files(strategy=strategy)
+        assert all([strategy.ensure_config_file.called,
+            strategy.ensure_tabs_file.called,
+            strategy.ensure_user_data_dir.called,
+            strategy.ensure_app_data_dir.called,
+            ])
