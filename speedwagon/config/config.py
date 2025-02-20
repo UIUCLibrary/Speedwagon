@@ -43,6 +43,7 @@ __all__ = [
     "AbsConfig",
     "AbsConfigSettings",
     "ConfigManager",
+    'ensure_settings_files',
     "generate_default",
     "get_platform_settings",
     "IniConfigManager",
@@ -447,6 +448,12 @@ def ensure_settings_files(
     logger: Optional[logging.Logger] = None,
     strategy: Optional[AbsEnsureConfigFile] = None,
 ) -> None:
+    """Ensure that all settings files are available.
+
+    Args:
+        logger: Logger used to report files being created.
+        strategy: Strategy used to ensure files are available.
+    """
     logger = logger or logging.getLogger(__package__)
     strategy = strategy or CreateBasicMissingConfigFile(logger=logger)
     strategy.ensure_config_file()
