@@ -43,6 +43,7 @@ __all__ = [
     "AbsConfig",
     "AbsConfigSettings",
     "ConfigManager",
+    'ensure_settings_files',
     "generate_default",
     "get_platform_settings",
     "IniConfigManager",
@@ -50,19 +51,22 @@ __all__ = [
     "StandardConfigFileLocator",
     "WindowsConfig",
     "NixConfig",
+    "DEFAULT_CONFIG_DIRECTORY_NAME",
 ]
 
 CONFIG_INI_FILE_NAME: Final[str] = "config.ini"
 TABS_YML_FILE_NAME: Final[str] = "tabs.yml"
+DEFAULT_CONFIG_DIRECTORY_NAME: Final[str] = "Speedwagon"
 
 
 class AbsConfig(collections.abc.Mapping):
     """Abstract class for defining where speedwagon should find data files."""
 
-    def __init__(self) -> None:
+    def __init__(self, prefix: str = DEFAULT_CONFIG_DIRECTORY_NAME) -> None:
         """Populate the base structure of a config class."""
         super().__init__()
         self._data: SettingsData = {}
+        self.prefix = prefix
 
     @abc.abstractmethod
     def get_user_data_directory(self) -> str:
@@ -100,15 +104,15 @@ class NixConfig(AbsConfig):
 
     def get_user_data_directory(self) -> str:
         """Get path the app data for the current system."""
-        return os.path.join(self._get_app_dir(), "data")
+        return os.path.join(self._get_app_dir(), self.prefix, "data")
 
     def get_app_data_directory(self) -> str:
         """Get path the app data for the current system."""
-        return self._get_app_dir()
+        return os.path.join(self._get_app_dir(), self.prefix)
 
     @staticmethod
     def _get_app_dir() -> str:
-        return os.path.join(str(pathlib.Path.home()), ".config", "Speedwagon")
+        return os.path.join(str(pathlib.Path.home()), ".config")
 
 
 class WindowsConfig(AbsConfig):
@@ -124,13 +128,13 @@ class WindowsConfig(AbsConfig):
 
     def get_user_data_directory(self) -> str:
         """Get user data directory."""
-        return os.path.join(str(pathlib.Path.home()), "Speedwagon", "data")
+        return os.path.join(str(pathlib.Path.home()), self.prefix, "data")
 
     def get_app_data_directory(self) -> str:
         """Get path the app data for the current system."""
         data_path = os.getenv("LocalAppData")
         if data_path:
-            return os.path.join(data_path, "Speedwagon")
+            return os.path.join(data_path, self.prefix)
         raise FileNotFoundError("Unable to located data_directory")
 
 
@@ -219,6 +223,7 @@ def generate_default(config_file: str) -> None:
 
 def get_platform_settings(
     configuration: Optional[AbsConfig] = None,
+    prefix: str = DEFAULT_CONFIG_DIRECTORY_NAME,
 ) -> AbsConfig:
     """Load a configuration of config.AbsConfig.
 
@@ -233,7 +238,8 @@ def get_platform_settings(
         system_config = configurations.get(platform.system())
         if system_config is None:
             raise ValueError(f"Platform {platform.system()} not supported")
-        return system_config()
+        return system_config(prefix)
+    configuration.prefix = prefix
     return configuration
 
 
@@ -438,12 +444,89 @@ class AbsEnsureConfigFile(abc.ABC):
         """Ensure the user app directory exists."""
 
 
+def ensure_settings_files(
+    logger: Optional[logging.Logger] = None,
+    strategy: Optional[AbsEnsureConfigFile] = None,
+) -> None:
+    """Ensure that all settings files are available.
+
+    Args:
+        logger: Logger used to report files being created.
+        strategy: Strategy used to ensure files are available.
+    """
+    logger = logger or logging.getLogger(__package__)
+    strategy = strategy or CreateBasicMissingConfigFile(logger=logger)
+    strategy.ensure_config_file()
+    strategy.ensure_tabs_file()
+    strategy.ensure_user_data_dir()
+    strategy.ensure_app_data_dir()
+
+
+class AbsSettingLocator(abc.ABC):
+    @abc.abstractmethod
+    def get_user_data_dir(self) -> str:
+        """Get user data directory."""
+
+    @abc.abstractmethod
+    def get_app_data_dir(self) -> str:
+        """Get app data directory."""
+
+    @abc.abstractmethod
+    def get_config_file(self) -> str:
+        """Get config file used."""
+
+    @abc.abstractmethod
+    def get_tabs_file(self) -> str:
+        """Get tabs settings file used."""
+
+
+class StandardConfigFileLocator(AbsSettingLocator):
+    """Standard config file locator."""
+
+    def __init__(self, config_directory_prefix: str) -> None:
+        """Create a new StandardConfigFileLocator object."""
+        self._platform_settings = get_platform_settings(
+            prefix=config_directory_prefix
+        )
+
+    def get_user_data_dir(self) -> str:
+        """Get user data directory."""
+        return typing.cast(
+            str, self._platform_settings.get("user_data_directory")
+        )
+
+    def get_config_file(self) -> str:
+        """Get config file."""
+        return os.path.join(
+            self._platform_settings.get_app_data_directory(),
+            CONFIG_INI_FILE_NAME,
+        )
+
+    def get_app_data_dir(self) -> str:
+        """Get app data dir."""
+        return typing.cast(str, self._platform_settings["app_data_directory"])
+
+    def get_tabs_file(self) -> str:
+        """Get tabs file path."""
+        return os.path.join(
+            self._platform_settings.get_app_data_directory(),
+            TABS_YML_FILE_NAME,
+        )
+
+
 class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
     """Create a missing config file if not already exists."""
 
-    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
+    def __init__(
+        self,
+        logger: Optional[logging.Logger] = None,
+        config_location_strategy: Optional[AbsSettingLocator] = None
+    ) -> None:
         super().__init__(logger)
-        self.config_strategy = StandardConfigFileLocator()
+        self.config_strategy = (
+            config_location_strategy or
+            StandardConfigFileLocator(DEFAULT_CONFIG_DIRECTORY_NAME)
+        )
 
     def ensure_config_file(self, file_path: Optional[str] = None) -> None:
         file_path = file_path or self.config_strategy.get_config_file()
@@ -487,68 +570,6 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
             )
 
 
-def ensure_settings_files(
-    logger: Optional[logging.Logger] = None,
-    strategy: Optional[AbsEnsureConfigFile] = None,
-) -> None:
-    logger = logger or logging.getLogger(__package__)
-    strategy = strategy or CreateBasicMissingConfigFile(logger=logger)
-    strategy.ensure_config_file()
-    strategy.ensure_tabs_file()
-    strategy.ensure_user_data_dir()
-    strategy.ensure_app_data_dir()
-
-
-class AbsSettingLocator(abc.ABC):
-    @abc.abstractmethod
-    def get_user_data_dir(self) -> str:
-        """Get user data directory."""
-
-    @abc.abstractmethod
-    def get_app_data_dir(self) -> str:
-        """Get app data directory."""
-
-    @abc.abstractmethod
-    def get_config_file(self) -> str:
-        """Get config file used."""
-
-    @abc.abstractmethod
-    def get_tabs_file(self) -> str:
-        """Get tabs settings file used."""
-
-
-class StandardConfigFileLocator(AbsSettingLocator):
-    """Standard config file locator."""
-
-    def __init__(self) -> None:
-        """Create a new StandardConfigFileLocator object."""
-        self._platform_settings = get_platform_settings()
-
-    def get_user_data_dir(self) -> str:
-        """Get user data directory."""
-        return typing.cast(
-            str, self._platform_settings.get("user_data_directory")
-        )
-
-    def get_config_file(self) -> str:
-        """Get config file."""
-        return os.path.join(
-            self._platform_settings.get_app_data_directory(),
-            CONFIG_INI_FILE_NAME,
-        )
-
-    def get_app_data_dir(self) -> str:
-        """Get app data dir."""
-        return typing.cast(str, self._platform_settings["app_data_directory"])
-
-    def get_tabs_file(self) -> str:
-        """Get tabs file path."""
-        return os.path.join(
-            self._platform_settings.get_app_data_directory(),
-            TABS_YML_FILE_NAME,
-        )
-
-
 class AbsConfigSettings(abc.ABC):  # pylint: disable=R0903
     """Abstract base class for getting settings."""
 
@@ -560,10 +581,16 @@ class AbsConfigSettings(abc.ABC):  # pylint: disable=R0903
 class StandardConfig(AbsConfigSettings):
     """Standard config."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self, config_directory_prefix: str = DEFAULT_CONFIG_DIRECTORY_NAME
+    ) -> None:
         """Create new standard config object."""
         super().__init__()
         self.config_loader_strategy: Optional[AbsConfigLoader] = None
+        self._config_directory_prefix = config_directory_prefix
+        self.config_file_location_strategy = lambda: StandardConfigFileLocator(
+            config_directory_prefix=self._config_directory_prefix
+        ).get_config_file()
 
     def settings(self) -> FullSettingsData:
         """Get settings."""
@@ -576,7 +603,7 @@ class StandardConfig(AbsConfigSettings):
         loader = MixedConfigLoader()
         loader.resolution_strategy_order = [
             DefaultsSetter(),
-            ConfigFileSetter(StandardConfigFileLocator().get_config_file()),
+            ConfigFileSetter(self.config_file_location_strategy()),
             CliArgsSetter(),
         ]
         return loader.get_settings()
@@ -607,13 +634,18 @@ class IniConfigManager(AbsGlobalConfigDataManagement):
         self.loader: Optional[AbsConfigLoader] = None
         self.saver: Optional[AbsConfigSaver] = None
         self.config_resolution_order: Optional[List[AbsSetting]] = None
+        self.default_config_locator_strategy = (
+            lambda: StandardConfigFileLocator(
+                config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+            ).get_config_file()
+        )
 
     def get_resolution_order(self) -> List[AbsSetting]:
         """Get resolution order."""
         if self.config_resolution_order is not None:
             return self.config_resolution_order
         config_file = (
-            self.config_file or StandardConfigFileLocator().get_config_file()
+            self.config_file or self.default_config_locator_strategy()
         )
         resolution_order: List[AbsSetting] = [DefaultsSetter()]
         if self.config_file:

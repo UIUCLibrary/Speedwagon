@@ -9,18 +9,21 @@ Changes:
        added a splash screen for logo
 
 """
+
 from __future__ import annotations
 import abc
 import argparse
 import io
 import json
 import sys
-import typing
-from typing import Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional
+from typing import (
+    Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional, Callable, Any
+)
 
 import speedwagon.job
 import speedwagon.config
-
+from speedwagon.config.config import DEFAULT_CONFIG_DIRECTORY_NAME
+from speedwagon.config import StandardConfigFileLocator
 from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
 
 if TYPE_CHECKING:
@@ -150,12 +153,26 @@ class ApplicationLauncher:
             strategy: Starter strategy class.
         """
         super().__init__()
+        self.application_name = "speedwagon"
+        self.application_config_directory_name = "Speedwagon"
         try:
             from speedwagon.frontend.qtwidgets.gui_startup import (
                 StartQtThreaded,
+                ResolveSettings,
             )
 
-            self.strategy = strategy or StartQtThreaded()
+            settings_resolver = ResolveSettings()
+            settings_resolver.config_file_locator_strategy = (
+                lambda: StandardConfigFileLocator(
+                    self.application_config_directory_name
+                ).get_config_file()
+            )
+            self.strategy = strategy or StartQtThreaded(
+                settings_strategy=settings_resolver,
+                get_config_strategy=lambda: StandardConfigFileLocator(
+                    self.application_config_directory_name
+                )
+            )
         except ImportError:
             self.strategy = strategy or CLIStarter()
 
@@ -165,6 +182,7 @@ class ApplicationLauncher:
 
     def run(self, app=None) -> int:
         """Run Speedwagon."""
+        self.strategy.set_application_name(self.application_name)
         if app:
             try:
                 from speedwagon.frontend.qtwidgets.gui_startup import (
@@ -224,14 +242,16 @@ class RunCommand(SubCommand):
             print(f"Invalid {self.args}")
 
 
-def get_global_options():
-    config_locator = speedwagon.config.StandardConfigFileLocator()
+def get_global_options(
+    config_file_strategy: Callable[[], str] =
+        lambda: speedwagon.config.StandardConfigFileLocator(
+            config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+        ).get_config_file(),
+) -> Dict[str, Any]:
     loader = speedwagon.config.config.MixedConfigLoader()
     loader.resolution_strategy_order = [
         speedwagon.config.config.DefaultsSetter(),
-        speedwagon.config.config.ConfigFileSetter(
-            config_locator.get_config_file()
-        ),
+        speedwagon.config.config.ConfigFileSetter(config_file_strategy()),
         speedwagon.config.config.CliArgsSetter(),
     ]
     return loader.get_settings().get("GLOBAL", {})
@@ -252,6 +272,14 @@ def run_command(
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
+    def set_application_name(self, name: str) -> None:  # noqa: B027
+        """Set the application name if environment supports changing name.
+
+        Defaults to no-op.
+
+        This is useful for GUI applications such as ones that based on Qt.
+        """
+
     @abc.abstractmethod
     def run(self) -> int:
         pass
@@ -266,7 +294,7 @@ class AbsStarter(metaclass=abc.ABCMeta):
 class SingleWorkflowJSON(AbsStarter):
     def __init__(self) -> None:
         super().__init__()
-        self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
+        self.options: Optional[Dict[str, Any]] = None
         self.global_settings = None
         self.workflow = None
 

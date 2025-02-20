@@ -1,10 +1,12 @@
 from __future__ import annotations
+import logging
 from typing import Optional, List, TYPE_CHECKING, Any, Dict
 from unittest.mock import Mock, patch, mock_open, ANY, call
 
 import pytest
 
 import speedwagon.config
+from speedwagon.config.config import ensure_settings_files
 from yaml import YAMLError
 
 
@@ -615,3 +617,14 @@ class TestYAMLWorkflowConfigBackend:
             )
 
         assert config.get("Tesseract data file location") == "/some/path"
+
+def test_ensure_settings_files():
+    strategy = Mock(spec_set=speedwagon.config.config.AbsEnsureConfigFile)
+    logger = Mock(name="logger", spec_set=logging.Logger)
+    ensure_settings_files(logger=logger, strategy=strategy)
+    assert all([
+        strategy.ensure_config_file.called,
+        strategy.ensure_tabs_file.called,
+        strategy.ensure_user_data_dir.called,
+        strategy.ensure_app_data_dir.called,
+        ])

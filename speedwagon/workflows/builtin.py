@@ -3,7 +3,7 @@
 from __future__ import annotations
 import os
 import typing
-from typing import Dict, Type, List
+from typing import Dict, Type, List, Callable
 from speedwagon.tasks.system import AbsSystemTask
 
 from speedwagon import hookimpl
@@ -13,7 +13,7 @@ from speedwagon import config
 if typing.TYPE_CHECKING:
     from speedwagon import Workflow
 
-__all__ = ['registered_workflows', 'registered_initialization_tasks']
+__all__ = ["registered_workflows", "registered_initialization_tasks"]
 
 
 @hookimpl
@@ -40,8 +40,10 @@ class EnsureBuiltinWorkflowConfigFiles(AbsSystemTask):
     def __init__(self) -> None:
         """Create a new EnsureBuiltinWorkflowConfigFiles object."""
         super().__init__()
-        self.config_file_location_strategy = (
-            config.StandardConfigFileLocator()
+        self.workflow_settings_yaml_locator_strategy: Callable[[], str] = (
+            lambda: config.workflow.locate_workflow_settings_yaml(
+                prefix=config.config.DEFAULT_CONFIG_DIRECTORY_NAME
+            )
         )
 
     def description(self) -> str:
@@ -50,25 +52,21 @@ class EnsureBuiltinWorkflowConfigFiles(AbsSystemTask):
 
     def get_config_file(self) -> str:
         """Get config file path."""
-        return os.path.join(
-            self.config_file_location_strategy.get_app_data_dir(),
-            config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
-        )
+        return self.workflow_settings_yaml_locator_strategy()
 
     def get_settings_manager(
-            self
+        self,
     ) -> config.workflow.AbsWorkflowSettingsManager:
         yaml_file = self.get_config_file()
 
-        getter_strategy = \
-            config.WorkflowSettingsYAMLResolver(yaml_file)
+        getter_strategy = config.WorkflowSettingsYAMLResolver(yaml_file)
 
-        setter_strategy = \
-            config.WorkflowSettingsYamlExporter(yaml_file)
+        setter_strategy = config.WorkflowSettingsYamlExporter(yaml_file)
 
         return config.WorkflowSettingsManager(
             getter_strategy=getter_strategy,
-            setter_strategy=setter_strategy
+            setter_strategy=setter_strategy,
+            yaml_file_locator=lambda: yaml_file
         )
 
     def run(self) -> None:

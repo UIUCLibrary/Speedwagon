@@ -3,6 +3,7 @@ import os
 import pathlib
 import platform
 import shutil
+from typing import Optional
 
 import speedwagon.config
 import pytest
@@ -11,9 +12,9 @@ from speedwagon.job import all_required_workflow_keys
 
 
 class MockConfig(speedwagon.config.AbsConfig):
-        def __init__(self):
+        def __init__(self, prefix):
 
-            super().__init__()
+            super().__init__(prefix)
             self.user_data_dir = ""
             self.app_data_dir = ""
 
@@ -24,38 +25,52 @@ class MockConfig(speedwagon.config.AbsConfig):
             return self.app_data_dir
 
 
-@pytest.fixture(scope="module")
-def dummy_config(tmpdir_factory):
-    root_dir = os.path.join(tmpdir_factory.getbasetemp(), "settings")
-    os.makedirs(root_dir)
-    dummy = MockConfig()
-    dummy.user_data_dir = os.path.join(root_dir, "user_data_directory")
-    os.mkdir(dummy.user_data_dir)
+@pytest.fixture(scope="function")
+def dummy_config_factory(tmpdir_factory):
+    root_dir: Optional[str] = None
+    def _make_config_path(prefix="Speedwagon"):
+        nonlocal root_dir
+        root_dir = os.path.join(tmpdir_factory.getbasetemp(), "settings", prefix)
+        os.makedirs(root_dir)
+        dummy = MockConfig(prefix=prefix)
+        dummy.user_data_dir = os.path.join(root_dir, "user_data_directory")
+        os.mkdir(dummy.user_data_dir)
 
-    dummy.app_data_dir = os.path.join(root_dir, "app_data_directory")
-    os.mkdir(dummy.app_data_dir)
+        dummy.app_data_dir = os.path.join(root_dir, "app_data_directory")
+        os.mkdir(dummy.app_data_dir)
+        return dummy
+        # yield dummy
+        # shutil.rmtree(root_dir)
+    yield _make_config_path
+    if root_dir:
+        shutil.rmtree(root_dir)
 
-    yield dummy
-    shutil.rmtree(root_dir)
 
-
-def test_get_config(dummy_config):
-    config = speedwagon.config.get_platform_settings(dummy_config)
+def test_get_config(dummy_config_factory):
+    config = speedwagon.config.get_platform_settings(dummy_config_factory())
     assert config is not None
     assert isinstance(config, MockConfig)
 
+def test_get_config_with_alternative_path(dummy_config_factory):
+    dummy_config = dummy_config_factory("dummy")
+    config = speedwagon.config.get_platform_settings(dummy_config, prefix="dummy")
+    assert "dummy" in config.get_app_data_directory()
 
-def test_get_config__getitem__(dummy_config):
-    assert os.path.exists(dummy_config['user_data_directory'])
-    assert os.path.exists(dummy_config['app_data_directory'])
+
+def test_get_config__getitem__(dummy_config_factory):
+    config = dummy_config_factory()
+    assert os.path.exists(config['user_data_directory'])
+    assert os.path.exists(config['app_data_directory'])
 
 
-def test_get_config__contains__(dummy_config):
+def test_get_config__contains__(dummy_config_factory):
+    dummy_config = dummy_config_factory()
     assert ("user_data_directory" in dummy_config) is True
     assert ("foo" in dummy_config) is False
 
 
-def test_get_config__iter__(dummy_config):
+def test_get_config__iter__(dummy_config_factory):
+    dummy_config = dummy_config_factory()
     for i in dummy_config:
         print(i)
 
@@ -84,7 +99,7 @@ def test_read_settings(tmpdir):
 @pytest.mark.skipif(platform.system() == "Windows",
                     reason="Test for unix file systems only")
 def test_nix_get_app_data_directory(monkeypatch, tmpdir):
-    speedwagon_config = speedwagon.config.config.NixConfig()
+    speedwagon_config = speedwagon.config.config.NixConfig("Speedwagon")
     user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
         speedwagon.config.config.pathlib.Path,
@@ -98,7 +113,7 @@ def test_nix_get_app_data_directory(monkeypatch, tmpdir):
 @pytest.mark.skipif(platform.system() == "Windows",
                     reason="Test for unix file systems only")
 def test_nix_get_user_data_directory(monkeypatch):
-    speedwagon_config = speedwagon.config.config.NixConfig()
+    speedwagon_config = speedwagon.config.config.NixConfig("Speedwagon")
     user_path = os.path.join(os.sep, "Users", "someuser")
     monkeypatch.setattr(
         speedwagon.config.config.pathlib.Path,
@@ -109,7 +124,7 @@ def test_nix_get_user_data_directory(monkeypatch):
 
 
 def test_windows_get_app_data_directory(monkeypatch):
-    speedwagon_config = speedwagon.config.config.WindowsConfig()
+    speedwagon_config = speedwagon.config.config.WindowsConfig("Speedwagon")
     user_path = os.path.join('C:', 'Users', 'someuser')
     monkeypatch.setattr(
         pathlib.Path,

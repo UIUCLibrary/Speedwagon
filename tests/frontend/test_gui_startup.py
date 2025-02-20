@@ -8,6 +8,7 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
 
+
 try:  # pragma: no cover
     from importlib.metadata import PackageMetadata
 except ImportError:  # pragma: no cover
@@ -15,9 +16,13 @@ except ImportError:  # pragma: no cover
 
 from speedwagon.workflow import FileSelectData
 import speedwagon.config
+
+QtCore = pytest.importorskip('PySide6.QtCore')
+QtWidgets = pytest.importorskip('PySide6.QtWidgets')
+
+from speedwagon.frontend.qtwidgets.gui import MainWindow3
 gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
-from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor
 from speedwagon.frontend.qtwidgets.models.tabs import AbsLoadTabDataModelStrategy
@@ -307,7 +312,7 @@ class TestStartQtThreaded:
         )
 
         app = Mock()
-        startup = gui_startup.StartQtThreaded(app)
+        startup = gui_startup.StartQtThreaded(app=app)
         class SettingsFileLocatorDummy(
             speedwagon.config.config.AbsSettingLocator
         ):
@@ -332,6 +337,8 @@ class TestStartQtThreaded:
         if startup.windows is not None:
             startup.windows.close()
         startup.app.closeAllWindows()
+        startup.app.quit()
+        # print(startup)
 
     def test_save_workflow_config(self, qtbot, starter, monkeypatch):
         dialog = Mock()
@@ -534,7 +541,7 @@ class TestStartQtThreaded:
             lambda *_: "app_data_dir"
         )
 
-        start = gui_startup.StartQtThreaded(Mock())
+        start = gui_startup.StartQtThreaded(app=Mock())
         workflow = Mock(
             name="workflow instance",
             workflow_options=Mock(return_value=[])
@@ -751,16 +758,9 @@ class TestStartQtThreaded:
             "MainWindow3",
             MainWindow3
         )
-        monkeypatch.setattr(
-            starter.settings_resolver,
-            "get_settings",
-            Mock(
-                name="get_settings",
-                return_value={}
-            )
-        )
+        starter.settings_strategy = Mock(get_settings=Mock(return_value={}))
         starter.resolve_settings()
-        assert starter.settings_resolver.get_settings.called is True
+        assert starter.settings_strategy.get_settings.called is True
 
     # def test_read_settings_file(self, qtbot, monkeypatch, starter):
     #     read = Mock()
@@ -853,7 +853,7 @@ class TestStartQtThreaded:
         assert job_manager.submit_job.called is True
 
     def test_initialize(self, qtbot, monkeypatch):
-        start = gui_startup.StartQtThreaded(Mock())
+        start = gui_startup.StartQtThreaded(app=Mock())
         speedwagon.config.config.ensure_settings_files = Mock(name="ensure_settings_files")
         start.resolve_settings = Mock(name="resolve_settings")
         monkeypatch.setattr(
@@ -885,7 +885,7 @@ class TestStartQtThreaded:
         assert actual == expected
 
     def test_load_all_workflows_tab(self, qtbot):
-        start = gui_startup.StartQtThreaded(Mock())
+        start = gui_startup.StartQtThreaded(app=Mock())
         main_window = Mock('MainWindow3', add_tab=Mock())
         loaded_workflows = {}
         start.load_all_workflows_tab(main_window, loaded_workflows)
@@ -898,15 +898,17 @@ class TestStartQtThreaded:
 
         main_window.add_tab.assert_called_with("All", {})
 
-    def test_ensure_settings_files(self, qtbot, monkeypatch):
-        start = gui_startup.StartQtThreaded(Mock())
-        monkeypatch.setattr(
-            speedwagon.config.config,
-            "ensure_settings_files",
-            Mock(name="ensure_settings_files")
-        )
-        start.ensure_settings_files()
-        assert speedwagon.config.config.ensure_settings_files.called is True
+    def test_set_application_name(self, qtbot):
+        start = gui_startup.StartQtThreaded(app=Mock())
+        start.set_application_name("new app")
+        main_window = MainWindow3()
+        start.load_workflows = Mock()
+        qtbot.addWidget(main_window)
+        main_window.show = Mock()
+        main_window.update_settings = Mock()
+        start.build_main_window = lambda *_: main_window
+        start.start_gui(Mock())
+        assert main_window.windowTitle() == "new app"
 
 
 class TestWorkflowProgressCallbacks:

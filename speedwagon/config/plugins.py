@@ -1,7 +1,7 @@
 """Configuration of plugins."""
 
 import abc
-from typing import Dict, Set, Tuple, List
+from typing import Dict, Set, Tuple, List, Callable
 
 try:  # pragma: no cover
     from typing import TypedDict
@@ -22,12 +22,14 @@ def read_settings_file_plugins(settings_file: str) -> PluginDataType:
         return config_manager.plugins
 
 
-def get_whitelisted_plugins() -> Set[Tuple[str, str]]:
+def get_whitelisted_plugins(
+    config_file_strategy: Callable[[], str] =
+        lambda: config.StandardConfigFileLocator(
+            config_directory_prefix=config.DEFAULT_CONFIG_DIRECTORY_NAME
+        ).get_config_file()
+) -> Set[Tuple[str, str]]:
     """Get whitelisted plugins."""
-    config_strategy = config.StandardConfigFileLocator()
-    plugin_settings = read_settings_file_plugins(
-        config_strategy.get_config_file()
-    )
+    plugin_settings = read_settings_file_plugins(config_file_strategy())
 
     white_listed_plugins = set()
     for module, entry_points in plugin_settings.items():

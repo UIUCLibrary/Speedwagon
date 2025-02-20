@@ -4,7 +4,7 @@ from __future__ import annotations
 import abc
 import os
 import io
-from typing import Optional, Dict, List, TYPE_CHECKING
+from typing import Optional, Dict, List, TYPE_CHECKING, Callable
 
 try:  # pragma: no cover
     from typing import TypedDict
@@ -13,7 +13,7 @@ except ImportError:  # pragma: no cover
 import yaml
 import yaml.emitter
 
-from .config import StandardConfigFileLocator
+from .config import StandardConfigFileLocator, DEFAULT_CONFIG_DIRECTORY_NAME
 
 if TYPE_CHECKING:
     from .common import SettingsData, SettingsDataType
@@ -31,9 +31,7 @@ __all__ = [
 
 class AbsSettingsSerializer(abc.ABC):  # pylint: disable=R0903
     @abc.abstractmethod
-    def serialize(
-        self, workflow: Workflow, settings: SettingsData
-    ) -> str:
+    def serialize(self, workflow: Workflow, settings: SettingsData) -> str:
         """Serialize workflow settings."""
 
 
@@ -218,6 +216,13 @@ class WorkflowSettingsYamlExporter(
         )
 
 
+def locate_workflow_settings_yaml(prefix: str) -> str:
+    return os.path.join(
+        StandardConfigFileLocator(prefix).get_app_data_dir(),
+        WORKFLOWS_SETTINGS_YML_FILE_NAME,
+    )
+
+
 class WorkflowSettingsManager(AbsWorkflowSettingsManager):
     """Workflow Settings Manager."""
 
@@ -225,23 +230,36 @@ class WorkflowSettingsManager(AbsWorkflowSettingsManager):
         self,
         getter_strategy: Optional[AbsWorkflowSettingsResolver] = None,
         setter_strategy: Optional[AbsWorkflowSettingsExporter] = None,
+        yaml_file_locator: Optional[Callable[[], str]] = None,
     ) -> None:
         """Create a new WorkflowSettingsManager object."""
         super().__init__()
+
         self.settings_getter_strategy: AbsWorkflowSettingsResolver = (
             getter_strategy
-            or WorkflowSettingsYAMLResolver(self._get_yaml_file())
+            or WorkflowSettingsYAMLResolver(
+                (
+                    yaml_file_locator
+                    or (
+                        lambda: locate_workflow_settings_yaml(
+                            prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+                        )
+                    )
+                )()
+            )
         )
         self.settings_saver_strategy: AbsWorkflowSettingsExporter = (
             setter_strategy
-            or WorkflowSettingsYamlExporter(self._get_yaml_file())
-        )
-
-    @staticmethod
-    def _get_yaml_file() -> str:
-        return os.path.join(
-            StandardConfigFileLocator().get_app_data_dir(),
-            WORKFLOWS_SETTINGS_YML_FILE_NAME,
+            or WorkflowSettingsYamlExporter(
+                (
+                    yaml_file_locator
+                    or (
+                        lambda: locate_workflow_settings_yaml(
+                            prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+                        )
+                    )
+                )()
+            )
         )
 
     def get_workflow_settings(self, workflow: Workflow) -> SettingsData:
@@ -279,10 +297,14 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
         return self.get_yaml_strategy().get_response(self.workflow).get(key)
 
 
-def get_config_backend() -> AbsWorkflowBackend:
+def get_config_backend(
+    config_directory_prefix: str = DEFAULT_CONFIG_DIRECTORY_NAME,
+) -> AbsWorkflowBackend:
     """Get config backend."""
     config_backend = YAMLWorkflowConfigBackend()
-    config_strategy = StandardConfigFileLocator()
+    config_strategy = StandardConfigFileLocator(
+        config_directory_prefix=config_directory_prefix
+    )
     backend_yaml = os.path.join(
         config_strategy.get_app_data_dir(), WORKFLOWS_SETTINGS_YML_FILE_NAME
     )
