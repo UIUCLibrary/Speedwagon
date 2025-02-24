@@ -5,8 +5,30 @@ Change Log
 ----------
 
 
-Unreleased
-==========
+0.4.0b11 (2025-02-24)
+=====================
+
+Feat
+----
+
+- speedwagon can be configured to have an alternative config directory path
+- application name can be setup during config time
+
+v0.4.0b10 (2024-11-27)
+======================
+
+Feat
+----
+
+- when creating ToolConsole and calling WorkflowProgressGui.attach_logger verify that signals have been attached
+
+Fix
+---
+
+- fixed job export crashing speedwagon
+
+v0.4.0b8 (2024-07-25)
+=====================
 
 v0.4.0b7 (2024-06-07)
 =====================
