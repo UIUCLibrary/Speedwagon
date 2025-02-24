@@ -26,6 +26,7 @@ __all__ = [
     "WorkflowSettingsYamlExporter",
     "WorkflowSettingsYAMLResolver",
     "YAMLWorkflowConfigBackend",
+    "default_backend_factory"
 ]
 
 
@@ -309,4 +310,23 @@ def get_config_backend(
         config_strategy.get_app_data_dir(), WORKFLOWS_SETTINGS_YML_FILE_NAME
     )
     config_backend.yaml_file = backend_yaml
+    return config_backend
+
+
+def default_backend_factory(
+    new_workflow: Workflow,
+    config_directory_name: str
+) -> AbsWorkflowBackend:
+    """Get default workflow backend factory.
+
+    Args:
+        new_workflow: Workflow to use
+        config_directory_name: name of configuration directory
+
+    Returns: Workflow backend
+
+    """
+    config_backend = get_config_backend(config_directory_name)
+
+    config_backend.workflow = new_workflow
     return config_backend

@@ -22,6 +22,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.frontend.interaction import UserRequestFactory
     from speedwagon.tasks import TaskBuilder, Result
     from speedwagon.config import SettingsData, SettingsDataType
+    from speedwagon.config.workflow import AbsWorkflowBackend
     from pluggy import PluginManager
 
 
@@ -178,9 +179,9 @@ class Workflow(AbsWorkflow[_T]):  # pylint: disable=abstract-method
     def __init__(self, *args, **kwargs) -> None:
         """Create a new workflow object."""
         super().__init__(*args, **kwargs)
-        self._options_backends = None
+        self._options_backends: Optional[AbsWorkflowBackend] = None
 
-    def set_options_backend(self, value) -> None:
+    def set_options_backend(self, value: AbsWorkflowBackend) -> None:
         """Set the option backend."""
         self._options_backends = value
 

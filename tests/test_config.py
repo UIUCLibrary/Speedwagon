@@ -628,3 +628,16 @@ def test_ensure_settings_files():
         strategy.ensure_user_data_dir.called,
         strategy.ensure_app_data_dir.called,
         ])
+
+def test_workflow_backend_factory(monkeypatch):
+    workflow = Mock(spec_set=speedwagon.job.Workflow)
+
+    # So the function doesn't actually try to look for the config file
+    monkeypatch.setattr(
+        speedwagon.config.workflow,
+        "get_config_backend",
+        Mock(name="get_config_backend")
+    )
+
+    factory = speedwagon.config.workflow.default_backend_factory(workflow, "dummy")
+    assert factory.workflow == workflow

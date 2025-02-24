@@ -341,6 +341,9 @@ class TabsConfigurationTab(SettingsTab):
         self._modified = False
         layout = QtWidgets.QVBoxLayout(self)
         self.editor = TabEditor()
+        self.editor.load_tab_data_model_strategy =\
+            tab_models.TabDataModelConfigLoader()
+
         self.editor.changes_made.connect(self.changes_made)
         self.editor.layout().setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.editor)

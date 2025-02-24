@@ -25,10 +25,9 @@ from collections import namedtuple
 
 from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
-
 from speedwagon.frontend.qtwidgets import ui_loader, ui
 import speedwagon.runner_strategies
-
+from speedwagon.config.workflow import default_backend_factory
 from speedwagon.config import StandardConfig, FullSettingsData
 
 if TYPE_CHECKING:
@@ -86,6 +85,7 @@ class MainWindow3(MainWindow3UI):
         """
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.workflow_config_backend_factory = default_backend_factory
         self.job_manager: Optional[
             speedwagon.runner_strategies.BackgroundJobManager
         ] = None
@@ -158,6 +158,9 @@ class MainWindow3(MainWindow3UI):
         self, tab_name: str, workflows: typing.Dict[str, typing.Type[Workflow]]
     ) -> None:
         """Add tab."""
+        self.tab_widget.workflow_config_backend_factory =\
+            self.workflow_config_backend_factory
+
         self.tab_widget.add_workflows_tab(tab_name, list(workflows.values()))
 
     def set_active_workflow(self, workflow_name: str) -> None:

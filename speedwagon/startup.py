@@ -13,6 +13,7 @@ Changes:
 from __future__ import annotations
 import abc
 import argparse
+import functools
 import io
 import json
 import sys
@@ -28,7 +29,6 @@ from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
 
 if TYPE_CHECKING:
     import speedwagon.frontend.qtwidgets.gui_startup
-
 
 __all__ = [
     "ApplicationLauncher",
@@ -167,10 +167,19 @@ class ApplicationLauncher:
                     self.application_config_directory_name
                 ).get_config_file()
             )
-            self.strategy = strategy or StartQtThreaded(
-                settings_strategy=settings_resolver,
-                get_config_strategy=lambda: StandardConfigFileLocator(
-                    self.application_config_directory_name
+
+            config_backend_factory = functools.partial(
+                speedwagon.config.workflow.default_backend_factory,
+                config_directory_name=self.application_config_directory_name
+            )
+            self.strategy = (
+                strategy or
+                StartQtThreaded(
+                    workflow_config_backend_factory=config_backend_factory,
+                    settings_strategy=settings_resolver,
+                    get_config_strategy=lambda: StandardConfigFileLocator(
+                        self.application_config_directory_name
+                    )
                 )
             )
         except ImportError:
