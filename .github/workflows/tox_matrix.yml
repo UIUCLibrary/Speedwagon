@@ -21,7 +21,7 @@ jobs:
           contains(matrix.os, 'ubuntu') && contains(matrix.frontend, 'PySide6')
         run: |
           sudo apt update
-          sudo apt-get install freeglut3 freeglut3-dev
+          sudo apt-get install freeglut3-dev
       - name: Install requirements
         run: |
           pip install wheel uv

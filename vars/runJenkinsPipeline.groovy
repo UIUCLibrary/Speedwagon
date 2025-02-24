@@ -504,29 +504,31 @@ def call(){
                                                     {
                                                         node('docker && linux && x86_64'){
                                                             checkout scm
-                                                            def image = docker.build(UUID.randomUUID().toString(), '-f ci/docker/python/linux/jenkins/Dockerfile .')
-                                                            try{
-                                                                image.inside('--mount source=python-tmp-speedwagon,target=/tmp'){
-                                                                    sh( label: 'Running Tox',
-                                                                        script: """python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv
-                                                                                   trap "rm -rf venv" EXIT
-                                                                                   . ./venv/bin/activate
-                                                                                   uv python install cpython-${version}
-                                                                                   trap "rm -rf ./venv ./.tox" EXIT
-                                                                                   uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
-                                                                                """
-                                                                        )
+                                                            retry(3){
+                                                                def image = docker.build(UUID.randomUUID().toString(), '-f ci/docker/python/linux/jenkins/Dockerfile .')
+                                                                try{
+                                                                    image.inside('--mount source=python-tmp-speedwagon,target=/tmp'){
+                                                                        sh( label: 'Running Tox',
+                                                                            script: """python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv
+                                                                                       trap "rm -rf venv" EXIT
+                                                                                       . ./venv/bin/activate
+                                                                                       uv python install cpython-${version}
+                                                                                       trap "rm -rf ./venv ./.tox" EXIT
+                                                                                       uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                                    """
+                                                                            )
+                                                                    }
+                                                                } finally {
+                                                                    sh "docker image rm --force ${image.imageName()}"
+                                                                    sh "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                                    cleanWs(
+                                                                        patterns: [
+                                                                            [pattern: 'venv/', type: 'INCLUDE'],
+                                                                            [pattern: '.tox/', type: 'INCLUDE'],
+                                                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                                                        ]
+                                                                    )
                                                                 }
-                                                            } finally {
-                                                                sh "docker image rm --force ${image.imageName()}"
-                                                                sh "${tool(name: 'Default', type: 'git')} clean -dfx"
-                                                                cleanWs(
-                                                                    patterns: [
-                                                                        [pattern: 'venv/', type: 'INCLUDE'],
-                                                                        [pattern: '.tox/', type: 'INCLUDE'],
-                                                                        [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                                    ]
-                                                                )
                                                             }
                                                         }
                                                     }
