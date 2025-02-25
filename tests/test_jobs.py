@@ -1,11 +1,19 @@
 import os.path
-from unittest.mock import Mock, patch, mock_open, call
+from importlib.metadata import entry_points
+from unittest.mock import Mock, patch, mock_open, call, MagicMock
 import json
+
+import sys
+
+if sys.version_info >= (3, 10):
+    from importlib import metadata
+else:
+    import importlib_metadata as metadata
 
 import pytest
 import speedwagon.plugins
 import speedwagon.job
-from speedwagon import Workflow
+
 
 
 def test_all_required_workflow_keys(monkeypatch):
@@ -131,3 +139,36 @@ class TestJobConfigSerialization:
         )
         serializer.load()
         assert mock_strategy.load.called is True
+
+class TestOnlyActivatedPluginsWorkflows:
+    def test_locate(self):
+        workflow_finder =\
+            speedwagon.job.OnlyActivatedPluginsWorkflows(
+                plugin_settings={
+                    "spam": {"bacon": True}
+                }
+            )
+
+        mock_workflow = Mock()
+        mock_workflow.name = "eggs"
+        spam = Mock(
+            module="spam",
+            load=Mock(
+                return_value=Mock(
+                    registered_workflows=Mock(
+                        return_value={"eggs": mock_workflow}
+                    )
+
+                )
+            )
+        )
+        spam.name ="bacon"
+
+        workflow_finder.iter_plugins = Mock(return_value=[spam])
+        assert workflow_finder.locate() == {"eggs": mock_workflow}
+
+    def test_iter_plugins_looks_for_entry_points(self, monkeypatch):
+        mock_entry_points = Mock(name="entry_points()", return_value=iter([]))
+        monkeypatch.setattr(metadata, "entry_points", mock_entry_points)
+        list(speedwagon.job.OnlyActivatedPluginsWorkflows.iter_plugins())
+        assert mock_entry_points.called

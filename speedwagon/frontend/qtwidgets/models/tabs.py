@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import abc
 from typing import (
+    Callable,
     Optional,
     Type,
     Union,
@@ -469,12 +470,19 @@ class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
     def __init__(self) -> None:
         super().__init__()
         self.yml_file: Optional[str] = None
+        self.get_all_active_workflows_strategy: Callable[
+            [], Dict[str, Type[speedwagon.Workflow]]
+        ] = speedwagon.job.available_workflows
 
     @staticmethod
     def prep_data(
         data_load_strategy: AbsTabsConfigDataManagement,
+        get_all_active_workflows_strategy: Callable[
+            [],
+            Dict[str, Type[speedwagon.Workflow]]
+        ] = speedwagon.job.available_workflows,
     ) -> Dict[str, List[Type[speedwagon.Workflow]]]:
-        all_workflows = speedwagon.job.available_workflows()
+        all_workflows = get_all_active_workflows_strategy()
 
         sorted_workflows = sorted(
             list(all_workflows.values()), key=lambda item: item.name
@@ -489,6 +497,19 @@ class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
                 if workflow_name in all_workflows:
                     workflow_klass = all_workflows[workflow_name]
                     tab_workflows.append(workflow_klass)
+                else:
+                    # if unable to load the workflow generate a dummy
+                    # workflow class
+                    dummy_class =\
+                        type(
+                            workflow_name,
+                            (speedwagon.job.NullWorkflow,),
+                            {
+                                "name": workflow_name,
+                                "discover_task_metadata": print}
+                        )
+                    tab_workflows.append(dummy_class)
+
             workflow_tabs_data[tab_data.tab_name] = tab_workflows
 
         return workflow_tabs_data
@@ -499,7 +520,10 @@ class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
         data = self.prep_data(
             data_load_strategy=speedwagon.config.tabs.CustomTabsYamlConfig(
                 self.yml_file
-            )
+            ),
+            get_all_active_workflows_strategy=(
+                self.get_all_active_workflows_strategy
+            ),
         )
         for tab_name, workflows in data.items():
             model.append_workflow_tab(tab_name, workflows)

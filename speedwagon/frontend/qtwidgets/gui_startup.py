@@ -58,6 +58,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.frontend.qtwidgets.dialog import dialogs, settings
     from speedwagon.job import (
         AbsWorkflow,
+        AbsWorkflowFinder,
         AbsJobConfigSerializationStrategy,
         Workflow,
     )
@@ -207,17 +208,41 @@ class ResolveSettings(AbsResolveSettingsStrategy):  # pylint: disable=R0903
         return manager.data()
 
 
+def get_active_workflows(
+    config_file: str,
+    workflow_finder: Optional[AbsWorkflowFinder] = None
+) -> Dict[str, Type[Workflow]]:
+    workflow_finder = (
+        workflow_finder or
+        speedwagon.job.OnlyActivatedPluginsWorkflows(
+            plugin_settings=plugin_config.read_settings_file_plugins(
+                config_file
+            )
+        )
+    )
+    return speedwagon.job.available_workflows(workflow_finder)
+
+
 def _setup_config_tab(
     saver: dialog.settings.MultiSaver,
     locate_tabs_file_strategy: Callable[[], str] = lambda: _get_tabs_file(
         config.DEFAULT_CONFIG_DIRECTORY_NAME
     ),
+    config_file_location_strategy: Callable[
+        [], str
+    ] = lambda: config.StandardConfigFileLocator(
+        config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+    ).get_config_file(),
 ) -> dialog.settings.TabsConfigurationTab:
+
     tabs_config = dialog.settings.TabsConfigurationTab()
-    tabs_config.editor.load_tab_data_model_strategy = TabDataModelConfigLoader(
+    model_loader = TabDataModelConfigLoader(
         yml_file_locator_strategy=locate_tabs_file_strategy
     )
-
+    model_loader.get_all_active_workflows_strategy = functools.partial(
+        get_active_workflows, config_file=config_file_location_strategy()
+    )
+    tabs_config.load_tab_data_model_strategy = model_loader
     tabs_config.editor.load_data()
     saver.config_savers.append(
         dialog.settings.ConfigFileSaver(
@@ -358,6 +383,13 @@ def _get_tabs_file(config_directory_prefix: str) -> str:
 
 class StartQtThreaded(AbsGuiStarter):
     """Start a Qt Widgets base app using threads for job workers."""
+
+    def set_workflow_config_backend_factory(
+        self,
+        factory: Callable[[Workflow], AbsWorkflowBackend]
+    ) -> None:
+        """Set workflow config backend factory."""
+        self.workflow_config_backend_factory = factory
 
     def __init__(
         self,
@@ -505,8 +537,15 @@ class StartQtThreaded(AbsGuiStarter):
         self.logger.debug("Loading Workflows")
         loading_workflows_stream = io.StringIO()
         self.windows.clear_tabs()
+
         with contextlib.redirect_stderr(loading_workflows_stream):
-            all_workflows = speedwagon.job.available_workflows()
+            all_workflows = speedwagon.job.available_workflows(
+                strategy=speedwagon.job.OnlyActivatedPluginsWorkflows(
+                    plugin_settings=plugin_config.read_settings_file_plugins(
+                        self.config_files.get_config_file()
+                    )
+                )
+            )
 
         for workflow_name, error in self._find_invalid(all_workflows):
             error_message = (
@@ -635,6 +674,7 @@ class StartQtThreaded(AbsGuiStarter):
                 functools.partial(
                     _setup_config_tab,
                     locate_tabs_file_strategy=self.config_files.get_tabs_file,
+                    config_file_location_strategy=get_config_file,
                 ),
                 True,
             ),
@@ -717,6 +757,10 @@ class StartQtThreaded(AbsGuiStarter):
     ) -> speedwagon.frontend.qtwidgets.gui.MainWindow3:
         """Build main window widget."""
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        window.workflow_config_backend_factory = (
+            self.workflow_config_backend_factory
+        )
+
         window.console.attach_logger(self.logger)
 
         window.action_export_logs.triggered.connect(

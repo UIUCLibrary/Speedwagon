@@ -1,6 +1,7 @@
 """Creating and managing tabs in the UI display."""
 from __future__ import annotations
 
+import functools
 import typing
 from typing import Optional, Type, Dict, List
 # pylint: disable=wrong-import-position
@@ -18,8 +19,9 @@ from speedwagon.frontend.qtwidgets import ui_loader
 from speedwagon.frontend.qtwidgets.models.options import (
     load_job_settings_model
 )
+from speedwagon.config.config import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import StandardConfig, FullSettingsData
-from speedwagon.frontend.qtwidgets.widgets import default_get_workflow_backend
+from speedwagon.config.workflow import default_backend_factory
 if typing.TYPE_CHECKING:
     import speedwagon.job
     from speedwagon.frontend.qtwidgets.widgets import (
@@ -67,7 +69,10 @@ class WorkflowsTab3(WorkflowsTab3UI):
         self._workflow_selected: Optional[Type[speedwagon.job.Workflow]] = None
         self.settings_changed.connect(self._update_okay_button)
         self.settings_changed.emit()
-        self.workflow_config_backend_factory = default_get_workflow_backend
+        self.workflow_config_backend_factory = functools.partial(
+            default_backend_factory,
+            config_directory_name=DEFAULT_CONFIG_DIRECTORY_NAME
+        )
 
     def model(self) -> workflow_models.AbsWorkflowList:
         """Get the model used by the current tab."""
@@ -195,7 +200,10 @@ class ItemTabsWidget(ItemTabsUI):
         self.layout().addWidget(self.tabs)
         self._model = workflow_models.TabsTreeModel()
         self._model.modelReset.connect(self._model_reset)
-        self.workflow_config_backend_factory = default_get_workflow_backend
+        self.workflow_config_backend_factory = functools.partial(
+            default_backend_factory,
+            config_directory_name=DEFAULT_CONFIG_DIRECTORY_NAME
+        )
 
     def model(self) -> QtCore.QAbstractItemModel:
         """Get module used by widget."""

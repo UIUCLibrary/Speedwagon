@@ -1208,3 +1208,20 @@ class TestTabDataModelYAMLLoader:
             "after loading model row count": after_load_row_count
         }
         assert actual == expected
+
+
+class TestTabsConfigurationTab:
+    def test_load_tab_data_model_strategy_sets_editor(self, qtbot):
+        tab = settings.TabsConfigurationTab()
+        qtbot.addWidget(tab)
+        mock_load_tab_data_model_strategy = Mock(name="load_tab_data_model_strategy")
+        tab.load_tab_data_model_strategy = mock_load_tab_data_model_strategy
+        assert tab.editor.load_tab_data_model_strategy == mock_load_tab_data_model_strategy
+
+    def test_load_tab_data_model_strategy_get_from_editor(self, qtbot):
+        tab = settings.TabsConfigurationTab()
+        qtbot.addWidget(tab)
+        mock_load_tab_data_model_strategy = Mock(name="load_tab_data_model_strategy")
+        tab.editor.load_tab_data_model_strategy = mock_load_tab_data_model_strategy
+        assert tab.load_tab_data_model_strategy == mock_load_tab_data_model_strategy
+

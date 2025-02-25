@@ -341,13 +341,23 @@ class TabsConfigurationTab(SettingsTab):
         self._modified = False
         layout = QtWidgets.QVBoxLayout(self)
         self.editor = TabEditor()
-        self.editor.load_tab_data_model_strategy =\
+        self._load_tab_data_model_strategy = (
             tab_models.TabDataModelConfigLoader()
+        )
 
         self.editor.changes_made.connect(self.changes_made)
         self.editor.layout().setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.editor)
         self.setLayout(layout)
+
+    @property
+    def load_tab_data_model_strategy(self):
+        """Get the load data model strategy."""
+        return self.editor.load_tab_data_model_strategy
+
+    @load_tab_data_model_strategy.setter
+    def load_tab_data_model_strategy(self, value):
+        self.editor.load_tab_data_model_strategy = value
 
     def data_is_modified(self) -> bool:
         """Check if data has changed since originally set."""
