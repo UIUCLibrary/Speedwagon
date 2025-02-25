@@ -14,7 +14,7 @@ QtGui = pytest.importorskip("PySide6.QtGui")
 import speedwagon.config
 from speedwagon.frontend.qtwidgets.tabs import WorkflowsTab3, ItemTabsWidget
 from speedwagon.frontend.qtwidgets.models.options import load_job_settings_model
-
+from speedwagon.job import Workflow
 
 class TestMainWindow3:
     def test_updated_settings_uses_config_strategy(self, qtbot):
@@ -51,6 +51,21 @@ class TestMainWindow3:
         with qtbot.waitSignal(window.export_job_config):
             window.action_export_job.trigger()
 
+    def test_add_tab_add_a_tab(self, qtbot):
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        starting_count = window.tab_widget.count()
+        bacon_workflow = Mock(spec_set=Workflow)
+        bacon_workflow.name = "bacon"
+        window.add_tab(
+            tab_name="spam",
+            workflows={"bacon": bacon_workflow}
+        )
+        assert \
+            all([
+                starting_count==0,
+                window.tab_widget.count() == 1]),\
+            (f"Starting tab count: {starting_count}. Should be 0. "
+             f"Tabs found: {window.tab_widget.count()}. Should be 1.")
 
 def test_load_job_settings_model(qtbot):
     data = {

@@ -19,7 +19,7 @@ from speedwagon.frontend.qtwidgets.models.options import (
     load_job_settings_model
 )
 from speedwagon.config import StandardConfig, FullSettingsData
-
+from speedwagon.frontend.qtwidgets.widgets import default_get_workflow_backend
 if typing.TYPE_CHECKING:
     import speedwagon.job
     from speedwagon.frontend.qtwidgets.widgets import (
@@ -67,6 +67,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
         self._workflow_selected: Optional[Type[speedwagon.job.Workflow]] = None
         self.settings_changed.connect(self._update_okay_button)
         self.settings_changed.emit()
+        self.workflow_config_backend_factory = default_get_workflow_backend
 
     def model(self) -> workflow_models.AbsWorkflowList:
         """Get the model used by the current tab."""
@@ -79,7 +80,8 @@ class WorkflowsTab3(WorkflowsTab3UI):
 
     def _handle_selector_changed(self, index: QtCore.QModelIndex) -> None:
         workflow = self._model.data(index, WorkflowClassRole)
-
+        self.workspace.workflow_config_backend_factory =\
+            self.workflow_config_backend_factory
         self.workspace.set_workflow(workflow)
         self._handle_workflow_changed(workflow)
 
@@ -110,6 +112,9 @@ class WorkflowsTab3(WorkflowsTab3UI):
         self.workspace.app_settings_lookup_strategy = (
             self.app_settings_lookup_strategy
         )
+        self.workspace.workflow_config_backend_factory =\
+            self.workflow_config_backend_factory
+
         self.settings_changed.emit()
         self.workflow_selected.emit(workflow_klass)
 
@@ -190,6 +195,7 @@ class ItemTabsWidget(ItemTabsUI):
         self.layout().addWidget(self.tabs)
         self._model = workflow_models.TabsTreeModel()
         self._model.modelReset.connect(self._model_reset)
+        self.workflow_config_backend_factory = default_get_workflow_backend
 
     def model(self) -> QtCore.QAbstractItemModel:
         """Get module used by widget."""
@@ -203,6 +209,9 @@ class ItemTabsWidget(ItemTabsUI):
             tab_name = self._model.data(tab_index)
 
             workflows_tab = WorkflowsTab3(parent=self.tabs)
+            workflows_tab.workflow_config_backend_factory =\
+                self.workflow_config_backend_factory
+
             workflows_tab.start_workflow.connect(self.submit_job)
 
             workflow_klasses = {}
