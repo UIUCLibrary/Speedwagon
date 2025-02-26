@@ -9,7 +9,8 @@ This documented is for version |version|.
 
    overview
    user
-   development
+   framework_users
+   speedwagon_development
 
 
 .. toctree::

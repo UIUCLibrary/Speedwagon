@@ -22,12 +22,3 @@ Collection of tools and workflows for DS
            :alt: Jenkins Coverage
            :target: https://jenkins-prod.library.illinois.edu/job/open%20source/job/speedwagon/job/master/coverage/
            
-How to Build Wheel from Source
-------------------------------
-
-1) Clone/download this repository
-2) Install build package (ideally in a virtual environment)
-3) Type the following command:
-    python -m build
-
-This generates a .whl file which can be installed using pip.
