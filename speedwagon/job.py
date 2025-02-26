@@ -1,4 +1,5 @@
 """Define how various jobs are described."""
+
 from __future__ import annotations
 
 import abc
@@ -10,11 +11,29 @@ import os
 import sys
 import typing
 from typing import (
-    Any, Dict, Iterable, List, Optional, Set, Tuple, Type, Mapping, Sequence,
-    TypeVar, Generic
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Mapping,
+    Sequence,
+    TypeVar,
+    Generic,
 )
 
+
+# pylint: disable=wrong-import-position
+if sys.version_info >= (3, 10):
+    from importlib import metadata
+else:
+    import importlib_metadata as metadata
+
 import speedwagon.plugins
+from speedwagon.config import plugins as plugin_config
 import speedwagon.workflows
 
 if typing.TYPE_CHECKING:
@@ -33,6 +52,7 @@ __all__ = [
     "available_workflows",
     "all_required_workflow_keys",
     "AbsJobConfigSerializationStrategy",
+    "AbsWorkflowFinder",
 ]
 
 _T = TypeVar("_T", bound=Mapping[str, object])
@@ -71,10 +91,7 @@ class AbsWorkflow(Generic[_T], metaclass=abc.ABCMeta):
         """
 
     def completion_task(  # noqa: B027
-        self,
-        task_builder: TaskBuilder,
-        results: List[Result],
-        user_args: _T
+        self, task_builder: TaskBuilder, results: List[Result], user_args: _T
     ) -> None:
         """Last task after Job is completed.
 
@@ -82,9 +99,7 @@ class AbsWorkflow(Generic[_T], metaclass=abc.ABCMeta):
         """
 
     def initial_task(  # noqa: B027
-        self,
-        task_builder: TaskBuilder,
-        user_args: _T
+        self, task_builder: TaskBuilder, user_args: _T
     ) -> None:
         """Create a task to run before the main tasks start.
 
@@ -102,9 +117,7 @@ class AbsWorkflow(Generic[_T], metaclass=abc.ABCMeta):
         """
 
     def create_new_task(  # noqa: B027
-        self,
-        task_builder: TaskBuilder,
-        job_args
+        self, task_builder: TaskBuilder, job_args
     ) -> None:
         """Add a new task to be accomplished when the workflow is started.
 
@@ -321,17 +334,48 @@ class WorkflowFinder(AbsDynamicFinder):
 
 
 class AbsWorkflowFinder(abc.ABC):  # pylint: disable=too-few-public-methods
+    """Abstract class for locating Workflows."""
+
     @abc.abstractmethod
     def locate(self) -> Dict[str, Type[Workflow]]:
         """Locate workflows from everywhere."""
 
 
-class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
+class OnlyActivatedPluginsWorkflows(AbsWorkflowFinder):
+    entry_points_group = "speedwagon.plugins"
 
+    def __init__(self, plugin_settings: plugin_config.PluginDataType):
+        super().__init__()
+        self.settings = plugin_settings
+
+    @classmethod
+    def iter_plugins(cls):
+        yield from metadata.entry_points(group=cls.entry_points_group)
+
+    def locate(self) -> Dict[str, Type[Workflow]]:
+        all_active_workflows: Dict[str, Type[Workflow]] = {}
+        for entry_point in self.iter_plugins():
+            if (
+                entry_point.module in self.settings
+                and entry_point.name in self.settings[entry_point.module]
+                and self.settings[entry_point.module][entry_point.name] is True
+            ):
+                all_active_workflows = {
+                    **all_active_workflows,
+                    **speedwagon.plugins.get_workflows_from_plugin(
+                        entry_point,
+                        inclusion_filter=lambda workflow: workflow.active,
+                    ),
+                }
+        return all_active_workflows
+
+
+class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
     def __init__(self, plugin_manager: Optional[PluginManager] = None) -> None:
         super().__init__()
-        self.plugin_manager: PluginManager = \
+        self.plugin_manager: PluginManager = (
             plugin_manager or self.get_plugin_manager()
+        )
 
     @staticmethod
     def get_plugin_manager():
@@ -340,11 +384,12 @@ class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
         )
 
     def locate(self) -> Dict[str, Type[Workflow]]:
-        all_workflows: Dict[str, Type[Workflow]] = {}
-        for plugin_workflows in \
-                self.plugin_manager.hook.registered_workflows():
-            all_workflows = {**all_workflows, **plugin_workflows}
-        return all_workflows
+        registered_workflows = self.plugin_manager.hook.registered_workflows()
+        return {
+            workflow_name: workflow
+            for plugin_workflows in registered_workflows
+            for workflow_name, workflow in plugin_workflows.items()
+        }
 
 
 def available_workflows(strategy: Optional[AbsWorkflowFinder] = None) -> dict:
@@ -361,7 +406,7 @@ def available_workflows(strategy: Optional[AbsWorkflowFinder] = None) -> dict:
 
 
 def all_required_workflow_keys(
-    workflows: Optional[Dict[str, Type[Workflow]]] = None
+    workflows: Optional[Dict[str, Type[Workflow]]] = None,
 ) -> Set[str]:
     """Get all the keys required by the workflows.
 
@@ -424,7 +469,7 @@ class ConfigJSONSerialize(AbsJobConfigSerializationStrategy):
 
     @staticmethod
     def deserialize_data(
-        data: typing.Mapping[str, Any]
+        data: typing.Mapping[str, Any],
     ) -> typing.Tuple[str, Dict[str, Any]]:
         return data["Workflow"], data["Configuration"]
 

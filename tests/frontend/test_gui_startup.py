@@ -30,6 +30,7 @@ from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, Tabs
 from speedwagon.frontend.qtwidgets.models import tabs as tab_models
 from speedwagon.config import StandardConfigFileLocator
 import speedwagon.workflows.builtin
+from speedwagon.job import AbsWorkflowFinder
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
@@ -593,7 +594,7 @@ class TestStartQtThreaded:
         monkeypatch.setattr(
             speedwagon.job,
             "available_workflows",
-            lambda: {"Zip Packages": workflow_klass}
+            lambda *_, **__: {"Zip Packages": workflow_klass}
         )
         monkeypatch.setattr(
             speedwagon.config.StandardConfigFileLocator,
@@ -664,7 +665,7 @@ class TestStartQtThreaded:
         monkeypatch.setattr(
             speedwagon.job,
             "available_workflows",
-            lambda: {"Zip Packages": workflow_klass}
+            lambda *_, **__: {"Zip Packages": workflow_klass}
         )
         monkeypatch.setattr(
             speedwagon.config.StandardConfigFileLocator,
@@ -711,7 +712,7 @@ class TestStartQtThreaded:
         monkeypatch.setattr(
             speedwagon.job,
             "available_workflows",
-            lambda: {"Zip Packages": workflow_klass}
+            lambda *_, **__: {"Zip Packages": workflow_klass}
         )
         monkeypatch.setattr(
             speedwagon.config.StandardConfigFileLocator,
@@ -910,6 +911,18 @@ class TestStartQtThreaded:
         start.start_gui(Mock())
         assert main_window.windowTitle() == "new app"
 
+    def test_set_workflow_config_backend_factory(self, qtbot):
+        start = gui_startup.StartQtThreaded(app=Mock())
+        start.load_workflows = Mock()
+        config_backend = Mock()
+        start.set_workflow_config_backend_factory(config_backend)
+        main_window = MainWindow3()
+        main_window.update_settings = Mock()
+        main_window.show = Mock()
+        qtbot.addWidget(main_window)
+        start.build_main_window = lambda *_: main_window
+        start.start_gui(Mock())
+        assert main_window.workflow_config_backend_factory == config_backend
 
 class TestWorkflowProgressCallbacks:
 
@@ -1287,3 +1300,16 @@ def test_get_help_url_malformed_data(monkeypatch):
     with pytest.raises(ValueError) as error:
         gui_startup.get_help_url()
     assert "malformed" in str(error)
+
+def test_get_active_workflows():
+    config_file = "dummy.ini"
+    workflow_finder = Mock(
+        name='finder',
+        spec_set=AbsWorkflowFinder,
+        locate=Mock(
+            return_value={
+                "spam": Mock(name="spam workflow")
+            }
+        )
+    )
+    assert "spam" in gui_startup.get_active_workflows(config_file, workflow_finder=workflow_finder)

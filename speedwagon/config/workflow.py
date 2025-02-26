@@ -26,7 +26,8 @@ __all__ = [
     "WorkflowSettingsYamlExporter",
     "WorkflowSettingsYAMLResolver",
     "YAMLWorkflowConfigBackend",
-    "default_backend_factory"
+    "default_backend_factory",
+    "AbsWorkflowBackend"
 ]
 
 
@@ -46,7 +47,10 @@ WORKFLOWS_SETTINGS_YML_FILE_NAME = "workflows_settings.yml"
 
 
 class AbsWorkflowBackend(abc.ABC):  # pylint: disable=R0903
+    """Abstract workflow backend."""
+
     def __init__(self) -> None:
+        """Create a new object."""
         self.workflow: Optional[Workflow] = None
 
     @abc.abstractmethod

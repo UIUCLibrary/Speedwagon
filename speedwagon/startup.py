@@ -18,11 +18,15 @@ import io
 import json
 import sys
 from typing import (
-    Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional, Callable, Any
+    Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional, Callable, Any,
+    Collection, TypeVar, Mapping
 )
 
 import speedwagon.job
 import speedwagon.config
+from speedwagon.config.workflow import (
+    default_backend_factory, AbsWorkflowBackend
+)
 from speedwagon.config.config import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import StandardConfigFileLocator
 from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
@@ -33,6 +37,8 @@ if TYPE_CHECKING:
 __all__ = [
     "ApplicationLauncher",
 ]
+
+_T = TypeVar("_T", bound=Mapping[str, object])
 
 
 def parse_args() -> argparse.ArgumentParser:
@@ -71,7 +77,10 @@ class CustomTabsFileReader:
                 )
         return new_tab_items
 
-    def _load_workflow(self, workflow_name: str):
+    def _load_workflow(
+        self,
+        workflow_name: str
+    ) -> Type[speedwagon.job.Workflow[_T]]:
         try:
             workflow = self.all_workflows[workflow_name]
             if workflow.active is False:
@@ -95,20 +104,12 @@ class CustomTabsFileReader:
         try:
             for tab_entity in strategy.data():
                 try:
-                    new_tab_items = {}
-                    for item_name in tab_entity.workflow_names:
-                        try:
-                            workflow = self._load_workflow(item_name)
-                        except WorkflowLoadFailure as error:
-                            print(
-                                f"Unable to load workflow '{item_name}'. "
-                                f"Reason: {error}",
-                                file=sys.stderr,
-                            )
-                            continue
-                        new_tab_items[item_name] = workflow
-
-                    yield tab_entity.tab_name, new_tab_items
+                    yield (
+                        tab_entity.tab_name,
+                        self.gather_registered_workflows(
+                            tab_entity.workflow_names
+                        )
+                    )
                 except TabLoadFailure as error:
                     print(
                         f"Custom tab {tab_entity.tab_name} failed to load. "
@@ -124,6 +125,26 @@ class CustomTabsFileReader:
             print(
                 f"Custom tabs failed to load. Reason: {error}", file=sys.stderr
             )
+
+    def gather_registered_workflows(
+        self,
+        workflow_names: Collection[str]
+    ) -> Dict[str, Type[speedwagon.job.Workflow[_T]]]:
+        new_tab_items: Dict[str, Type[speedwagon.job.Workflow[_T]]] = {}
+        for item_name in workflow_names:
+            try:
+                if item_name not in self.all_workflows:
+                    raise WorkflowLoadFailure("Workflow not registered.")
+                new_tab_items[item_name] = self._load_workflow(item_name)
+            except WorkflowLoadFailure as error:
+                print(
+                    f"Unable to load workflow '{item_name}'. "
+                    f"Reason: {error}",
+                    file=sys.stderr,
+                )
+                continue
+
+        return new_tab_items
 
 
 def get_custom_tabs(
@@ -192,6 +213,12 @@ class ApplicationLauncher:
     def run(self, app=None) -> int:
         """Run Speedwagon."""
         self.strategy.set_application_name(self.application_name)
+        self.strategy.set_workflow_config_backend_factory(
+            functools.partial(
+                default_backend_factory,
+                config_directory_name=self.application_config_directory_name
+            )
+        )
         if app:
             try:
                 from speedwagon.frontend.qtwidgets.gui_startup import (
@@ -287,6 +314,18 @@ class AbsStarter(metaclass=abc.ABCMeta):
         Defaults to no-op.
 
         This is useful for GUI applications such as ones that based on Qt.
+        """
+
+    def set_workflow_config_backend_factory(  # noqa: B027
+        self,
+        factory: Callable[[speedwagon.job.Workflow], AbsWorkflowBackend]
+    ) -> None:
+        """Set the workflow config backend factory.
+
+        Defaults to no-op.
+
+        Args:
+            factory: Factory for creating workflow config backend.
         """
 
     @abc.abstractmethod

@@ -1,6 +1,7 @@
 """Specialize widgets."""
 from __future__ import annotations
 import abc
+import functools
 import json
 import os.path
 import typing
@@ -590,12 +591,6 @@ class DynamicForm(QtWidgets.QScrollArea):
         return self._background.model.get_as(with_instance)
 
 
-def default_get_workflow_backend(new_workflow: Workflow):
-    config_backend = config.get_config_backend()
-    config_backend.workflow = new_workflow
-    return config_backend
-
-
 class Workspace(QtWidgets.QWidget):
     """Workspace widget.
 
@@ -615,7 +610,10 @@ class Workspace(QtWidgets.QWidget):
         with as_file(resources.files(ui).joinpath("workspace.ui")) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
         self.app_settings_lookup_strategy = config.StandardConfig()
-        self.workflow_config_backend_factory = default_get_workflow_backend
+        self.workflow_config_backend_factory = functools.partial(
+            config.workflow.default_backend_factory,
+            config_directory_name="Speedwagon"
+        )
 
     def set_workflow(self, workflow_klass: typing.Type[Workflow]) -> None:
         """Set current workflow."""

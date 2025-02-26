@@ -109,6 +109,9 @@ class MainWindow3(MainWindow3UI):
         ###########################################################
         self.action_export_job.triggered.connect(self._export_job_config)
         self.tab_widget.submit_job.connect(self.submit_job)
+        self.tab_widget.workflow_config_backend_factory = (
+            self.workflow_config_backend_factory
+        )
         self.submit_job.connect(lambda *args: print("got it"))
 
     def update_settings(self) -> None:
