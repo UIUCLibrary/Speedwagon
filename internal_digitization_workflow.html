@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Internal Digitization Workflow &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=9628f188"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Advanced Usage" href="advanced.html" />
+    <link rel="prev" title="Simplified Workflow - How to package vendor files" href="simplified_workflow.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="internal-digitization-workflow">
+<span id="id1"></span><h1>Internal Digitization Workflow<a class="headerlink" href="#internal-digitization-workflow" title="Link to this heading">¶</a></h1>
+<p>At the U of I, the digitization workflow only generates tiff files by batch.
+Each batch contains several books, using a naming convention Speedwagon will
+use.  Additional files and repackaging are needed for a HT package.</p>
+<ol class="arabic">
+<li><p>Select Convert CaptureOne TIFF to Hathi TIFF package the Tools tab.  Files
+are separated by book based on the prefix (unique ID), an underscore
+delimiter and suffix of sequential 8 digit padded zero number
+(HT requirement)</p>
+<ol class="arabic simple">
+<li><p>Speedwagon generate separate folders for each book in a batch</p></li>
+<li><p>Speedwagon separates files for each book into generated folders</p></li>
+</ol>
+<img alt="_images/convert_capture_one_to_hathi_tiff.png" src="_images/convert_capture_one_to_hathi_tiff.png" />
+</li>
+<li><p>Click the input and output space to select folders – you can select the same
+location for both</p></li>
+<li><p>Select Start.</p>
+<img alt="_images/settings.png" src="_images/settings.png" />
+<ol class="arabic simple">
+<li><p>Once complete, there will be duplicate files in the folder. Original
+files are detained as a precaution. The batch are deleted since another
+set of files are now split into folders [at this state we should not
+need to duplicate any files – they should be deleted].</p></li>
+</ol>
+</li>
+<li><p>Delete duplicate files</p></li>
+<li><p>In the Workflow tab, Select Validate Metadata</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p>Select the Input location and file type under profile.</p>
+<img alt="_images/validate_metadata.png" src="_images/validate_metadata.png" />
+</li>
+</ol>
+</div></blockquote>
+</li>
+<li><p>Create JP2000 files for HT.  Select convert TIFF to HathiTrust JP2.  Select
+Input path and Output destination.  Speedwagon will replace the tiffs
+with JP2000 files for each image, retaining the directory structure.</p></li>
+<li><p>Select Generate OCR (Optical Character Recognition) in the Workflows.
+Select JP2000 (if this is the file type being used)</p>
+<ol class="arabic">
+<li><p>Txt files are generated for each image file in the same directory.</p>
+<img alt="_images/generate_ocr.png" src="_images/generate_ocr.png" />
+</li>
+</ol>
+</li>
+<li><p>Generate MARC.XML file for each book.  Speedwagon uses the U of I’s GetMarc
+tool to query the Voyager catalog record using the books unique
+bibliographic identifier.  Metadata for HT packages at other institutions
+must be created according to their procedures.</p></li>
+<li><p>Select Generate MARC.XML files in the Tools tab. Select the Input folder.</p>
+<blockquote>
+<div><img alt="_images/generate_marc.png" src="_images/generate_marc.png" />
+<ol class="arabic">
+<li><p>A MARC record is created for each book in the same directory as the
+image and txt files.</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>It is suggested verifying the 955 is present with the bibliographic
+ID in the marc.xml file for at least one item for each batch</p></li>
+</ol>
+</div></blockquote>
+</li>
+</ol>
+<img alt="_images/marc_xml.png" src="_images/marc_xml.png" />
+</div></blockquote>
+</li>
+<li><p>Select Hathi Prep to create the meta.yml file.</p></li>
+<li><p>Select Input and Image Format</p>
+<ol class="arabic">
+<li><p>In the Title Page Selection prompt, select the title page for each book
+in the drop-down menu.  Select the images that represents the title.
+The U of I visually reviews each book to identify the title page before
+this step to identify the title page.</p>
+<img alt="_images/select_title_page.png" src="_images/select_title_page.png" />
+</li>
+<li><p>This will edit the meta.yml file designating the Title Page which will
+become the thumbnail appearing with a given book in HT.  (U of I only
+include the title page in the page data for a book.)</p></li>
+<li><p>Other institutions may want to include additional page data however
+Speedwagon only edits the title page in the meta.yml.</p>
+<img alt="_images/hathi_prep.png" src="_images/hathi_prep.png" />
+</li>
+<li><p>Once title pages are selected, the meta.yml files and checksum md5s are
+created.</p></li>
+</ol>
+<img alt="_images/prep_generating_checksums.png" src="_images/prep_generating_checksums.png" />
+</li>
+<li><p>Use Verify HathiTrust Package Completeness to verify each book/item
+contains files needed for HathiTrust.</p>
+<ol class="arabic">
+<li><p>Select Verify HathiTrust Package Completeness in the Workflows tab.</p>
+<ol class="arabic">
+<li><p>Select the file path for source.</p></li>
+<li><p>Select setting for:</p>
+<ol class="arabic">
+<li><p>Check for the page_data in meta.yml and</p></li>
+<li><p>Check ALTO OCR xml files to False or True depending on package
+delivered by vendor.</p></li>
+<li><p>Change Check OCR xml files are utf-8 to True.</p>
+<img alt="_images/verify_hathi_package_complete.png" src="_images/verify_hathi_package_complete.png" />
+</li>
+</ol>
+</li>
+<li><p>When the tool finishes, review the manifest in the prompt for
+errors. Speedwagon will list any missing files and in what directory
+files are missing. Speedwagon also lists the files present by book.</p>
+<img alt="_images/no_validation_errors.png" src="_images/no_validation_errors.png" />
+</li>
+</ol>
+</li>
+</ol>
+</li>
+<li><p>Send metadata file for books in batch to Zephir when HathiTrust Package
+Completeness test is successful.  Depending on an institution’s, procedures,
+a metadata contact may do this.  The U of I’s metadata contact is
+responsible for this.</p>
+<ol class="arabic simple">
+<li><p>HathiTrust sends a verification email with notification metadata was
+successfully received.</p></li>
+</ol>
+</li>
+<li><p>Zip Packages</p>
+<ol class="arabic simple">
+<li><p>In the Tools tab, select Zip Packages</p></li>
+<li><p>Set output location. A specific server is designated for U of I
+HathiTrust package submission.</p></li>
+</ol>
+<img alt="_images/zip_packages.png" src="_images/zip_packages.png" />
+</li>
+</ol>
+<ol class="loweralpha simple" start="3">
+<li><p>When zipping is complete send email to HathiTrust</p></li>
+<li><p>(<a class="reference external" href="mailto:feedback&#37;&#52;&#48;issues&#46;hathitrust&#46;org">feedback<span>&#64;</span>issues<span>&#46;</span>hathitrust<span>&#46;</span>org</a>) using the following template:</p></li>
+</ol>
+<p>e.      HathiTrust sends 3 emails:
+I.      Notification a submission was received.
+II.     Status update and notification of any ingest issues.
+III.    Verification content was successfully ingested in HathiTrust Digital Library</p>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="user.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use_cases.html">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflows.html">Workflows</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="uiuc_workflows.html">UIUC Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="user.html">User Guide</a><ul>
+  <li><a href="uiuc_workflows.html">UIUC Workflows</a><ul>
+      <li>Previous: <a href="simplified_workflow.html" title="previous chapter">Simplified Workflow - How to package vendor files</a></li>
+      <li>Next: <a href="advanced.html" title="next chapter">Advanced Usage</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/internal_digitization_workflow.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

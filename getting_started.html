@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Getting Started &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=9628f188"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Use Cases" href="use_cases.html" />
+    <link rel="prev" title="User Guide" href="user.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h1>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<p>There are a number of ways to install Speedwagon, depending on your needs.</p>
+<section id="installation-on-windows">
+<h3>Installation on Windows<a class="headerlink" href="#installation-on-windows" title="Link to this heading">¶</a></h3>
+<p>Since the majority of computer workstations used by the staff of The University
+of Illinois at Urbana Champaign libraries run the Windows operating system,
+the development of Speedwagon focused on making the application easily
+accessible on the Windows platform. A great deal work has gone into making
+Speedwagon not only easy to use but also easy to install on Windows for an
+average user.</p>
+<section id="installation-on-windows-from-msi-installer">
+<h4>Installation on Windows from MSI installer<a class="headerlink" href="#installation-on-windows-from-msi-installer" title="Link to this heading">¶</a></h4>
+<p>Normal Windows users can download and install a prebuilt Windows Installer
+.msi file. Unless you have experience with installing
+<a class="reference internal" href="glossary.html#term-Python-Package"><span class="xref std std-term">Python packages</span></a>, you should use this method because it
+is the easiest. This installer uses the standard Windows install wizard to
+help you install everything needed to run Speedwagon. In addition, the install
+wizard creates a start menu icon and adds an easy way to uninstall it later
+if you choose.</p>
+<p>Double click on the Speedwagon-version.number.msi file to start the
+installation wizard.</p>
+<img alt="_images/msi_icon.png" src="_images/msi_icon.png" />
+</section>
+<section id="installation-on-windows-from-whl-file">
+<h4>Installation on Windows from whl File<a class="headerlink" href="#installation-on-windows-from-whl-file" title="Link to this heading">¶</a></h4>
+<p>If you do not want to install the msi but you still want to install a prebuilt
+package, you can install the Python wheel.</p>
+<p>Install Speedwagon whl file from the command line:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">D</span><span class="p">:</span>\<span class="n">hborcher</span>\<span class="n">Downloads</span>\<span class="n">speedwagon</span><span class="o">-</span><span class="mf">0.1.4</span><span class="n">b5</span><span class="o">-</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span>
+</pre></div>
+</div>
+</section>
+<section id="installation-on-windows-from-source">
+<h4>Installation on Windows from Source<a class="headerlink" href="#installation-on-windows-from-source" title="Link to this heading">¶</a></h4>
+<p>If you do not want to install the msi or the whl file.</p>
+<ol class="arabic">
+<li><p>Download the latest <a class="reference external" href="https://github.com/UIUCLibrary/Speedwagon/releases">source release from github</a>.</p></li>
+<li><p>Install Speedwagon as a <a class="reference internal" href="glossary.html#term-Python-Package"><span class="xref std std-term">Python package</span></a> from the command line:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="installation-on-other-operating-systems">
+<h3>Installation on Other Operating Systems<a class="headerlink" href="#installation-on-other-operating-systems" title="Link to this heading">¶</a></h3>
+<p>The majority of the code in Speedwagon is operating system agnostic. However,
+because of the resources available and the internal demand for Windows
+installers, Speedwagon has been mainly developed and tested to work on Windows.
+With this said, Speedwagon can run on a Mac computer. However, it requires
+more work from the user and running it on a Mac has caveats. Not every feature
+is available and there are currently no plans to support prebuilt standalone
+distributions.</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="user.html">User Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use_cases.html">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflows.html">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uiuc_workflows.html">UIUC Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="user.html">User Guide</a><ul>
+      <li>Previous: <a href="user.html" title="previous chapter">User Guide</a></li>
+      <li>Next: <a href="use_cases.html" title="next chapter">Use Cases</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/getting_started.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

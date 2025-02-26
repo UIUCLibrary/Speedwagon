@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>speedwagon.tasks &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=9628f188"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="speedwagon.validators" href="speedwagon.validators.html" />
+    <link rel="prev" title="speedwagon.startup" href="speedwagon.startup.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-speedwagon.tasks">
+<span id="speedwagon-tasks"></span><h1>speedwagon.tasks<a class="headerlink" href="#module-speedwagon.tasks" title="Link to this heading">¶</a></h1>
+<p>Define a single step in the workflow.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">speedwagon.tasks.</span></span><span class="sig-name descname"><span class="pre">Subtask</span></span><a class="headerlink" href="#speedwagon.tasks.Subtask" title="Link to this definition">¶</a></dt>
+<dd><p>Base class for defining a new task for a <code class="xref py py-class docutils literal notranslate"><span class="pre">Workflow</span></code> to create.</p>
+<p>Subclass this generate a new task</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.tasks.Subtask.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new sub-task.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.exec">
+<span class="sig-name descname"><span class="pre">exec</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.tasks.Subtask.exec" title="Link to this definition">¶</a></dt>
+<dd><p>Execute subtask.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.tasks.Subtask.log" title="Link to this definition">¶</a></dt>
+<dd><p>Generate text message for the subtask.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.parent_task_log_q">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parent_task_log_q</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Deque</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#speedwagon.tasks.Subtask.parent_task_log_q" title="Link to this definition">¶</a></dt>
+<dd><p>Log queue of the parent.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.results">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">results</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">_T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#speedwagon.tasks.Subtask.results" title="Link to this definition">¶</a></dt>
+<dd><p>Get the results of the subtask.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.set_results">
+<span class="sig-name descname"><span class="pre">set_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_T</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.tasks.Subtask.set_results" title="Link to this definition">¶</a></dt>
+<dd><p>Set the results of the subtask.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.settings">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">settings</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#speedwagon.tasks.Subtask.settings" title="Link to this definition">¶</a></dt>
+<dd><p>Get the settings for the subtask.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.status">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">status</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TaskStatus</span></em><a class="headerlink" href="#speedwagon.tasks.Subtask.status" title="Link to this definition">¶</a></dt>
+<dd><p>Get the status of the subtask.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.subtask_working_dir">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">subtask_working_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#speedwagon.tasks.Subtask.subtask_working_dir" title="Link to this definition">¶</a></dt>
+<dd><p>Get the subtask working directory.</p>
+<p class="rubric">Notes</p>
+<p>This has the side effect of creating the working directory if it
+does not already exist.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.task_description">
+<span class="sig-name descname"><span class="pre">task_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.tasks.Subtask.task_description" title="Link to this definition">¶</a></dt>
+<dd><p>Get user readable information about what the subtask is doing.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.task_result">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">task_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#speedwagon.tasks.Result" title="speedwagon.tasks.tasks.Result"><span class="pre">Result</span></a><span class="p"><span class="pre">[</span></span><span class="pre">_T</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#speedwagon.tasks.Subtask.task_result" title="Link to this definition">¶</a></dt>
+<dd><p>Get the result of the subtask.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.tasks.Subtask.work">
+<span class="sig-name descname"><span class="pre">work</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#speedwagon.tasks.Subtask.work" title="Link to this definition">¶</a></dt>
+<dd><p>Perform work.</p>
+<p>This method is called when the task’s work should be done.</p>
+<p>Override this method to accomplish the task.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Currently expects to return a boolean value to indicate if the task
+has succeeded or failed. However, this is likely to change.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="speedwagon.tasks.Result">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">speedwagon.tasks.</span></span><span class="sig-name descname"><span class="pre">Result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">AbsSubtask</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_T</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#speedwagon.tasks.Result" title="Link to this definition">¶</a></dt>
+<dd><p>Subtask result.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="speedwagon.tasks.Result.source">
+<span class="sig-name descname"><span class="pre">source</span></span><a class="headerlink" href="#speedwagon.tasks.Result.source" title="Link to this definition">¶</a></dt>
+<dd><p>Class Type used to provide the results</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Type[speedwagon.tasks.tasks.AbsSubtask]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="speedwagon.tasks.Result.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#speedwagon.tasks.Result.data" title="Link to this definition">¶</a></dt>
+<dd><p>Payload of the result data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>speedwagon.tasks.tasks._T</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../plugin_development/develop_plugins.html">Develop Speedwagon Plugins</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul>
+  <li><a href="../api_reference.html">API Reference</a><ul>
+      <li>Previous: <a href="speedwagon.startup.html" title="previous chapter">speedwagon.startup</a></li>
+      <li>Next: <a href="speedwagon.validators.html" title="next chapter">speedwagon.validators</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/speedwagon/speedwagon.tasks.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

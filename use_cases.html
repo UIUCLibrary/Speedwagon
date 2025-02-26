@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Use Cases &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=9628f188"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Workflows" href="workflows.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="use-cases">
+<h1>Use Cases<a class="headerlink" href="#use-cases" title="Link to this heading">¶</a></h1>
+<section id="simplified-directory-structure-diagram-vendor-generated-package">
+<h2>Simplified Directory Structure Diagram (Vendor generated package)<a class="headerlink" href="#simplified-directory-structure-diagram-vendor-generated-package" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>The Simplified Workflow described below requires a specific directory
+structure.  Files must be structured properly with correct labels for
+Speedwagon to process the files.</p></li>
+<li><p>For all vendored content HathiTrust serves as the final preservation
+repository.</p></li>
+<li><p>Deliverables from the U of I vendor include JP2000, text, marc.xml, MD5 and
+yml files for each book.  See the diagram below to see an example of the
+directory structure for this workflow. See figure below:</p></li>
+</ul>
+<p>batch folder</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>uniqueID1</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>00000001.jp2</p></li>
+<li><p>00000001.xml</p></li>
+<li><p>00000001.xml</p></li>
+<li><p>00000002.jp2</p></li>
+<li><p>00000002.txt</p></li>
+<li><p>00000002.xml</p></li>
+<li><p>checksum.md5</p></li>
+<li><p>marc</p></li>
+<li><p>meta.yml</p></li>
+</ul>
+</div></blockquote>
+</td>
+<td><p>uniqueID2</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>00000001.xml</p></li>
+<li><p>00000002.jp2</p></li>
+<li><p>00000002.txt</p></li>
+<li><p>00000002.xml</p></li>
+<li><p>checksum.md5</p></li>
+<li><p>marc</p></li>
+<li><p>meta.yml</p></li>
+</ul>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="internal-workflow-diagram-locally-generated-package">
+<h2>Internal Workflow Diagram (Locally generated package)<a class="headerlink" href="#internal-workflow-diagram-locally-generated-package" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>The U of I digitizes content on site.  Files generated in the digitization
+lab are packaged in large batches with preservation and access derivatives.
+Each package will contain an access folder with TIFFS and a preservation
+folder with TIFFS.  Each package contains several books.</p></li>
+<li><p>Tiff files are first converted to JP2000 files with the “Convert TIFF to
+HathiTrustJP2.”  However, the program will work with JP2000 or TIFF files.
+The U of I prefers to create JP2000 files for it packages.</p></li>
+<li><p>Files are named with a preceding unique identifier followed by an
+underscore and 8 digit padded number. The U of I prepares files for
+HathiTrust Digital Library as well as the local preservation repository,
+Medusa.  This requires 2 output directories. Speedwagon will package the
+batch of files for both repositories.</p></li>
+<li><p>Use the “Convert CaptureOne TIFF to Hathi to Digital Library Compound
+Object and HathiTrust.” This will create a directory of folders split up
+by book, named with the unique identifier.</p></li>
+<li><p>For HT, a copy of the JP2000 files are organized into separate folder
+named with the unique identifier.</p></li>
+<li><p>For the local preservation repository, both preservation TIFFs and access
+JP2000 files are organized into a package profile, named by unique
+identifier.</p></li>
+<li><p>The unique identifier and underscore are removed from the file names.  The
+TIFFS or JP2000 files contain only the 8 digit padded number. See the
+figure below:</p></li>
+</ul>
+<p>Input - Batch Folder</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Preservation</p>
+<ul>
+<li><p>uniqueID1_00000001.jp2</p></li>
+<li><p>uniqueID1_00000002.jp2</p></li>
+<li><p>uniqueID2_00000001.jp2</p></li>
+<li><p>uniqueID2_00000002.jp2</p></li>
+</ul>
+</li>
+<li><p>access</p></li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><p>uniqueID1_00000001.tif</p></li>
+<li><p>uniqueID1_00000002.tif</p></li>
+<li><p>uniqueID2_00000001.tif</p></li>
+<li><p>uniqueID2_00000002.tif</p></li>
+</ul>
+</div></blockquote>
+<p>Output HT Package</p>
+<p>Split into individual book packages</p>
+<ul class="simple">
+<li><p>access (folder)</p></li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><p>uniqueID1_00000001.jp2</p></li>
+<li><p>uniqueID1_00000002.jp2</p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>access (folder)</p></li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><p>uniqueID2_00000001.jp2</p></li>
+<li><p>uniqueID2_00000002.jp2</p></li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+<p>Output for Local Preservation Repository Package
+(NB: this content not packaged for Hathi)</p>
+<p>Split into individual book packages</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>uniqueID1 (folder)</p></li>
+</ul>
+<blockquote>
+<div><ul>
+<li><p>preservation (folder)</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>uniqueID1_00000001.tif</p></li>
+<li><p>uniqueID1_00000002.tif</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>access (folder)</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>uniqueID1_00000001.jp2</p></li>
+<li><p>uniqueID1_00000002.jp2</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>uniqueID2 (folder)</p></li>
+</ul>
+<blockquote>
+<div><ul>
+<li><p>preservation (folder)</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>uniqueID2_00000001.tif</p></li>
+<li><p>uniqueID2_00000002.tif</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>access (folder)</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>uniqueID2_00000001.jp2</p></li>
+<li><p>uniqueID2_00000002.jp2</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="user.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="workflows.html">Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uiuc_workflows.html">UIUC Workflows</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html">Advanced Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="user.html">User Guide</a><ul>
+      <li>Previous: <a href="getting_started.html" title="previous chapter">Getting Started</a></li>
+      <li>Next: <a href="workflows.html" title="next chapter">Workflows</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/use_cases.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Arguments &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=9628f188"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Workflow Configuration" href="workflow_configure.html" />
+    <link rel="prev" title="Configuration" href="configuration.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="arguments">
+<h1>Arguments<a class="headerlink" href="#arguments" title="Link to this heading">¶</a></h1>
+<p>Most Workflows are going to have parameters provided by the user to configure a job. These parameters could be in the
+form of an input directory or file. They could also be a toggle to provide additional task to a job.</p>
+<p>Adding user arguments a Workflow to specialize a job can be done within by overriding the
+<a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.job_options" title="speedwagon.Workflow.job_options"><code class="xref py py-meth docutils literal notranslate"><span class="pre">job_options()</span></code></a> method.</p>
+<p><a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.job_options" title="speedwagon.Workflow.job_options"><code class="xref py py-meth docutils literal notranslate"><span class="pre">job_options()</span></code></a> returns a Python list of objects that are subclasses of
+<a class="reference internal" href="../speedwagon/speedwagon.workflow.html#speedwagon.workflow.AbsOutputOptionDataType" title="speedwagon.workflow.AbsOutputOptionDataType"><code class="xref py py-class docutils literal notranslate"><span class="pre">speedwagon.workflow.AbsOutputOptionDataType</span></code></a>.
+This includes the following.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../speedwagon/speedwagon.workflow.html#speedwagon.workflow.DirectorySelect" title="speedwagon.workflow.DirectorySelect"><code class="xref py py-class docutils literal notranslate"><span class="pre">DirectorySelect</span></code></a> for selecting a folder.</p></li>
+<li><p><a class="reference internal" href="../speedwagon/speedwagon.workflow.html#speedwagon.workflow.FileSelectData" title="speedwagon.workflow.FileSelectData"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileSelectData</span></code></a> for selecting a file.</p></li>
+<li><p><a class="reference internal" href="../speedwagon/speedwagon.workflow.html#speedwagon.workflow.ChoiceSelection" title="speedwagon.workflow.ChoiceSelection"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChoiceSelection</span></code></a> for selecting a value with a pre-determined set
+of possible values.</p></li>
+<li><p><a class="reference internal" href="../speedwagon/speedwagon.workflow.html#speedwagon.workflow.BooleanSelect" title="speedwagon.workflow.BooleanSelect"><code class="xref py py-class docutils literal notranslate"><span class="pre">BooleanSelect</span></code></a> for selecting a value that is True or False.</p></li>
+<li><p><a class="reference internal" href="../speedwagon/speedwagon.workflow.html#speedwagon.workflow.TextLineEditData" title="speedwagon.workflow.TextLineEditData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChoiceSelection</span></code></a> for selecting a string.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MakeChecksums</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Generate Checksums&quot;</span>
+
+    <span class="k">def</span> <span class="nf">job_options</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">AbsOutputOptionDataType</span><span class="p">]:</span>
+        <span class="n">selected_hash_algorithm</span> <span class="o">=</span> <span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">DirectorySelect</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Algorithm&quot;</span><span class="p">)</span>
+        <span class="n">selected_hash_algorithm</span><span class="o">.</span><span class="n">add_selection</span><span class="p">(</span><span class="s2">&quot;MD5&quot;</span><span class="p">)</span>
+        <span class="n">selected_hash_algorithm</span><span class="o">.</span><span class="n">add_selection</span><span class="p">(</span><span class="s2">&quot;SHA-1&quot;</span><span class="p">)</span>
+        <span class="n">selected_hash_algorithm</span><span class="o">.</span><span class="n">add_selection</span><span class="p">(</span><span class="s2">&quot;SHA-256&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">DirectorySelect</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Source Path&quot;</span><span class="p">),</span>
+            <span class="n">selected_hash_algorithm</span><span class="p">,</span>
+        <span class="p">]</span>
+</pre></div>
+</div>
+<section id="validation">
+<h2>Validation<a class="headerlink" href="#validation" title="Link to this heading">¶</a></h2>
+<p>To sanitize inputs provided by a user, validations can be added to any
+<a class="reference internal" href="../speedwagon/speedwagon.workflow.html#speedwagon.workflow.AbsOutputOptionDataType" title="speedwagon.workflow.AbsOutputOptionDataType"><code class="xref py py-class docutils literal notranslate"><span class="pre">AbsOutputOptionDataType</span></code></a>. object using the
+<a class="reference internal" href="../speedwagon/speedwagon.workflow.html#speedwagon.workflow.AbsOutputOptionDataType.add_validation" title="speedwagon.workflow.AbsOutputOptionDataType.add_validation"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_validation</span></code></a> method.</p>
+<p>The following validation classes are included as a part of speedwagon in the
+<a class="reference internal" href="../speedwagon/speedwagon.validators.html#module-speedwagon.validators" title="speedwagon.validators"><code class="xref py py-mod docutils literal notranslate"><span class="pre">speedwagon.validators</span></code></a> module.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../speedwagon/speedwagon.validators.html#speedwagon.validators.ExistsOnFileSystem" title="speedwagon.validators.ExistsOnFileSystem"><code class="xref py py-class docutils literal notranslate"><span class="pre">ExistsOnFileSystem</span></code></a></p></li>
+<li><p><a class="reference internal" href="../speedwagon/speedwagon.validators.html#speedwagon.validators.IsDirectory" title="speedwagon.validators.IsDirectory"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsDirectory</span></code></a></p></li>
+<li><p><a class="reference internal" href="../speedwagon/speedwagon.validators.html#speedwagon.validators.IsFile" title="speedwagon.validators.IsFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsFile</span></code></a></p></li>
+<li><p><a class="reference internal" href="../speedwagon/speedwagon.validators.html#speedwagon.validators.CustomValidation" title="speedwagon.validators.CustomValidation"><code class="xref py py-class docutils literal notranslate"><span class="pre">CustomValidation</span></code></a></p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MakeChecksums</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+   <span class="k">def</span> <span class="nf">job_options</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">AbsOutputOptionDataType</span><span class="p">]:</span>
+        <span class="n">input_path</span> <span class="o">=</span> <span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">DirectorySelect</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Source Path&quot;</span><span class="p">)</span>
+        <span class="n">input_path</span><span class="o">.</span><span class="n">add_validation</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">validators</span><span class="o">.</span><span class="n">ExistsOnFileSystem</span><span class="p">())</span>
+
+        <span class="c1"># The IsDirectory validation below only runs if the condition evaluates</span>
+        <span class="c1">#  os.path.exists to True.</span>
+        <span class="n">input_path</span><span class="o">.</span><span class="n">add_validation</span><span class="p">(</span>
+            <span class="n">speedwagon</span><span class="o">.</span><span class="n">validators</span><span class="o">.</span><span class="n">IsDirectory</span><span class="p">(),</span>
+            <span class="n">condition</span><span class="o">=</span><span class="k">lambda</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">input_path</span>
+        <span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="develop_plugins.html">Develop Speedwagon Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul>
+  <li><a href="develop_plugins.html">Develop Speedwagon Plugins</a><ul>
+  <li><a href="configuration.html">Configuration</a><ul>
+      <li>Previous: <a href="configuration.html" title="previous chapter">Configuration</a></li>
+      <li>Next: <a href="workflow_configure.html" title="next chapter">Workflow Configuration</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/plugin_development/arguments.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

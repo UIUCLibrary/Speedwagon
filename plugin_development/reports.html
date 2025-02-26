@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Reporting Job Results &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=9628f188"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference" href="../api_reference.html" />
+    <link rel="prev" title="Tasks" href="tasks.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="reporting-job-results">
+<h1>Reporting Job Results<a class="headerlink" href="#reporting-job-results" title="Link to this heading">¶</a></h1>
+<p>After a job is completed, it is often helpful to provide the user a report of
+what happened. This might be a summary of all the items processed or the
+results of a validation.</p>
+<p>To include a report with your Speedwagon Workflow, override the
+<a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.generate_report" title="speedwagon.Workflow.generate_report"><code class="xref py py-meth docutils literal notranslate"><span class="pre">generate_report()</span></code></a> method in
+your derived <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow" title="speedwagon.Workflow"><code class="xref py py-class docutils literal notranslate"><span class="pre">sptoxeedwagon.Workflow</span></code></a> class.</p>
+<p>This method has the results of the tasks and returns a report as a string.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ConvertFileTaskResult</span> <span class="o">=</span> <span class="n">TypedDict</span><span class="p">(</span>
+    <span class="s2">&quot;ConvertFileTaskResult&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;file_created&quot;</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MakeJp2Workflow</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">generate_report</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span>
+            <span class="n">speedwagon</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">Result</span><span class="p">[</span><span class="n">ConvertFileTaskResult</span><span class="p">]</span>
+        <span class="p">],</span>
+        <span class="o">**</span><span class="n">user_args</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="n">files_generated</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;file_created&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span>
+        <span class="p">]</span>
+        <span class="n">files_generated_list</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">files_generated</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;Results:&quot;</span> \
+               <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> \
+               <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Created the following files:&quot;</span> \
+               <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">files_generated_list</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">ConvertFileTask</span><span class="p">(</span>
+    <span class="n">speedwagon</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">Subtask</span><span class="p">[</span><span class="n">ConvertFileTaskResult</span><span class="p">]</span>
+<span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">def</span> <span class="nf">work</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">images</span><span class="o">.</span><span class="n">convert_image</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source_file</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destination_file</span>
+        <span class="p">)</span>
+
+        <span class="c1"># This will be the same data made available in the</span>
+        <span class="c1"># list of Results in the generate_report method.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_results</span><span class="p">({</span>
+            <span class="s2">&quot;file_created&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">destination_file</span><span class="p">,</span>
+        <span class="p">})</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">destination_file</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="develop_plugins.html">Develop Speedwagon Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul>
+  <li><a href="develop_plugins.html">Develop Speedwagon Plugins</a><ul>
+      <li>Previous: <a href="tasks.html" title="previous chapter">Tasks</a></li>
+      <li>Next: <a href="../api_reference.html" title="next chapter">API Reference</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/plugin_development/reports.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

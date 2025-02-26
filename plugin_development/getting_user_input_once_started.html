@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Getting User Input After Submitting the Job &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=9628f188"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tasks" href="tasks.html" />
+    <link rel="prev" title="Workflow Configuration" href="workflow_configure.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="getting-user-input-after-submitting-the-job">
+<h1>Getting User Input After Submitting the Job<a class="headerlink" href="#getting-user-input-after-submitting-the-job" title="Link to this heading">¶</a></h1>
+<p>Jobs in Speedwagon are a limited to user interaction once a job has been
+submitted. As of version 0.4.0, there is no way to inquire feedback from a
+user once the tasks have started to run.</p>
+<p>However, there is a single time in the lifespan of a job that a user can be
+asked for additional information after the job has been submitted.</p>
+<p>If the <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow" title="speedwagon.Workflow"><code class="xref py py-class docutils literal notranslate"><span class="pre">Workflow</span></code></a> derived class implements
+the <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.get_additional_info" title="speedwagon.Workflow.get_additional_info"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_additional_info()</span></code></a> method, the user can be asked to
+provide additional information to configure the job already started but
+before <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.discover_task_metadata" title="speedwagon.Workflow.discover_task_metadata"><code class="xref py py-meth docutils literal notranslate"><span class="pre">discover_task_metadata()</span></code></a> and starting the
+main tasks of the job.</p>
+<p>It is intended to be used with the <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.initial_task" title="speedwagon.Workflow.initial_task"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initial_task()</span></code></a> method of the derived
+<a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow" title="speedwagon.Workflow"><code class="xref py py-class docutils literal notranslate"><span class="pre">Workflow</span></code></a> because
+<a class="reference internal" href="../speedwagon/speedwagon.tasks.html#speedwagon.tasks.Result" title="speedwagon.tasks.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Results</span></code></a> from these tasks
+are available to <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.discover_task_metadata" title="speedwagon.Workflow.discover_task_metadata"><code class="xref py py-meth docutils literal notranslate"><span class="pre">discover_task_metadata()</span></code></a></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LocateBadFiles</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">Subtask</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">work</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_results</span><span class="p">([</span><span class="s2">&quot;file1.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;file2.txt&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<span class="k">class</span> <span class="nc">WorkflowRemoveBadFiles</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Remove Bad Files&quot;</span>
+
+    <span class="k">def</span> <span class="nf">initial_task</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task_builder</span><span class="p">:</span> <span class="n">TaskBuilder</span><span class="p">,</span> <span class="o">**</span><span class="n">user_args</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Contrived task that locates &quot;bad files&quot;</span>
+        <span class="n">task_builder</span><span class="o">.</span><span class="n">add_subtask</span><span class="p">(</span><span class="n">LocateBadFiles</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">get_additional_info</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">user_request_factory</span><span class="p">:</span> <span class="n">UserRequestFactory</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">pretask_results</span><span class="p">:</span> <span class="nb">list</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="c1"># From the list of possible bad files, ask the user</span>
+        <span class="c1"># to approve which files are okay to delete.</span>
+        <span class="n">requester</span> <span class="o">=</span> <span class="n">user_request_factory</span><span class="o">.</span><span class="n">confirm_removal</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">requester</span><span class="o">.</span><span class="n">get_user_response</span><span class="p">(</span>
+            <span class="n">options</span><span class="p">,</span>
+            <span class="n">pretask_results</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">discover_task_metadata</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">initial_results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">Result</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span>
+        <span class="n">additional_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">user_args</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+
+        <span class="c1"># Use the initial_results collected from</span>
+        <span class="c1"># get_additional_info to only create task information for</span>
+        <span class="c1"># the files approved by the user.</span>
+        <span class="n">files_to_remove</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">initial_result</span> <span class="ow">in</span> <span class="n">initial_results</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">initial_result</span><span class="o">.</span><span class="n">source</span> <span class="o">==</span> <span class="n">LocateBadFiles</span><span class="p">:</span>
+                <span class="n">files_to_remove</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                    <span class="p">{</span><span class="s2">&quot;file_name&quot;</span><span class="p">:</span> <span class="n">file_to_delete</span><span class="p">}</span>
+                    <span class="k">for</span> <span class="n">file_to_delete</span> <span class="ow">in</span> <span class="n">initial_result</span><span class="o">.</span><span class="n">data</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">files_to_remove</span>
+
+    <span class="k">def</span> <span class="nf">create_new_task</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task_builder</span><span class="p">:</span> <span class="n">TaskBuilder</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">job_args</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">task_builder</span><span class="o">.</span><span class="n">add_subtask</span><span class="p">(</span>
+            <span class="n">speedwagon</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">filesystem</span><span class="o">.</span><span class="n">DeleteFile</span><span class="p">(</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">job_args</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="develop_plugins.html">Develop Speedwagon Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul>
+  <li><a href="develop_plugins.html">Develop Speedwagon Plugins</a><ul>
+  <li><a href="configuration.html">Configuration</a><ul>
+      <li>Previous: <a href="workflow_configure.html" title="previous chapter">Workflow Configuration</a></li>
+      <li>Next: <a href="tasks.html" title="next chapter">Tasks</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/plugin_development/getting_user_input_once_started.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

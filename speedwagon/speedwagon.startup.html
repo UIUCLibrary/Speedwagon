@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>speedwagon.startup &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=9628f188"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="speedwagon.tasks" href="speedwagon.tasks.html" />
+    <link rel="prev" title="speedwagon.reports" href="speedwagon.reports.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-speedwagon.startup">
+<span id="speedwagon-startup"></span><h1>speedwagon.startup<a class="headerlink" href="#module-speedwagon.startup" title="Link to this heading">¶</a></h1>
+<p>Define how Speedwagon starts up on the current system.</p>
+<p>Use for loading and starting up the main application</p>
+<section id="changes">
+<h2>Changes:<a class="headerlink" href="#changes" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><div class="versionadded">
+<p><span class="versionmodified added">Added in version 0.1.4: </span>added a splash screen for logo</p>
+</div>
+</div></blockquote>
+</section>
+<section id="configuring-how-speedwagon-starts">
+<h2>Configuring how Speedwagon starts<a class="headerlink" href="#configuring-how-speedwagon-starts" title="Link to this heading">¶</a></h2>
+<p>ApplicationLauncher is needed to start speedwagon.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="speedwagon.startup.ApplicationLauncher">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">speedwagon.startup.</span></span><span class="sig-name descname"><span class="pre">ApplicationLauncher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strategy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AbsStarter</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#speedwagon.startup.ApplicationLauncher" title="Link to this definition">¶</a></dt>
+<dd><p>Application launcher.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 0.2.0: </span>Added ApplicationLauncher for launching speedwagon in different ways.</p>
+</div>
+</dd></dl>
+
+<p>To change how it starts change the strategy with an AbsStarter class.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../plugin_development/develop_plugins.html">Develop Speedwagon Plugins</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul>
+  <li><a href="../api_reference.html">API Reference</a><ul>
+      <li>Previous: <a href="speedwagon.reports.html" title="previous chapter">speedwagon.reports</a></li>
+      <li>Next: <a href="speedwagon.tasks.html" title="next chapter">speedwagon.tasks</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/speedwagon/speedwagon.startup.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>speedwagon.validators &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=9628f188"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="speedwagon.workflow" href="speedwagon.workflow.html" />
+    <link rel="prev" title="speedwagon.tasks" href="speedwagon.tasks.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-speedwagon.validators">
+<span id="speedwagon-validators"></span><h1>speedwagon.validators<a class="headerlink" href="#module-speedwagon.validators" title="Link to this heading">¶</a></h1>
+<p>Validation code.</p>
+<p>This contains mainly code for validating input.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="speedwagon.validators.AbsOutputValidation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">speedwagon.validators.</span></span><span class="sig-name descname"><span class="pre">AbsOutputValidation</span></span><a class="headerlink" href="#speedwagon.validators.AbsOutputValidation" title="Link to this definition">¶</a></dt>
+<dd><p>Generic abstract base class for user options validations.</p>
+<p>If validate() is called or the “candidate” property is read prior to
+setting the candidate property, a ValueError will be thrown.</p>
+<p>To subclass, implement the investigate() method.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.validators.AbsOutputValidation.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.validators.AbsOutputValidation.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new validation object with no results.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="speedwagon.validators.AbsOutputValidation.candidate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">candidate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">_T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#speedwagon.validators.AbsOutputValidation.candidate" title="Link to this definition">¶</a></dt>
+<dd><p>Get candidate.</p>
+<p>If not set prior, this will raise a ValueError</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.validators.AbsOutputValidation.investigate">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">investigate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">candidate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">UserDataType</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">ReportT</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#speedwagon.validators.AbsOutputValidation.investigate" title="Link to this definition">¶</a></dt>
+<dd><p>Test that returns any findings in the generic report format.</p>
+<p>This needs to be implemented in any subclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>candidate</strong> – Anything that is being validated.</p></li>
+<li><p><strong>job_options</strong> – dictionary of the keys and values of other user
+arguments used by the job.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returns a list of findings if any found, otherwise it returns an
+empty list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.validators.AbsOutputValidation.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.validators.AbsOutputValidation.reset" title="Link to this definition">¶</a></dt>
+<dd><p>Reset any findings stored by the validation instance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.validators.AbsOutputValidation.validate">
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.validators.AbsOutputValidation.validate" title="Link to this definition">¶</a></dt>
+<dd><p>Set is_valid and findings.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="speedwagon.validators.ExistsOnFileSystem">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">speedwagon.validators.</span></span><span class="sig-name descname"><span class="pre">ExistsOnFileSystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_template</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{}</span> <span class="pre">does</span> <span class="pre">not</span> <span class="pre">exist'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#speedwagon.validators.ExistsOnFileSystem" title="Link to this definition">¶</a></dt>
+<dd><p>Validate a file or folder exists on the file system.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="speedwagon.validators.IsDirectory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">speedwagon.validators.</span></span><span class="sig-name descname"><span class="pre">IsDirectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_template</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{}</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">a</span> <span class="pre">directory'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#speedwagon.validators.IsDirectory" title="Link to this definition">¶</a></dt>
+<dd><p>Validation for the string pointing to a directory.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.validators.IsDirectory.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_template</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{}</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">a</span> <span class="pre">directory'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.validators.IsDirectory.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new validation for string pointing to directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>message_template</strong> – Message template when candidate fails validation.
+Note: There is a single value in the template for the
+input value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="speedwagon.validators.IsFile">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">speedwagon.validators.</span></span><span class="sig-name descname"><span class="pre">IsFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_template</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{}</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">a</span> <span class="pre">file'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#speedwagon.validators.IsFile" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.validators.IsFile.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_template</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'{}</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">a</span> <span class="pre">file'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.validators.IsFile.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new validation object with no results.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="speedwagon.validators.CustomValidation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">speedwagon.validators.</span></span><span class="sig-name descname"><span class="pre">CustomValidation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">_T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure_message_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">_T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#speedwagon.validators.CustomValidation" title="Link to this definition">¶</a></dt>
+<dd><p>Allows for simple custom validation.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">validation</span> <span class="o">=</span> <span class="n">CustomValidation</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">query</span><span class="o">=</span><span class="k">lambda</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">candidate</span><span class="o">.</span><span class="n">isalpha</span><span class="p">(),</span>
+<span class="gp">... </span>    <span class="n">failure_message_function</span><span class="o">=</span><span class="k">lambda</span> <span class="n">candidate</span><span class="p">:(</span>
+<span class="gp">... </span>       <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">candidate</span><span class="si">}</span><span class="s2"> contains non-alphanumerical characters&quot;</span>
+<span class="gp">... </span>        <span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">validation</span><span class="o">.</span><span class="n">investigate</span><span class="p">(</span><span class="s2">&quot;s1&quot;</span><span class="p">,</span> <span class="p">{})</span>
+<span class="go">[&#39;s1 contains non-alphanumerical characters&#39;]</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="speedwagon.validators.CustomValidation.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">_T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure_message_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">_T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#speedwagon.validators.CustomValidation.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Create a custom validation object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>query</strong> – Callable function that validates the candidate and
+returns True or False based on the success of failure of
+the validation.</p></li>
+<li><p><strong>failure_message_function</strong> – Callable function that takes the
+failed candidate as an argument and returns a string to explain
+the validation failed.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../plugin_development/develop_plugins.html">Develop Speedwagon Plugins</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul>
+  <li><a href="../api_reference.html">API Reference</a><ul>
+      <li>Previous: <a href="speedwagon.tasks.html" title="previous chapter">speedwagon.tasks</a></li>
+      <li>Next: <a href="speedwagon.workflow.html" title="next chapter">speedwagon.workflow</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/speedwagon/speedwagon.validators.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Workflow Configuration &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=9628f188"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Getting User Input After Submitting the Job" href="getting_user_input_once_started.html" />
+    <link rel="prev" title="Arguments" href="arguments.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="workflow-configuration">
+<h1>Workflow Configuration<a class="headerlink" href="#workflow-configuration" title="Link to this heading">¶</a></h1>
+<p>Speedwagon Workflows can provide a configuration at the workflow level that a
+user can configure in the application settings. This is useful if the workflow
+requires access to a directory on the hard drive, such as the path to training
+data or a url that the workflow has to access.</p>
+<p>When a workflow has a workflow configuration, a configuration section shows up
+in the Workflows settings in Settings as seen below.</p>
+<figure class="align-default" id="id1">
+<img alt="../_images/workflow_configure.png" src="../_images/workflow_configure.png" />
+<figcaption>
+<p><span class="caption-text">As seen on MacOS in Settings Window</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<section id="register-settings">
+<h2>Register Settings<a class="headerlink" href="#register-settings" title="Link to this heading">¶</a></h2>
+<p>To add Workflow settings to a workflow, override the
+<a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.workflow_options" title="speedwagon.Workflow.workflow_options"><code class="xref py py-meth docutils literal notranslate"><span class="pre">workflow_options()</span></code></a> method
+within the derived speedwagon.Workflow class.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GenerateMarcXMLFilesWorkflow</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Generate MARC.XML Files&quot;</span>
+    <span class="o">...</span>
+
+    <span class="k">def</span> <span class="nf">workflow_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">TextLineEditData</span><span class="p">(</span>
+                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Getmarc server url&quot;</span><span class="p">,</span>
+                <span class="n">required</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">),</span>
+        <span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>To access the data in the workflow setting, use the
+<a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.get_workflow_configuration_value" title="speedwagon.Workflow.get_workflow_configuration_value"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_workflow_configuration_value(key)</span></code></a>
+method.</p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GenerateMarcXMLFilesWorkflow</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Generate MARC.XML Files&quot;</span>
+    <span class="o">...</span>
+
+    <span class="k">def</span> <span class="nf">discover_task_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_results</span><span class="p">,</span>
+                               <span class="n">additional_data</span><span class="p">,</span> <span class="n">user_args</span><span class="p">):</span>
+
+        <span class="n">server_url</span> <span class="o">=</span>\
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_workflow_configuration_value</span><span class="p">(</span>
+                <span class="n">key</span><span class="o">=</span><span class="s2">&quot;Getmarc server url&quot;</span>
+            <span class="p">)</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="develop_plugins.html">Develop Speedwagon Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul>
+  <li><a href="develop_plugins.html">Develop Speedwagon Plugins</a><ul>
+  <li><a href="configuration.html">Configuration</a><ul>
+      <li>Previous: <a href="arguments.html" title="previous chapter">Arguments</a></li>
+      <li>Next: <a href="getting_user_input_once_started.html" title="next chapter">Getting User Input After Submitting the Job</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/plugin_development/workflow_configure.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

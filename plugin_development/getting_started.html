@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Getting Started &#8212; speedwagon 0.4.0.dev14 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=9628f188"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Configuration" href="configuration.html" />
+    <link rel="prev" title="Develop Speedwagon Plugins" href="develop_plugins.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h1>
+<section id="set-up-the-development-environment">
+<h2>Set up the Development Environment<a class="headerlink" href="#set-up-the-development-environment" title="Link to this heading">¶</a></h2>
+<ol class="arabic">
+<li><p>Create a new Python directory for your python project to run</p></li>
+<li><p>Create a virtual env and activate it</p>
+<blockquote>
+<div><p>On Mac or Linux terminal:</p>
+<blockquote>
+<div><div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="gp">$ </span><span class="nb">source</span><span class="w"> </span>venv/bin/activate
+</pre></div>
+</div>
+</div></blockquote>
+<p>On Windows command line:</p>
+<blockquote>
+<div><div class="highlight-doscon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;</span> py -m venv venv
+<span class="gp">&gt;</span> venv\Scripts\activate
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+</li>
+<li><p>Create a pyproject.toml file</p>
+<blockquote>
+<div><p>The pyroject.toml file should have at least a <strong>[project]</strong> section with the following keys defined:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#name">name</a>: This should be the name of your plugin</p></li>
+<li><p><a class="reference external" href="https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#version">version</a>: The starting version of your plugin</p></li>
+<li><p><a class="reference external" href="https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#dependencies-and-requirements">dependencies</a>: Include at least “speedwagon”</p></li>
+</ul>
+<p>For example:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myspeedwagonplugin&quot;</span>
+<span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;0.1.0&quot;</span>
+<span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;speedwagon&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Create a Python package.</p>
+<blockquote>
+<div><p>This should be the same name that you used for the project in the pyproject.toml file.
+At this point your project should look like this.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>project_root_dir/
+├── myspeedwagonplugin/
+│   └── __init__.py
+├── pyproject.toml
+└── venv/
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Generate plugin hook file with registered_workflows() function.</p>
+<blockquote>
+<div><p>There are no strict requirements for the naming of this file outside of ones that Python requires. For my example,
+I will use hook.py. Create this file inside the Python package folder you just created.</p>
+<p>Use the following code as a starting point.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># hook.py</span>
+<span class="kn">import</span> <span class="nn">speedwagon</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="nd">@speedwagon</span><span class="o">.</span><span class="n">hookimpl</span>
+<span class="k">def</span> <span class="nf">registered_workflows</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Type</span><span class="p">[</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Register workflows with the plugin.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Returns a dictionary with the name of the workflow for the key and the</span>
+<span class="sd">        class of the workflow for the value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{}</span>
+</pre></div>
+</div>
+<p>At this point your project should look like this.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>project_root_dir/
+├── myspeedwagonplugin/
+│   ├── __init__.py
+│   └── hook.py
+├── pyproject.toml
+└── venv/
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Register this hook for Speedwagon</p>
+<blockquote>
+<div><p>To register your plugin so that speedwagon can find it, edit the pyproject.toml file by adding a new
+<strong>[project.entry-points.’speedwagon.plugins’]</strong> section after the <strong>[project]</strong> section. Here, provide a name
+for the workflows and the import path to the hook file containing the <code class="code docutils literal notranslate"><span class="pre">registered_workflows()</span></code> function.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[project]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;myspeedwagonplugin&quot;</span>
+<span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;0.1.0&quot;</span>
+<span class="n">dependencies</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;speedwagon==0.3.1&quot;</span>
+<span class="p">]</span>
+
+<span class="k">[project.entry-points.</span><span class="s1">&#39;speedwagon.plugins&#39;</span><span class="k">]</span>
+<span class="n">myworkflows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;myspeedwagonplugin.hook&#39;</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>pip install in editing mode</p>
+<blockquote>
+<div><p>Use “pip install” with the “-e” flag to install your plugin so that speedwagon can find it while you are
+developing. <strong>Make sure you have activated your virtual env from step 1 first .</strong></p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(venv)</span> <span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+<p>You are done setting up the Speedwagon plugin development environment.</p>
+</section>
+<section id="installing-the-gui-framework">
+<h2>Installing the GUI Framework<a class="headerlink" href="#installing-the-gui-framework" title="Link to this heading">¶</a></h2>
+<p>Speedwagon does not preinstall the GUI dependency because speedwagon can run without a desktop gui.
+But if you are developing a plugin, you probably want to install the gui. It’s much easier that way.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>PySide6
+<span class="go">Collecting PySide6</span>
+<span class="go">  Obtaining dependency information for PySide6 from https://files.pythonhosted.org/packages/1e/a4/8fd2f8f1d34db1f44a99d4f994e9f81498960161547319b7ce6258acd6bd/PySide6-6.7.0-cp39-abi3-macosx_11_0_universal2.whl.metadata</span>
+<span class="go">  Downloading PySide6-6.7.0-cp39-abi3-macosx_11_0_universal2.whl.metadata (5.3 kB)</span>
+<span class="go">Requirement already satisfied: shiboken6==6.7.0 in ./venv/lib/python3.12/site-packages (from PySide6) (6.7.0)</span>
+<span class="go">Collecting PySide6-Essentials==6.7.0 (from PySide6)</span>
+<span class="go">  Obtaining dependency information for PySide6-Essentials==6.7.0 from https://files.pythonhosted.org/packages/5d/81/f64c263851956139cc7012f39d0d174464a2618015962c9ecc82d751330a/PySide6_Essentials-6.7.0-cp39-abi3-macosx_11_0_universal2.whl.metadata</span>
+<span class="go">  Downloading PySide6_Essentials-6.7.0-cp39-abi3-macosx_11_0_universal2.whl.metadata (3.7 kB)</span>
+<span class="go">Collecting PySide6-Addons==6.7.0 (from PySide6)</span>
+<span class="go">  Obtaining dependency information for PySide6-Addons==6.7.0 from https://files.pythonhosted.org/packages/d9/f6/6a95948f729e0f96ba249482b445fca02bf435024f723d59943e2f699942/PySide6_Addons-6.7.0-cp39-abi3-macosx_11_0_universal2.whl.metadata</span>
+<span class="go">  Downloading PySide6_Addons-6.7.0-cp39-abi3-macosx_11_0_universal2.whl.metadata (4.0 kB)</span>
+<span class="go">Downloading PySide6-6.7.0-cp39-abi3-macosx_11_0_universal2.whl (525 kB)</span>
+<span class="go">   ──────────────────────────────────────── 525.3/525.3 kB 4.2 MB/s eta 0:00:00</span>
+<span class="go">Downloading PySide6_Addons-6.7.0-cp39-abi3-macosx_11_0_universal2.whl (273.7 MB)</span>
+<span class="go">   ──────────────────────────────────────── 273.7/273.7 MB 8.1 MB/s eta 0:00:00</span>
+<span class="go">Downloading PySide6_Essentials-6.7.0-cp39-abi3-macosx_11_0_universal2.whl (153.4 MB)</span>
+<span class="go">   ──────────────────────────────────────── 153.4/153.4 MB 12.2 MB/s eta 0:00:00</span>
+<span class="go">Installing collected packages: PySide6-Essentials, PySide6-Addons, PySide6</span>
+<span class="go">Successfully installed PySide6-6.7.0 PySide6-Addons-6.7.0 PySide6-Essentials-6.7.0</span>
+</pre></div>
+</div>
+<p>Launch speedwagon</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>-m<span class="w"> </span>speedwagon
+</pre></div>
+</div>
+<p>You should now be able to see and load your plugin within the Speedwagon application.</p>
+<a class="reference internal image-reference" href="../_images/plugin_installed.png"><img alt="../_images/plugin_installed.png" src="../_images/plugin_installed.png" style="width: 500px;" />
+</a>
+<p>Right now the plugin contains no workflows. Let’s fix that.</p>
+</section>
+<section id="build-new-speedwagon-workflow">
+<h2>Build New Speedwagon Workflow<a class="headerlink" href="#build-new-speedwagon-workflow" title="Link to this heading">¶</a></h2>
+<ol class="arabic">
+<li><dl class="simple">
+<dt>Create a new Python file.</dt><dd><p>This can be a file named anything as long as it ends in a .py</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt>Import speedwagon.Workflow</dt><dd><p>In the new file, import speedwagon</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># workflows.py</span>
+<span class="kn">import</span> <span class="nn">speedwagon</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><p>Create a new class that subclasses <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow" title="speedwagon.Workflow"><code class="xref py py-class docutils literal notranslate"><span class="pre">speedwagon.Workflow</span></code></a>.</p>
+<blockquote>
+<div><p>Add a name and description class attributes. The name attribute should be how you want the workflow to list it
+self. The description field should be a small summary of what it does and explain the workflow parameters</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># workflows.py</span>
+<span class="kn">import</span> <span class="nn">speedwagon</span>
+
+<span class="k">class</span> <span class="nc">DirectoryContentWorkflow</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Show Folder Content&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Locates the content of a folder</span>
+
+<span class="s2">input: path to a directory</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Add any user input arguments.</p>
+<blockquote>
+<div><p>While this step is technically optional, you will most likely need to get some input from the user. To add an
+input section to the workflow, override the <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.job_options" title="speedwagon.Workflow.job_options"><code class="xref py py-meth docutils literal notranslate"><span class="pre">job_options()</span></code></a> method.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">DirectoryContentWorkflow</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">def</span> <span class="nf">job_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">DirectorySelect</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">),</span>
+        <span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Locate information about a job.</p>
+<blockquote>
+<div><p>You need to implement <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.discover_task_metadata" title="speedwagon.Workflow.discover_task_metadata"><code class="xref py py-meth docutils literal notranslate"><span class="pre">discover_task_metadata</span></code></a> abstract method for any class derived from <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow" title="speedwagon.Workflow"><code class="xref py py-class docutils literal notranslate"><span class="pre">speedwagon.Workflow()</span></code></a>.
+This method is for gathering any information that will be used for creating subtasks.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">DirectoryContentWorkflow</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">def</span> <span class="nf">discover_task_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_results</span><span class="p">,</span> <span class="n">additional_data</span><span class="p">,</span> <span class="o">**</span><span class="n">user_args</span><span class="p">)</span>
+        <span class="n">my_input</span> <span class="o">=</span> <span class="n">user_args</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span>
+            <span class="p">}</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">my_input</span><span class="p">)</span>
+        <span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Write a Subtask Class</p>
+<blockquote>
+<div><p>Unless your workflow includes any prewritten subtask, you will need to create your own.</p>
+<p>Create a new class the that inherits from <a class="reference internal" href="../speedwagon/speedwagon.tasks.html#speedwagon.tasks.Subtask" title="speedwagon.tasks.Subtask"><code class="xref py py-class docutils literal notranslate"><span class="pre">speedwagon.tasks.Subtask</span></code></a>. The only method that is required is the <a class="reference internal" href="../speedwagon/speedwagon.tasks.html#speedwagon.tasks.Subtask.work" title="speedwagon.tasks.Subtask.work"><code class="xref py py-meth docutils literal notranslate"><span class="pre">work()</span></code></a>
+method. You can implement the class however you want.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GetFileInformation</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">Subtask</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span> <span class="o">=</span> <span class="n">file_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+
+    <span class="k">def</span> <span class="nf">work</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">file_stats</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_results</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span>
+                <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="n">file_stats</span><span class="o">.</span><span class="n">st_size</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>Assign data located in <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow.discover_task_metadata" title="speedwagon.Workflow.discover_task_metadata"><code class="xref py py-meth docutils literal notranslate"><span class="pre">discover_task_metadata()</span></code></a> to the <a class="reference internal" href="../speedwagon/speedwagon.tasks.html#speedwagon.tasks.Subtask" title="speedwagon.tasks.Subtask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subtask</span></code></a></p>
+<blockquote>
+<div><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">GetFileInformation</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">Subtask</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">def</span> <span class="nf">create_new_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_builder</span><span class="p">,</span> <span class="o">**</span><span class="n">job_args</span><span class="p">):</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="n">GetFileInformation</span><span class="p">(</span>
+            <span class="n">file_name</span><span class="o">=</span><span class="n">job_args</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+            <span class="n">file_path</span><span class="o">=</span><span class="n">job_args</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">task_builder</span><span class="o">.</span><span class="n">add_subtask</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+<p>Example of a complete <a class="reference internal" href="../speedwagon/speedwagon.html#speedwagon.Workflow" title="speedwagon.Workflow"><code class="xref py py-class docutils literal notranslate"><span class="pre">Workflow</span></code></a> and <a class="reference internal" href="../speedwagon/speedwagon.tasks.html#speedwagon.tasks.Subtask" title="speedwagon.tasks.Subtask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subtask</span></code></a> full implemented with TypeHints added.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># workflows.py</span>
+<span class="kn">import</span> <span class="nn">speedwagon</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="k">class</span> <span class="nc">DirectoryContentWorkflow</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Show Folder Content&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Locates the content of a folder</span>
+
+<span class="s2">    input: path to a directory</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">discover_task_metadata</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">initial_results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
+        <span class="n">additional_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">user_args</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+        <span class="n">my_input</span> <span class="o">=</span> <span class="n">user_args</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span>
+            <span class="p">}</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">my_input</span><span class="p">)</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">create_new_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_builder</span><span class="p">:</span> <span class="n">speedwagon</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">TaskBuilder</span><span class="p">,</span> <span class="o">**</span><span class="n">job_args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="n">GetFileInformation</span><span class="p">(</span>
+            <span class="n">file_name</span><span class="o">=</span><span class="n">job_args</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+            <span class="n">file_path</span><span class="o">=</span><span class="n">job_args</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">task_builder</span><span class="o">.</span><span class="n">add_subtask</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">job_options</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">AbsOutputOptionDataType</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">DirectorySelect</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">generate_report</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Result</span><span class="p">],</span>
+        <span class="o">**</span><span class="n">user_args</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="n">report_header_lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s1">&#39;The content of: </span><span class="si">{</span><span class="n">user_args</span><span class="p">[</span><span class="s2">&quot;input&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s2">&quot;&quot;</span>
+        <span class="p">]</span>
+
+        <span class="n">report_content_lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s1">&#39;  * </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> -&gt; size: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span>
+        <span class="p">]</span>
+
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">report_header_lines</span> <span class="o">+</span> <span class="n">report_content_lines</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">GetFileInformation</span><span class="p">(</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">Subtask</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span> <span class="o">=</span> <span class="n">file_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+
+    <span class="k">def</span> <span class="nf">work</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">file_stats</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_results</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span>
+                <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="n">file_stats</span><span class="o">.</span><span class="n">st_size</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</section>
+<section id="register-workflow-as-part-of-your-plugin">
+<h2>Register Workflow as Part of Your Plugin<a class="headerlink" href="#register-workflow-as-part-of-your-plugin" title="Link to this heading">¶</a></h2>
+<p>Open the python file that contains the <code class="code docutils literal notranslate"><span class="pre">registered_workflows()</span></code> function.
+In the dictionary that returns from that function add an entry. This entry should use name of the workflow for the
+key and the value should be the class to the workflow.</p>
+<p>For example:</p>
+<dl>
+<dt>if your project files are as such…</dt><dd><div class="highlight-default notranslate"><div class="highlight"><pre><span></span>project_root_dir/
+├── myspeedwagonplugin/
+│   ├── __init__.py
+│   ├── workflows.py
+│   └── hook.py
+├── pyproject.toml
+└── venv/
+</pre></div>
+</div>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># hook.py</span>
+<span class="kn">import</span> <span class="nn">speedwagon</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Type</span>
+<span class="kn">from</span> <span class="nn">myspeedwagonplugin.workflows</span> <span class="kn">import</span> <span class="n">SampleWorkflow</span>
+
+<span class="nd">@speedwagon</span><span class="o">.</span><span class="n">hookimpl</span>
+<span class="k">def</span> <span class="nf">registered_workflows</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Type</span><span class="p">[</span><span class="n">speedwagon</span><span class="o">.</span><span class="n">workflow</span><span class="p">]]:</span>
+<span class="sd">&quot;&quot;&quot;Register workflows with the plugin.</span>
+
+<span class="sd">Returns:</span>
+<span class="sd">    Returns a dictionary with the name of the workflow for the key and the</span>
+<span class="sd">    class of the workflow for the value.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;My sample workflow&quot;</span><span class="p">:</span> <span class="n">SampleWorkflow</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/full_mark_horz_bw.gif" alt="Logo of speedwagon"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">speedwagon</a></h1>
+
+
+
+<p class="blurb">Collection of tools and workflows for DS</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="develop_plugins.html">Develop Speedwagon Plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api_reference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../speedwagon_development.html">Speedwagon Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Appendices:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vendor_specs.html">Vendor File &amp; Technical Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Change Log</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../framework_users.html">Guide for Developing Applications Using Speedwagon Framework</a><ul>
+  <li><a href="develop_plugins.html">Develop Speedwagon Plugins</a><ul>
+      <li>Previous: <a href="develop_plugins.html" title="previous chapter">Develop Speedwagon Plugins</a></li>
+      <li>Next: <a href="configuration.html" title="next chapter">Configuration</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2017, 2018, 2019, University Library at The University of Illinois at Urbana Champaign: Preservation Services.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/plugin_development/getting_started.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
