@@ -1,7 +1,6 @@
 """Creating and managing tabs in the UI display."""
 from __future__ import annotations
 
-import functools
 import typing
 from typing import Optional, Type, Dict, List
 # pylint: disable=wrong-import-position
@@ -19,9 +18,10 @@ from speedwagon.frontend.qtwidgets import ui_loader
 from speedwagon.frontend.qtwidgets.models.options import (
     load_job_settings_model
 )
-from speedwagon.config.config import DEFAULT_CONFIG_DIRECTORY_NAME
-from speedwagon.config import StandardConfig, FullSettingsData
-from speedwagon.config.workflow import default_backend_factory
+from speedwagon.config import (
+    StandardConfig, FullSettingsData, AbsConfigSettings
+)
+
 if typing.TYPE_CHECKING:
     import speedwagon.job
     from speedwagon.frontend.qtwidgets.widgets import (
@@ -61,7 +61,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
         super().__init__(parent)
         self._parent = parent
         self.set_model(workflow_models.WorkflowList())
-        self.app_settings_lookup_strategy = StandardConfig()
+        self.session_config: AbsConfigSettings = StandardConfig()
         self.start_button.clicked.connect(self.submit_job)
         self.workflow_selector.selected_index_changed.connect(
             self._handle_selector_changed
@@ -69,10 +69,6 @@ class WorkflowsTab3(WorkflowsTab3UI):
         self._workflow_selected: Optional[Type[speedwagon.job.Workflow]] = None
         self.settings_changed.connect(self._update_okay_button)
         self.settings_changed.emit()
-        self.workflow_config_backend_factory = functools.partial(
-            default_backend_factory,
-            config_directory_name=DEFAULT_CONFIG_DIRECTORY_NAME
-        )
 
     def model(self) -> workflow_models.AbsWorkflowList:
         """Get the model used by the current tab."""
@@ -85,8 +81,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
 
     def _handle_selector_changed(self, index: QtCore.QModelIndex) -> None:
         workflow = self._model.data(index, WorkflowClassRole)
-        self.workspace.workflow_config_backend_factory =\
-            self.workflow_config_backend_factory
+        self.workspace.session_config = self.session_config
         self.workspace.set_workflow(workflow)
         self._handle_workflow_changed(workflow)
 
@@ -104,7 +99,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
                 "Current Workflow not set. Workflow must be set first."
             )
         workflow_inst = workflow_klass(
-            self.workspace.app_settings_lookup_strategy.settings()
+            self.workspace.configuration.application_settings()
         )
         load_job_settings_model(
             data, self.workspace.settings_form, workflow_inst.job_options()
@@ -114,18 +109,15 @@ class WorkflowsTab3(WorkflowsTab3UI):
         self, workflow_klass: typing.Type[speedwagon.job.Workflow]
     ) -> None:
         self._workflow_selected = workflow_klass
-        self.workspace.app_settings_lookup_strategy = (
-            self.app_settings_lookup_strategy
+        self.workspace.session_config = (
+            self.session_config
         )
-        self.workspace.workflow_config_backend_factory =\
-            self.workflow_config_backend_factory
-
         self.settings_changed.emit()
         self.workflow_selected.emit(workflow_klass)
 
     def get_app_config(self) -> FullSettingsData:
         """Get app configuration."""
-        return self.app_settings_lookup_strategy.settings()
+        return self.session_config.application_settings()
 
     def _update_okay_button(self) -> None:
         if self._workflow_selected is None:
@@ -200,10 +192,7 @@ class ItemTabsWidget(ItemTabsUI):
         self.layout().addWidget(self.tabs)
         self._model = workflow_models.TabsTreeModel()
         self._model.modelReset.connect(self._model_reset)
-        self.workflow_config_backend_factory = functools.partial(
-            default_backend_factory,
-            config_directory_name=DEFAULT_CONFIG_DIRECTORY_NAME
-        )
+        self.session_config: AbsConfigSettings = StandardConfig()
 
     def model(self) -> QtCore.QAbstractItemModel:
         """Get module used by widget."""
@@ -217,9 +206,7 @@ class ItemTabsWidget(ItemTabsUI):
             tab_name = self._model.data(tab_index)
 
             workflows_tab = WorkflowsTab3(parent=self.tabs)
-            workflows_tab.workflow_config_backend_factory =\
-                self.workflow_config_backend_factory
-
+            workflows_tab.session_config = self.session_config
             workflows_tab.start_workflow.connect(self.submit_job)
 
             workflow_klasses = {}

@@ -42,7 +42,7 @@ class EnsureBuiltinWorkflowConfigFiles(AbsSystemTask):
         super().__init__()
         self.workflow_settings_yaml_locator_strategy: Callable[[], str] = (
             lambda: config.workflow.locate_workflow_settings_yaml(
-                prefix=config.config.DEFAULT_CONFIG_DIRECTORY_NAME
+                prefix=config.common.DEFAULT_CONFIG_DIRECTORY_NAME
             )
         )
 

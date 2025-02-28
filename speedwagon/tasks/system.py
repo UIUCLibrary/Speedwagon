@@ -1,13 +1,33 @@
 """System tasks."""
-
+from __future__ import annotations
 import abc
 import logging
+from typing import Optional, TYPE_CHECKING
+from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 
 from speedwagon.config import config
+if TYPE_CHECKING:
+    from speedwagon.config.common import FullSettingsData
+    from speedwagon.config.config import AbsConfigSettings
 
 
 class AbsSystemTask(abc.ABC):
     """Abstract base class for creating system tasks."""
+
+    def __init__(self):
+        """Create a system task object."""
+        self._config_backend: Optional[AbsConfigSettings] = None
+
+    @property
+    def config(self) -> Optional[FullSettingsData]:
+        """Get current configuration."""
+        if self._config_backend:
+            return self._config_backend.application_settings()
+        return None
+
+    def set_config_backend(self, value: AbsConfigSettings) -> None:
+        """Set AbsConfigSettings backend used by config attribute."""
+        self._config_backend = value
 
     @abc.abstractmethod
     def run(self) -> None:
@@ -24,7 +44,7 @@ class EnsureGlobalConfigFiles(AbsSystemTask):
     def __init__(
         self,
         logger: logging.Logger,
-            directory_prefix: str = config.DEFAULT_CONFIG_DIRECTORY_NAME
+        directory_prefix: str = DEFAULT_CONFIG_DIRECTORY_NAME
     ) -> None:
         """Create a new EnsureGlobalConfigFiles object.
 

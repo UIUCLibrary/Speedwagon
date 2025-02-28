@@ -5,6 +5,7 @@ import os
 import platform
 import subprocess
 import typing
+import warnings
 from typing import (
     Optional,
     Dict,
@@ -24,7 +25,6 @@ from importlib.resources import as_file
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
 
-
 from speedwagon import config
 from speedwagon.frontend.qtwidgets.ui_loader import load_ui
 from speedwagon.frontend.qtwidgets.widgets import (
@@ -37,7 +37,7 @@ from speedwagon.frontend.qtwidgets.models.settings import (
     build_setting_qt_model,
 )
 from speedwagon.frontend.qtwidgets import models
-
+from speedwagon.config.tabs import NullTabsConfig
 
 if TYPE_CHECKING:
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
@@ -342,7 +342,7 @@ class TabsConfigurationTab(SettingsTab):
         layout = QtWidgets.QVBoxLayout(self)
         self.editor = TabEditor()
         self._load_tab_data_model_strategy = (
-            tab_models.TabDataModelConfigLoader()
+            tab_models.TabDataModelConfigLoader(NullTabsConfig())
         )
 
         self.editor.changes_made.connect(self.changes_made)
@@ -369,21 +369,12 @@ class TabsConfigurationTab(SettingsTab):
 
     def tab_config_management_strategy(self) -> AbsTabsConfigDataManagement:
         """Get the default strategy for working with custom tab YAML files."""
-        if self.settings_location is None:
-            raise RuntimeError("settings_location not set")
-        return config.tabs.CustomTabsYamlConfig(self.settings_location)
+        return self.editor.load_tab_data_model_strategy.tabs_manager
 
     def on_okay(self) -> None:
         """Execute when a user selects okay."""
-        if self.settings_location is None:
-            msg = QtWidgets.QMessageBox(parent=self)
-            msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-            msg.setText("Unable to save settings. No settings location set")
-            msg.exec()
-            return
-        print(f"Saving changes to {self.settings_location}")
-        yaml_tab_config = self.tab_config_management_strategy()
-        yaml_tab_config.save(
+        tab_config = self.tab_config_management_strategy()
+        tab_config.save(
             list(
                 filter(
                     lambda tab: tab.tab_name != "All",
@@ -437,6 +428,21 @@ class AbsConfigSaver2(abc.ABC):  # pylint: disable=too-few-public-methods
     @abc.abstractmethod
     def save(self) -> None:
         """Save to file."""
+
+
+class CallbackSaver(AbsConfigSaver2):  # pylint: disable=too-few-public-methods
+    """Callback function config saver."""
+
+    def __init__(
+        self,
+        save_data_callback_func: Callable[[], None],
+        parent: Optional[QtWidgets.QWidget] = None
+    ) -> None:
+        super().__init__(parent)
+        self.get_data_callback = save_data_callback_func
+
+    def save(self) -> None:
+        self.get_data_callback()
 
 
 class AbsSaveStrategy(abc.ABC):
@@ -527,6 +533,8 @@ class SettingsTabSaveStrategy(SaveStrategy):
 
 
 class ConfigSaver(AbsConfigSaver):
+    yaml_config_klass = config.tabs.CustomTabsYamlConfig
+
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         self.tabs_yaml_path: Optional[str] = None
@@ -534,6 +542,12 @@ class ConfigSaver(AbsConfigSaver):
             typing.Callable[[Optional[QtWidgets.QWidget]], None]
         ] = []
         self.file_manager: Optional[config.IniConfigManager] = None
+
+    @property
+    def tabs_config_management(self) -> AbsTabsConfigDataManagement:
+        if not self.tabs_yaml_path:
+            raise RuntimeError("ConfigSaver.tabs_yaml_path not set")
+        return ConfigSaver.yaml_config_klass(self.tabs_yaml_path)
 
     @property
     def config_file_path(self) -> Optional[str]:
@@ -570,13 +584,17 @@ class ConfigSaver(AbsConfigSaver):
         return global_data
 
     def get_tab_config_strategy(self) -> AbsTabsConfigDataManagement:
+        warnings.warn(
+            "use tabs_config_management instead",
+            DeprecationWarning,
+            stacklevel=1
+        )
         if not self.tabs_yaml_path:
             raise RuntimeError("ConfigSaver.tabs_yaml_path not set")
-        return config.tabs.CustomTabsYamlConfig(self.tabs_yaml_path)
+        return ConfigSaver.yaml_config_klass(self.tabs_yaml_path)
 
     def _save_tabs(self, editor: TabEditor) -> None:
-        yaml_config = self.get_tab_config_strategy()
-        yaml_config.save(
+        self.tabs_config_management.save(
             list(
                 filter(
                     lambda tab: tab.tab_name != "All",
@@ -707,8 +725,8 @@ class TabEditor(TabEditorWidgetUI):
         """Create a tab editor widget."""
         super().__init__(parent, flags)
         self.load_tab_data_model_strategy: \
-            tab_models.AbsLoadTabDataModelStrategy = \
-            tab_models.TabDataModelConfigLoader()
+            tab_models.TabDataModelConfigLoader = \
+            tab_models.TabDataModelConfigLoader(NullTabsConfig())
 
         self.model = models.TabsTreeModel()
         self._user_tabs_model = QtCore.QSortFilterProxyModel()

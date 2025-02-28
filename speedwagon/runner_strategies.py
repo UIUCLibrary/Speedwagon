@@ -21,7 +21,7 @@ import functools
 
 import speedwagon.config
 from speedwagon.config import StandardConfigFileLocator
-from speedwagon.config.config import DEFAULT_CONFIG_DIRECTORY_NAME
+from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 import speedwagon.exceptions
 from speedwagon import runner
 

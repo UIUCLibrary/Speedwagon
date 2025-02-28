@@ -41,7 +41,7 @@ class AbsFindPackageTask(speedwagon.tasks.Subtask, abc.ABC):
         """Locate package type.
 
         Args:
-            search_path:
+            search_path: Path to search for packages
 
         Returns:
             Returns packages located.

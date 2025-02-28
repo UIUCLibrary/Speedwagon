@@ -9,7 +9,7 @@ import speedwagon
 import speedwagon.exceptions
 from speedwagon.frontend import qtwidgets, interaction
 from speedwagon.frontend.qtwidgets import widgets, models
-from speedwagon.config import StandardConfigFileLocator
+from speedwagon.config import StandardConfigFileLocator, AbsConfigSettings
 
 
 class TestConfirmListModel:
@@ -232,13 +232,15 @@ class TestWorkflowsTab3:
             def discover_task_metadata(self, *args, **kwargs):
                 return []
 
-        tab_widget.app_settings_lookup_strategy = Mock(
-            settings=Mock(
+        tab_widget.session_config = Mock(
+            spec_set=AbsConfigSettings,
+            application_settings=Mock(
                 return_value={"GLOBAL": {"spam": "eggs"}}
             )
         )
-        tab_widget.workspace.app_settings_lookup_strategy =  Mock(
-            settings=Mock(
+        tab_widget.workspace.session_config =  Mock(
+            spec_set=AbsConfigSettings,
+            application_settings=Mock(
                 return_value={"GLOBAL": {"spam": "eggs"}}
             )
         )
@@ -274,10 +276,13 @@ class TestWorkflowsTab3:
                 return []
 
         tab_widget.add_workflow(DummyWorkflow)
-        tab_widget.workspace.app_settings_lookup_strategy = \
+        tab_widget.session_config.application_settings = Mock(return_value={})
+        tab_widget.workspace.session_config = \
             Mock(
-                speedwagon.config.AbsConfigSettings,
-                settings=Mock(return_value={})
+                spec_set=speedwagon.config.AbsConfigSettings,
+                application_settings=Mock(return_value={}),
+                workflow_settings=Mock(return_value={})
+
         )
         with qtbot.wait_signal(tab_widget.workflow_selected):
             qtbot.mouseClick(
@@ -296,9 +301,10 @@ class TestWorkflowsTab3:
             def discover_task_metadata(self, *args, **kwargs):
                 return []
 
-        tab_widget.workspace.app_settings_lookup_strategy = Mock(
-            speedwagon.config.AbsConfigSettings,
-            settings=Mock(return_value={})
+        tab_widget.session_config = Mock(
+            spec_set=speedwagon.config.AbsConfigSettings,
+            application_settings=Mock(return_value={}),
+            workflow_settings=Mock(return_value={})
         )
         tab_widget.add_workflow(DummyWorkflow)
 

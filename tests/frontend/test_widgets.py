@@ -491,14 +491,14 @@ class TestWorkspace:
         return speedwagon.frontend.qtwidgets.widgets.Workspace()
 
     def test_show_workflow_name(self, qtbot, sample_workflow_klass, workspace):
-        workspace.app_settings_lookup_strategy = Mock()
+        workspace.session_config = Mock()
         workspace.set_workflow(sample_workflow_klass)
         assert workspace.workflow_name == sample_workflow_klass.name
 
     def test_show_workflow_description(
         self, qtbot, sample_workflow_klass, workspace
     ):
-        workspace.app_settings_lookup_strategy = Mock()
+        workspace.session_config = Mock()
         workspace.set_workflow(sample_workflow_klass)
         assert (
             workspace.workflow_description == sample_workflow_klass.description

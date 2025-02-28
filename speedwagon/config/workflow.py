@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import abc
+import collections.abc
 import os
 import io
 from typing import Optional, Dict, List, TYPE_CHECKING, Callable
@@ -13,7 +14,8 @@ except ImportError:  # pragma: no cover
 import yaml
 import yaml.emitter
 
-from .config import StandardConfigFileLocator, DEFAULT_CONFIG_DIRECTORY_NAME
+from .config import StandardConfigFileLocator
+from .common import DEFAULT_CONFIG_DIRECTORY_NAME
 
 if TYPE_CHECKING:
     from .common import SettingsData, SettingsDataType
@@ -46,7 +48,10 @@ StructuredWorkflowSettings = Dict[str, List[WorkflowSettingsNameValuePair]]
 WORKFLOWS_SETTINGS_YML_FILE_NAME = "workflows_settings.yml"
 
 
-class AbsWorkflowBackend(abc.ABC):  # pylint: disable=R0903
+class AbsWorkflowBackend(
+    collections.abc.Mapping,
+    abc.ABC
+):  # pylint: disable=R0903
     """Abstract workflow backend."""
 
     def __init__(self) -> None:
@@ -54,8 +59,12 @@ class AbsWorkflowBackend(abc.ABC):  # pylint: disable=R0903
         self.workflow: Optional[Workflow] = None
 
     @abc.abstractmethod
-    def get(self, key: str) -> Optional[SettingsDataType]:
+    def get(self, key: str, default=None) -> Optional[SettingsDataType]:
         """Get data for some key."""
+
+    def __getitem__(self, item):
+        """Get config for the workflow."""
+        return self.get(item)
 
 
 class AbsWorkflowSettingsResolver(abc.ABC):  # pylint: disable=R0903
@@ -295,11 +304,28 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
             raise AttributeError("yaml_file not set")
         return WorkflowSettingsYAMLResolver(self.yaml_file)
 
-    def get(self, key: str) -> Optional[SettingsDataType]:
-        """Get value for key."""
+    def _get_workflow_configuration(self):
         if self.yaml_file is None or self.workflow is None:
             return None
-        return self.get_yaml_strategy().get_response(self.workflow).get(key)
+        return self.get_yaml_strategy().get_response(self.workflow)
+
+    def get(self, key: str, default=None) -> Optional[SettingsDataType]:
+        """Get value for key."""
+        if config := self._get_workflow_configuration():
+            return config.get(key, default)
+        return None
+
+    def __iter__(self):
+        """Iterate over configurations."""
+        if config := self._get_workflow_configuration():
+            return iter(config)
+        raise StopIteration
+
+    def __len__(self):
+        """Get the number of configurations."""
+        if config := self._get_workflow_configuration():
+            return len(config)
+        return 0
 
 
 def get_config_backend(
@@ -319,7 +345,7 @@ def get_config_backend(
 
 def default_backend_factory(
     new_workflow: Workflow,
-    config_directory_name: str
+    config_directory_name: str = DEFAULT_CONFIG_DIRECTORY_NAME
 ) -> AbsWorkflowBackend:
     """Get default workflow backend factory.
 
