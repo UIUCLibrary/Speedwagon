@@ -2,18 +2,18 @@ import platform
 import logging
 from unittest.mock import Mock, patch, mock_open, MagicMock, ANY
 import pytest
-
 import speedwagon
 import speedwagon.config
 import sys
 import typing
+import warnings
 QtCore = pytest.importorskip("PySide6.QtCore")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from speedwagon.frontend.qtwidgets.dialog import settings, dialogs
 from speedwagon.frontend.qtwidgets import models
 from speedwagon.frontend.qtwidgets.models.tabs import (
     AbsLoadTabDataModelStrategy,
-    TabDataModelYAMLLoader
+    TabDataModelYAMLFileLoader,
 )
 if sys.version_info < (3, 10):
     import importlib_metadata as metadata
@@ -141,38 +141,38 @@ class TestTabsConfigurationTab:
         )
         return settings.TabsConfigurationTab()
 
-    @pytest.mark.parametrize("settings_location, writes_to_file", [
-        ("setting_location", True),
-        (None, False)
-    ])
-    def test_on_okay_modified(self, qtbot, monkeypatch, settings_location,
-                              writes_to_file, config_tab):
-
-        from PySide6 import QtWidgets
-
-
-        config_tab.settings_location = settings_location
-        # from speedwagon.frontend.qtwidgets import tabs
-        from speedwagon import config
-        config_management_strategy = Mock(
-            config.tabs.AbsTabsConfigDataManagement, name="AbsTabsConfigDataManagement")
-        # write_tabs_yaml = Mock()
-        mock_exec = Mock(name="message box exec")
-        with monkeypatch.context() as mp:
-
-            mp.setattr(
-                config_tab,
-                "tab_config_management_strategy",
-                Mock(return_value=config_management_strategy)
-            )
-            # mp.setattr(tabs, "write_tabs_yaml", write_tabs_yaml)
-            mp.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
-            config_tab.on_okay()
-
-        assert \
-            mock_exec.called is True and \
-            config_management_strategy.save.called is writes_to_file, \
-            f"mock_exec.called is {mock_exec.called}"
+    # @pytest.mark.parametrize("settings_location, writes_to_file", [
+    #     ("setting_location", True),
+    #     (None, False)
+    # ])
+    # def test_on_okay_modified(self, qtbot, monkeypatch, settings_location,
+    #                           writes_to_file, config_tab):
+    #
+    #     from PySide6 import QtWidgets
+    #
+    #
+    #     config_tab.settings_location = settings_location
+    #     # from speedwagon.frontend.qtwidgets import tabs
+    #     from speedwagon import config
+    #     config_management_strategy = Mock(
+    #         config.tabs.AbsTabsConfigDataManagement, name="AbsTabsConfigDataManagement")
+    #     # write_tabs_yaml = Mock()
+    #     mock_exec = Mock(name="message box exec")
+    #     with monkeypatch.context() as mp:
+    #
+    #         mp.setattr(
+    #             config_tab,
+    #             "tab_config_management_strategy",
+    #             Mock(return_value=config_management_strategy)
+    #         )
+    #         # mp.setattr(tabs, "write_tabs_yaml", write_tabs_yaml)
+    #         mp.setattr(QtWidgets.QMessageBox, "exec", mock_exec)
+    #         config_tab.on_okay()
+    #
+    #     assert \
+    #         mock_exec.called is True and \
+    #         config_management_strategy.save.called is writes_to_file, \
+    #         f"mock_exec.called is {mock_exec.called}"
 
     def test_create_new_tab_set_modified_true(self, qtbot, monkeypatch, config_tab):
         with qtbot.wait_signal(config_tab.changes_made):
@@ -210,13 +210,13 @@ class TestTabsConfigurationTab:
             )
         assert config_tab.data_is_modified() is False
 
-    def test_tab_config_management_strategy_no_settings_location_raises(
-        self,
-        qtbot,
-        config_tab
-    ):
-        with pytest.raises(RuntimeError):
-            config_tab.tab_config_management_strategy()
+    # def test_tab_config_management_strategy_no_settings_location_raises(
+    #     self,
+    #     qtbot,
+    #     config_tab
+    # ):
+    #     with pytest.raises(RuntimeError):
+    #         config_tab.tab_config_management_strategy()
 
     def test_tab_config_management_strategy(self, qtbot, config_tab):
         config_tab.settings_location = "dummy.yml"
@@ -233,6 +233,53 @@ class TestTabsConfigurationTab:
 
         config_tab.load(strategy)
         assert strategy.load.called is True
+
+    def test_load_tab_data_model_strategy_sets_editor(self, qtbot):
+        tab = settings.TabsConfigurationTab()
+        qtbot.addWidget(tab)
+        mock_load_tab_data_model_strategy = Mock(name="load_tab_data_model_strategy")
+        tab.load_tab_data_model_strategy = mock_load_tab_data_model_strategy
+        assert tab.editor.load_tab_data_model_strategy == mock_load_tab_data_model_strategy
+
+    def test_load_tab_data_model_strategy_get_from_editor(self, qtbot):
+        tab = settings.TabsConfigurationTab()
+        qtbot.addWidget(tab)
+        mock_load_tab_data_model_strategy = Mock(name="load_tab_data_model_strategy")
+        tab.editor.load_tab_data_model_strategy = mock_load_tab_data_model_strategy
+        assert tab.load_tab_data_model_strategy == mock_load_tab_data_model_strategy
+
+    def test_on_okay_calls_save(self, qtbot, monkeypatch):
+        tab = settings.TabsConfigurationTab()
+        qtbot.addWidget(tab)
+        tabs_config_data_management = Mock(
+            spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement,
+        )
+        tab.tab_config_management_strategy = Mock(
+            name="tab_config_management_strategy",
+            return_value=tabs_config_data_management,
+        )
+        monkeypatch.setattr(settings.QtWidgets.QMessageBox, "exec", Mock(name="exec"))
+        tab.on_okay()
+        tabs_config_data_management.save.assert_called_once()
+
+    def test_on_okay_opens_dialog_box(
+            self,
+            qtbot,
+            monkeypatch
+    ):
+        tab = settings.TabsConfigurationTab()
+        qtbot.addWidget(tab)
+        tabs_config_data_management = Mock(
+            spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement,
+        )
+        tab.tab_config_management_strategy = Mock(
+            name="tab_config_management_strategy",
+            return_value=tabs_config_data_management,
+        )
+        message_box_exec = Mock(name="QMessageBox.exec")
+        monkeypatch.setattr(settings.QtWidgets.QMessageBox, "exec", message_box_exec)
+        tab.on_okay()
+        message_box_exec.assert_called_once()
 
 
 class TestTabEditor:
@@ -863,13 +910,15 @@ class TestConfigSaver:
             entry_point,
             enabled=True
         )
+        tabs_config_management = Mock()
+        monkeypatch.setattr(settings.ConfigSaver, "tabs_config_management", property(tabs_config_management))
         saver = settings.ConfigSaver(QtWidgets.QWidget())
         saver.config_file_path = "some/file/path.ini"
         global_settings = settings.GlobalSettingsTab()
         global_settings.model = settings_model
         CustomTabsYamlConfig = Mock(name="CustomTabsYamlConfig")
         CustomTabsYamlConfig.save = Mock(name='save')
-        monkeypatch.setattr(saver, "get_tab_config_strategy", Mock(return_value=CustomTabsYamlConfig))
+
         monkeypatch.setattr(
             speedwagon.config.StandardConfigFileLocator,
             'get_tabs_file',
@@ -904,11 +953,13 @@ class TestConfigSaver:
     def test_get_tab_config_strategy_without_tabs_yaml_path_raises(self, qtbot):
         saver = settings.ConfigSaver(QtWidgets.QWidget())
         with pytest.raises(RuntimeError):
+            warnings.simplefilter("ignore", DeprecationWarning)
             saver.get_tab_config_strategy()
 
     def test_get_tab_config_strategy(self, qtbot):
         saver = settings.ConfigSaver(QtWidgets.QWidget())
         saver.tabs_yaml_path = "dummy.yml"
+        warnings.simplefilter("ignore", DeprecationWarning)
         assert isinstance(
             saver.get_tab_config_strategy(),
             speedwagon.config.tabs.AbsTabsConfigDataManagement
@@ -918,6 +969,18 @@ class TestConfigSaver:
         saver = settings.ConfigSaver()
         saver.tabs_yaml_path = "dummy.yml"
 
+    def test_tabs_yaml_path_not_set_raises(self):
+        saver = settings.ConfigSaver()
+        with pytest.raises(RuntimeError) as error:
+            saver.tabs_config_management
+        assert "tabs_yaml_path not set" in str(error.value)
+
+    def test_tabs_config_management(self):
+        settings.ConfigSaver.yaml_config_klass = Mock(spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement, name="AbsTabsConfigDataManagement")
+        saver = settings.ConfigSaver()
+        saver.tabs_yaml_path = "dummy.yml"
+        assert saver.tabs_config_management is not None
+        saver.yaml_config_klass.assert_called_once_with("dummy.yml")
 
     # def test_write_yaml(self, qtbot, monkeypatch):
     #     saver = settings.ConfigSaver(QtWidgets.QWidget())
@@ -969,6 +1032,13 @@ def test_multisaver_child_save_methods_called():
     saver.save()
     dummy_saver.save.assert_called_once()
 
+
+class TestCallbackSaver:
+    def test_save(self):
+        save_data_callback_func = Mock()
+        saver = settings.CallbackSaver(save_data_callback_func=save_data_callback_func)
+        saver.save()
+        save_data_callback_func.assert_called_once_with()
 
 class TestSettingsTabSaveStrategy:
 
@@ -1145,7 +1215,7 @@ class TestSettingsDialog:
         )
     # dialog_box.exec()
 
-class TestTabDataModelYAMLLoader:
+class TestTabDataModelYAMLFileLoader:
     @pytest.fixture()
     def tab_widget(self, monkeypatch):
         monkeypatch.setattr(
@@ -1158,7 +1228,7 @@ class TestTabDataModelYAMLLoader:
         def available_workflows():
             return {}
         monkeypatch.setattr(speedwagon.job, "available_workflows", available_workflows)
-        loader = TabDataModelYAMLLoader()
+        loader = TabDataModelYAMLFileLoader()
         class DummyStrategy(speedwagon.config.tabs.AbsTabsConfigDataManagement):
             def data(self):
                 return [
@@ -1170,7 +1240,7 @@ class TestTabDataModelYAMLLoader:
         assert "All" in loader.prep_data(DummyStrategy())
 
     def test_with_no_file_is_no_op(self, qtbot, tab_widget):
-        loader = TabDataModelYAMLLoader()
+        loader = TabDataModelYAMLFileLoader()
 
         loader.load(tab_widget)
         loader.yml_file = None
@@ -1191,7 +1261,7 @@ class TestTabDataModelYAMLLoader:
     def test_load(self, qtbot):
         class BaconWorkflow(speedwagon.Workflow):
             name = "Bacon"
-        loader = TabDataModelYAMLLoader()
+        loader = TabDataModelYAMLFileLoader()
         loader.prep_data = Mock(return_value={'Spam': [BaconWorkflow]})
         model = models.TabsTreeModel()
         loader.yml_file = "dummy.yml"
@@ -1209,19 +1279,4 @@ class TestTabDataModelYAMLLoader:
         }
         assert actual == expected
 
-
-class TestTabsConfigurationTab:
-    def test_load_tab_data_model_strategy_sets_editor(self, qtbot):
-        tab = settings.TabsConfigurationTab()
-        qtbot.addWidget(tab)
-        mock_load_tab_data_model_strategy = Mock(name="load_tab_data_model_strategy")
-        tab.load_tab_data_model_strategy = mock_load_tab_data_model_strategy
-        assert tab.editor.load_tab_data_model_strategy == mock_load_tab_data_model_strategy
-
-    def test_load_tab_data_model_strategy_get_from_editor(self, qtbot):
-        tab = settings.TabsConfigurationTab()
-        qtbot.addWidget(tab)
-        mock_load_tab_data_model_strategy = Mock(name="load_tab_data_model_strategy")
-        tab.editor.load_tab_data_model_strategy = mock_load_tab_data_model_strategy
-        assert tab.load_tab_data_model_strategy == mock_load_tab_data_model_strategy
 

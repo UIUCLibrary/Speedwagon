@@ -19,33 +19,40 @@ from speedwagon.job import Workflow
 class TestMainWindow3:
     def test_updated_settings_uses_config_strategy(self, qtbot):
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        window.config_strategy = \
+        window.session_config = \
             Mock(speedwagon.config.config.AbsConfigSettings)
 
         window.update_settings()
-        assert window.config_strategy.settings.called is True
+        assert window.session_config.application_settings.called is True
 
     def test_debug_mode_reflected_in_window_title(self, qtbot):
         class DummyConfigSettings(speedwagon.config.config.AbsConfigSettings):
-            def settings(self):
+            def application_settings(self):
                 return {"GLOBAL": {"debug": True}}
+            def workflow_settings(self, workflow):
+                return {}
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        window.config_strategy = DummyConfigSettings()
+        window.session_config = DummyConfigSettings()
         window.update_settings()
         assert "DEBUG" in window.windowTitle()
 #
     def test_normal_mode_dose_not_have_debug_in_window_title_text(self, qtbot):
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        window.config_strategy = \
+        window.session_config = \
             Mock(
-                speedwagon.config.config.AbsConfigSettings,
-                settings=Mock(return_value={"debug": False})
+                spec_set=speedwagon.config.config.AbsConfigSettings,
+                application_settings=Mock(return_value={"debug": False})
             )
         window.update_settings()
         assert "DEBUG" not in window.windowTitle()
 
     def test_export_job_config_triggered_by_action_export_job(self, qtbot):
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        window.session_config = Mock(
+            spec_set=speedwagon.config.config.AbsConfigSettings,
+            application_settings=Mock(return_value={}),
+            workflow_settings=Mock(return_value={}),
+        )
         tab = WorkflowsTab3()
         window.tab_widget.add_tab(tab, "dummy")
         with qtbot.waitSignal(window.export_job_config):

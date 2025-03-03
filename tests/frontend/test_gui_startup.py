@@ -8,7 +8,6 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
 
-
 try:  # pragma: no cover
     from importlib.metadata import PackageMetadata
 except ImportError:  # pragma: no cover
@@ -24,7 +23,7 @@ from speedwagon.frontend.qtwidgets.gui import MainWindow3
 gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
 from speedwagon.frontend.qtwidgets.dialog import dialogs
-from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor
+from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor, GlobalSettingsTab, SettingsBuilder2
 from speedwagon.frontend.qtwidgets.models.tabs import AbsLoadTabDataModelStrategy
 from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp
 from speedwagon.frontend.qtwidgets.models import tabs as tab_models
@@ -313,7 +312,11 @@ class TestStartQtThreaded:
         )
 
         app = Mock()
-        startup = gui_startup.StartQtThreaded(app=app)
+        config = Mock(
+            spec_set=speedwagon.config.AbsConfigSettings,
+            application_settings=Mock(return_value={"GLOBAL": {}})
+        )
+        startup = gui_startup.StartQtThreaded(app=app, config=config)
         class SettingsFileLocatorDummy(
             speedwagon.config.config.AbsSettingLocator
         ):
@@ -510,7 +513,7 @@ class TestStartQtThreaded:
         exec_ = Mock()
         monkeypatch.setattr(SettingsDialog, "exec", exec_)
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.dialog.settings.GlobalSettingsTab,
+            GlobalSettingsTab,
             "read_config_data",
             Mock()
         )
@@ -567,7 +570,8 @@ class TestStartQtThreaded:
 
         main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
         main_window3.show = Mock()
-        main_window3.config_strategy = Mock()
+        main_window3.session_config = Mock()
+        main_window3.update_settings = Mock()
         # main_window3.console = Mock()
         MainWindow3 = Mock(
             name="MainWindow3",
@@ -641,7 +645,8 @@ class TestStartQtThreaded:
     ):
         main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
         main_window3.show = Mock()
-        main_window3.config_strategy = Mock()
+        main_window3.session_config = Mock()
+        main_window3.update_settings = Mock()
         # main_window3.console = Mock()
         MainWindow3 = Mock(
             name="MainWindow3",
@@ -689,7 +694,8 @@ class TestStartQtThreaded:
     def test_load_help(self, qtbot, monkeypatch, starter):
         main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
         main_window3.show = Mock()
-        main_window3.config_strategy = Mock()
+        main_window3.session_config = Mock()
+        main_window3.update_settings = Mock()
         MainWindow3 = Mock(
             name="MainWindow3",
             return_value=main_window3,
@@ -737,43 +743,6 @@ class TestStartQtThreaded:
         qtbot.addWidget(starter.windows)
         starter.windows.action_help_requested.triggered.emit()
         assert open_new.called is True
-
-    def test_resolve_settings_calls_get_settings(
-            self,
-            qtbot,
-            monkeypatch,
-            starter
-    ):
-        starter.load_custom_tabs = Mock()
-        starter.load_all_workflows_tab = Mock()
-
-        main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        main_window3.show = Mock()
-        main_window3.config_strategy = Mock()
-        MainWindow3 = Mock(
-            name="MainWindow3",
-            return_value=main_window3,
-        )
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui,
-            "MainWindow3",
-            MainWindow3
-        )
-        starter.settings_strategy = Mock(get_settings=Mock(return_value={}))
-        starter.resolve_settings()
-        assert starter.settings_strategy.get_settings.called is True
-
-    # def test_read_settings_file(self, qtbot, monkeypatch, starter):
-    #     read = Mock()
-    #
-    #     monkeypatch.setattr(
-    #         speedwagon.config.configparser.ConfigParser,
-    #         "read",
-    #         read
-    #     )
-    #
-    #     starter.read_settings_file("somefile")
-    #     read.assert_called_with("somefile")
 
     def test_request_more_info_emits_request_signal(self, qtbot, starter):
         workflow = Mock()
@@ -911,18 +880,30 @@ class TestStartQtThreaded:
         start.start_gui(Mock())
         assert main_window.windowTitle() == "new app"
 
-    def test_set_workflow_config_backend_factory(self, qtbot):
-        start = gui_startup.StartQtThreaded(app=Mock())
-        start.load_workflows = Mock()
-        config_backend = Mock()
-        start.set_workflow_config_backend_factory(config_backend)
-        main_window = MainWindow3()
-        main_window.update_settings = Mock()
-        main_window.show = Mock()
-        qtbot.addWidget(main_window)
-        start.build_main_window = lambda *_: main_window
-        start.start_gui(Mock())
-        assert main_window.workflow_config_backend_factory == config_backend
+    def test_request_settings(self, qtbot, monkeypatch):
+        start = gui_startup.StartQtThreaded(
+            app=Mock(),
+            config=Mock(name="config"),
+        )
+        monkeypatch.setattr(GlobalSettingsTab,"read_config_data", Mock())
+        monkeypatch.setattr(TabEditor,"load_data", Mock())
+        dialog_exec = Mock(name="exec")
+        monkeypatch.setattr(SettingsDialog,"exec", dialog_exec)
+        start.config_files_locator=Mock(
+            name="config_files_locator",
+            spec_set=speedwagon.config.config.AbsSettingLocator,
+            get_config_file=Mock(return_value="some/config/file"),
+            get_app_data_dir=Mock(return_value="some/app/datapath"),
+        )
+        start.request_settings()
+        dialog_exec.assert_called_once()
+
+def test_global_setting_save(qtbot, monkeypatch):
+    manager = Mock(name="IniConfigManager", spec_set=speedwagon.config.IniConfigManager)
+    monkeypatch.setattr(gui_startup, "IniConfigManager", Mock(return_value=manager))
+    tab = Mock(get_data=Mock(return_value={}))
+    gui_startup.save_global_tab_widget_settings("fake_file", tab)
+    manager.save.assert_called_once()
 
 class TestWorkflowProgressCallbacks:
 
@@ -1313,3 +1294,32 @@ def test_get_active_workflows():
         )
     )
     assert "spam" in gui_startup.get_active_workflows(config_file, workflow_finder=workflow_finder)
+
+class TestResolveSettingsStrategyConfigAdapter:
+    @pytest.fixture()
+    def mock_source_application_settings(self):
+        return Mock(spec_set=gui_startup.AbsResolveSettingsStrategy)
+
+    @pytest.fixture()
+    def mocked_workflow_backend(self):
+        return Mock()
+
+    @pytest.fixture()
+    def adapter(self, mock_source_application_settings, mocked_workflow_backend):
+        return gui_startup.ResolveSettingsStrategyConfigAdapter(
+            mock_source_application_settings,
+            mocked_workflow_backend
+        )
+
+    def test_application_settings(
+        self,
+        adapter,
+        mock_source_application_settings
+    ):
+        adapter.application_settings()
+        mock_source_application_settings.get_settings.assert_called_once()
+
+    def test_workflow_settings(self, adapter, mocked_workflow_backend):
+        workflow = Mock()
+        adapter.workflow_settings(workflow)
+        mocked_workflow_backend.assert_called_once_with(workflow)

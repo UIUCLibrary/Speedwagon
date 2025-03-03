@@ -62,6 +62,18 @@ class TabsYamlFileReader(AbsTabsYamlFileReader):
         return tabs_config_data
 
 
+class NullTabsConfig(AbsTabsConfigDataManagement):
+    """Empty tabs config class."""
+
+    def data(self) -> List[CustomTabData]:
+        """Get no data."""
+        return []
+
+    def save(self, tabs: List[CustomTabData]) -> None:
+        """Does nothing."""
+        return None
+
+
 class CustomTabsYamlConfig(AbsTabsConfigDataManagement):
     """YAML config file manager."""
 

@@ -103,6 +103,19 @@ class TestCustomTabsYamlConfig:
         config_loader.file_reader_strategy.read_file = Mock(return_value="")
         assert config_loader.data() == []
 
+
+class TestNullTabsConfig:
+    @pytest.fixture()
+    def tab_config(self):
+        return speedwagon.config.tabs.NullTabsConfig()
+
+    def test_empty_data(self, tab_config):
+        assert tab_config.data() == []
+
+    def test_save(self, tab_config):
+        assert tab_config.save(tabs=[]) is None
+
+
 class TestTabsWriteStrategy:
     def test_write_data_is_called(self, monkeypatch):
         strategy = speedwagon.config.tabs.TabsYamlWriter()
@@ -363,7 +376,7 @@ class TestStandardConfig:
         config_settings.config_loader_strategy = \
             Mock(speedwagon.config.config.AbsConfigLoader)
 
-        config_settings.settings()
+        config_settings.application_settings()
         assert \
             config_settings.config_loader_strategy.get_settings.called is True
 
@@ -596,7 +609,6 @@ class TestYAMLWorkflowConfigBackend:
             tesseract_path.required = True
             return [tesseract_path]
 
-
         def discover_task_metadata(self, initial_results, additional_data, **user_args):
             return []
 
@@ -611,12 +623,76 @@ class TestYAMLWorkflowConfigBackend:
                     name='get_response',
                     return_value=Mock(
                         name="get",
-                        get=lambda key: {"Tesseract data file location": "/some/path"}.get(key)
+                        get=lambda key, *_: {"Tesseract data file location": "/some/path"}.get(key)
                     )
                 )
             )
 
         assert config.get("Tesseract data file location") == "/some/path"
+
+    def test_get_with_nothing(self):
+        config = speedwagon.config.YAMLWorkflowConfigBackend()
+        assert config.get("something") is None
+
+    def test_iter(self):
+        config = speedwagon.config.YAMLWorkflowConfigBackend()
+        config.workflow = TestYAMLWorkflowConfigBackend.SpamWorkflow()
+        config.yaml_file = "dummy.yml"
+        config_values = {"first": "value"}
+
+        config.get_yaml_strategy = (
+            Mock(
+                name="WorkflowSettingsYAMLResolver",
+                return_value=Mock(
+                    get_response=Mock(
+                        return_value=config_values
+                    )
+                )
+        ))
+        assert next(iter(config)) == "first"
+
+    def test_len(self):
+        config = speedwagon.config.YAMLWorkflowConfigBackend()
+        config.workflow = TestYAMLWorkflowConfigBackend.SpamWorkflow()
+        config.yaml_file = "dummy.yml"
+        config_values = {"first": "value"}
+
+        config.get_yaml_strategy = (
+            Mock(
+                name="WorkflowSettingsYAMLResolver",
+                return_value=Mock(
+                    get_response=Mock(
+                        return_value=config_values
+                    )
+                )
+        ))
+        assert len(config) == 1
+
+    def test_getitem(self):
+        config = speedwagon.config.YAMLWorkflowConfigBackend()
+        config.workflow = TestYAMLWorkflowConfigBackend.SpamWorkflow()
+        config.yaml_file = "dummy.yml"
+        config_values = {"first": "value"}
+
+        config.get_yaml_strategy = (
+            Mock(
+                name="WorkflowSettingsYAMLResolver",
+                return_value=Mock(
+                    get_response=Mock(
+                        return_value=config_values
+                    )
+                )
+        ))
+        assert config['first'] == "value"
+
+
+    def test_len_with_nothing(self):
+        assert len(speedwagon.config.YAMLWorkflowConfigBackend()) == 0
+
+    def test_iter_with_nothing(self):
+        with pytest.raises(StopIteration):
+            assert next(iter(speedwagon.config.YAMLWorkflowConfigBackend()))
+
 
 def test_ensure_settings_files():
     strategy = Mock(spec_set=speedwagon.config.config.AbsEnsureConfigFile)

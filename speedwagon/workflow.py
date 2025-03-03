@@ -235,7 +235,7 @@ class BooleanSelect(AbsOutputOptionDataType):
 
 def default_back_end_yaml() -> str:
     config_strategy = speedwagon.config.StandardConfigFileLocator(
-        speedwagon.config.config.DEFAULT_CONFIG_DIRECTORY_NAME
+        speedwagon.config.common.DEFAULT_CONFIG_DIRECTORY_NAME
     )
     return os.path.join(
         config_strategy.get_app_data_dir(),

@@ -1,4 +1,5 @@
 """Load and save user configurations."""
+
 from __future__ import annotations
 import abc
 import argparse
@@ -25,6 +26,7 @@ from typing import (
     Iterator,
     Iterable,
     List,
+    Mapping,
 )
 
 try:
@@ -35,15 +37,17 @@ except ImportError:  # pragma: no cover
 from types import TracebackType
 
 import speedwagon.job
+from .common import DEFAULT_CONFIG_DIRECTORY_NAME
 
 if typing.TYPE_CHECKING:
     from .common import SettingsData, FullSettingsData, SettingsDataType
+
 
 __all__ = [
     "AbsConfig",
     "AbsConfigSettings",
     "ConfigManager",
-    'ensure_settings_files',
+    "ensure_settings_files",
     "generate_default",
     "get_platform_settings",
     "IniConfigManager",
@@ -51,12 +55,10 @@ __all__ = [
     "StandardConfigFileLocator",
     "WindowsConfig",
     "NixConfig",
-    "DEFAULT_CONFIG_DIRECTORY_NAME",
 ]
 
 CONFIG_INI_FILE_NAME: Final[str] = "config.ini"
 TABS_YML_FILE_NAME: Final[str] = "tabs.yml"
-DEFAULT_CONFIG_DIRECTORY_NAME: Final[str] = "Speedwagon"
 
 
 class AbsConfig(collections.abc.Mapping):
@@ -520,12 +522,12 @@ class CreateBasicMissingConfigFile(AbsEnsureConfigFile):
     def __init__(
         self,
         logger: Optional[logging.Logger] = None,
-        config_location_strategy: Optional[AbsSettingLocator] = None
+        config_location_strategy: Optional[AbsSettingLocator] = None,
     ) -> None:
         super().__init__(logger)
         self.config_strategy = (
-            config_location_strategy or
-            StandardConfigFileLocator(DEFAULT_CONFIG_DIRECTORY_NAME)
+            config_location_strategy
+            or StandardConfigFileLocator(DEFAULT_CONFIG_DIRECTORY_NAME)
         )
 
     def ensure_config_file(self, file_path: Optional[str] = None) -> None:
@@ -574,8 +576,14 @@ class AbsConfigSettings(abc.ABC):  # pylint: disable=R0903
     """Abstract base class for getting settings."""
 
     @abc.abstractmethod
-    def settings(self) -> FullSettingsData:
+    def application_settings(self) -> FullSettingsData:
         """Get the current app settings."""
+
+    @abc.abstractmethod
+    def workflow_settings(
+        self, workflow: speedwagon.job.Workflow
+    ) -> Mapping[str, SettingsDataType]:
+        """Get workflow settings."""
 
 
 class StandardConfig(AbsConfigSettings):
@@ -592,7 +600,7 @@ class StandardConfig(AbsConfigSettings):
             config_directory_prefix=self._config_directory_prefix
         ).get_config_file()
 
-    def settings(self) -> FullSettingsData:
+    def application_settings(self) -> FullSettingsData:
         """Get settings."""
         return self.resolve_settings()
 
@@ -607,6 +615,22 @@ class StandardConfig(AbsConfigSettings):
             CliArgsSetter(),
         ]
         return loader.get_settings()
+
+    def workflow_settings(
+        self, workflow: speedwagon.job.Workflow
+    ) -> Mapping[str, SettingsDataType]:
+        """Get configuration settings for workflow.
+
+        Args:
+            workflow: Workflow to get configuration.
+
+        Returns: Workflow configuration.
+
+        """
+        # This is needed to avoid circular imports!
+        from .workflow import default_backend_factory
+
+        return default_backend_factory(workflow, self._config_directory_prefix)
 
 
 class AbsGlobalConfigDataManagement(abc.ABC):

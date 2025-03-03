@@ -278,8 +278,8 @@ class SubtaskJobAdapter(AbsJobAdapter, ProcessJobWorker):
     @property
     def settings(self) -> typing.Dict[str, str]:
         """Get the settings for the subtask."""
-        if self.adaptee.settings:
-            return self.adaptee.settings
+        if self.adaptee.application_settings:
+            return self.adaptee.application_settings
         return {
             key: value
             for key, value in self.adaptee.__dict__.items()

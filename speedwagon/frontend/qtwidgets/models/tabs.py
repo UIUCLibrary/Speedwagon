@@ -20,13 +20,8 @@ from typing import (
 from PySide6 import QtCore, QtGui
 
 import speedwagon.config.tabs as tabs_config
-from speedwagon.config.config import (
-    StandardConfigFileLocator,
-    DEFAULT_CONFIG_DIRECTORY_NAME,
-)
 import speedwagon.job
 from .common import WorkflowItem, WorkflowClassRole, AbsWorkflowList
-
 if TYPE_CHECKING:
     from speedwagon.config import AbsTabsConfigDataManagement
 
@@ -466,10 +461,10 @@ class AbsLoadTabDataModelStrategy(abc.ABC):  # pylint: disable=R0903
         """Load data."""
 
 
-class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
-    def __init__(self) -> None:
+class AbsTabDataModelYAMLLoader(AbsLoadTabDataModelStrategy, abc.ABC):
+
+    def __init__(self):
         super().__init__()
-        self.yml_file: Optional[str] = None
         self.get_all_active_workflows_strategy: Callable[
             [], Dict[str, Type[speedwagon.Workflow]]
         ] = speedwagon.job.available_workflows
@@ -500,7 +495,7 @@ class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
                 else:
                     # if unable to load the workflow generate a dummy
                     # workflow class
-                    dummy_class =\
+                    dummy_class = \
                         type(
                             workflow_name,
                             (speedwagon.job.NullWorkflow,),
@@ -513,6 +508,12 @@ class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
             workflow_tabs_data[tab_data.tab_name] = tab_workflows
 
         return workflow_tabs_data
+
+
+class TabDataModelYAMLFileLoader(AbsTabDataModelYAMLLoader):
+    def __init__(self) -> None:
+        super().__init__()
+        self.yml_file: Optional[str] = None
 
     def load(self, model: TabsTreeModel) -> None:
         if self.yml_file is None:
@@ -531,15 +532,26 @@ class TabDataModelYAMLLoader(AbsLoadTabDataModelStrategy):
         model.modelReset.emit()
 
 
-class TabDataModelConfigLoader(TabDataModelYAMLLoader):
-    def __init__(
-        self,
-        yml_file_locator_strategy=lambda: StandardConfigFileLocator(
-            config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
-        ).get_tabs_file(),
-    ) -> None:
+class TabDataModelConfigLoader(AbsTabDataModelYAMLLoader):
+    def __init__(self, tabs_manager: AbsTabsConfigDataManagement):
         super().__init__()
-        self.yml_file = yml_file_locator_strategy()
+        self.tabs_manager = tabs_manager
+        self.get_all_active_workflows_strategy: Callable[
+            [], Dict[str, Type[speedwagon.Workflow]]
+        ] = speedwagon.job.available_workflows
+
+    def load(self, model: TabsTreeModel) -> None:
+
+        data = self.prep_data(
+            data_load_strategy=self.tabs_manager,
+            get_all_active_workflows_strategy=(
+                self.get_all_active_workflows_strategy
+            ),
+        )
+        for tab_name, workflows in data.items():
+            model.append_workflow_tab(tab_name, workflows)
+        model.reset_modified()
+        model.modelReset.emit()
 
 
 class TabStandardItem(QtGui.QStandardItem):

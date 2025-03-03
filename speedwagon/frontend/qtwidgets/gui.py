@@ -27,7 +27,6 @@ from PySide6 import QtWidgets, QtCore, QtGui  # type: ignore
 
 from speedwagon.frontend.qtwidgets import ui_loader, ui
 import speedwagon.runner_strategies
-from speedwagon.config.workflow import default_backend_factory
 from speedwagon.config import StandardConfig, FullSettingsData
 
 if TYPE_CHECKING:
@@ -85,12 +84,10 @@ class MainWindow3(MainWindow3UI):
         """
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.workflow_config_backend_factory = default_backend_factory
         self.job_manager: Optional[
             speedwagon.runner_strategies.BackgroundJobManager
         ] = None
-
-        self.config_strategy: speedwagon.config.AbsConfigSettings = (
+        self.session_config: speedwagon.config.AbsConfigSettings = (
             StandardConfig()
         )
 
@@ -109,15 +106,12 @@ class MainWindow3(MainWindow3UI):
         ###########################################################
         self.action_export_job.triggered.connect(self._export_job_config)
         self.tab_widget.submit_job.connect(self.submit_job)
-        self.tab_widget.workflow_config_backend_factory = (
-            self.workflow_config_backend_factory
-        )
+        self.tab_widget.session_config = self.session_config
         self.submit_job.connect(lambda *args: print("got it"))
 
     def update_settings(self) -> None:
         """Update settings."""
-        settings = self._get_settings()
-        global_settings = settings.get("GLOBAL")
+        global_settings = self.settings.get("GLOBAL")
         if global_settings:
             debug_mode = global_settings.get("debug", False)
         else:
@@ -161,9 +155,7 @@ class MainWindow3(MainWindow3UI):
         self, tab_name: str, workflows: typing.Dict[str, typing.Type[Workflow]]
     ) -> None:
         """Add tab."""
-        self.tab_widget.workflow_config_backend_factory =\
-            self.workflow_config_backend_factory
-
+        self.tab_widget.session_config = self.session_config
         self.tab_widget.add_workflows_tab(tab_name, list(workflows.values()))
 
     def set_active_workflow(self, workflow_name: str) -> None:
@@ -192,8 +184,10 @@ class MainWindow3(MainWindow3UI):
         self.console.detach_logger()
         super().closeEvent(event)
 
-    def _get_settings(self) -> FullSettingsData:
-        return self.config_strategy.settings()
+    @property
+    def settings(self) -> FullSettingsData:
+        """Get session settings."""
+        return self.session_config.application_settings()
 
 
 def set_app_display_metadata(app: QtWidgets.QApplication) -> None:

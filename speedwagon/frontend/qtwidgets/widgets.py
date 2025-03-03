@@ -1,7 +1,6 @@
 """Specialize widgets."""
 from __future__ import annotations
 import abc
-import functools
 import json
 import os.path
 import typing
@@ -609,23 +608,21 @@ class Workspace(QtWidgets.QWidget):
         super().__init__(parent)
         with as_file(resources.files(ui).joinpath("workspace.ui")) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
-        self.app_settings_lookup_strategy = config.StandardConfig()
-        self.workflow_config_backend_factory = functools.partial(
-            config.workflow.default_backend_factory,
-            config_directory_name="Speedwagon"
-        )
+        self.session_config: config.AbsConfigSettings = config.StandardConfig()
 
     def set_workflow(self, workflow_klass: typing.Type[Workflow]) -> None:
         """Set current workflow."""
         if workflow_klass.name:
             self.workflow_name_value.setText(workflow_klass.name)
         try:
-            settings = self.app_settings_lookup_strategy.settings()
+            settings = self.session_config.application_settings()
             new_workflow = workflow_klass(
                 global_settings=settings.get("GLOBAL", {})
             )
             new_workflow.set_options_backend(
-                self.workflow_config_backend_factory(new_workflow)
+                self.session_config.workflow_settings(
+                    new_workflow
+                )
             )
             if new_workflow.description:
                 self.workflow_description_value.setText(

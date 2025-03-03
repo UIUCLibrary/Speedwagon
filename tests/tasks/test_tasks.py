@@ -4,10 +4,14 @@ import shutil
 import time
 import typing
 import concurrent.futures
+from unittest.mock import Mock
+
 import pytest
+
+from speedwagon import config
 import speedwagon
 import speedwagon.worker
-
+from speedwagon.tasks import system
 
 class SimpleSubtask(speedwagon.tasks.Subtask):
 
@@ -253,6 +257,31 @@ def test_posttask_builder(tmpdir):
     if os.path.exists(shortcut):
         os.unlink(shortcut)
 
+class TestAbsSystemTask:
+
+    @pytest.fixture
+    def spam_task(self):
+        class SpamTask(system.AbsSystemTask):
+            def description(self):
+                return "Spam"
+            def run(self) -> None:
+                pass
+
+        return SpamTask()
+    def test_system_task_has_config(self, spam_task):
+
+        spam_task.set_config_backend(
+            Mock(
+                name="mockConfig",
+                spec_set=config.AbsConfigSettings,
+                application_settings=Mock(return_value={"bacon": "eggs"})
+            )
+        )
+        assert spam_task.config["bacon"] == "eggs"
+
+    def test_config_none(self, spam_task):
+        # Note: set_config_backend has not been set
+        assert spam_task.config is None
 #
 # @pytest.mark.adapter
 # # @pytest.mark.filterwarnings("ignore::DeprecationWarning")

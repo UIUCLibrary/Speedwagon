@@ -21,7 +21,7 @@ import functools
 
 import speedwagon.config
 from speedwagon.config import StandardConfigFileLocator
-from speedwagon.config.config import DEFAULT_CONFIG_DIRECTORY_NAME
+from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 import speedwagon.exceptions
 from speedwagon import runner
 
@@ -338,8 +338,9 @@ class TaskDispatcherRunning(AbsTaskDispatcherState):
         return self.parent.thread.is_alive()
 
     def stop(self) -> None:
-        self.parent.current_state = TaskDispatcherStopping(self.parent)
-        self.parent.current_state.halt_dispatching()
+        state = TaskDispatcherStopping(self.parent)
+        self.parent.current_state = state
+        state.halt_dispatching()
 
     def start(self) -> None:
         self.parent.logger.warning("Processing thread is already started")

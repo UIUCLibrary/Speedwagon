@@ -1666,3 +1666,21 @@ class TestItemsModel:
         expected_result = {}
         model.process_results = lambda *args: expected_result
         assert model.results() == expected_result
+
+class TestTabDataModelConfigLoader:
+    def test_load_emits_model_reset_in_model(self, qtbot):
+        tabs_manager = Mock(
+            spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement,
+            name="tab_manager"
+        )
+        model_loader = models.tabs.TabDataModelConfigLoader(tabs_manager)
+        mock_workflow = Mock("workflow_one")
+        mock_workflow.name = "workflow_one"
+        model_loader.prep_data = Mock(return_value={
+            "tab one": [
+
+            ]
+        })
+        model = models.tabs.TabsTreeModel()
+        with qtbot.wait_signal(model.modelReset):
+            model_loader.load(model)

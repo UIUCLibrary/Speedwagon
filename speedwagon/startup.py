@@ -27,7 +27,7 @@ import speedwagon.config
 from speedwagon.config.workflow import (
     default_backend_factory, AbsWorkflowBackend
 )
-from speedwagon.config.config import DEFAULT_CONFIG_DIRECTORY_NAME
+from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import StandardConfigFileLocator
 from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
 
@@ -180,6 +180,7 @@ class ApplicationLauncher:
             from speedwagon.frontend.qtwidgets.gui_startup import (
                 StartQtThreaded,
                 ResolveSettings,
+                ResolveSettingsStrategyConfigAdapter
             )
 
             settings_resolver = ResolveSettings()
@@ -196,11 +197,10 @@ class ApplicationLauncher:
             self.strategy = (
                 strategy or
                 StartQtThreaded(
-                    workflow_config_backend_factory=config_backend_factory,
-                    settings_strategy=settings_resolver,
-                    get_config_strategy=lambda: StandardConfigFileLocator(
-                        self.application_config_directory_name
-                    )
+                    config=ResolveSettingsStrategyConfigAdapter(
+                        source_application_settings=settings_resolver,
+                        workflow_backend=config_backend_factory,
+                    ),
                 )
             )
         except ImportError:
@@ -208,6 +208,9 @@ class ApplicationLauncher:
 
     def initialize(self) -> None:
         """Initialize anything that needs to done prior to running."""
+        self.strategy.config_files_locator = StandardConfigFileLocator(
+            self.application_config_directory_name
+        )
         self.strategy.initialize()
 
     def run(self, app=None) -> int:
