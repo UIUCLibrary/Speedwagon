@@ -5,6 +5,15 @@ Change Log
 ----------
 
 
+0.4.0b14 (2025-03-03)
+=====================
+
+Refactor
+--------
+
+- LocalSettingsBuilder
+- simplify configurations
+
 0.4.0b13 (2025-02-26)
 =====================
 
