@@ -672,8 +672,8 @@ class StartQtThreaded(AbsGuiStarter):
             ),
             active=are_there_any_plugins(),
         )
-        dialog = self._settings_builder.build(parent=parent)
-        dialog()
+        settings_dialog = self._settings_builder.build(parent=parent)
+        settings_dialog()
 
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Start gui application."""
