@@ -70,7 +70,7 @@ class NullTabsConfig(AbsTabsConfigDataManagement):
         return []
 
     def save(self, tabs: List[CustomTabData]) -> None:
-        """Does nothing."""
+        """No-op."""
         return None
 
 
