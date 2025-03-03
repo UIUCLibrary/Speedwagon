@@ -62,6 +62,10 @@ if typing.TYPE_CHECKING:
     from speedwagon import runner_strategies
     from speedwagon.frontend.qtwidgets import gui
     from speedwagon.frontend.qtwidgets.dialog import dialogs
+    from speedwagon.frontend.qtwidgets.dialog.settings import (
+        AbsConfigSaverCallbacks
+    )
+
     from speedwagon.job import (
         AbsWorkflow,
         AbsWorkflowFinder,
@@ -71,8 +75,9 @@ if typing.TYPE_CHECKING:
     from speedwagon.config.common import SettingsDataType
     from speedwagon.config.config import AbsSettingLocator
     from speedwagon.config import FullSettingsData
+    from speedwagon.config.workflow import AbsWorkflowBackend
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
-    from speedwagon.workflow import AbsOutputOptionDataType, AbsWorkflowBackend
+    from speedwagon.workflow import AbsOutputOptionDataType
     import pluggy
 
 __all__ = ["AbsGuiStarter", "StartQtThreaded", "SingleWorkflowJSON"]
@@ -1198,27 +1203,28 @@ class LocalSettingsBuilder:
     class TabData(typing.NamedTuple):
         name: str
         setup_function: Callable[
-            [dialog.settings.MultiSaver], dialog.settings.SettingsTab
+            [dialog.settings.AbsConfigSaverCallbacks],
+            dialog.settings.SettingsTab
         ]
         active: bool
 
-    def __init__(self, app_data_dir):
+    def __init__(self, app_data_dir: str) -> None:
         self.app_data_dir = app_data_dir
         self.tabs: List[LocalSettingsBuilder.TabData] = []
         self.on_success_save_updated_settings: Callable[
             [typing.Any],
             None
-        ] = lambda: None
+        ] = lambda *_: None
 
-    def reset(self):
+    def reset(self) -> None:
         self.tabs.clear()
-        self.on_success_save_updated_settings = lambda: None
+        self.on_success_save_updated_settings = lambda *_: None
 
     def add_tab(
         self,
         name: str,
         setup_function: Callable[
-            [dialog.settings.MultiSaver],
+            [dialog.settings.AbsConfigSaverCallbacks],
             dialog.settings.SettingsTab
         ],
         active: bool = True
@@ -1227,12 +1233,16 @@ class LocalSettingsBuilder:
             LocalSettingsBuilder.TabData(name, setup_function, active)
         )
 
-    def _build_tabs(self, dialog_builder, saver):
+    def _build_tabs(
+        self,
+        dialog_builder: dialog.settings.SettingsBuilder2,
+        saver: AbsConfigSaverCallbacks
+    ) -> None:
         for tab in self.tabs:
             if tab.active is True:
                 dialog_builder.add_tab(tab.name, tab.setup_function(saver))
 
-    def build(self, parent) -> Callable[[], None]:
+    def build(self, parent: Optional[QtWidgets.QWidget]) -> Callable[[], None]:
         dialog_builder = dialog.settings.SettingsBuilder2(parent=parent)
         dialog_builder.app_data_dir = self.app_data_dir
 
@@ -1242,6 +1252,6 @@ class LocalSettingsBuilder:
         dialog_builder.set_saver_strategy(saver)
         config_dialog: dialog.settings.SettingsDialog = dialog_builder.build()
 
-        def run():
+        def run() -> None:
             config_dialog.exec()
         return run
