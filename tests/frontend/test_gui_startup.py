@@ -3,15 +3,15 @@ import json
 import logging
 import os
 import pathlib
-
+import webbrowser
 import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
-
-try:  # pragma: no cover
-    from importlib.metadata import PackageMetadata
-except ImportError:  # pragma: no cover
-    from importlib_metadata import PackageMetadata  # type: ignore
+import sys
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from importlib.metadata import PackageMetadata, PackageNotFoundError
+else:  # pragma: no cover
+    from importlib_metadata import PackageMetadata, PackageNotFoundError
 
 from speedwagon.workflow import FileSelectData
 import speedwagon.config
@@ -497,74 +497,18 @@ class TestStartQtThreaded:
 
         assert QMessageBox.called is True
 
-    def test_request_system_info(self, monkeypatch, qtbot):
-        SystemInfoDialog = Mock()
-
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.dialog.dialogs,
-            "SystemInfoDialog",
-            SystemInfoDialog
-        )
-
-        gui_startup.StartQtThreaded.request_system_info()
-        assert SystemInfoDialog.called is True
-
-    def test_request_settings_opens_setting_dialog(self, qtbot, monkeypatch):
-        exec_ = Mock()
-        monkeypatch.setattr(SettingsDialog, "exec", exec_)
-        monkeypatch.setattr(
-            GlobalSettingsTab,
-            "read_config_data",
-            Mock()
-        )
-
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.dialog.settings.TabsConfigurationTab,
-            "load",
-            Mock()
-        )
-        def load(_, model):
-            data = {"All": []}
-            for tab_name, workflows in data.items():
-                model.append_workflow_tab(tab_name, workflows)
-        monkeypatch.setattr(
-            tab_models.TabDataModelConfigLoader,
-            "load",
-            load
-        )
-
-        monkeypatch.setattr(
-            speedwagon.config.config.pathlib.Path,
-            "home",
-            lambda *_: pathlib.Path("/usr/home")
-        )
-
-        monkeypatch.setattr(
-            speedwagon.config.config.WindowsConfig,
-            "get_app_data_directory",
-            lambda *_: "app_data_dir"
-        )
-
-        start = gui_startup.StartQtThreaded(app=Mock())
-        workflow = Mock(
-            name="workflow instance",
-            workflow_options=Mock(return_value=[])
-        )
-        workflow.name = "Zip Packages"
-
-        workflow_klass = Mock(return_value=workflow)
-        monkeypatch.setattr(
-            speedwagon.job,
-            "available_workflows",
-            lambda: {"Zip Packages": workflow_klass}
-        )
-        monkeypatch.setattr(
-            speedwagon.config.StandardConfigFileLocator,
-            'get_tabs_file',
-            lambda *_: 'dummy.yml'
-        )
-        start.request_settings()
-        assert exec_.called is True
+    @pytest.mark.parametrize("signal_name, expected_action_called", [
+        ("action_system_info_requested", "open_system_info_dialog"),
+        ("action_open_application_preferences", "open_settings_dialog"),
+        ("action_help_requested", "open_help"),
+        ("action_open_application_preferences", "open_settings_dialog"),
+    ])
+    def test_actions(self, starter, qtbot, signal_name, expected_action_called):
+        actions = Mock(spec_set=gui_startup.MainWindowBuilder.WindowActions)
+        main_window = starter.build_main_window(Mock(name="job_manager"), actions=actions)
+        qtbot.addWidget(main_window)
+        getattr(main_window, signal_name).trigger()
+        getattr(actions, expected_action_called).assert_called_once()
 
     def test_run_opens_window(self, qtbot, monkeypatch, starter):
 
@@ -636,113 +580,37 @@ class TestStartQtThreaded:
 
         main_window.add_tab.assert_called_with("dummy", ANY)
 
-    def test_load_help_no_package_info(
+    def test_load_help_web_page_no_url_found(
             self,
             qtbot,
             monkeypatch,
             caplog,
-            starter
     ):
-        main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        main_window3.show = Mock()
-        main_window3.session_config = Mock()
-        main_window3.update_settings = Mock()
-        # main_window3.console = Mock()
-        MainWindow3 = Mock(
-            name="MainWindow3",
-            return_value=main_window3,
-        )
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui,
-            "MainWindow3",
-            MainWindow3
-        )
-
-        starter.load_custom_tabs = Mock()
-        starter.load_all_workflows_tab = Mock()
-        workflow = Mock(
-            name="workflow instance",
-            workflow_options=Mock(return_value=[])
-        )
-        workflow.name = "Zip Packages"
-
-        workflow_klass = Mock(return_value=workflow)
-        monkeypatch.setattr(
-            speedwagon.job,
-            "available_workflows",
-            lambda *_, **__: {"Zip Packages": workflow_klass}
-        )
-        monkeypatch.setattr(
-            speedwagon.config.StandardConfigFileLocator,
-            'get_tabs_file',
-            lambda *_: 'dummy.yml'
-        )
-        starter.run()
-
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui_startup.metadata,
-            "metadata",
-            Mock(
-                side_effect=speedwagon.frontend.qtwidgets.gui_startup.metadata.PackageNotFoundError(
-                    "Not found yet"
-                )
-            )
-        )
-        starter.windows.action_help_requested.triggered.emit()
+        monkeypatch.setattr(gui_startup, "get_help_url", lambda: None)
+        gui_startup.load_help_web_page()
         assert any("No help link available" in m for m in caplog.messages)
 
-    def test_load_help(self, qtbot, monkeypatch, starter):
-        main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        main_window3.show = Mock()
-        main_window3.session_config = Mock()
-        main_window3.update_settings = Mock()
-        MainWindow3 = Mock(
-            name="MainWindow3",
-            return_value=main_window3,
-        )
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui,
-            "MainWindow3",
-            MainWindow3
-        )
+    def test_load_help_web_page_no_package_info(
+            self,
+            qtbot,
+            monkeypatch,
+            caplog,
+    ):
+        monkeypatch.setattr(gui_startup, "get_help_url", Mock(side_effect=PackageNotFoundError('speedwagon')))
+        gui_startup.load_help_web_page()
+        assert any("No help link available" in m for m in caplog.messages)
 
-        starter.load_custom_tabs = Mock()
-        starter.load_all_workflows_tab = Mock()
-        workflow = Mock(
-            name="workflow instance",
-            workflow_options=Mock(return_value=[])
-        )
-        workflow.name = "Zip Packages"
-
-        workflow_klass = Mock(return_value=workflow)
-        monkeypatch.setattr(
-            speedwagon.job,
-            "available_workflows",
-            lambda *_, **__: {"Zip Packages": workflow_klass}
-        )
-        monkeypatch.setattr(
-            speedwagon.config.StandardConfigFileLocator,
-            'get_tabs_file',
-            lambda *_: 'dummy.yml'
-        )
-        starter.run()
-        open_new = Mock()
-
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui_startup,
-            "get_help_url",
-            lambda: "https://www.fake.com"
-        )
-
-        monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui_startup.webbrowser,
-            "open_new",
-            open_new
-        )
-
-        qtbot.addWidget(starter.windows)
-        starter.windows.action_help_requested.triggered.emit()
-        assert open_new.called is True
+    def test_load_help_web_page(
+            self,
+            qtbot,
+            monkeypatch,
+            caplog,
+    ):
+        open_new = Mock(name="open_new")
+        monkeypatch.setattr(webbrowser, "open_new", open_new)
+        monkeypatch.setattr(gui_startup, "get_help_url", Mock(return_value="www.example.com"))
+        gui_startup.load_help_web_page()
+        open_new.assert_called_once()
 
     def test_request_more_info_emits_request_signal(self, qtbot, starter):
         workflow = Mock()
@@ -880,23 +748,6 @@ class TestStartQtThreaded:
         start.start_gui(Mock())
         assert main_window.windowTitle() == "new app"
 
-    def test_request_settings(self, qtbot, monkeypatch):
-        start = gui_startup.StartQtThreaded(
-            app=Mock(),
-            config=Mock(name="config"),
-        )
-        monkeypatch.setattr(GlobalSettingsTab,"read_config_data", Mock())
-        monkeypatch.setattr(TabEditor,"load_data", Mock())
-        dialog_exec = Mock(name="exec")
-        monkeypatch.setattr(SettingsDialog,"exec", dialog_exec)
-        start.config_files_locator=Mock(
-            name="config_files_locator",
-            spec_set=speedwagon.config.config.AbsSettingLocator,
-            get_config_file=Mock(return_value="some/config/file"),
-            get_app_data_dir=Mock(return_value="some/app/datapath"),
-        )
-        start.request_settings()
-        dialog_exec.assert_called_once()
 
 def test_global_setting_save(qtbot, monkeypatch):
     manager = Mock(name="IniConfigManager", spec_set=speedwagon.config.IniConfigManager)

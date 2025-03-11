@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     TypedDict,
     Mapping,
+    Generic, TypeVar,
     TYPE_CHECKING,
 )
 import sys
@@ -234,7 +235,7 @@ class PluginsTab(SettingsTab):
     def data_is_modified(self) -> bool:
         return self.plugins_activation.model.data_modified
 
-    def get_data(self) -> Dict[str, typing.Any]:
+    def get_data(self) -> config.plugins.PluginSettingsData:
         return {"enabled_plugins": self.plugins_activation.enabled_plugins()}
 
     def load(self, settings_ini: str) -> None:
@@ -519,11 +520,14 @@ class SaveStrategy(AbsSaveStrategy, abc.ABC):
             file_handel.write(data)
 
 
-class SettingsTabSaveStrategy(SaveStrategy):
+T = TypeVar("T")
+
+
+class SettingsTabSaveStrategy(SaveStrategy, Generic[T]):
     def __init__(
         self,
-        settings_tab_widget: SettingsTab,
-        serialization_function: Callable[[SettingsTab], str],
+        settings_tab_widget: T,
+        serialization_function: Callable[[T], str],
     ) -> None:
         self.widget = settings_tab_widget
         self.serialization_function = serialization_function

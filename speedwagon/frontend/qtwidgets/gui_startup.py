@@ -4,6 +4,7 @@ from __future__ import annotations
 import abc
 import collections
 import contextlib
+import dataclasses
 import functools
 import pathlib
 from functools import partial
@@ -24,7 +25,7 @@ from typing import (
     Type,
     Callable,
     DefaultDict,
-    Mapping,
+    Mapping, Protocol,
 )
 import traceback as tb
 import webbrowser
@@ -311,7 +312,10 @@ def _setup_workflow_settings_tab(
     return workflow_settings_tab
 
 
-def save_global_tab_widget_settings(config_file, tab) -> None:
+def save_global_tab_widget_settings(
+    config_file: str,
+    tab: dialog.settings.GlobalSettingsTab
+) -> None:
     ini_manager = IniConfigManager(config_file)
     ini_manager.save(
         {
@@ -357,7 +361,7 @@ def _setup_plugins_tab(
     plugins_tab = dialog.settings.PluginsTab()
     plugins_tab.load(config_file)
 
-    def serializer(widget) -> str:
+    def serializer(widget: dialog.settings.PluginsTab) -> str:
         ini_serializer = plugin_config.IniSerializer()
         ini_serializer.parser.read(config_file)
         return ini_serializer.serialize(widget.get_data())
@@ -392,6 +396,108 @@ def _get_tabs_file(config_directory_prefix: str) -> str:
         config_directory_prefix=config_directory_prefix
     )
     return config_strategy.get_tabs_file()
+
+
+class MainWindowBuilder:
+    class ActionProtocol(Protocol):
+        def __call__(self, parent: gui.MainWindow3) -> None:
+            ...
+
+    @dataclasses.dataclass
+    class WindowActions:
+        export_logs: MainWindowBuilder.ActionProtocol = lambda *_: None
+        export_workflow_config: Callable[
+            [
+                str,
+                Dict[str, AbsOutputOptionDataType],
+                QtWidgets.QWidget,
+                Optional[QtWidgets.QFileDialog],
+                Optional[speedwagon.job.AbsJobConfigSerializationStrategy]
+            ],
+            None
+        ] = lambda *_: None
+        import_workflow_config: MainWindowBuilder.ActionProtocol = (
+            lambda *_: None
+        )
+        open_system_info_dialog: MainWindowBuilder.ActionProtocol = (
+            lambda *_: None
+        )
+        open_settings_dialog: MainWindowBuilder.ActionProtocol = (
+            lambda *_: None
+        )
+        open_about: MainWindowBuilder.ActionProtocol = lambda *_: None
+        open_help: Callable[[], None] = lambda: None
+
+    def __init__(self) -> None:
+        self.config: Optional[speedwagon.config.AbsConfigSettings] = None
+        self.logger: Optional[logging.Logger] = None
+        self.submit_job: Callable[
+            [str, Dict[str, AbsOutputOptionDataType]],
+            None
+        ] = lambda *_, **__: None
+        self.job_manager = None
+
+        self.actions = MainWindowBuilder.WindowActions()
+
+    @staticmethod
+    def _attach_actions(
+        window: speedwagon.frontend.qtwidgets.gui.MainWindow3,
+        actions: MainWindowBuilder.WindowActions
+    ) -> None:
+        window.action_export_logs.triggered.connect(
+            lambda: actions.export_logs(window)
+        )
+
+        window.export_job_config.connect(actions.export_workflow_config)
+
+        window.action_system_info_requested.triggered.connect(
+            lambda: actions.open_system_info_dialog(window)
+        )
+
+        window.action_import_job.triggered.connect(
+            functools.partial(actions.import_workflow_config, parent=window)
+        )
+
+        window.action_open_application_preferences.triggered.connect(
+            lambda: actions.open_settings_dialog(window)
+        )
+
+        window.action_help_requested.triggered.connect(actions.open_help)
+
+        window.action_about.triggered.connect(
+            lambda: actions.open_about(window)
+        )
+
+    def build(self) -> speedwagon.frontend.qtwidgets.gui.MainWindow3:
+        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        if self.config is None:
+            raise ValueError("Required attribute not set: config")
+        window.session_config = self.config
+        if self.logger is not None:
+            window.console.attach_logger(self.logger)
+        self._attach_actions(window=window, actions=self.actions)
+
+        window.submit_job.connect(self.submit_job)
+        return window
+
+
+def load_help_web_page(
+    logger: Optional[logging.Logger] = None,
+    landing_page: Optional[str] = None
+) -> None:
+    logger = logger or logging.getLogger(__name__)
+    try:
+        home_page = landing_page or get_help_url()
+        if home_page:
+            webbrowser.open_new(home_page)
+        else:
+            logger.warning(
+                "No help link available. "
+                "Reason: no project url located in Project-URL package "
+                "metadata"
+            )
+    except metadata.PackageNotFoundError as error:
+        logger.warning("No help link available. Reason: %s", error)
 
 
 class StartQtThreaded(AbsGuiStarter):
@@ -476,20 +582,6 @@ class StartQtThreaded(AbsGuiStarter):
     def set_application_name(self, name: str) -> None:
         """Set the Qt application name and the window matching."""
         self._application_name = name
-
-    def _load_help(self) -> None:
-        try:
-            home_page = get_help_url()
-            if home_page:
-                webbrowser.open_new(home_page)
-            else:
-                self.logger.warning(
-                    "No help link available. "
-                    "Reason: no project url located in Project-URL package "
-                    "metadata"
-                )
-        except metadata.PackageNotFoundError as error:
-            self.logger.warning("No help link available. Reason: %s", error)
 
     def resolve_settings(self) -> FullSettingsData:
         """Resolve settings."""
@@ -632,6 +724,9 @@ class StartQtThreaded(AbsGuiStarter):
                 self.windows.update_settings()
             self.load_workflows()
         self._settings_builder.reset()
+        self._settings_builder.app_data_dir = (
+            self.config_locations.get_app_data_dir()
+        )
         self._settings_builder.on_success_save_updated_settings = success
         get_config_file = self.config_locations.get_config_file
         get_tabs_file = self.config_locations.get_tabs_file
@@ -721,47 +816,37 @@ class StartQtThreaded(AbsGuiStarter):
             sys.excepthook = original_hook
 
     def build_main_window(
-        self, job_manager
+        self,
+        job_manager: runner_strategies.BackgroundJobManager,
+        actions: Optional[MainWindowBuilder.WindowActions] = None
     ) -> speedwagon.frontend.qtwidgets.gui.MainWindow3:
         """Build main window widget."""
-        window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
-        window.session_config = self.config
-
-        window.console.attach_logger(self.logger)
-
-        window.action_export_logs.triggered.connect(
-            lambda: self.save_log(window)
-        )
-
-        window.export_job_config.connect(save_workflow_config)
-
-        window.action_import_job.triggered.connect(
-            lambda: self.import_workflow_config(window)
-        )
-
-        window.action_system_info_requested.triggered.connect(
-            lambda: self.request_system_info(window)
-        )
-
-        window.action_open_application_preferences.triggered.connect(
-            lambda: self.request_settings(window)
-        )
-
-        window.action_help_requested.triggered.connect(self._load_help)
-
-        window.action_about.triggered.connect(
-            lambda: dialog.about_dialog_box(window)
-        )
-
-        window.submit_job.connect(
-            lambda workflow_name, options: self.submit_job(
-                job_manager,
-                workflow_name,
-                options,
-                main_app=self.windows,
+        builder = MainWindowBuilder()
+        builder.config = self.config
+        builder.logger = self.logger
+        builder.actions = (
+            actions or
+            MainWindowBuilder.WindowActions(
+                export_logs=self.save_log,
+                export_workflow_config=save_workflow_config,
+                import_workflow_config=(
+                    lambda parent: self.import_workflow_config(parent)
+                ),
+                open_system_info_dialog=self.request_system_info,
+                open_settings_dialog=self.request_settings,
+                open_help=lambda: load_help_web_page(
+                    logger=self.logger,
+                    landing_page=get_help_url()
+                ),
+                open_about=dialog.about_dialog_box,
             )
         )
-        return window
+        builder.submit_job = functools.partial(
+            self.submit_job,
+            job_manager,
+            main_app=self.windows
+        )
+        return builder.build()
 
     @staticmethod
     def abort_job(
@@ -1253,5 +1338,6 @@ class LocalSettingsBuilder:
         config_dialog: dialog.settings.SettingsDialog = dialog_builder.build()
 
         def run() -> None:
+            print(self.app_data_dir)
             config_dialog.exec()
         return run
