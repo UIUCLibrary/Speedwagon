@@ -119,36 +119,6 @@ class Worker(metaclass=abc.ABCMeta):
         """Load jobs into queue."""
 
 
-# pylint: disable=too-few-public-methods
-class AbsObserver(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def emit(self, value) -> None:
-        pass
-
-
-class AbsSubject(metaclass=abc.ABCMeta):
-    lock = multiprocessing.Lock()
-    _observers = set()  # type: typing.Set[AbsObserver]
-
-    def subscribe(self, observer: AbsObserver) -> None:
-        if not isinstance(observer, AbsObserver):
-            raise TypeError("Observer not derived from AbsObserver")
-        self._observers |= {observer}
-
-    def unsubscribe(self, observer: AbsObserver) -> None:
-        """Remove observer from getting notifications."""
-        self._observers -= {observer}
-
-    def notify(self, value=None):
-        """Notify observers of value."""
-        with self.lock:
-            for observer in self._observers:
-                if value is None:
-                    observer.emit()
-                else:
-                    observer.emit(value)
-
-
 class AbsJobManager(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def add_job(

@@ -4,14 +4,17 @@ import logging
 import os
 import pathlib
 import webbrowser
+
 import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
 import sys
+
+
 if sys.version_info >= (3, 10):  # pragma: no cover
-    from importlib.metadata import PackageMetadata, PackageNotFoundError
+    import importlib.metadata as importlib_metadata
 else:  # pragma: no cover
-    from importlib_metadata import PackageMetadata, PackageNotFoundError
+    import importlib_metadata
 
 from speedwagon.workflow import FileSelectData
 import speedwagon.config
@@ -23,12 +26,13 @@ from speedwagon.frontend.qtwidgets.gui import MainWindow3
 gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
 from speedwagon.frontend.qtwidgets.dialog import dialogs
-from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor, GlobalSettingsTab, SettingsBuilder2
+from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor, GlobalSettingsTab, SettingsBuilder
 from speedwagon.frontend.qtwidgets.models.tabs import AbsLoadTabDataModelStrategy
 from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp
 from speedwagon.frontend.qtwidgets.models import tabs as tab_models
 from speedwagon.config import StandardConfigFileLocator
 import speedwagon.workflows.builtin
+from speedwagon.tasks import system as system_tasks
 from speedwagon.job import AbsWorkflowFinder
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
@@ -596,7 +600,15 @@ class TestStartQtThreaded:
             monkeypatch,
             caplog,
     ):
-        monkeypatch.setattr(gui_startup, "get_help_url", Mock(side_effect=PackageNotFoundError('speedwagon')))
+        monkeypatch.setattr(
+            gui_startup,
+            "get_help_url",
+            Mock(
+                side_effect=importlib_metadata.PackageNotFoundError(
+                    'speedwagon'
+                )
+            )
+        )
         gui_startup.load_help_web_page()
         assert any("No help link available" in m for m in caplog.messages)
 
@@ -692,35 +704,14 @@ class TestStartQtThreaded:
 
     def test_initialize(self, qtbot, monkeypatch):
         start = gui_startup.StartQtThreaded(app=Mock())
-        speedwagon.config.config.ensure_settings_files = Mock(name="ensure_settings_files")
-        start.resolve_settings = Mock(name="resolve_settings")
+        get_startup_tasks = Mock(name="get_startup_tasks", return_value=[])
         monkeypatch.setattr(
-            speedwagon.config.WorkflowSettingsYamlExporter,
-            "write_data_to_file",
-            Mock()
-        )
-        monkeypatch.setattr(
-            StandardConfigFileLocator,
-            "get_config_file",
-            lambda _ : "dummy.ini"
-        )
-        monkeypatch.setattr(
-            speedwagon.workflows.builtin,
-            "EnsureBuiltinWorkflowConfigFiles",
-            Mock(speedwagon.workflows.builtin.AbsSystemTask)
+            gui_startup,
+            "get_startup_tasks",
+            get_startup_tasks
         )
         start.initialize()
-
-        expected = {
-            "ensure_settings_files was called": True,
-            "resolve_settings was called": True,
-        }
-        actual = {
-            "ensure_settings_files was called":
-                speedwagon.config.config.ensure_settings_files.called,
-            "resolve_settings was called": start.resolve_settings.called,
-        }
-        assert actual == expected
+        get_startup_tasks.assert_called_once()
 
     def test_load_all_workflows_tab(self, qtbot):
         start = gui_startup.StartQtThreaded(app=Mock())
@@ -745,16 +736,15 @@ class TestStartQtThreaded:
         main_window.show = Mock()
         main_window.update_settings = Mock()
         start.build_main_window = lambda *_: main_window
+        start.config = Mock()
         start.start_gui(Mock())
         assert main_window.windowTitle() == "new app"
 
+    def test_request_settings(self, starter):
+        settings_builder_strategy = Mock(name="dialog_builder_strategy")
+        starter.request_settings(dialog_builder_strategy=settings_builder_strategy)
+        settings_builder_strategy.assert_called_once()
 
-def test_global_setting_save(qtbot, monkeypatch):
-    manager = Mock(name="IniConfigManager", spec_set=speedwagon.config.IniConfigManager)
-    monkeypatch.setattr(gui_startup, "IniConfigManager", Mock(return_value=manager))
-    tab = Mock(get_data=Mock(return_value={}))
-    gui_startup.save_global_tab_widget_settings("fake_file", tab)
-    manager.save.assert_called_once()
 
 class TestWorkflowProgressCallbacks:
 
@@ -1095,7 +1085,7 @@ def test_get_help_url(monkeypatch):
     monkeypatch.setattr(
         gui_startup.metadata, "metadata",
         Mock(
-            spec_set=PackageMetadata,
+            spec_set=importlib_metadata.PackageMetadata,
             return_value=pkg_metadata
         )
     )
@@ -1109,7 +1099,7 @@ def test_get_help_url_nothing_on_missing(monkeypatch):
     monkeypatch.setattr(
         gui_startup.metadata, "metadata",
         Mock(
-            spec_set=PackageMetadata,
+            spec_set=importlib_metadata.PackageMetadata,
             return_value=pkg_metadata
         )
     )
@@ -1125,7 +1115,7 @@ def test_get_help_url_malformed_data(monkeypatch):
     monkeypatch.setattr(
         gui_startup.metadata, "metadata",
         Mock(
-            spec_set=PackageMetadata,
+            spec_set=importlib_metadata.PackageMetadata,
             return_value=pkg_metadata
         )
     )
@@ -1174,3 +1164,201 @@ class TestResolveSettingsStrategyConfigAdapter:
         workflow = Mock()
         adapter.workflow_settings(workflow)
         mocked_workflow_backend.assert_called_once_with(workflow)
+
+
+def test_build_request_settings_dialog2(qtbot, monkeypatch):
+    def exists(path):
+        return path in ["somedir", "someconfig.ini"]
+    monkeypatch.setattr(
+        speedwagon.frontend.qtwidgets.dialog.settings.os.path,
+        "exists",
+        exists
+    )
+
+    def build_setting_qt_model(config_file):
+        my_model = speedwagon.frontend.qtwidgets.models.settings.SettingsModel()
+        my_model.add_setting('starting-tab', "all")
+        return my_model
+
+    monkeypatch.setattr(
+        speedwagon.frontend.qtwidgets.dialog.settings,
+        "build_setting_qt_model",
+        build_setting_qt_model
+    )
+    monkeypatch.setattr(
+        speedwagon.config.plugins,
+        "read_settings_file_plugins",
+        Mock(
+            name="read_settings_file_plugins",
+            return_value={"myplugin": {
+                "one": True
+            }}
+        )
+    )
+    def entry_points(*args, **kwargs):
+        entry_point_1 = Mock(module='myplugin')
+        entry_point_1.name = "one"
+        return [
+            entry_point_1
+        ]
+    monkeypatch.setattr(importlib_metadata, "entry_points", entry_points)
+
+    def get_active_workflows(config_file, workflow_finder=None):
+        return {}
+    monkeypatch.setattr(gui_startup, "get_active_workflows", get_active_workflows)
+    initialize_workflows = Mock(name="initialize_workflows", return_value=[])
+    monkeypatch.setattr(speedwagon.workflow, "initialize_workflows", initialize_workflows)
+    monkeypatch.setattr(
+        speedwagon.config.tabs.CustomTabsYamlConfig,
+        "data",
+        Mock(name="data", return_value=[])
+    )
+    config_locations = Mock(
+        name="config_locations",
+        spec_set=speedwagon.config.config.AbsSettingLocator,
+        get_app_data_dir=Mock(return_value="somedir"),
+        get_config_file=Mock(return_value="someconfig.ini"),
+        get_tabs_file=Mock(return_value="sometabs.yml"),
+    )
+    on_success_save_updated_settings = Mock(name="on_success_save_updated_settings")
+
+    dialog_box = gui_startup.build_request_settings_dialog(
+        config_locations,
+        on_success_save_updated_settings
+    )
+
+    with qtbot.waitSignal(dialog_box.finished):
+        dialog_box.tabs_widget.setCurrentIndex(3)
+        plugin_tab = dialog_box.tabs_widget.currentWidget()
+        assert "myplugin" in plugin_tab.plugins_activation.enabled_plugins()
+        qtbot.mousePress(
+            plugin_tab.plugins_activation.plugin_list_view.viewport(),
+            QtCore.Qt.LeftButton,
+            pos=plugin_tab.plugins_activation.plugin_list_view.visualRect(
+                plugin_tab.plugins_activation.model.index(0,0)
+            ).center()
+        )
+        qtbot.keyPress(
+            plugin_tab.plugins_activation.plugin_list_view.viewport(),
+            QtCore.Qt.Key_Space
+        )
+        dialog_box.button_box.button(dialog_box.button_box.StandardButton.Ok).click()
+    on_success_save_updated_settings.assert_called_once()
+
+class TestLocalSettingsBuilder2:
+    def test_tabs_start_with_zero(self):
+        builder = gui_startup.LocalSettingsBuilder()
+        assert len(builder.tabs) == 0
+
+    def test_add_tab(self):
+        builder = gui_startup.LocalSettingsBuilder()
+        def _setup_config_tab():
+            tabs_config = dialog.settings.TabsConfigurationTab()
+            return tabs_config
+        builder.add_tab(
+            "Tabs",
+            _setup_config_tab,
+
+        )
+        assert len(builder.tabs) == 1
+
+    @pytest.fixture()
+    def setup_config_tab_func(self):
+        def _setup_config_tab():
+            tabs_config = speedwagon.frontend.qtwidgets.dialog.settings.TabsConfigurationTab()
+            tab_manager = Mock(
+                name="tab_manager",
+                spec_set=speedwagon.config.AbsTabsConfigDataManagement,
+                data=Mock(return_value=[
+                    speedwagon.config.tabs.CustomTabData("dummy", [])
+                ])
+            )
+            model_loader = tab_models.TabDataModelConfigLoader(
+                tabs_manager=tab_manager,
+            )
+            model_loader.get_all_active_workflows_strategy = lambda :{
+                "Spam": type(
+                    "SpamWorkflow",
+                    (speedwagon.Workflow,),
+                    {"name": "Spam"}
+                )
+            }
+            tabs_config.load_tab_data_model_strategy = model_loader
+            tabs_config.editor.load_data()
+            return tabs_config
+        return _setup_config_tab
+    def test_build(self, qtbot, setup_config_tab_func):
+        parent = QtWidgets.QWidget()
+        qtbot.addWidget(parent)
+        builder = gui_startup.LocalSettingsBuilder()
+
+        save_tabs_function = Mock(name="save_tabs_function")
+        builder.add_tab(
+            "Tabs",
+            setup_config_tab_func,
+            save_data_func=save_tabs_function
+        )
+        dialog_box = builder.build(parent=parent)
+        with qtbot.waitSignal(dialog_box.accepted):
+            widget = dialog_box.tabs_widget.currentWidget()
+            # Make a change in the settings
+            qtbot.mousePress(
+                widget.editor.all_workflows_list_view.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=widget.editor.all_workflows_list_view.visualRect(
+                    widget.editor.all_workflows_list_view.model().index(0,0)
+                ).center()
+            )
+            widget.editor.add_items_button.click()
+            dialog_box.button_box.button(dialog_box.button_box.StandardButton.Ok).click()
+        save_tabs_function.assert_called_once_with([
+                speedwagon.config.tabs.CustomTabData(tab_name="dummy", workflow_names=["Spam"])
+            ]
+        )
+
+    def test_build2(self, qtbot, setup_config_tab_func):
+        parent = QtWidgets.QWidget()
+        qtbot.addWidget(parent)
+        builder = gui_startup.LocalSettingsBuilder()
+
+        save_tabs_function = Mock(name="save_tabs_function")
+        builder.add_tab(
+            "Tab config",
+            setup_config_tab_func,
+            save_data_func=save_tabs_function
+        )
+
+        builder.add_tab(
+            "Global Settings",
+            speedwagon.frontend.qtwidgets.dialog.settings.GlobalSettingsTab,
+            save_data_func=Mock()
+        )
+        dialog_box: speedwagon.frontend.qtwidgets.dialog.settings.SettingsDialog = builder.build(parent=parent)
+        with qtbot.waitSignal(dialog_box.accepted):
+            dialog_box.tabs_widget.setCurrentIndex(0)
+            widget = dialog_box.tabs_widget.currentWidget()
+            # Make a change in the settings
+            qtbot.mousePress(
+                widget.editor.all_workflows_list_view.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=widget.editor.all_workflows_list_view.visualRect(
+                    widget.editor.all_workflows_list_view.model().index(0,0)
+                ).center()
+            )
+            widget.editor.add_items_button.click()
+            dialog_box.button_box.button(dialog_box.button_box.StandardButton.Ok).click()
+
+        save_tabs_function.assert_called_once_with([
+                speedwagon.config.tabs.CustomTabData(tab_name="dummy", workflow_names=["Spam"])
+            ]
+        )
+def test_get_startup_tasks_includes_global_config_file_task():
+    config_backend = Mock()
+    config_file_locations = Mock()
+    logger = Mock()
+    tasks = gui_startup.get_startup_tasks(
+        config_backend,
+        config_file_locations,
+        logger
+    )
+    assert any([isinstance(a, system_tasks.EnsureGlobalConfigFiles) for a in tasks])

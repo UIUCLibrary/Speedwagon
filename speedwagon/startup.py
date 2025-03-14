@@ -176,6 +176,7 @@ class ApplicationLauncher:
         super().__init__()
         self.application_name = "speedwagon"
         self.application_config_directory_name = "Speedwagon"
+        self.settings_resolver: Optional[ResolveSettings] = None
         try:
             from speedwagon.frontend.qtwidgets.gui_startup import (
                 StartQtThreaded,
@@ -183,8 +184,8 @@ class ApplicationLauncher:
                 ResolveSettingsStrategyConfigAdapter
             )
 
-            settings_resolver = ResolveSettings()
-            settings_resolver.config_file_locator_strategy = (
+            self.settings_resolver = ResolveSettings()
+            self.settings_resolver.config_file_locator_strategy = (
                 lambda: StandardConfigFileLocator(
                     self.application_config_directory_name
                 ).get_config_file()
@@ -198,7 +199,7 @@ class ApplicationLauncher:
                 strategy or
                 StartQtThreaded(
                     config=ResolveSettingsStrategyConfigAdapter(
-                        source_application_settings=settings_resolver,
+                        source_application_settings=self.settings_resolver,
                         workflow_backend=config_backend_factory,
                     ),
                 )
@@ -216,16 +217,18 @@ class ApplicationLauncher:
     def run(self, app=None) -> int:
         """Run Speedwagon."""
         self.strategy.set_application_name(self.application_name)
+        config_backend = functools.partial(
+            default_backend_factory,
+            config_directory_name=self.application_config_directory_name
+        )
+
         self.strategy.set_workflow_config_backend_factory(
-            functools.partial(
-                default_backend_factory,
-                config_directory_name=self.application_config_directory_name
-            )
+            config_backend
         )
         if app:
             try:
                 from speedwagon.frontend.qtwidgets.gui_startup import (
-                    AbsGuiStarter,
+                    AbsGuiStarter
                 )
 
                 if isinstance(self.strategy, AbsGuiStarter):

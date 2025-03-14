@@ -25,7 +25,11 @@ from typing import (
     Type,
     Callable,
     DefaultDict,
-    Mapping, Protocol,
+    Generic,
+    TypeVar,
+    Mapping,
+    Protocol,
+    Iterable,
 )
 import traceback as tb
 import webbrowser
@@ -42,31 +46,29 @@ import speedwagon.job
 from speedwagon.frontend.qtwidgets.models.tabs import TabDataModelConfigLoader
 from speedwagon.workflow import initialize_workflows
 
-from speedwagon.config.tabs import CustomTabsYamlConfig, TabsYamlWriter
+from speedwagon.config.tabs import CustomTabsYamlConfig
 from speedwagon.config.config import (
     StandardConfigFileLocator,
     get_platform_settings,
     IniConfigManager,
     StandardConfig,
+    AbsConfigSettings,
 )
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import plugins as plugin_config
-from speedwagon.config.workflow import locate_workflow_settings_yaml
+from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
 from speedwagon.utils import get_desktop_path, validate_user_input
 from speedwagon.tasks import system as system_tasks
 from speedwagon import plugins, info
 from . import user_interaction
 from . import dialog
 from . import runners
+from . import export
 
 if typing.TYPE_CHECKING:
     from speedwagon import runner_strategies
     from speedwagon.frontend.qtwidgets import gui
     from speedwagon.frontend.qtwidgets.dialog import dialogs
-    from speedwagon.frontend.qtwidgets.dialog.settings import (
-        AbsConfigSaverCallbacks
-    )
-
     from speedwagon.job import (
         AbsWorkflow,
         AbsWorkflowFinder,
@@ -198,9 +200,7 @@ def save_workflow_config(
 
 
 def locate_config_file(config_directory_prefix: str) -> str:
-    return StandardConfigFileLocator(
-        config_directory_prefix
-    ).get_config_file()
+    return StandardConfigFileLocator(config_directory_prefix).get_config_file()
 
 
 class AbsResolveSettingsStrategy(abc.ABC):  # pylint: disable=R0903
@@ -221,12 +221,11 @@ class ResolveSettings(AbsResolveSettingsStrategy):  # pylint: disable=R0903
 
 
 def get_active_workflows(
-    config_file: str,
-    workflow_finder: Optional[AbsWorkflowFinder] = None
+    config_file: str, workflow_finder: Optional[AbsWorkflowFinder] = None
 ) -> Dict[str, Type[Workflow]]:
     workflow_finder = (
-        workflow_finder or
-        speedwagon.job.OnlyActivatedPluginsWorkflows(
+        workflow_finder
+        or speedwagon.job.OnlyActivatedPluginsWorkflows(
             plugin_settings=plugin_config.read_settings_file_plugins(
                 config_file
             )
@@ -236,142 +235,46 @@ def get_active_workflows(
 
 
 def _setup_config_tab(
-    saver: dialog.settings.MultiSaver,
-    locate_tabs_file_strategy: Callable[[], str] = lambda: _get_tabs_file(
-        DEFAULT_CONFIG_DIRECTORY_NAME
-    ),
-    config_file_location_strategy: Callable[
-        [], str
-    ] = lambda: StandardConfigFileLocator(
-        config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
-    ).get_config_file(),
+    yaml_file, config_ini
 ) -> dialog.settings.TabsConfigurationTab:
-
     tabs_config = dialog.settings.TabsConfigurationTab()
     model_loader = TabDataModelConfigLoader(
-        tabs_manager=CustomTabsYamlConfig(locate_tabs_file_strategy())
+        tabs_manager=CustomTabsYamlConfig(yaml_file)
     )
     model_loader.get_all_active_workflows_strategy = functools.partial(
-        get_active_workflows, config_file=config_file_location_strategy()
+        get_active_workflows, config_file=config_ini
     )
     tabs_config.load_tab_data_model_strategy = model_loader
     tabs_config.editor.load_data()
-    saver.config_savers.append(
-        dialog.settings.ConfigFileSaver(
-            dialog.settings.SettingsTabSaveStrategy(
-                tabs_config,
-                lambda widget: TabsYamlWriter().serialize(
-                    filter(
-                        lambda tab: tab.tab_name != "All",
-                        widget.get_data().get("tab_information", []),
-                    )
-                ),
-            ),
-            locate_tabs_file_strategy(),
-        )
-    )
     return tabs_config
 
 
 def _setup_workflow_settings_tab(
-    saver: dialog.settings.MultiSaver,
-    workflow_settings_location_strategy: Callable[
-        [], str
-    ] = lambda: locate_workflow_settings_yaml(DEFAULT_CONFIG_DIRECTORY_NAME),
+    get_workflows: Callable[[], Iterable[Workflow]],
 ) -> dialog.settings.ConfigWorkflowSettingsTab:
     workflow_settings_tab = dialog.settings.ConfigWorkflowSettingsTab()
-    saver.config_savers.append(
-        dialog.settings.ConfigFileSaver(
-            dialog.settings.SettingsTabSaveStrategy(
-                workflow_settings_tab,
-                lambda widget: speedwagon.config.workflow
-                .SettingsYamlSerializer
-                .serialize_structure_to_yaml(
-                    {
-                        workflow_name:
-                            speedwagon.config.workflow.SettingsYamlSerializer
-                            .structure_workflow_data(value)
-                        for (workflow_name, value) in
-                        widget.get_data()['workflow settings'].items()
-                    }
-                ),
-            ),
-            workflow_settings_location_strategy(),
-        )
-    )
     # Only add workflows to the configuration if it has something to
     # configure. Otherwise, this gets overly cluttered.
     workflow_settings_tab.set_workflows(
         filter(
             lambda workflow: len(workflow.workflow_options()) != 0,
-            initialize_workflows(
-                workflow_settings_location_strategy
-            ),
+            get_workflows(),
         )
     )
     return workflow_settings_tab
 
 
-def save_global_tab_widget_settings(
-    config_file: str,
-    tab: dialog.settings.GlobalSettingsTab
-) -> None:
-    ini_manager = IniConfigManager(config_file)
-    ini_manager.save(
-        {
-            "GLOBAL": typing.cast(
-                speedwagon.config.SettingsData,
-                tab.get_data()
-            )
-        }
-    )
-
-
 def _setup_global_settings_tab(
-    saver: dialog.settings.MultiSaver,
-    config_file_location_strategy: Callable[
-        [], str
-    ] = lambda: locate_config_file(DEFAULT_CONFIG_DIRECTORY_NAME),
+    config_file,
 ) -> dialog.settings.GlobalSettingsTab:
     global_settings_tab = dialog.settings.GlobalSettingsTab()
-    config_file = config_file_location_strategy()
-
-    saver.config_savers.append(
-        dialog.settings.CallbackSaver(
-            save_data_callback_func=functools.partial(
-                save_global_tab_widget_settings,
-                config_file=config_file,
-                tab=global_settings_tab
-            )
-        )
-    )
     global_settings_tab.load_ini_file(config_file)
     return global_settings_tab
 
 
-def _setup_plugins_tab(
-    saver: dialog.settings.MultiSaver,
-    config_file_location_strategy: Callable[
-        [], str
-    ] = lambda: StandardConfigFileLocator(
-        config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
-    ).get_config_file(),
-) -> dialog.settings.PluginsTab:
-    config_file = config_file_location_strategy()
+def _setup_plugins_tab(config_file) -> dialog.settings.PluginsTab:
     plugins_tab = dialog.settings.PluginsTab()
     plugins_tab.load(config_file)
-
-    def serializer(widget: dialog.settings.PluginsTab) -> str:
-        ini_serializer = plugin_config.IniSerializer()
-        ini_serializer.parser.read(config_file)
-        return ini_serializer.serialize(widget.get_data())
-
-    saver.config_savers.append(
-        dialog.settings.ConfigFileSaver(
-            dialog.settings.SettingsTabSaveStrategy(plugins_tab, serializer),
-            config_file,
-        )
-    )
     return plugins_tab
 
 
@@ -399,9 +302,8 @@ def _get_tabs_file(config_directory_prefix: str) -> str:
 
 
 class MainWindowBuilder:
-    class ActionProtocol(Protocol):
-        def __call__(self, parent: gui.MainWindow3) -> None:
-            ...
+    class ActionProtocol(Protocol):  # pylint: disable=too-few-public-methods
+        def __call__(self, parent: gui.MainWindow3) -> None: ...
 
     @dataclasses.dataclass
     class WindowActions:
@@ -412,9 +314,9 @@ class MainWindowBuilder:
                 Dict[str, AbsOutputOptionDataType],
                 QtWidgets.QWidget,
                 Optional[QtWidgets.QFileDialog],
-                Optional[speedwagon.job.AbsJobConfigSerializationStrategy]
+                Optional[speedwagon.job.AbsJobConfigSerializationStrategy],
             ],
-            None
+            None,
         ] = lambda *_: None
         import_workflow_config: MainWindowBuilder.ActionProtocol = (
             lambda *_: None
@@ -432,8 +334,7 @@ class MainWindowBuilder:
         self.config: Optional[speedwagon.config.AbsConfigSettings] = None
         self.logger: Optional[logging.Logger] = None
         self.submit_job: Callable[
-            [str, Dict[str, AbsOutputOptionDataType]],
-            None
+            [str, Dict[str, AbsOutputOptionDataType]], None
         ] = lambda *_, **__: None
         self.job_manager = None
 
@@ -442,7 +343,7 @@ class MainWindowBuilder:
     @staticmethod
     def _attach_actions(
         window: speedwagon.frontend.qtwidgets.gui.MainWindow3,
-        actions: MainWindowBuilder.WindowActions
+        actions: MainWindowBuilder.WindowActions,
     ) -> None:
         window.action_export_logs.triggered.connect(
             lambda: actions.export_logs(window)
@@ -482,8 +383,7 @@ class MainWindowBuilder:
 
 
 def load_help_web_page(
-    logger: Optional[logging.Logger] = None,
-    landing_page: Optional[str] = None
+    logger: Optional[logging.Logger] = None, landing_page: Optional[str] = None
 ) -> None:
     logger = logger or logging.getLogger(__name__)
     try:
@@ -500,6 +400,48 @@ def load_help_web_page(
         logger.warning("No help link available. Reason: %s", error)
 
 
+class StartupTaskBuilder:
+
+    def __init__(
+        self,
+        config_backend: speedwagon.config.AbsConfigSettings
+    ) -> None:
+        self._tasks: List[system_tasks.AbsSystemTask] = []
+        self.config_backend = config_backend
+
+    def add(self, task: system_tasks.AbsSystemTask) -> None:
+        self._tasks.append(task)
+
+    def iter_tasks(self) -> Iterable[system_tasks.AbsSystemTask]:
+        for task in self._tasks:
+            task.set_config_backend(self.config_backend)
+            yield task
+
+
+def get_startup_tasks(
+    config_backend: speedwagon.config.AbsConfigSettings,
+    config_file_locations: AbsSettingLocator,
+    logger: logging.Logger
+) -> Iterable[system_tasks.AbsSystemTask]:
+    task_builder = StartupTaskBuilder(config_backend=config_backend)
+    task_builder.add(
+        system_tasks.EnsureGlobalConfigFiles(
+            logger,
+            directory_prefix=config_file_locations.get_app_data_dir(),
+        )
+    )
+
+    plugin_manager = plugins.get_plugin_manager(
+        plugins.register_whitelisted_plugins
+    )
+
+    for plugin_tasks in plugin_manager.hook.registered_initialization_tasks():
+        for task in plugin_tasks:
+            task_builder.add(task)
+
+    return list(task_builder.iter_tasks())
+
+
 class StartQtThreaded(AbsGuiStarter):
     """Start a Qt Widgets base app using threads for job workers."""
 
@@ -511,18 +453,14 @@ class StartQtThreaded(AbsGuiStarter):
         """Create a new starter object."""
         super().__init__(app, config or StandardConfig())
         self._application_name: Optional[str] = None
-        self.config_files_locator: AbsSettingLocator =\
+        self.config_files_locator: AbsSettingLocator = (
             StandardConfigFileLocator(
                 config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
             )
-
-        self.startup_settings: FullSettingsData = {"GLOBAL": {"debug": False}}
+        )
 
         self.windows: Optional[gui.MainWindow3] = None
         self.logger = logging.getLogger()
-        self._settings_builder = LocalSettingsBuilder(
-            app_data_dir=self.config_locations.get_app_data_dir(),
-        )
         formatter = logging.Formatter(
             "%(asctime)-15s %(threadName)s %(message)s"
         )
@@ -583,35 +521,28 @@ class StartQtThreaded(AbsGuiStarter):
         """Set the Qt application name and the window matching."""
         self._application_name = name
 
-    def resolve_settings(self) -> FullSettingsData:
-        """Resolve settings."""
-        self.platform_settings._data.update(self.settings.get("GLOBAL", {}))
-        self.startup_settings = self.settings
-        return self.startup_settings
+    def set_workflow_config_backend_factory(
+        self,
+        factory: Callable[[speedwagon.job.Workflow], AbsWorkflowBackend]
+    ) -> None:
+        """Set backend for gui app."""
+        settings_resolver = ResolveSettings()
+        settings_resolver.config_file_locator_strategy =\
+            self.config_locations.get_config_file
+
+        self.config = ResolveSettingsStrategyConfigAdapter(
+            source_application_settings=settings_resolver,
+            workflow_backend=factory
+        )
 
     def initialize(self) -> None:
         """Initialize the application before opening the main window."""
-        startup_tasks: List[system_tasks.AbsSystemTask] = [
-            system_tasks.EnsureGlobalConfigFiles(
-                self.logger,
-                directory_prefix=self.config_locations.get_app_data_dir(),
-            ),
-        ]
-
-        plugin_manager = plugins.get_plugin_manager(
-            plugins.register_whitelisted_plugins
-        )
-
-        for (
-            plugin_tasks
-        ) in plugin_manager.hook.registered_initialization_tasks():
-            startup_tasks += plugin_tasks
-
-        for task in startup_tasks:
-            task.set_config_backend(self.config)
+        for task in get_startup_tasks(
+            config_backend=self.config,
+            config_file_locations=self.config_locations,
+            logger=self.logger
+        ):
             task.run()
-
-        self.startup_settings = self.resolve_settings()
 
     def load_workflows(self) -> None:
         """Load workflows."""
@@ -714,66 +645,29 @@ class StartQtThreaded(AbsGuiStarter):
         system_info_dialog.exec()
 
     def request_settings(
-        self, parent: Optional[QtWidgets.QWidget] = None
+        self,
+        parent: Optional[QtWidgets.QWidget] = None,
+        dialog_builder_strategy: Optional[
+            Callable[[Optional[QtWidgets.QWidget]], QtWidgets.QDialog]
+        ] = None,
     ) -> None:
         """Open dialog box for settings."""
 
-        def success(_) -> None:
+        def success() -> None:
             if self.windows:
                 self.windows.clear_tabs()
                 self.windows.update_settings()
             self.load_workflows()
-        self._settings_builder.reset()
-        self._settings_builder.app_data_dir = (
-            self.config_locations.get_app_data_dir()
-        )
-        self._settings_builder.on_success_save_updated_settings = success
-        get_config_file = self.config_locations.get_config_file
-        get_tabs_file = self.config_locations.get_tabs_file
 
-        self._settings_builder.add_tab(
-            "Workflow Settings",
-            functools.partial(
-                _setup_workflow_settings_tab,
-                workflow_settings_location_strategy=lambda:
-                locate_workflow_settings_yaml(
-                    self.config_locations.get_app_data_dir()
-                ),
-            ),
+        builder_strategy: Callable[
+            [Optional[QtWidgets.QWidget]], QtWidgets.QDialog
+        ] = dialog_builder_strategy or functools.partial(
+            build_request_settings_dialog,
+            self.config_locations,
+            success,
         )
-        self._settings_builder.add_tab(
-            "Global Settings",
-            functools.partial(
-                _setup_global_settings_tab,
-                config_file_location_strategy=get_config_file,
-            ),
-        )
-        self._settings_builder.add_tab(
-            "Tabs",
-            functools.partial(
-                _setup_config_tab,
-                locate_tabs_file_strategy=get_tabs_file,
-                config_file_location_strategy=get_config_file,
-            ),
-        )
-
-        def are_there_any_plugins() -> bool:
-            def no_builtins(manager: pluggy.PluginManager) -> None:
-                manager.load_setuptools_entrypoints("speedwagon.plugins")
-
-            plugin_manager = speedwagon.plugins.get_plugin_manager(no_builtins)
-            return len(plugin_manager.get_plugins()) > 0
-
-        self._settings_builder.add_tab(
-            "Plugins",
-            functools.partial(
-                _setup_plugins_tab,
-                config_file_location_strategy=get_config_file,
-            ),
-            active=are_there_any_plugins(),
-        )
-        settings_dialog = self._settings_builder.build(parent=parent)
-        settings_dialog()
+        settings_dialog = builder_strategy(parent)
+        settings_dialog.exec()
 
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Start gui application."""
@@ -792,12 +686,11 @@ class StartQtThreaded(AbsGuiStarter):
                 speedwagon.runner_strategies.BackgroundJobManager() as
                 job_manager
             ):
-                job_manager.global_settings = self.startup_settings.get(
+                job_manager.global_settings = self.settings.get(
                     "GLOBAL", {}
                 )
 
                 self.windows = self.build_main_window(job_manager)
-
                 self._request_window = user_interaction.QtRequestMoreInfo(
                     self.windows
                 )
@@ -818,33 +711,25 @@ class StartQtThreaded(AbsGuiStarter):
     def build_main_window(
         self,
         job_manager: runner_strategies.BackgroundJobManager,
-        actions: Optional[MainWindowBuilder.WindowActions] = None
+        actions: Optional[MainWindowBuilder.WindowActions] = None,
     ) -> speedwagon.frontend.qtwidgets.gui.MainWindow3:
         """Build main window widget."""
         builder = MainWindowBuilder()
         builder.config = self.config
         builder.logger = self.logger
-        builder.actions = (
-            actions or
-            MainWindowBuilder.WindowActions(
-                export_logs=self.save_log,
-                export_workflow_config=save_workflow_config,
-                import_workflow_config=(
-                    lambda parent: self.import_workflow_config(parent)
-                ),
-                open_system_info_dialog=self.request_system_info,
-                open_settings_dialog=self.request_settings,
-                open_help=lambda: load_help_web_page(
-                    logger=self.logger,
-                    landing_page=get_help_url()
-                ),
-                open_about=dialog.about_dialog_box,
-            )
+        builder.actions = actions or MainWindowBuilder.WindowActions(
+            export_logs=self.save_log,
+            export_workflow_config=save_workflow_config,
+            import_workflow_config=self.import_workflow_config,
+            open_system_info_dialog=self.request_system_info,
+            open_settings_dialog=self.request_settings,
+            open_help=lambda: load_help_web_page(
+                logger=self.logger, landing_page=get_help_url()
+            ),
+            open_about=dialog.about_dialog_box,
         )
         builder.submit_job = functools.partial(
-            self.submit_job,
-            job_manager,
-            main_app=self.windows
+            self.submit_job, job_manager, main_app=self.windows
         )
         return builder.build()
 
@@ -955,7 +840,7 @@ class StartQtThreaded(AbsGuiStarter):
         for title, workflow in workflows.copy().items():
             try:
                 workflow(
-                    global_settings=self.startup_settings.get("GLOBAL", {})
+                    global_settings=self.settings.get("GLOBAL", {})
                 )
             except (
                 speedwagon.exceptions.SpeedwagonException,
@@ -1095,7 +980,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
         self,
         app,
         config: Optional[speedwagon.config.AbsConfigSettings] = None,
-        logger: Optional[logging.Logger] = None
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         """Create an environment where the workflow is loaded from a json file.
 
@@ -1107,9 +992,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
         super().__init__(app, config or StandardConfig())
         self.global_settings = None
         self.on_exit: typing.Optional[
-            Callable[
-                [speedwagon.frontend.qtwidgets.gui.MainWindow3], None
-            ]
+            Callable[[speedwagon.frontend.qtwidgets.gui.MainWindow3], None]
         ] = None
         self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
         self.workflow: typing.Optional[AbsWorkflow] = None
@@ -1263,13 +1146,11 @@ def generate_findings_report(findings: Dict[str, List[str]]) -> str:
     return "\n".join(error_lines)
 
 
-class ResolveSettingsStrategyConfigAdapter(
-    speedwagon.config.AbsConfigSettings
-):
+class ResolveSettingsStrategyConfigAdapter(AbsConfigSettings):
     def __init__(
         self,
         source_application_settings: AbsResolveSettingsStrategy,
-        workflow_backend: Callable[[Workflow], AbsWorkflowBackend]
+        workflow_backend: Callable[[Workflow], AbsWorkflowBackend],
     ):
         self.application_source = source_application_settings
         self.workflow_backend = workflow_backend
@@ -1278,66 +1159,143 @@ class ResolveSettingsStrategyConfigAdapter(
         return self.application_source.get_settings()
 
     def workflow_settings(
-        self,
-        workflow: speedwagon.job.Workflow
+        self, workflow: speedwagon.job.Workflow
     ) -> Mapping[str, SettingsDataType]:
         return self.workflow_backend(workflow)
 
 
+T = TypeVar("T")
+
+
 class LocalSettingsBuilder:
-    class TabData(typing.NamedTuple):
-        name: str
-        setup_function: Callable[
-            [dialog.settings.AbsConfigSaverCallbacks],
-            dialog.settings.SettingsTab
-        ]
-        active: bool
+    # Until Python 3.11 NamedTuple can't have multiple inheritance
+    if sys.version_info < (3, 11):
+        class TabData(typing.NamedTuple):
+            name: str
+            setup_function: Callable[[], dialog.settings.SettingsTab[T]]
+            save_data_func: Callable[[T], bool]
+            active: bool
+    else:
+        class TabData(typing.NamedTuple, Generic[T]):
+            name: str
+            setup_function: Callable[[], dialog.settings.SettingsTab[T]]
+            save_data_func: Callable[[T], bool]
+            active: bool
 
-    def __init__(self, app_data_dir: str) -> None:
-        self.app_data_dir = app_data_dir
+    def __init__(self) -> None:
         self.tabs: List[LocalSettingsBuilder.TabData] = []
-        self.on_success_save_updated_settings: Callable[
-            [typing.Any],
-            None
-        ] = lambda *_: None
-
-    def reset(self) -> None:
-        self.tabs.clear()
-        self.on_success_save_updated_settings = lambda *_: None
+        self.on_open_config_dir: Callable[
+            [Optional[QtWidgets.QWidget]], None
+        ] = lambda _: None
 
     def add_tab(
         self,
         name: str,
-        setup_function: Callable[
-            [dialog.settings.AbsConfigSaverCallbacks],
-            dialog.settings.SettingsTab
-        ],
-        active: bool = True
+        setup_function: Callable[[], dialog.settings.SettingsTab[T]],
+        save_data_func: Callable[[T], bool] = lambda *args: True,
+        active: bool = True,
     ) -> None:
         self.tabs.append(
-            LocalSettingsBuilder.TabData(name, setup_function, active)
+            LocalSettingsBuilder.TabData(
+                name, setup_function, save_data_func, active
+            )
         )
 
-    def _build_tabs(
-        self,
-        dialog_builder: dialog.settings.SettingsBuilder2,
-        saver: AbsConfigSaverCallbacks
+    @staticmethod
+    def _save_if_modified(
+        config_widget: dialog.settings.SettingsTab[T],
+        save_data_func: Callable[[T], bool],
     ) -> None:
-        for tab in self.tabs:
-            if tab.active is True:
-                dialog_builder.add_tab(tab.name, tab.setup_function(saver))
+        if config_widget.data_is_modified():
+            save_data_func(config_widget.get_data())
 
-    def build(self, parent: Optional[QtWidgets.QWidget]) -> Callable[[], None]:
-        dialog_builder = dialog.settings.SettingsBuilder2(parent=parent)
-        dialog_builder.app_data_dir = self.app_data_dir
+    def build(
+        self, parent: Optional[QtWidgets.QWidget] = None
+    ) -> dialog.settings.SettingsDialog:
+        dialog_builder = dialog.settings.SettingsBuilder(parent=parent)
+        dialog_builder.on_open_settings_dir = self.on_open_config_dir
+        for widget_tab in self.tabs:
+            widget = widget_tab.setup_function()
+            dialog_builder.add_on_save_callback(
+                functools.partial(
+                    self._save_if_modified, widget, widget_tab.save_data_func
+                )
+            )
 
-        saver = dialog.settings.MultiSaver(parent=parent)
-        self._build_tabs(dialog_builder, saver)
-        saver.add_success_call_back(self.on_success_save_updated_settings)
-        dialog_builder.set_saver_strategy(saver)
-        config_dialog: dialog.settings.SettingsDialog = dialog_builder.build()
+            dialog_builder.add_tab(widget_tab.name, widget)
+        return dialog_builder.build()
 
-        def run() -> None:
-            print(self.app_data_dir)
-            config_dialog.exec()
-        return run
+
+def build_request_settings_dialog(
+    settings_locator: AbsSettingLocator,
+    on_success_save_updated_settings: Callable[[], None],
+    parent: Optional[QtWidgets.QWidget] = None,
+) -> QtWidgets.QDialog:
+    settings_builder = LocalSettingsBuilder()
+    workflow_settings_yaml = os.path.join(
+        settings_locator.get_app_data_dir(), WORKFLOWS_SETTINGS_YML_FILE_NAME
+    )
+    settings_builder.on_open_config_dir = functools.partial(
+        dialog.settings.open_settings_dir,
+        settings_locator.get_app_data_dir(),
+        None
+    )
+
+    settings_builder.add_tab(
+        "Workflow Settings",
+        functools.partial(
+            _setup_workflow_settings_tab,
+            get_workflows=lambda: initialize_workflows(
+                lambda: workflow_settings_yaml
+            ),
+        ),
+        save_data_func=functools.partial(
+            export.write_workflow_settings_to_file,
+            workflow_settings_yaml,
+            on_success_save_updated_settings=on_success_save_updated_settings,
+        ),
+    )
+    global_settings_file = settings_locator.get_config_file()
+    settings_builder.add_tab(
+        "Global Settings",
+        functools.partial(_setup_global_settings_tab, global_settings_file),
+        save_data_func=functools.partial(
+            export.write_global_settings_to_config_file,
+            global_settings_file,
+            on_success_save_updated_settings=on_success_save_updated_settings,
+        ),
+    )
+    settings_builder.add_tab(
+        "Tabs",
+        functools.partial(
+            _setup_config_tab,
+            settings_locator.get_tabs_file(),
+            settings_locator.get_config_file(),
+        ),
+        save_data_func=functools.partial(
+            export.write_customized_tab_data,
+            settings_locator.get_tabs_file(),
+            on_success_save_updated_settings=on_success_save_updated_settings,
+        ),
+    )
+
+    def are_there_any_plugins() -> bool:
+        def no_builtins(manager: pluggy.PluginManager) -> None:
+            manager.load_setuptools_entrypoints("speedwagon.plugins")
+
+        plugin_manager = speedwagon.plugins.get_plugin_manager(no_builtins)
+        return len(plugin_manager.get_plugins()) > 0
+
+    settings_builder.add_tab(
+        "Plugins",
+        functools.partial(
+            _setup_plugins_tab, settings_locator.get_config_file()
+        ),
+        save_data_func=functools.partial(
+            export.write_plugins_config_file,
+            settings_locator.get_config_file(),
+            on_success_save_updated_settings=on_success_save_updated_settings,
+        ),
+        active=are_there_any_plugins(),
+    )
+    return settings_builder.build(parent=parent)

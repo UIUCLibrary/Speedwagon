@@ -1,6 +1,7 @@
 """Configuration of plugins."""
 
 import abc
+import configparser
 from typing import Dict, Set, Tuple, List, Callable
 
 try:  # pragma: no cover
@@ -39,7 +40,7 @@ def get_whitelisted_plugins(
 
 
 class PluginSettingsData(TypedDict):
-    enabled_plugins: Dict[str, List[str]]
+    enabled_plugins: Dict[str, List[Tuple[str, bool]]]
 
 
 class AbsSerializer(abc.ABC):  # pylint: disable=R0903
@@ -55,9 +56,13 @@ class IniSerializer(AbsSerializer):  # pylint: disable=R0903
     def serialize(self, data: PluginSettingsData) -> str:
         for plugin_name, workflows in data["enabled_plugins"].items():
             section = f"PLUGINS.{plugin_name}"
-            self.parser.add_section(section)
-            for workflow in workflows:
-                self.parser.set(section, workflow, "True")
+            try:
+                self.parser.add_section(section)
+            except configparser.DuplicateSectionError:
+                self.parser.remove_section(section)
+                self.parser.add_section(section)
+            for workflow, activate in workflows:
+                self.parser.set(section, workflow, str(activate))
 
         with io.StringIO() as string_writer:
             self.parser.write(string_writer)

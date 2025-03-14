@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import configparser
+import io
 import logging
 from typing import Optional, List, TYPE_CHECKING, Any, Dict
 from unittest.mock import Mock, patch, mock_open, ANY, call
@@ -717,3 +720,125 @@ def test_workflow_backend_factory(monkeypatch):
 
     factory = speedwagon.config.workflow.default_backend_factory(workflow, "dummy")
     assert factory.workflow == workflow
+
+class TestIniSerializer:
+    @pytest.fixture
+    def serializer(self):
+        serializer_ = speedwagon.config.plugins.IniSerializer()
+        serializer_.parser = Mock(
+            name="parser",
+            spec_set=configparser.ConfigParser
+        )
+        return serializer_
+
+    def test_empty_section_added_when_plugin_has_no_workflows(self, serializer):
+        data = speedwagon.config.plugins.PluginSettingsData(
+            enabled_plugins={
+                "spam": []
+            }
+        )
+        serializer.serialize(data)
+        serializer.parser.add_section.assert_called_once_with("PLUGINS.spam")
+    @pytest.mark.parametrize(
+        "enabled_plugins, expect_string",
+        [
+            (
+                {
+                    "spam": [("bacon_workflows", True)]
+                },
+                """[PLUGINS.spam]
+bacon_workflows = True
+"""
+            ),
+            (
+                {
+                    "spam": [
+                        ("bacon_workflows", True),
+                        ("eggs_workflows", True)
+                    ],
+                },
+                """[PLUGINS.spam]
+bacon_workflows = True
+eggs_workflows = True
+"""
+            ),
+            (
+                {
+                    "spam": [
+                        ("bacon_workflows", True),
+                        ("eggs_workflows", False)
+                    ],
+                },
+                """[PLUGINS.spam]
+bacon_workflows = True
+eggs_workflows = False
+"""
+            )
+        ]
+    )
+    def test_serialize(self, enabled_plugins, expect_string):
+        assert speedwagon.config.plugins.IniSerializer().serialize(
+            speedwagon.config.plugins.PluginSettingsData(
+                enabled_plugins=enabled_plugins
+            )
+        ).strip() == expect_string.strip()
+
+    def test_serialize_with_existing_other_sections(self):
+        serializer =  speedwagon.config.plugins.IniSerializer()
+        serializer.parser.read_file(
+            io.StringIO("""
+[GLOBAL]
+starting-tab = all
+debug = False
+        """.strip())
+        )
+        assert serializer.serialize(
+            speedwagon.config.plugins.PluginSettingsData(
+                enabled_plugins={
+                        "spam": [
+                            ("bacon_workflows", True),
+                            ("eggs_workflows", False)
+                        ],
+                    }
+            )
+        ).strip() == """
+[GLOBAL]
+starting-tab = all
+debug = False
+
+[PLUGINS.spam]
+bacon_workflows = True
+eggs_workflows = False
+""".strip()
+
+    def test_serialize_with_existing_duplicate_sections(self):
+        serializer =  speedwagon.config.plugins.IniSerializer()
+        serializer.parser.read_file(
+            io.StringIO("""
+[GLOBAL]
+starting-tab = all
+debug = False
+
+[PLUGINS.spam]
+bacon_workflows = False
+eggs_workflows = True
+        """.strip())
+        )
+        assert serializer.serialize(
+            speedwagon.config.plugins.PluginSettingsData(
+                enabled_plugins={
+                        "spam": [
+                            ("bacon_workflows", True),
+                            ("eggs_workflows", False)
+                        ],
+                    }
+            )
+        ).strip() == """
+[GLOBAL]
+starting-tab = all
+debug = False
+
+[PLUGINS.spam]
+bacon_workflows = True
+eggs_workflows = False
+""".strip()
