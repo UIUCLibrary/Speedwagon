@@ -18,6 +18,7 @@ import time
 import types
 import typing
 from typing import (
+    Any,
     Dict,
     Optional,
     cast,
@@ -235,7 +236,7 @@ def get_active_workflows(
 
 
 def _setup_config_tab(
-    yaml_file, config_ini
+    yaml_file: str, config_ini: str
 ) -> dialog.settings.TabsConfigurationTab:
     tabs_config = dialog.settings.TabsConfigurationTab()
     model_loader = TabDataModelConfigLoader(
@@ -265,14 +266,14 @@ def _setup_workflow_settings_tab(
 
 
 def _setup_global_settings_tab(
-    config_file,
+    config_file: str,
 ) -> dialog.settings.GlobalSettingsTab:
     global_settings_tab = dialog.settings.GlobalSettingsTab()
     global_settings_tab.load_ini_file(config_file)
     return global_settings_tab
 
 
-def _setup_plugins_tab(config_file) -> dialog.settings.PluginsTab:
+def _setup_plugins_tab(config_file: str) -> dialog.settings.PluginsTab:
     plugins_tab = dialog.settings.PluginsTab()
     plugins_tab.load(config_file)
     return plugins_tab
@@ -282,8 +283,7 @@ def get_help_url() -> Optional[str]:
     pkg_metadata: metadata.PackageMetadata = metadata.metadata(
         speedwagon.__name__
     )
-    urls = pkg_metadata.get_all("Project-URL")
-    if urls:
+    if urls := pkg_metadata.get_all("Project-URL"):
         for value in urls:
             try:
                 url_type, url_value = value.split(", ")
@@ -773,7 +773,9 @@ class StartQtThreaded(AbsGuiStarter):
             workflow_name
         )
 
-        def serialize_options(options):
+        def serialize_options(
+            options: Dict[str, AbsOutputOptionDataType]
+        ) -> Dict[str, Any]:
             return {
                 option.setting_name
                 if option.setting_name
@@ -802,7 +804,7 @@ class StartQtThreaded(AbsGuiStarter):
 
         if main_app is not None:
 
-            def _rejected():
+            def _rejected() -> None:
                 QtWidgets.QApplication.processEvents()
                 main_app.close()
 
@@ -853,7 +855,7 @@ def report_exception_dialog(
     exc: BaseException,
     parent: typing.Optional[QtWidgets.QWidget] = None,
     dialog_box_title: Optional[str] = None,
-    is_fatal=True,
+    is_fatal: bool = True,
 ) -> None:
     error_dialog = dialog.dialogs.SpeedwagonExceptionDialog(parent)
     if dialog_box_title:
@@ -1097,7 +1099,12 @@ class SingleWorkflowJSON(AbsGuiStarter):
 
 
 def export_system_info_to_file(
-    file: str, file_type: str, writer=info.write_system_info_to_file
+    file: str,
+    file_type: str,
+    writer: Callable[
+        [info.SystemInfo, str, Callable[[info.SystemInfo], str]],
+        None
+    ] = info.write_system_info_to_file
 ) -> None:
     writer(info.SystemInfo(), file, system_info_report_formatters[file_type])
 
