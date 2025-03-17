@@ -1,6 +1,7 @@
 """Configuration settings."""
 from __future__ import annotations
 import abc
+import logging
 import os
 import platform
 import subprocess
@@ -56,6 +57,8 @@ SaveCallback = Callable[["SettingsTab"], Dict[str, typing.Any]]
 DEFAULT_WINDOW_FLAGS = QtCore.Qt.WindowType(0)
 
 T = TypeVar("T")
+
+logger = logging.getLogger(__name__)
 
 
 class TabsSettingsData(TypedDict):
@@ -536,6 +539,7 @@ class TabEditor(TabEditorWidgetUI):
             self._remove_items
         )
         self.splitter.setChildrenCollapsible(False)
+        self._handle_current_tab_index_changed(0)
 
     def _handle_current_tab_index_changed(self, index: int) -> None:
         base_index = self._user_tabs_model.mapToSource(
@@ -545,6 +549,15 @@ class TabEditor(TabEditorWidgetUI):
         self._active_tab_workflows_model.set_source_tab(
             self.model.data(base_index)
         )
+
+        if self._active_tab_workflows_model.source_tab is None:
+            self.add_items_button.setEnabled(False)
+            self.remove_items_button.setEnabled(False)
+            self.delete_current_tab_button.setEnabled(False)
+        else:
+            self.remove_items_button.setEnabled(True)
+            self.delete_current_tab_button.setEnabled(True)
+            self.add_items_button.setEnabled(True)
         self.current_tab_index_changed.emit(base_index)
 
     @property
@@ -629,6 +642,9 @@ class TabEditor(TabEditorWidgetUI):
         self.changes_made.emit()
 
     def _add_items_to_tab(self) -> None:
+        if self._active_tab_workflows_model.source_tab is None:
+            logger.warning("No tab selected to add items to.")
+            return
         model = cast(
             tab_models.TabProxyModel, self.tab_workflows_list_view.model()
         )

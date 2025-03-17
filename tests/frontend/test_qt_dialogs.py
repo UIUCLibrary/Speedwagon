@@ -272,13 +272,14 @@ class TestTabsConfigurationTab:
 
 class TestTabEditor:
     @pytest.fixture()
-    def editor(self, monkeypatch):
+    def editor(self, qtbot, monkeypatch):
         monkeypatch.setattr(
             speedwagon.config.StandardConfigFileLocator,
             'get_tabs_file',
             lambda *_: 'dummy.yml'
         )
         new_editor = settings.TabEditor()
+        qtbot.addWidget(new_editor)
         return new_editor
 
     def test_set_all_workflows_set_model(self, qtbot, editor):
@@ -405,13 +406,7 @@ class TestTabEditor:
             )
 
         assert editor.selected_tab_combo_box.model().rowCount() == 0
-        with qtbot.wait_signal(editor.changes_made):
-            qtbot.mouseClick(
-                editor.delete_current_tab_button,
-                QtCore.Qt.LeftButton
-            )
-        a = editor.tab_workflows_list_view.model()
-        print(a.rowCount())
+
     def test_modified_by_add(self, qtbot, monkeypatch, editor):
         qtbot.addWidget(editor)
         def getText(*args, **kwargs):
@@ -568,8 +563,6 @@ class TestTabEditor:
         assert editor.modified is True
 
     def test_workflow_revert_no_modified(self, qtbot, editor):
-        dialog = QtWidgets.QDialog()
-        editor.setParent(dialog)
         class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
                 class Spam1(speedwagon.Workflow):
@@ -625,6 +618,77 @@ class TestTabEditor:
             )
         assert editor.modified is False
 
+    def test_add_workflow_to_empty_warns(self, caplog, qtbot, editor):
+        class DummyLoader(AbsLoadTabDataModelStrategy):
+            def load(self, model: models.TabsTreeModel) -> None:
+                class Spam1(speedwagon.Workflow):
+                    name = "spam 1"
+
+                class Spam2(speedwagon.Workflow):
+                    name = "spam 2"
+
+                class Spam3(speedwagon.Workflow):
+                    name = "spam 3"
+
+                class Spam4(speedwagon.Workflow):
+                    name = "spam 4"
+
+                model.append_workflow_tab("All", [Spam1, Spam2, Spam3, Spam4])
+
+        loader = DummyLoader()
+        loader.load(editor.model)
+
+        mo = editor.all_workflows_list_view.model()
+        qtbot.mouseClick(
+            editor.all_workflows_list_view.viewport(),
+            QtCore.Qt.LeftButton,
+            pos=editor.all_workflows_list_view.visualRect(mo.index(1,0)).center()
+        )
+        # Force add item button to be active to test. It should be inactive if
+        # there isn't a tab selected. However, to make this test possible, the
+        # button is manually enabled.
+        editor.add_items_button.setEnabled(True)
+        with qtbot.wait_signal(editor.add_items_button.clicked):
+            qtbot.mouseClick(
+                editor.add_items_button,
+                QtCore.Qt.LeftButton,
+            )
+        assert len([
+            rec for rec in caplog.records if rec.levelname == "WARNING"
+        ]) == 1
+
+    def test_add_button_is_inactive_when_no_tab(self, qtbot, editor):
+        class DummyLoader(AbsLoadTabDataModelStrategy):
+            def load(self, model: models.TabsTreeModel) -> None:
+                class Spam1(speedwagon.Workflow):
+                    name = "spam 1"
+
+                class Spam2(speedwagon.Workflow):
+                    name = "spam 2"
+
+                class Spam3(speedwagon.Workflow):
+                    name = "spam 3"
+
+                class Spam4(speedwagon.Workflow):
+                    name = "spam 4"
+
+                model.append_workflow_tab("All", [Spam1, Spam2, Spam3, Spam4])
+                model.append_workflow_tab("Bacon", [Spam2])
+
+        loader = DummyLoader()
+        loader.load(editor.model)
+
+        mo = editor.all_workflows_list_view.model()
+        editor.set_current_tab("Bacon")
+        assert editor.add_items_button.isEnabled() is True
+        editor.delete_current_tab_button.click()
+        qtbot.mouseClick(
+            editor.all_workflows_list_view.viewport(),
+            QtCore.Qt.LeftButton,
+            pos=editor.all_workflows_list_view.visualRect(mo.index(1,0)).center()
+        )
+        assert editor.add_items_button.isEnabled() is False
+        editor.show()
 
 class TestSettingsBuilder2:
 
