@@ -1,6 +1,6 @@
 """Speedwagon."""
 
-from speedwagon import tasks, worker
+from speedwagon import tasks
 from speedwagon import startup
 from speedwagon.exceptions import JobCancelled
 from speedwagon.runner_strategies import simple_api_run_workflow
@@ -14,7 +14,6 @@ __all__ = [
     "tasks",
     "startup",
     "simple_api_run_workflow",
-    "worker",
     "JobCancelled",
     "frontend",
     'config',

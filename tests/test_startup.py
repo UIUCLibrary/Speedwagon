@@ -194,6 +194,35 @@ class TestCustomTabsFileReader:
         captured = capsys.readouterr()
         assert "Custom tabs failed to load" in captured.err
 
+    def test_loading_inactive_workflow_produces_warning(self, caplog):
+        all_workflows = {
+            "spam": Mock(active= False)
+        }
+        reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
+        reader.gather_registered_workflows(["spam"])
+        assert len([
+            rec for rec in caplog.records if rec.levelname == "WARNING"
+        ]) == 1
+
+    def test_load_custom_tabs_failure(self, caplog):
+        all_workflows = {
+            "spam": Mock(active= False)
+        }
+        reader = speedwagon.startup.CustomTabsFileReader(all_workflows)
+        strategy = Mock(
+            spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement,
+            data=Mock(return_value=[
+                Mock()
+            ]),
+        )
+        reader.gather_registered_workflows = Mock(
+            side_effect=speedwagon.exceptions.TabLoadFailure("Didn't work")
+        )
+        list(reader.load_custom_tabs(strategy))
+        assert len([
+            rec for rec in caplog.records if rec.levelname == "ERROR"
+        ]) == 1
+
 
 def test_run_command_invalid():
     with pytest.raises(ValueError) as error:

@@ -16,6 +16,7 @@ import argparse
 import functools
 import io
 import json
+import logging
 import sys
 from typing import (
     Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional, Callable, Any,
@@ -41,16 +42,17 @@ __all__ = [
 _T = TypeVar("_T", bound=Mapping[str, object])
 
 
+logger = logging.getLogger(__name__)
+
+
 def parse_args() -> argparse.ArgumentParser:
     """Parse command line arguments."""
     return speedwagon.config.config.CliArgsSetter.get_arg_parser()
 
 
-class CustomTabsFileReader:
-    """Reads the tab file data."""
-
+class AbsTabFileReader(abc.ABC):  # pylint: disable=too-few-public-methods
     def __init__(
-        self, all_workflows: Dict[str, Type[speedwagon.job.Workflow]]
+            self, all_workflows: Dict[str, Type[speedwagon.job.Workflow]]
     ) -> None:
         """Load all workflows supported.
 
@@ -59,34 +61,31 @@ class CustomTabsFileReader:
         """
         self.all_workflows = all_workflows
 
-    def _get_tab_items(
-        self, tab: List[str], tab_name: str
-    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
-        new_tab_items = {}
-        for item_name in tab:
-            try:
-                workflow = self.all_workflows[item_name]
-                if workflow.active is False:
-                    print("workflow not active")
-                new_tab_items[item_name] = workflow
+    @abc.abstractmethod
+    def load_custom_tabs(
+            self, strategy: speedwagon.config.tabs.AbsTabsConfigDataManagement
+    ) -> Iterator[Tuple[str, dict]]:
+        """Get custom tabs data from file.
 
-            except LookupError:
-                print(
-                    f"Unable to load '{item_name}' in tab {tab_name}",
-                    file=sys.stderr,
-                )
-        return new_tab_items
+        Args:
+            strategy: strategy for retrieving the tab data.
+
+        Yields:
+            Yields a tuple containing the name of the tab and the
+                containing workflows.
+        """
+
+
+class CustomTabsFileReader(AbsTabFileReader):
+    """Reads the tab file data."""
 
     def _load_workflow(
         self,
         workflow_name: str
     ) -> Type[speedwagon.job.Workflow[_T]]:
-        try:
-            workflow = self.all_workflows[workflow_name]
-            if workflow.active is False:
-                print("workflow not active")
-        except KeyError as tab_error:
-            raise WorkflowLoadFailure from tab_error
+        workflow = self.all_workflows[workflow_name]
+        if workflow.active is False:
+            logger.warning("Loading workflow that is not active")
         return workflow
 
     def load_custom_tabs(
@@ -111,10 +110,9 @@ class CustomTabsFileReader:
                         )
                     )
                 except TabLoadFailure as error:
-                    print(
-                        f"Custom tab {tab_entity.tab_name} failed to load. "
-                        f"Reason: {error}",
-                        file=sys.stderr,
+                    logger.error(
+                        'Custom tab %s failed to load. Reason: %s',
+                        tab_entity.tab_name, error
                     )
                     raise
         except TabLoadFailure as error:
@@ -148,10 +146,12 @@ class CustomTabsFileReader:
 
 
 def get_custom_tabs(
-    all_workflows: Dict[str, Type[speedwagon.job.Workflow]], yaml_file: str
+    all_workflows: Dict[str, Type[speedwagon.job.Workflow]],
+    yaml_file: str,
+    reader_klass: Type[AbsTabFileReader] = CustomTabsFileReader
 ) -> Iterator[Tuple[str, dict]]:
     """Load custom tab yaml file."""
-    getter = CustomTabsFileReader(all_workflows)
+    getter = reader_klass(all_workflows)
     try:
         yield from getter.load_custom_tabs(
             strategy=speedwagon.config.tabs.CustomTabsYamlConfig(yaml_file)
