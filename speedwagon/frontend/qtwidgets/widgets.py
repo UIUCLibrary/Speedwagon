@@ -13,6 +13,7 @@ from typing import (
     TypedDict,
     List,
     Iterable,
+    Tuple,
     TYPE_CHECKING,
 )
 
@@ -782,6 +783,34 @@ class PluginConfig(QtWidgets.QWidget):
     @property
     def modified(self) -> bool:
         return self.model.data_modified
+
+    def plugins(self) -> Dict[str, List[Tuple[str, bool]]]:
+        all_plugins: Dict[str, List[Tuple[str, bool]]] = defaultdict(list)
+
+        for i in range(self.model.rowCount()):
+            checked = typing.cast(
+                QtCore.Qt.ItemDataRole,
+                self.model.data(
+                    self.model.index(i), QtCore.Qt.ItemDataRole.CheckStateRole
+                ),
+            )
+
+            source = typing.cast(
+                str,
+                self.model.data(
+                    self.model.index(i), self.model.ModuleRole
+                ),
+            )
+            plugin_name = typing.cast(
+                str,
+                self.model.data(
+                    self.model.index(i), QtCore.Qt.ItemDataRole.DisplayRole
+                ),
+            )
+            all_plugins[source].append(
+                (plugin_name, checked == QtCore.Qt.CheckState.Checked)
+            )
+        return dict(all_plugins)
 
     def enabled_plugins(self) -> Dict[str, List[str]]:
         active_plugins: Dict[str, List[str]] = defaultdict(list)

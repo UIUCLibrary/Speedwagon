@@ -99,7 +99,7 @@ class WorkflowsTab3(WorkflowsTab3UI):
                 "Current Workflow not set. Workflow must be set first."
             )
         workflow_inst = workflow_klass(
-            self.workspace.configuration.application_settings()
+            self.workspace.session_config.application_settings()
         )
         load_job_settings_model(
             data, self.workspace.settings_form, workflow_inst.job_options()

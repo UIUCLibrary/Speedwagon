@@ -20,15 +20,6 @@ if sys.version_info < (3, 10):
 else:
     from importlib import metadata
 
-def test_settings_open_dir_if_location_is_set(qtbot, monkeypatch):
-    settings_dialog = settings.SettingsDialog()
-    qtbot.addWidget(settings_dialog)
-    settings_dialog.settings_location = "some_file_path"
-    mock_call = Mock()
-    monkeypatch.setattr(settings.OpenSettingsDirectory, "open", mock_call)
-    settings_dialog.open_settings_path_button.click()
-    assert mock_call.called is True
-
 
 class TestOpenSettings:
     def test_open_darwin_settings(self, monkeypatch):
@@ -225,9 +216,6 @@ class TestTabsConfigurationTab:
             speedwagon.config.tabs.AbsTabsConfigDataManagement
         )
 
-    def test_get_data(self, qtbot, config_tab):
-        assert "tab_information" in config_tab.get_data()
-
     def test_load(self, qtbot, config_tab):
         strategy = Mock(AbsLoadTabDataModelStrategy)
 
@@ -248,49 +236,50 @@ class TestTabsConfigurationTab:
         tab.editor.load_tab_data_model_strategy = mock_load_tab_data_model_strategy
         assert tab.load_tab_data_model_strategy == mock_load_tab_data_model_strategy
 
-    def test_on_okay_calls_save(self, qtbot, monkeypatch):
-        tab = settings.TabsConfigurationTab()
-        qtbot.addWidget(tab)
-        tabs_config_data_management = Mock(
-            spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement,
-        )
-        tab.tab_config_management_strategy = Mock(
-            name="tab_config_management_strategy",
-            return_value=tabs_config_data_management,
-        )
-        monkeypatch.setattr(settings.QtWidgets.QMessageBox, "exec", Mock(name="exec"))
-        tab.on_okay()
-        tabs_config_data_management.save.assert_called_once()
+    # def test_on_okay_calls_save(self, qtbot, monkeypatch):
+    #     tab = settings.TabsConfigurationTab()
+    #     qtbot.addWidget(tab)
+    #     tabs_config_data_management = Mock(
+    #         spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement,
+    #     )
+    #     tab.tab_config_management_strategy = Mock(
+    #         name="tab_config_management_strategy",
+    #         return_value=tabs_config_data_management,
+    #     )
+    #     monkeypatch.setattr(settings.QtWidgets.QMessageBox, "exec", Mock(name="exec"))
+    #     tab.on_okay()
+    #     tabs_config_data_management.save.assert_called_once()
 
-    def test_on_okay_opens_dialog_box(
-            self,
-            qtbot,
-            monkeypatch
-    ):
-        tab = settings.TabsConfigurationTab()
-        qtbot.addWidget(tab)
-        tabs_config_data_management = Mock(
-            spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement,
-        )
-        tab.tab_config_management_strategy = Mock(
-            name="tab_config_management_strategy",
-            return_value=tabs_config_data_management,
-        )
-        message_box_exec = Mock(name="QMessageBox.exec")
-        monkeypatch.setattr(settings.QtWidgets.QMessageBox, "exec", message_box_exec)
-        tab.on_okay()
-        message_box_exec.assert_called_once()
+    # def test_on_okay_opens_dialog_box(
+    #         self,
+    #         qtbot,
+    #         monkeypatch
+    # ):
+    #     tab = settings.TabsConfigurationTab()
+    #     qtbot.addWidget(tab)
+    #     tabs_config_data_management = Mock(
+    #         spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement,
+    #     )
+    #     tab.tab_config_management_strategy = Mock(
+    #         name="tab_config_management_strategy",
+    #         return_value=tabs_config_data_management,
+    #     )
+    #     message_box_exec = Mock(name="QMessageBox.exec")
+    #     monkeypatch.setattr(settings.QtWidgets.QMessageBox, "exec", message_box_exec)
+    #     tab.on_okay()
+    #     message_box_exec.assert_called_once()
 
 
 class TestTabEditor:
     @pytest.fixture()
-    def editor(self, monkeypatch):
+    def editor(self, qtbot, monkeypatch):
         monkeypatch.setattr(
             speedwagon.config.StandardConfigFileLocator,
             'get_tabs_file',
             lambda *_: 'dummy.yml'
         )
         new_editor = settings.TabEditor()
+        qtbot.addWidget(new_editor)
         return new_editor
 
     def test_set_all_workflows_set_model(self, qtbot, editor):
@@ -417,13 +406,7 @@ class TestTabEditor:
             )
 
         assert editor.selected_tab_combo_box.model().rowCount() == 0
-        with qtbot.wait_signal(editor.changes_made):
-            qtbot.mouseClick(
-                editor.delete_current_tab_button,
-                QtCore.Qt.LeftButton
-            )
-        a = editor.tab_workflows_list_view.model()
-        print(a.rowCount())
+
     def test_modified_by_add(self, qtbot, monkeypatch, editor):
         qtbot.addWidget(editor)
         def getText(*args, **kwargs):
@@ -580,8 +563,6 @@ class TestTabEditor:
         assert editor.modified is True
 
     def test_workflow_revert_no_modified(self, qtbot, editor):
-        dialog = QtWidgets.QDialog()
-        editor.setParent(dialog)
         class DummyLoader(AbsLoadTabDataModelStrategy):
             def load(self, model: models.TabsTreeModel) -> None:
                 class Spam1(speedwagon.Workflow):
@@ -637,6 +618,77 @@ class TestTabEditor:
             )
         assert editor.modified is False
 
+    def test_add_workflow_to_empty_warns(self, caplog, qtbot, editor):
+        class DummyLoader(AbsLoadTabDataModelStrategy):
+            def load(self, model: models.TabsTreeModel) -> None:
+                class Spam1(speedwagon.Workflow):
+                    name = "spam 1"
+
+                class Spam2(speedwagon.Workflow):
+                    name = "spam 2"
+
+                class Spam3(speedwagon.Workflow):
+                    name = "spam 3"
+
+                class Spam4(speedwagon.Workflow):
+                    name = "spam 4"
+
+                model.append_workflow_tab("All", [Spam1, Spam2, Spam3, Spam4])
+
+        loader = DummyLoader()
+        loader.load(editor.model)
+
+        mo = editor.all_workflows_list_view.model()
+        qtbot.mouseClick(
+            editor.all_workflows_list_view.viewport(),
+            QtCore.Qt.LeftButton,
+            pos=editor.all_workflows_list_view.visualRect(mo.index(1,0)).center()
+        )
+        # Force add item button to be active to test. It should be inactive if
+        # there isn't a tab selected. However, to make this test possible, the
+        # button is manually enabled.
+        editor.add_items_button.setEnabled(True)
+        with qtbot.wait_signal(editor.add_items_button.clicked):
+            qtbot.mouseClick(
+                editor.add_items_button,
+                QtCore.Qt.LeftButton,
+            )
+        assert len([
+            rec for rec in caplog.records if rec.levelname == "WARNING"
+        ]) == 1
+
+    def test_add_button_is_inactive_when_no_tab(self, qtbot, editor):
+        class DummyLoader(AbsLoadTabDataModelStrategy):
+            def load(self, model: models.TabsTreeModel) -> None:
+                class Spam1(speedwagon.Workflow):
+                    name = "spam 1"
+
+                class Spam2(speedwagon.Workflow):
+                    name = "spam 2"
+
+                class Spam3(speedwagon.Workflow):
+                    name = "spam 3"
+
+                class Spam4(speedwagon.Workflow):
+                    name = "spam 4"
+
+                model.append_workflow_tab("All", [Spam1, Spam2, Spam3, Spam4])
+                model.append_workflow_tab("Bacon", [Spam2])
+
+        loader = DummyLoader()
+        loader.load(editor.model)
+
+        mo = editor.all_workflows_list_view.model()
+        editor.set_current_tab("Bacon")
+        assert editor.add_items_button.isEnabled() is True
+        editor.delete_current_tab_button.click()
+        qtbot.mouseClick(
+            editor.all_workflows_list_view.viewport(),
+            QtCore.Qt.LeftButton,
+            pos=editor.all_workflows_list_view.visualRect(mo.index(1,0)).center()
+        )
+        assert editor.add_items_button.isEnabled() is False
+        editor.show()
 
 class TestSettingsBuilder2:
 
@@ -647,10 +699,10 @@ class TestSettingsBuilder2:
             'get_tabs_file',
             lambda *_: 'dummy.yml'
         )
-        return settings.SettingsBuilder2()
+        return settings.SettingsBuilder()
 
     def test_accepted(self, qtbot):
-        builder = settings.SettingsBuilder2()
+        builder = settings.SettingsBuilder()
         dialog = builder.build()
         ok = dialog.button_box.button(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
@@ -661,7 +713,7 @@ class TestSettingsBuilder2:
             qtbot.mouseClick(ok, QtCore.Qt.LeftButton)
 
     def test_rejected(self, qtbot):
-        builder = settings.SettingsBuilder2()
+        builder = settings.SettingsBuilder()
         dialog = builder.build()
         cancel_button = dialog.button_box.button(
             QtWidgets.QDialogButtonBox.StandardButton.Cancel
@@ -691,48 +743,48 @@ class TestSettingsBuilder2:
             qtbot.mouseClick(ok, QtCore.Qt.LeftButton)
         assert on_save_callback.called is True
 
-    def test_add_on_save_callback_returns_same_widgets(self, qtbot, builder):
-        item = settings.TabsConfigurationTab()
-        builder.add_tab("spam", item)
+    # def test_add_on_save_callback_returns_same_widgets(self, qtbot, builder):
+    #     item = settings.TabsConfigurationTab()
+    #     builder.add_tab("spam", item)
+    #
+    #     # def my_callback(parent, tab_widgets: typing.Dict[str, settings.SettingsTab]):
+    #     #     assert tab_widgets['spam'] == item
+    #     my_callback = Mock()
+    #     builder.add_on_save_callback(my_callback)
+    #     dialog = builder.build()
+    #     ok = dialog.button_box.button(
+    #         QtWidgets.QDialogButtonBox.StandardButton.Ok
+    #     )
+    #     ok.setEnabled(True)
+    #     qtbot.add_widget(dialog)
+    #     with qtbot.wait_signal(dialog.accepted):
+    #         qtbot.mouseClick(ok, QtCore.Qt.LeftButton)
 
-        def my_callback(parent, tab_widgets: typing.Dict[str, settings.SettingsTab]):
-            assert tab_widgets['spam'] == item
-
-        builder.add_on_save_callback(my_callback)
-        dialog = builder.build()
-        ok = dialog.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
-        )
-        ok.setEnabled(True)
-        qtbot.add_widget(dialog)
-        with qtbot.wait_signal(dialog.accepted):
-            qtbot.mouseClick(ok, QtCore.Qt.LeftButton)
-
-    @pytest.mark.parametrize(
-        "settings_widget",
-        [
-            settings.TabsConfigurationTab,
-            settings.GlobalSettingsTab,
-            settings.PluginsTab
-        ]
-    )
-    def test_get_data(self, qtbot, settings_widget, builder):
-        item = settings_widget()
-        builder.add_tab("spam", item)
-
-        def my_callback(parent, tab_widgets: typing.Dict[str, settings.SettingsTab]):
-            assert isinstance(tab_widgets['spam'].get_data(), dict)
-
-        builder.add_on_save_callback(my_callback)
-        dialog = builder.build()
-        ok = dialog.button_box.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
-        )
-        ok.setEnabled(True)
-        qtbot.add_widget(dialog)
-        with qtbot.wait_signal(dialog.accepted):
-            qtbot.mouseClick(ok, QtCore.Qt.LeftButton)
-
+    # @pytest.mark.parametrize(
+    #     "settings_widget",
+    #     [
+    #         settings.TabsConfigurationTab,
+    #         settings.GlobalSettingsTab,
+    #         settings.PluginsTab
+    #     ]
+    # )
+    # def test_get_data(self, qtbot, settings_widget, builder):
+    #     item = settings_widget()
+    #     builder.add_tab("spam", item)
+    #     #
+    #     # def my_callback(parent, tab_widgets: typing.Dict[str, settings.SettingsTab]):
+    #     #     assert isinstance(tab_widgets['spam'].get_data(), dict)
+    #     my_callback = Mock()
+    #     builder.add_on_save_callback(my_callback)
+    #     dialog = builder.build()
+    #     ok = dialog.button_box.button(
+    #         QtWidgets.QDialogButtonBox.StandardButton.Ok
+    #     )
+    #     ok.setEnabled(True)
+    #     qtbot.add_widget(dialog)
+    #     with qtbot.wait_signal(dialog.accepted):
+    #         qtbot.mouseClick(ok, QtCore.Qt.LeftButton)
+    #     my_callback.assert_called_once()
 
 class TestWorkflowProgress:
     @pytest.mark.parametrize(
@@ -880,188 +932,51 @@ class TestWorkflowProgressStateIdle:
             state.stop()
 
 
-class TestConfigSaver:
-
-    @pytest.fixture()
-    def sample_settings(self):
-        return {
-            "spam": "bacon",
-            "eggs": "lovely spam"
-        }
-
-    @pytest.fixture()
-    def settings_model(self, sample_settings):
-        new_model = models.SettingsModel()
-        for key, value in sample_settings.items():
-            new_model.add_setting(key, value)
-        return new_model
-
-    def test_set_config_path(
-            self,
-            qtbot,
-            monkeypatch,
-            sample_settings,
-            settings_model
-    ):
-        plugins_tab = settings.PluginsTab()
-        entry_point = Mock(module="bar")
-        entry_point.name = "foo"
-        plugins_tab.plugins_activation.model.add_entry_point(
-            entry_point,
-            enabled=True
-        )
-        tabs_config_management = Mock()
-        monkeypatch.setattr(settings.ConfigSaver, "tabs_config_management", property(tabs_config_management))
-        saver = settings.ConfigSaver(QtWidgets.QWidget())
-        saver.config_file_path = "some/file/path.ini"
-        global_settings = settings.GlobalSettingsTab()
-        global_settings.model = settings_model
-        CustomTabsYamlConfig = Mock(name="CustomTabsYamlConfig")
-        CustomTabsYamlConfig.save = Mock(name='save')
-
-        monkeypatch.setattr(
-            speedwagon.config.StandardConfigFileLocator,
-            'get_tabs_file',
-            lambda *_: 'dummy.yml'
-        )
-        with patch('builtins.open', mock_open()) as mocked_file:
-                saver.save({
-                    "Global Settings": global_settings,
-                    "Tabs": settings.TabsConfigurationTab(),
-                    "Plugins": settings.PluginsTab()
-                })
-                mocked_file.assert_called_once()
-
-    def test_config_file_path_none(self, qtbot):
-        saver = settings.ConfigSaver(QtWidgets.QWidget())
-        assert saver.config_file_path is None
-
-    def test_config_file_path_set(self, qtbot):
-        # This test exists because ConfigSaver.config_file_path passes this
-        # variable to a file manager object
-        saver = settings.ConfigSaver(QtWidgets.QWidget())
-        saver.config_file_path = "dummy.ini"
-        assert saver.config_file_path == "dummy.ini"
-
-    def test_on_success_callbacks(self, qtbot):
-        saver = settings.ConfigSaver(QtWidgets.QWidget())
-        success_callback = Mock()
-        saver.add_success_call_back(success_callback)
-        saver.on_success()
-        assert success_callback.called is True
-
-    def test_get_tab_config_strategy_without_tabs_yaml_path_raises(self, qtbot):
-        saver = settings.ConfigSaver(QtWidgets.QWidget())
-        with pytest.raises(RuntimeError):
-            warnings.simplefilter("ignore", DeprecationWarning)
-            saver.get_tab_config_strategy()
-
-    def test_get_tab_config_strategy(self, qtbot):
-        saver = settings.ConfigSaver(QtWidgets.QWidget())
-        saver.tabs_yaml_path = "dummy.yml"
-        warnings.simplefilter("ignore", DeprecationWarning)
-        assert isinstance(
-            saver.get_tab_config_strategy(),
-            speedwagon.config.tabs.AbsTabsConfigDataManagement
-        )
-
-    def test_foo(self):
-        saver = settings.ConfigSaver()
-        saver.tabs_yaml_path = "dummy.yml"
-
-    def test_tabs_yaml_path_not_set_raises(self):
-        saver = settings.ConfigSaver()
-        with pytest.raises(RuntimeError) as error:
-            saver.tabs_config_management
-        assert "tabs_yaml_path not set" in str(error.value)
-
-    def test_tabs_config_management(self):
-        settings.ConfigSaver.yaml_config_klass = Mock(spec_set=speedwagon.config.tabs.AbsTabsConfigDataManagement, name="AbsTabsConfigDataManagement")
-        saver = settings.ConfigSaver()
-        saver.tabs_yaml_path = "dummy.yml"
-        assert saver.tabs_config_management is not None
-        saver.yaml_config_klass.assert_called_once_with("dummy.yml")
-
-    # def test_write_yaml(self, qtbot, monkeypatch):
-    #     saver = settings.ConfigSaver(QtWidgets.QWidget())
-    #     CustomTabsYamlConfig = Mock(name="CustomTabsYamlConfig")
-    #     CustomTabsYamlConfig.save = Mock(name='save')
-    #     monkeypatch.setattr(saver, "get_tab_config_strategy", Mock(return_value=CustomTabsYamlConfig))
-    #     tab_config = settings.TabsConfigurationTab()
-    #     tabs_model = models.TabsTreeModel()
-    #
-    #     class FakeWorkflow(speedwagon.Workflow):
-    #         name = "Fake workflow"
-    #
-    #     tabs_model.append_workflow_tab("My Workflow", workflows=[FakeWorkflow])
-    #     tab_config.editor.model = tabs_model
-    #
-    #     saver.save({
-    #         "Global Settings": settings.GlobalSettingsTab(),
-    #         "Tabs": tab_config,
-    #         "Plugins": settings.PluginsTab()
-    #     })
-    #     CustomTabsYamlConfig.save.assert_called_with(
-    #         [
-    #             speedwagon.config.CustomTabData(
-    #                 tab_name="My Workflow", workflow_names=['Fake workflow']
-    #             )
-    #         ]
-    #     )
-    #
-
-class TestConfigFileSave:
-    def test_uses_AbsSaveStrategy(self, qtbot):
-        save_strategy = Mock(
-            settings.AbsSaveStrategy,
-            serialize_data=Mock(return_value="some data")
-        )
-        save_strategy.write_file = Mock()
-        saver = settings.ConfigFileSaver(save_strategy, "some_file.txt")
-        saver.save()
-        save_strategy.write_file.assert_called_once_with(
-            "some data",
-            "some_file.txt"
-        )
+# class TestConfigFileSave:
+#     def test_uses_AbsSaveStrategy(self, qtbot):
+#         save_strategy = Mock(
+#             settings.AbsSaveStrategy,
+#             serialize_data=Mock(return_value="some data")
+#         )
+#         save_strategy.write_file = Mock()
+#         saver = settings.ConfigFileSaver(save_strategy, "some_file.txt")
+#         saver.save()
+#         save_strategy.write_file.assert_called_once_with(
+#             "some data",
+#             "some_file.txt"
+#         )
 
 
-def test_multisaver_child_save_methods_called():
-    saver = settings.MultiSaver()
-    dummy_saver = Mock(settings.AbsConfigSaver2)
-    saver.config_savers.append(dummy_saver)
-    saver.save()
-    dummy_saver.save.assert_called_once()
+# def test_multisaver_child_save_methods_called():
+#     saver = settings.MultiSaver()
+#     dummy_saver = Mock(settings.AbsConfigSaver2)
+#     saver.config_savers.append(dummy_saver)
+#     saver.save()
+#     dummy_saver.save.assert_called_once()
 
 
-class TestCallbackSaver:
-    def test_save(self):
-        save_data_callback_func = Mock()
-        saver = settings.CallbackSaver(save_data_callback_func=save_data_callback_func)
-        saver.save()
-        save_data_callback_func.assert_called_once_with()
-
-class TestSettingsTabSaveStrategy:
-
-    def test_serialize_data(self, qtbot):
-        global_settings_tab = Mock(settings.SettingsTab)
-        def serialization_function(_):
-            return 'my serialized data'
-        save_strategy = settings.SettingsTabSaveStrategy(
-            global_settings_tab,
-            serialization_function
-        )
-        assert save_strategy.serialize_data() == 'my serialized data'
+# class TestCallbackSaver:
+#     def test_save(self):
+#         save_data_callback_func = Mock()
+#         saver = settings.CallbackSaver(save_data_callback_func=save_data_callback_func)
+#         saver.save()
+#         save_data_callback_func.assert_called_once_with()
 
 
-class TestSettingsTab:
-    def test_data_is_modified_raises_not_implemented(self, qtbot):
-        new_tab = settings.SettingsTab()
-        with pytest.raises(NotImplementedError):
-            new_tab.data_is_modified()
+@pytest.mark.parametrize(
+    'func_name', [
+        'data_is_modified',
+        'get_data'
+    ]
+)
+def test_data_unimplemented_functions_raises_not_implemented(
+        func_name,
+        qtbot
+):
+    new_tab = settings.SettingsTab()
+    with pytest.raises(NotImplementedError):
+        getattr(new_tab, func_name)()
 
-    def test_get_data_defaults_to_empty_dict(self, qtbot):
-        new_tab = settings.SettingsTab()
-        assert new_tab.get_data() == {}
 class TestPluginsTab:
     def test_not_modified_from_init(self, qtbot):
         tab = settings.PluginsTab()

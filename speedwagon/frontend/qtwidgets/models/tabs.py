@@ -49,9 +49,10 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         workflows: Optional[List[Type[speedwagon.job.Workflow]]] = None,
     ) -> None:
         """Add a new tab."""
+        self.beginResetModel()
         new_tab = TabStandardItem(name, workflows or [])
         self.root_item.appendRow(new_tab)
-        self.modelReset.emit()
+        self.endResetModel()
 
     @property
     def data_modified(self) -> bool:
@@ -551,7 +552,6 @@ class TabDataModelConfigLoader(AbsTabDataModelYAMLLoader):
         for tab_name, workflows in data.items():
             model.append_workflow_tab(tab_name, workflows)
         model.reset_modified()
-        model.modelReset.emit()
 
 
 class TabStandardItem(QtGui.QStandardItem):
