@@ -40,77 +40,10 @@ if TYPE_CHECKING:
     from speedwagon.info import SystemInfo
 
 
-__all__ = ["SystemInfoDialog", "WorkProgressBar", "about_dialog_box"]
+__all__ = ["SystemInfoDialog", "about_dialog_box"]
 
 ALREADY_STOPPED_MESSAGE = "Already stopped"
 DEFAULT_WINDOW_FLAGS = QtCore.Qt.WindowType(0)
-
-
-class ErrorDialogBox(QtWidgets.QMessageBox):
-    """Dialog box for Error Messages causes while running a job."""
-
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
-        """Create a error dialog box."""
-        super().__init__(parent)
-        self.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-        self.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Abort)
-        self.setSizeGripEnabled(True)
-
-    def event(self, event: QtCore.QEvent) -> bool:
-        # Allow the dialog box to be resized so that the additional information
-        # can be readable
-
-        result = QtWidgets.QMessageBox.event(self, event)
-
-        self.setMinimumHeight(100)
-        self.setMaximumHeight(1024)
-        self.setMinimumWidth(250)
-        self.setMaximumWidth(1000)
-
-        self.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Expanding,
-        )
-
-        text_edit = typing.cast(
-            Optional[QtWidgets.QTextEdit], self.findChild(QtWidgets.QTextEdit)
-        )
-
-        if text_edit is not None:
-            text_edit.setMinimumHeight(100)
-            text_edit.setMaximumHeight(16777215)
-            text_edit.setSizePolicy(
-                QtWidgets.QSizePolicy.Policy.Expanding,
-                QtWidgets.QSizePolicy.Policy.Expanding,
-            )
-
-        return result
-
-
-class WorkProgressBar(QtWidgets.QProgressDialog):
-    """Use this for showing progress."""
-
-    def __init__(
-        self,
-        parent: Optional[QtWidgets.QWidget] = None,
-        flags: QtCore.Qt.WindowType = DEFAULT_WINDOW_FLAGS,
-    ) -> None:
-        """Create a work progress dialog window."""
-        super().__init__(parent, flags)
-        self.setModal(True)
-        self.setMinimumHeight(100)
-        self.setMinimumWidth(250)
-        self._label = QtWidgets.QLabel(parent=self)
-        self._label.setWordWrap(True)
-        self.setLabel(self._label)
-
-    def resizeEvent(
-        self, event: QtGui.QResizeEvent  # pylint: disable=C0103
-    ) -> None:
-        """Resize event."""
-        super().resizeEvent(event)
-        self._label.setMaximumWidth(self.width())
-        self.setMinimumHeight(self._label.sizeHint().height() + 75)
 
 
 def about_dialog_box(parent: QtWidgets.QWidget) -> None:
