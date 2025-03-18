@@ -1,3 +1,5 @@
+import platform
+
 import pytest
 from unittest.mock import Mock, patch, mock_open
 import sys
@@ -268,3 +270,34 @@ class TestTabsConfigurationTab:
             )
         )
         assert "has no layout" in caplog.text
+
+def test_open_settings_dir_open():
+    settings_location = "somewhere"
+    strategy = Mock(spec_set=speedwagon.frontend.qtwidgets.dialog.settings.AbsOpenSettings)
+    speedwagon.frontend.qtwidgets.dialog.settings.open_settings_dir(
+        settings_location,
+        strategy
+    )
+    strategy.open.assert_called_once()
+
+
+def test_open_settings_dir_open_uses_defaults():
+    settings_location = "somewhere"
+    strategy = Mock(spec_set=speedwagon.frontend.qtwidgets.dialog.settings.AbsOpenSettings)
+    speedwagon.frontend.qtwidgets.dialog.settings.DEFAULT_SETTINGS_DIR_STRATEGIES[
+        platform.system()
+    ] = Mock(return_value=strategy)
+    speedwagon.frontend.qtwidgets.dialog.settings.open_settings_dir(
+        settings_location,
+    )
+    strategy.open.assert_called_once()
+
+def test_open_settings_dir_open_unsupported(monkeypatch):
+    settings_location = "somewhere"
+    mocked_open = Mock()
+    monkeypatch.setattr(speedwagon.frontend.qtwidgets.dialog.settings.UnsupportedOpenSettings, "open", mocked_open)
+    del speedwagon.frontend.qtwidgets.dialog.settings.DEFAULT_SETTINGS_DIR_STRATEGIES[platform.system()]
+    speedwagon.frontend.qtwidgets.dialog.settings.open_settings_dir(
+        settings_location,
+    )
+    mocked_open.assert_called_once()

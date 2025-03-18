@@ -17,6 +17,7 @@ from typing import (
     TypedDict,
     Generic, TypeVar,
     TYPE_CHECKING,
+    Type,
 )
 import sys
 # pylint: disable=wrong-import-position
@@ -197,27 +198,41 @@ class SettingsDialog(QtWidgets.QDialog):
         self.tabs_widget.addTab(tab, tab_name)
 
 
+class DarwinOpenSettings(AbsOpenSettings):
+    def system_open_directory(self, settings_directory: str) -> None:
+        subprocess.call(["/usr/bin/open", settings_directory])
+
+
+class WindowsOpenSettings(AbsOpenSettings):
+    def system_open_directory(self, settings_directory: str) -> None:
+        # pylint: disable=no-member
+        os.startfile(settings_directory)  # type: ignore[attr-defined]
+
+
+DEFAULT_SETTINGS_DIR_STRATEGIES: Dict[str, Type[AbsOpenSettings]] = {
+    "Darwin": DarwinOpenSettings,
+    "Windows": WindowsOpenSettings,
+    "Linux": UnsupportedOpenSettings
+}
+
+
 def open_settings_dir(
     settings_location: str,
     strategy: Optional[AbsOpenSettings] = None,
     parent: Optional[QtWidgets.QWidget] = None,
 ) -> None:
-
-    strategies: Dict[str, AbsOpenSettings] = {
-        "Darwin": DarwinOpenSettings(settings_location),
-        "Windows": WindowsOpenSettings(settings_location),
-    }
-
-    folder_opener = OpenSettingsDirectory(
-        strategy
-        if strategy is not None
-        else strategies.get(
-            platform.system(),
-            UnsupportedOpenSettings(
-                settings_directory=settings_location, parent=parent
-            ),
+    if strategy is None:
+        strategy_klass = DEFAULT_SETTINGS_DIR_STRATEGIES.get(
+            platform.system()
         )
-    )
+        if strategy_klass is None:
+            strategy = UnsupportedOpenSettings(
+                settings_directory=settings_location, parent=parent
+            )
+        else:
+            strategy = strategy_klass(settings_location)
+
+    folder_opener = OpenSettingsDirectory(strategy)
     folder_opener.open()
 
 
@@ -686,17 +701,6 @@ class TabEditor(TabEditorWidgetUI):
     def current_tab(self) -> QtWidgets.QWidget:
         """Get current tab widget."""
         return self.selected_tab_combo_box.currentData()
-
-
-class DarwinOpenSettings(AbsOpenSettings):
-    def system_open_directory(self, settings_directory: str) -> None:
-        subprocess.call(["/usr/bin/open", settings_directory])
-
-
-class WindowsOpenSettings(AbsOpenSettings):
-    def system_open_directory(self, settings_directory: str) -> None:
-        # pylint: disable=no-member
-        os.startfile(settings_directory)  # type: ignore[attr-defined]
 
 
 class OpenSettingsDirectory:
