@@ -1743,3 +1743,53 @@ class TestTabDataModelConfigLoader:
         model = models.tabs.TabsTreeModel()
         with qtbot.wait_signal(model.modelReset):
             model_loader.load(model)
+
+class TestModelDataFormatter:
+    @pytest.fixture
+    def data(self):
+        checksum_select = workflow.FileSelectData("Checksum File")
+        checksum_select.filter = "Checksum files (*.md5)"
+        checksum_select.placeholder_text = "select a file"
+
+        options = workflow.ChoiceSelection("Order")
+        options.add_selection("Bacon")
+        options.add_selection("Bacon eggs")
+        options.add_selection("Spam")
+
+        return [checksum_select, options, workflow.DirectorySelect("Eggs")]
+
+    @pytest.fixture
+    def model(self, data):
+        return models.ToolOptionsModel(data)
+
+    def test_font_role_no_placeholder(self, model, data):
+        model['Checksum File'] = "some value"
+        formater = models.options.ModelDataFormatter(model)
+        assert formater.font_role(
+            data[0]
+        ) is None
+
+    def test_font_role_placeholder(self, model, data):
+        model['Checksum File'] = None
+        formater = models.options.ModelDataFormatter(model)
+        assert formater.font_role(
+            data[0]
+        ) is not None
+
+    def test_display_role(self, model, data):
+        formater = models.options.ModelDataFormatter(model)
+        assert formater.display_role(
+            data[0],
+        ) == "select a file"
+
+    @pytest.mark.parametrize(
+        "row, role, expected",
+        [
+            (0, QtCore.Qt.ItemDataRole.DisplayRole, "select a file"),
+            (0, QtCore.Qt.ItemDataRole.EditRole, None),
+            (0, QtCore.Qt.ItemDataRole.ToolTipRole, None),
+        ]
+    )
+    def test_format(self, model, data, row, role, expected):
+        formater = models.options.ModelDataFormatter(model)
+        assert formater.format(data[row], role) == expected
