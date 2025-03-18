@@ -397,7 +397,7 @@ class InnerForm(QtWidgets.QWidget):
             layout.FieldGrowthPolicy.ExpandingFieldsGrow
         )
         self.setLayout(layout)
-        self.model = models.ToolOptionsModel4()
+        self.model = models.ToolOptionsModel()
         self.modelChanged.connect(self.update_widget)
         self.widgets: Dict[str, EditDelegateWidget] = {}
 
@@ -425,7 +425,7 @@ class InnerForm(QtWidgets.QWidget):
             if not index.isValid():
                 return
             serialized_json_data: str = typing.cast(
-                str, index.data(role=models.ToolOptionsModel4.JsonDataRole)
+                str, index.data(role=models.ToolOptionsModel.JsonDataRole)
             )
             json_data = typing.cast(
                 WidgetMetadata, json.loads(serialized_json_data)
@@ -455,7 +455,7 @@ class InnerForm(QtWidgets.QWidget):
                 return
             model_data = typing.cast(
                 AbsOutputOptionDataType,
-                self.model.data(index, models.ToolOptionsModel4.DataRole),
+                self.model.data(index, models.ToolOptionsModel.DataRole),
             )
 
             self.model.setData(index, self.widgets[model_data.label].data)
@@ -570,7 +570,7 @@ class DynamicForm(QtWidgets.QScrollArea):
         return self._background.create_editor(widget_name, data)
 
     # pylint: disable=invalid-name
-    def set_model(self, model: models.ToolOptionsModel4) -> None:
+    def set_model(self, model: models.ToolOptionsModel) -> None:
         """Set model used by the widget."""
         self._background.model = model
         self.modelChanged.emit()
@@ -584,7 +584,7 @@ class DynamicForm(QtWidgets.QScrollArea):
         self._background.update_widget()
 
     @property
-    def model(self) -> models.ToolOptionsModel4:
+    def model(self) -> models.ToolOptionsModel:
         """Get the model used by the widget."""
         return self._background.model
 
@@ -642,13 +642,13 @@ class Workspace(QtWidgets.QWidget):
                     new_workflow.description
                 )
             self.settings_form.set_model(
-                models.ToolOptionsModel4(new_workflow.job_options())
+                models.ToolOptionsModel(new_workflow.job_options())
             )
         except exceptions.MissingConfiguration as exc:
             self.workflow_description_value.setHtml(
                 f"<b>Workflow unavailable.</b><p><b>Reason: </b>{exc}</p>"
             )
-            self.settings_form.set_model(models.ToolOptionsModel4())
+            self.settings_form.set_model(models.ToolOptionsModel())
 
     def is_valid(self) -> bool:
         """Check if the workflow configured is valid."""

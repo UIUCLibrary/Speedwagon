@@ -22,14 +22,14 @@ if TYPE_CHECKING:
     from speedwagon.config import SettingsDataType
     from speedwagon.workflow import UserDataType
     from speedwagon.frontend.qtwidgets.widgets import DynamicForm
-__all__ = ["ToolOptionsModel4"]
+__all__ = ["ToolOptionsModel"]
 
 OptionPair = namedtuple("OptionPair", ("label", "data"))
 
 _T = TypeVar("_T")
 
 
-class ToolOptionsModel4(QtCore.QAbstractListModel):
+class ToolOptionsModel(QtCore.QAbstractListModel):
     """Tool Model Options."""
 
     JsonDataRole = cast(int, QtCore.Qt.ItemDataRole.UserRole) + 1
@@ -40,7 +40,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
         data: Optional[List[AbsOutputOptionDataType]] = None,
         parent: Optional[QtCore.QObject] = None,
     ) -> None:
-        """Create a new ToolOptionsModel4 object."""
+        """Create a new ToolOptionsModel object."""
         super().__init__(parent)
         self._data = data or []
 
@@ -51,9 +51,6 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
 
         This allows for looking up the data based on the key.
         """
-        if self._data is None:
-            raise IndexError("No data")
-
         for item in self._data:
             if item.label == key:
                 item.value = value
@@ -149,7 +146,7 @@ class ToolOptionsModel4(QtCore.QAbstractListModel):
 
 
 class ModelDataFormatter:
-    def __init__(self, model: ToolOptionsModel4):
+    def __init__(self, model: ToolOptionsModel):
         self._model = model
 
     @classmethod
@@ -208,13 +205,13 @@ def load_job_settings_model(
     settings_widget: DynamicForm,
     workflow_options: List[AbsOutputOptionDataType],
 ) -> None:
-    model = ToolOptionsModel4(workflow_options)
+    model = ToolOptionsModel(workflow_options)
     for key, value in data.items():
         for i in range(model.rowCount()):
             index = model.index(i)
             option_data = typing.cast(
                 AbsOutputOptionDataType,
-                model.data(index, ToolOptionsModel4.DataRole),
+                model.data(index, ToolOptionsModel.DataRole),
             )
 
             if option_data.label == key:

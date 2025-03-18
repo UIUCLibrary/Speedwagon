@@ -121,7 +121,7 @@ class TestSettingsModel:
         assert model.setData(index, "data") is False
 
 
-class TestToolOptionsModel4:
+class TestToolOptionsModel:
     @pytest.fixture()
     def dialog_box(self, qtbot):
         dialog = QtWidgets.QDialog()
@@ -161,7 +161,7 @@ class TestToolOptionsModel4:
         return [checksum_select, options, workflow.DirectorySelect("Eggs")]
 
     def test_headings(self, qtbot, data):
-        model = models.ToolOptionsModel4(data)
+        model = models.ToolOptionsModel(data)
         heading = model.headerData(
             0, QtCore.Qt.Vertical, QtCore.Qt.DisplayRole
         )
@@ -169,33 +169,33 @@ class TestToolOptionsModel4:
         assert heading == data[0].label
 
     def test_horizontal_heading_are_empty(self, data):
-        model = models.ToolOptionsModel4(data)
+        model = models.ToolOptionsModel(data)
         heading = model.headerData(
             0, QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole
         )
         assert heading is None
 
     def test_rows_match_data_size(self, qtbot, data):
-        model = models.ToolOptionsModel4(data)
+        model = models.ToolOptionsModel(data)
         assert model.rowCount() == len(data)
 
     def test_data_json_role_make_parseable_data(self, data):
-        model = models.ToolOptionsModel4(data)
+        model = models.ToolOptionsModel(data)
         index = model.index(0, 0)
 
         json_string = model.data(
-            index, role=models.ToolOptionsModel4.JsonDataRole
+            index, role=models.ToolOptionsModel.JsonDataRole
         )
 
         assert "widget_type" in json.loads(json_string)
 
     def test_get_data_invalid_index_is_none(self, data):
-        model = models.ToolOptionsModel4(data)
+        model = models.ToolOptionsModel(data)
         index = model.index(len(data) + 1, 0)
         assert model.data(index) is None
 
     def test_set_data(self, data):
-        model = models.ToolOptionsModel4(data)
+        model = models.ToolOptionsModel(data)
         index = model.index(0, 0)
 
         starting_value = model.data(index)
@@ -204,8 +204,18 @@ class TestToolOptionsModel4:
         changed_value = model.data(index)
         assert starting_value is None and changed_value == "spam"
 
+    @pytest.mark.parametrize("value, role, expected_return", [
+        (None, QtCore.Qt.ItemDataRole.EditRole, False),
+        (True, QtCore.Qt.ItemDataRole.EditRole, True),
+        (True, QtCore.Qt.ItemDataRole.FontRole, False),
+    ])
+    def test_qt_setData(self, data, value, role, expected_return):
+        model = models.ToolOptionsModel(data)
+        assert model.setData(model.index(0, 0), value, role) is expected_return
+
     def test_serialize_as(self, data):
-        model = models.ToolOptionsModel4(data)
+        model = models.ToolOptionsModel(data)
+
 
         def standard_serialize_function(
                 model_data: Optional[List[workflow.AbsOutputOptionDataType]]
@@ -215,6 +225,55 @@ class TestToolOptionsModel4:
                     if model_data is not None else {}
             )
         assert "Checksum File" in model.get_as(standard_serialize_function)
+
+    def test_setitem(self, data):
+        model = models.ToolOptionsModel(data)
+        model['Checksum File'] = "checksum.md5"
+        results = model.serialize()
+        assert results['Checksum File'] == "checksum.md5"
+
+    def test_setitem_with_no_data_raises(self):
+        model = models.ToolOptionsModel()
+        with pytest.raises(KeyError):
+            model['Checksum File'] = "checksum.md5"
+
+    @pytest.mark.parametrize("flag", [
+        QtCore.Qt.ItemFlag.ItemIsSelectable,
+        QtCore.Qt.ItemFlag.ItemIsEnabled,
+        QtCore.Qt.ItemFlag.ItemIsEditable
+    ])
+    def test_flags(self, flag, data):
+        model = models.ToolOptionsModel(data)
+        assert flag in model.flags(model.index(0, 0))
+
+    def test_vertical_header_data(self, data):
+        model = models.ToolOptionsModel(data)
+        header = model.headerData(
+            0,
+            QtCore.Qt.Orientation.Vertical,
+            role=QtCore.Qt.ItemDataRole.DisplayRole
+        )
+        assert header == "Checksum File"
+
+    def test_horizontal_header_data(self, data):
+        model = models.ToolOptionsModel(data)
+        header = model.headerData(
+            0,
+            QtCore.Qt.Orientation.Horizontal,
+            role=QtCore.Qt.ItemDataRole.DisplayRole
+        )
+        assert header is None
+    def test_serialize(self, data):
+        model = models.ToolOptionsModel(data)
+        assert model.serialize() == {
+            'Checksum File': None, 'Eggs': None, 'Order': None
+        }
+
+    def test_get(self, data):
+        model = models.ToolOptionsModel(data)
+        assert model.get() == {
+            'Checksum File': None, 'Eggs': None, 'Order': None
+        }
 
 
 def test_build_setting_model(tmpdir):

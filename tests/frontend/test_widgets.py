@@ -357,7 +357,7 @@ class TestDynamicForm:
             speedwagon.workflow.BooleanSelect("spam"),
             speedwagon.workflow.BooleanSelect("bacon"),
         ]
-        model = option_models.ToolOptionsModel4(data)
+        model = option_models.ToolOptionsModel(data)
         form.set_model(model)
         checkbox: speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget = (
             form._background.widgets["spam"]
@@ -375,7 +375,7 @@ class TestDynamicForm:
             speedwagon.workflow.FileSelectData("input"),
             speedwagon.workflow.FileSelectData("output"),
         ]
-        model = option_models.ToolOptionsModel4(data)
+        model = option_models.ToolOptionsModel(data)
 
         form.set_model(model)
         qtbot.keyClicks(
@@ -395,7 +395,7 @@ class TestDynamicForm:
         option.add_selection("spam")
         option.add_selection("bacon")
         data = [option]
-        model = option_models.ToolOptionsModel4(data)
+        model = option_models.ToolOptionsModel(data)
 
         form.set_model(model)
         combobox: speedwagon.frontend.qtwidgets.widgets.ComboWidget = (
