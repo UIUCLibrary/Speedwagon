@@ -281,6 +281,50 @@ class TestAbsSystemTask:
     def test_config_none(self, spam_task):
         # Note: set_config_backend has not been set
         assert spam_task.config is None
+
+class TestSubtask:
+    def test_status_default_to_idle(self):
+        task = speedwagon.tasks.Subtask()
+        assert task.status == speedwagon.tasks.tasks.TaskStatus.IDLE
+
+    def test_task_results_default_to_none(self):
+        task = speedwagon.tasks.Subtask()
+        assert task.task_result is None
+#
+    def test_results_default_to_none(self):
+        task = speedwagon.tasks.Subtask()
+        assert task.results is None
+
+    def test_work_raises(self):
+        # you are supposed to implement this so trying to call it will raise an
+        #  exception. Let's test for that!
+        task = speedwagon.tasks.Subtask()
+        with pytest.raises(NotImplementedError):
+            task.work()
+#
+    @pytest.mark.parametrize(
+        "return_value, expected_status",
+        [
+            (False, speedwagon.tasks.tasks.TaskStatus.FAILED),
+            (True, speedwagon.tasks.tasks.TaskStatus.SUCCESS),
+        ]
+    )
+    def test_exec_status(self, return_value, expected_status):
+        class MyTask(speedwagon.tasks.Subtask):
+            def work(self) -> bool:
+                return return_value
+        task = MyTask()
+        task.exec()
+        assert task.status == expected_status
+
+    def test_exec_throws_speedwagon_exceptions_failed(self):
+        class MyTask(speedwagon.tasks.Subtask):
+            def work(self) -> bool:
+                raise speedwagon.exceptions.SpeedwagonException("let's go")
+        task = MyTask()
+        with pytest.raises(speedwagon.exceptions.SpeedwagonException):
+            task.exec()
+        assert task.status == speedwagon.tasks.tasks.TaskStatus.FAILED
 #
 # @pytest.mark.adapter
 # # @pytest.mark.filterwarnings("ignore::DeprecationWarning")

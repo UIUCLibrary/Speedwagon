@@ -1793,3 +1793,10 @@ class TestModelDataFormatter:
     def test_format(self, model, data, row, role, expected):
         formater = models.options.ModelDataFormatter(model)
         assert formater.format(data[row], role) == expected
+
+def test_unpack_global_settings_model():
+    model = models.SettingsModel()
+    model.add_setting("A", "B")
+    assert models.settings.unpack_global_settings_model(
+        model
+    ) == {'A': 'B'}
