@@ -253,3 +253,18 @@ class TestTableEditDialog:
         model.results = Mock(return_value=return_data)
         dialog = dialogs.TableEditDialog(model=model)
         assert dialog.data() == return_data
+
+class TestTabsConfigurationTab:
+    def test_no_layout(self, caplog, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.dialog.settings.TabEditor,
+            "layout",
+            lambda *_: None
+        )
+        qtbot.addWidget(
+            speedwagon.frontend.qtwidgets.dialog.settings.TabsConfigurationTab(
+                parent=parent
+            )
+        )
+        assert "has no layout" in caplog.text

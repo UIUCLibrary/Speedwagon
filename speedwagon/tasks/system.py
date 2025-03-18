@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class AbsSystemTask(abc.ABC):
     """Abstract base class for creating system tasks."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Create a system task object."""
         self._config_backend: Optional[AbsConfigSettings] = None
 

@@ -106,7 +106,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
 
     @overload
     def parent(
-        self, child: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
+        self, child: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex], /
     ) -> QtCore.QModelIndex: ...
 
     @overload
@@ -427,8 +427,8 @@ class TabProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
         source_model = self.sourceModel()
         proxy_index = proxyIndex
         return source_model.index(
-            row=proxy_index.row(),
-            column=proxy_index.column(),
+            proxy_index.row(),
+            proxy_index.column(),
             parent=base_index,
         )
 
@@ -464,7 +464,7 @@ class AbsLoadTabDataModelStrategy(abc.ABC):  # pylint: disable=R0903
 
 class AbsTabDataModelYAMLLoader(AbsLoadTabDataModelStrategy, abc.ABC):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.get_all_active_workflows_strategy: Callable[
             [], Dict[str, Type[speedwagon.Workflow]]

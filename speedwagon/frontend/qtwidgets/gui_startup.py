@@ -76,7 +76,7 @@ if typing.TYPE_CHECKING:
         AbsJobConfigSerializationStrategy,
         Workflow,
     )
-    from speedwagon.config.common import SettingsDataType
+    from speedwagon.config.common import SettingsDataType, SettingsData
     from speedwagon.config.config import AbsSettingLocator
     from speedwagon.config import FullSettingsData
     from speedwagon.config.workflow import AbsWorkflowBackend
@@ -992,11 +992,11 @@ class SingleWorkflowJSON(AbsGuiStarter):
             logger: Optional Logger, defaults to default logger for __name__.
         """
         super().__init__(app, config or StandardConfig())
-        self.global_settings = None
+        self.global_settings: Optional[SettingsData] = None
         self.on_exit: typing.Optional[
             Callable[[speedwagon.frontend.qtwidgets.gui.MainWindow3], None]
         ] = None
-        self.options: typing.Optional[typing.Dict[str, typing.Any]] = None
+        self.options: typing.Optional[SettingsData] = None
         self.workflow: typing.Optional[AbsWorkflow] = None
         self.logger = logger or logging.getLogger(__name__)
 

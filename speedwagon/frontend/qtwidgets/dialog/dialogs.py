@@ -686,7 +686,7 @@ class ItemSelectOptionDelegate(QtWidgets.QStyledItemDelegate):
 
     delegate_klass = QtWidgets.QComboBox
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QtCore.QObject] = None) -> None:
         super().__init__(parent)
         self.get_choices: Callable[
             [Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]],
@@ -702,7 +702,7 @@ class ItemSelectOptionDelegate(QtWidgets.QStyledItemDelegate):
         """Create editor widget."""
         editor = self.delegate_klass(parent)
 
-        def commit_data():
+        def commit_data() -> None:
             self.commitData.emit(editor)
         editor.currentIndexChanged.connect(commit_data)
         return editor
@@ -734,7 +734,7 @@ class ItemSelectOptionDelegate(QtWidgets.QStyledItemDelegate):
 
 class ItemView(QtWidgets.QTreeView):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
         self.setEditTriggers(
 

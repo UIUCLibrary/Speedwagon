@@ -21,6 +21,7 @@ import sys
 # pylint: disable=wrong-import-position
 from importlib import resources
 from importlib.resources import as_file
+import logging
 
 from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets import ui_loader, ui
@@ -30,16 +31,16 @@ from speedwagon import Workflow, exceptions, config
 from speedwagon.frontend.qtwidgets.models.workflows import AbsWorkflowList
 from speedwagon.frontend.qtwidgets import models, logging_helpers
 
-
 if TYPE_CHECKING:
     if sys.version_info >= (3, 11):
         from typing import NotRequired
     else:
         from typing_extensions import NotRequired
-    import logging
 
 
 __all__ = ["Workspace", "DynamicForm", "SelectWorkflow"]
+
+logger = logging.getLogger(__name__)
 
 
 class WidgetMetadata(TypedDict):
@@ -97,10 +98,13 @@ class LineEditWidget(EditDelegateWidget):
         self.setFocusProxy(self.text_box)
         self.text_box.installEventFilter(self)
         self.text_box.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
-        layout = self.layout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.text_box)
-        self.setLayout(layout)
+
+        if layout := self.layout():
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(self.text_box)
+            self.setLayout(layout)
+        else:
+            logger.error("%s has no layout", self.__class__.__name__)
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
@@ -130,10 +134,12 @@ class CheckBoxWidget(EditDelegateWidget):
         if widget_metadata:
             self.check_box.setText(widget_metadata["label"])
         self._make_connections()
-        layout = self.layout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.check_box)
-        self.setLayout(layout)
+        if layout := self.layout():
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(self.check_box)
+            self.setLayout(layout)
+        else:
+            logger.error("%s has no layout", self.__class__.__name__)
         self.set_defaults()
 
     def set_defaults(self) -> None:
@@ -175,10 +181,12 @@ class ComboWidget(EditDelegateWidget):
 
         self.setFocusProxy(self.combo_box)
         self._make_connections()
-        layout = self.layout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.combo_box)
-        self.setLayout(layout)
+        if layout := self.layout():
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(self.combo_box)
+            self.setLayout(layout)
+        else:
+            logger.error("%s has no layout", self.__class__.__name__)
 
     def _make_connections(self) -> None:
         # pylint: disable=no-member
@@ -212,8 +220,9 @@ class ComboWidget(EditDelegateWidget):
         model = self.combo_box.model()
         selections = []
         for i in range(model.rowCount()):
-            index = model.index(i, column=0)
-            selections.append(model.data(index))
+            selections.append(
+                model.data(model.index(i, 0))
+            )
         return selections
 
 
@@ -234,10 +243,13 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         self.setFocusProxy(self.edit)
         self.edit.installEventFilter(self)
         self.edit.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
-        layout = self.layout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.edit)
-        self.setLayout(layout)
+        if layout := self.layout():
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.addWidget(self.edit)
+            self.setLayout(layout)
+        else:
+            logger.error("%s has no layout", self.__class__.__name__)
+
         self.setAcceptDrops(True)
 
     def _make_connections(self) -> None:
@@ -645,8 +657,18 @@ class Workspace(QtWidgets.QWidget):
     def _get_configuration(self) -> Dict[str, AbsOutputOptionDataType]:
         return self.settings_form.get_configuration()
 
+    @QtCore.Property(object)
+    def configuration(self) -> Dict[str, AbsOutputOptionDataType]:
+        """Get workflow configuration."""
+        return self._get_configuration()
+
     @property
     def workflow_name(self) -> str:
+        """Get workflow name."""
+        return self._get_workflow_name()
+
+    @QtCore.Property(str)
+    def name(self) -> str:
         """Get workflow name."""
         return self._get_workflow_name()
 
@@ -658,12 +680,13 @@ class Workspace(QtWidgets.QWidget):
         """Get workflow description."""
         return self._get_workflow_description()
 
+    @QtCore.Property(str)
+    def description(self) -> str:
+        """Get workflow description."""
+        return self._get_workflow_description()
+
     def _get_workflow_description(self) -> str:
         return self.workflow_description_value.toPlainText()
-
-    name = QtCore.Property(str, _get_workflow_name)
-    description = QtCore.Property(str, _get_workflow_description)
-    configuration = QtCore.Property(object, _get_configuration)
 
 
 class SelectWorkflow(QtWidgets.QWidget):
@@ -935,10 +958,10 @@ class ToolConsole(QtWidgets.QWidget):
         """Get the complete text in the console."""
         return self._log.toPlainText()
 
-    def attach_logger(self, logger: logging.Logger) -> None:
+    def attach_logger(self, logger_: logging.Logger) -> None:
         """Attach Python logger."""
-        logger.addHandler(self.log_handler)
-        self._attached_logger = logger
+        logger_.addHandler(self.log_handler)
+        self._attached_logger = logger_
 
     def detach_logger(self) -> None:
         """Detach Python logger."""

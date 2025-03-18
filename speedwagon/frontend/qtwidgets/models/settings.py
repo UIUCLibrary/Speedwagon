@@ -617,12 +617,10 @@ class WorkflowSettingsModel(QtCore.QAbstractItemModel):
     @typing.overload
     def parent(
         self, child: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
-    ) -> QtCore.QModelIndex:
-        ...
+    ) -> QtCore.QModelIndex: ...
 
     @typing.overload
-    def parent(self) -> QtCore.QObject:
-        ...
+    def parent(self) -> QtCore.QObject: ...
 
     def parent(
         self,

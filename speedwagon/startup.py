@@ -17,10 +17,11 @@ import functools
 import io
 import json
 import logging
+import os
 import sys
 from typing import (
     Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional, Callable, Any,
-    Collection, TypeVar, Mapping
+    Collection, TypeVar, Mapping, Union
 )
 
 import speedwagon.job
@@ -34,6 +35,8 @@ from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
 
 if TYPE_CHECKING:
     import speedwagon.frontend.qtwidgets.gui_startup
+    from speedwagon.config.common import SettingsData
+    from speedwagon.config.config import AbsSettingLocator, AbsConfigSettings
 
 __all__ = [
     "ApplicationLauncher",
@@ -167,6 +170,8 @@ class ApplicationLauncher:
        Added ApplicationLauncher for launching speedwagon in different ways.
     """
 
+    strategy: AbsStarter
+
     def __init__(self, strategy: Optional[AbsStarter] = None) -> None:
         """Strategy pattern for loading speedwagon in different ways.
 
@@ -239,13 +244,13 @@ class ApplicationLauncher:
 
 
 class SubCommand(abc.ABC):
-    def __init__(self, args) -> None:
+    def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
         self.args = args
-        self.global_settings = None
+        self.global_settings: Optional[SettingsData] = None
 
     @abc.abstractmethod
-    def run(self):
+    def run(self) -> None:
         """Run the command."""
 
 
@@ -258,6 +263,10 @@ class RunCommand(SubCommand):
         return frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
 
     def json_startup(self) -> None:
+        startup_strategy: Union[
+            SingleWorkflowJSON,
+            speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON
+        ]
         try:
             startup_strategy = self.get_gui_strategy()
         except ImportError:
@@ -268,7 +277,7 @@ class RunCommand(SubCommand):
         self._run_strategy(startup_strategy)
 
     @staticmethod
-    def _run_strategy(startup_strategy):
+    def _run_strategy(startup_strategy: AbsStarter) -> None:
         app_launcher = speedwagon.startup.ApplicationLauncher(
             strategy=startup_strategy
         )
@@ -277,7 +286,7 @@ class RunCommand(SubCommand):
         app.initialize()
         sys.exit(app_launcher.run())
 
-    def run(self):
+    def run(self) -> None:
         if "json" in self.args:
             self.json_startup()
         else:
@@ -300,7 +309,9 @@ def get_global_options(
 
 
 def run_command(
-    command_name: str, args: argparse.Namespace, command=None
+    command_name: str,
+    args: argparse.Namespace,
+    command: Optional[Type[RunCommand]] = None
 ) -> None:
     commands = {"run": RunCommand}
     command = command or commands.get(command_name)
@@ -314,6 +325,8 @@ def run_command(
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
+    config_files_locator: speedwagon.config.config.AbsSettingLocator
+
     def set_application_name(self, name: str) -> None:  # noqa: B027
         """Set the application name if environment supports changing name.
 
@@ -349,8 +362,20 @@ class SingleWorkflowJSON(AbsStarter):
     def __init__(self) -> None:
         super().__init__()
         self.options: Optional[Dict[str, Any]] = None
-        self.global_settings = None
-        self.workflow = None
+        self.global_settings: Optional[SettingsData] = None
+        self.workflow: Optional[speedwagon.job.Workflow] = None
+        self.config_files_locator: AbsSettingLocator = (
+            StandardConfigFileLocator(
+                config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+            )
+        )
+
+    @property
+    def config(self) -> AbsConfigSettings:
+        config_name = os.path.split(
+            self.config_files_locator.get_app_data_dir()
+        )[-1]
+        return speedwagon.config.StandardConfig(config_name)
 
     def run(self) -> int:
         if self.workflow:
@@ -374,7 +399,9 @@ class SingleWorkflowJSON(AbsStarter):
     def _set_workflow(self, workflow_name: str) -> None:
         available_workflows = speedwagon.job.available_workflows()
         self.workflow = available_workflows[workflow_name](
-            global_settings=self.global_settings or {}
+            global_settings=self.config.application_settings().get(
+                "GLOBAL", {}
+            )
         )
 
 
