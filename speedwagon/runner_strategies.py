@@ -443,7 +443,7 @@ class AbsTaskGeneratorStrategy(abc.ABC):
 
 
 class TaskGeneratorStrategy(AbsTaskGeneratorStrategy):
-    def __init__(self):
+    def __init__(self) -> None:
         self._results: List[Any] = []
 
     def results(self) -> List[Any]:

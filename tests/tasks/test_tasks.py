@@ -10,7 +10,6 @@ import pytest
 
 from speedwagon import config
 import speedwagon
-import speedwagon.worker
 from speedwagon.tasks import system
 
 class SimpleSubtask(speedwagon.tasks.Subtask):

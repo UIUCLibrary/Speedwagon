@@ -75,6 +75,20 @@ class TestDropDownWidget:
         qtbot.addWidget(widget)
         assert widget.get_selections() == ["spam", "bacon", "eggs"]
 
+    def test_no_layout(self, caplog, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.widgets.ComboWidget,
+            "layout",
+            lambda *_: None
+        )
+        qtbot.addWidget(
+            speedwagon.frontend.qtwidgets.widgets.ComboWidget(
+                widget_metadata={}, parent=parent
+            )
+        )
+        assert "has no layout" in caplog.text
+
 
 class TestCheckBoxWidget:
     def test_empty_widget_metadata(self, qtbot):
@@ -95,7 +109,19 @@ class TestCheckBoxWidget:
         with qtbot.wait_signal(widget.dataChanged):
             widget.check_box.setChecked(True)
         assert widget.data is True
-
+    def test_no_layout(self, caplog, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget,
+            "layout",
+            lambda *_: None
+        )
+        qtbot.addWidget(
+            speedwagon.frontend.qtwidgets.widgets.CheckBoxWidget(
+                widget_metadata={}, parent=parent
+            )
+        )
+        assert "has no layout" in caplog.text
 
 class TestFileSelectWidget:
     def test_empty_widget_metadata(self, qtbot):
@@ -666,3 +692,35 @@ class TestQtWidgetTableEditWidget:
         assert (
             results[0]["two"] == "Option 1"
         ), f'expected "Option 1" but got {results}'
+
+
+class TestLineEditWidget:
+    def test_no_layout(self, caplog, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.widgets.LineEditWidget,
+            "layout",
+            lambda *_: None
+        )
+        qtbot.addWidget(
+            speedwagon.frontend.qtwidgets.widgets.LineEditWidget(
+                widget_metadata={},
+                parent=parent
+            )
+        )
+        assert "has no layout" in caplog.text
+
+class TestFileSystemItemSelectWidget:
+    def test_no_layout(self, caplog, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.widgets.FileSystemItemSelectWidget,
+            "layout",
+            lambda *_: None
+        )
+        qtbot.addWidget(
+            speedwagon.frontend.qtwidgets.widgets.FileSystemItemSelectWidget(
+                widget_metadata={}, parent=parent
+            )
+        )
+        assert "has no layout" in caplog.text

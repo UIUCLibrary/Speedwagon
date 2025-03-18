@@ -348,7 +348,10 @@ class TabsConfigurationTab(SettingsTab[List[config.tabs.CustomTabData]]):
         )
 
         self.editor.changes_made.connect(self.changes_made)
-        self.editor.layout().setContentsMargins(0, 0, 0, 0)
+        if editor_layout := self.editor.layout():
+            editor_layout.setContentsMargins(0, 0, 0, 0)
+        else:
+            logger.error("%s has no layout", {self.editor.__class__.__name__})
         layout.addWidget(self.editor)
         self.setLayout(layout)
 

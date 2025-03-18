@@ -11,7 +11,6 @@ from . import splashscreen
 from . import gui
 from . import gui_startup
 from . import shared_custom_widgets
-from . import worker
 
 __all__ = [
     "user_interaction",
@@ -25,5 +24,4 @@ __all__ = [
     "shared_custom_widgets",
     "gui",
     "gui_startup",
-    "worker",
 ]

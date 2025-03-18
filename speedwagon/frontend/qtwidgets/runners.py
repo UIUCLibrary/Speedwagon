@@ -101,7 +101,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             self.dialog_box.failed()
 
         @QtCore.Slot(object)
-        def _finished(self, results) -> None:
+        def _finished(self, results: runner_strategies.JobSuccess) -> None:
             if results in [
                 runner_strategies.JobSuccess.SUCCESS,
                 runner_strategies.JobSuccess.ABORTED,
