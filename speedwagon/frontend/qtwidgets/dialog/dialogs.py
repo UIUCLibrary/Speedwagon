@@ -228,15 +228,18 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
     def stop(self) -> None:
         self.context.state = WorkflowProgressStateStopping(self.context)
 
-    def close_dialog(self, event: QtGui.QCloseEvent) -> None:
+    def ask_user_if_should_stop(self) -> bool:
         dialog = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Trying to stop job.",
             "Trying to stop job?",
             QtWidgets.QMessageBox.StandardButton.Yes
             | QtWidgets.QMessageBox.StandardButton.No,
-        )
-        if dialog.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
+            )
+        return dialog.exec() == QtWidgets.QMessageBox.StandardButton.Yes
+
+    def close_dialog(self, event: QtGui.QCloseEvent) -> None:
+        if self.ask_user_if_should_stop():
             self.context.aborted.emit()
             self.context.state = WorkflowProgressStateStopping(self.context)
             event.accept()
@@ -369,7 +372,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         self.progress_bar: QtWidgets.QProgressBar
         self.banner: QtWidgets.QLabel
         # =====================================================================
-        self._log_handler: typing.Optional[logging.Handler] = None
+        self._log_handler = logging_helpers.QtSignalLogHandler(self)
         self._parent_logger: typing.Optional[logging.Logger] = None
 
         self._console_data = QtGui.QTextDocument(parent=self)
@@ -386,14 +389,10 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         self.cursor.endEditBlock()
 
     def flush(self) -> None:
-        if self._log_handler is not None:
-            self._log_handler.flush()
+        self._log_handler.flush()
 
     def attach_logger(self, logger: logging.Logger) -> None:
         self._parent_logger = logger
-        self._log_handler = logging_helpers.QtSignalLogHandler(self)
-        if self._log_handler.signals is None:
-            raise RuntimeError("attach_logger failed to connect signals")
         self._log_handler.signals.messageSent.connect(
             self.write_html_block_to_console
         )
@@ -403,10 +402,8 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
     def remove_log_handles(self) -> None:
         if self._parent_logger is not None:
-            if self._log_handler is not None:
-                self._log_handler.flush()
-                self._parent_logger.removeHandler(self._log_handler)
-                self._log_handler = None
+            self._log_handler.flush()
+            self._parent_logger.removeHandler(self._log_handler)
             self._parent_logger = None
 
     def get_console_content(self) -> str:

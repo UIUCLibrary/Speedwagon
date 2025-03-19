@@ -699,7 +699,7 @@ class SelectWorkflow(QtWidgets.QWidget):
             )
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
-        self.workflowSelectionView.setModel(models.WorkflowList())
+        self.model = models.WorkflowList()
 
     @property
     def model(self) -> QtCore.QAbstractItemModel:
@@ -953,6 +953,7 @@ class ToolConsole(QtWidgets.QWidget):
         """Attach Python logger."""
         logger_.addHandler(self.log_handler)
         self._attached_logger = logger_
+        self.destroyed.connect(self.detach_logger)
 
     def detach_logger(self) -> None:
         """Detach Python logger."""
@@ -960,3 +961,7 @@ class ToolConsole(QtWidgets.QWidget):
             self.log_handler.flush()
             self._attached_logger.removeHandler(self.log_handler)
             self._attached_logger = None
+
+    def closeEvent(self, event):
+        self.detach_logger()
+        super().closeEvent(event)

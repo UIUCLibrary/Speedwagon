@@ -802,17 +802,25 @@ class TestWorkflowProgress:
 
     def test_get_console(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
+        qtbot.add_widget(progress_dialog)
         progress_dialog.write_to_console("spam")
         assert "spam" in progress_dialog.get_console_content()
 
-    def test_start_changes_state_to_working(self, qtbot):
+    def test_start_changes_state_to_working(self, qtbot, monkeypatch):
         progress_dialog = dialogs.WorkflowProgress()
+        monkeypatch.setattr(
+            dialogs.WorkflowProgressStateWorking,
+            "ask_user_if_should_stop",
+            lambda *_: True
+        )
+        qtbot.addWidget(progress_dialog)
         assert progress_dialog.current_state == "idle"
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
 
     def test_stop_changes_working_state_to_stopping(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
+        qtbot.add_widget(progress_dialog)
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
         progress_dialog.stop()
@@ -820,6 +828,7 @@ class TestWorkflowProgress:
 
     def test_failed_changes_working_state_to_failed(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
+        qtbot.addWidget(progress_dialog)
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
         progress_dialog.failed()
@@ -827,6 +836,7 @@ class TestWorkflowProgress:
 
     def test_cancel_completed_changes_stopping_state_to_aborted(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
+        qtbot.addWidget(progress_dialog)
         progress_dialog.start()
         assert progress_dialog.current_state == "working"
         progress_dialog.stop()
@@ -835,6 +845,7 @@ class TestWorkflowProgress:
 
     def test_success_completed_chances_status_to_done(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
+        qtbot.addWidget(progress_dialog)
         progress_dialog.start()
         progress_dialog.success_completed()
         assert progress_dialog.current_state == "done"
@@ -842,7 +853,7 @@ class TestWorkflowProgress:
 
 class TestWorkflowProgressGui:
     def test_remove_log_handles(self, qtbot):
-        logger = logging.getLogger()
+        logger = logging.getLogger('test_remove_log_handles')
         logger.setLevel(logging.INFO)
         progress_dialog = dialogs.WorkflowProgressGui()
         qtbot.add_widget(progress_dialog)
@@ -853,7 +864,7 @@ class TestWorkflowProgressGui:
         assert "Some message" not in progress_dialog.get_console_content()
 
     def test_attach_logger(self, qtbot):
-        logger = logging.getLogger()
+        logger = logging.getLogger('test_attach_logger')
         logger.setLevel(logging.INFO)
         progress_dialog = dialogs.WorkflowProgressGui()
         qtbot.add_widget(progress_dialog)
@@ -914,6 +925,7 @@ class TestWorkflowProgressState:
 class TestWorkflowProgressStateStopping:
     def test_stopping_produces_a_warning(self, qtbot, monkeypatch):
         context = dialogs.WorkflowProgress()
+        qtbot.add_widget(context)
         mock_dialog = Mock(
             Icon = Mock(name="Icon", Information = ""),
             StandardButton=Mock(name="StandardButton", Yes=1, No=0)
@@ -927,6 +939,7 @@ class TestWorkflowProgressStateStopping:
 class TestWorkflowProgressStateIdle:
     def test_stopping_produces_a_warning(self, qtbot):
         context = dialogs.WorkflowProgress()
+        qtbot.add_widget(context)
         state = dialogs.WorkflowProgressStateIdle(context)
         with pytest.warns(UserWarning):
             state.stop()
