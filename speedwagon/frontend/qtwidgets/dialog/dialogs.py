@@ -315,13 +315,6 @@ class WorkflowProgressStateFailed(AbsWorkflowProgressState):
         warnings.warn(ALREADY_STOPPED_MESSAGE, stacklevel=2)
 
 
-class WorkflowProgressStateWorkingIndeterminate(WorkflowProgressStateWorking):
-    def __init__(self, context: "WorkflowProgress"):
-        super().__init__(context)
-        self.reset_cancel_button()
-        context.progress_bar.setRange(0, 0)
-
-
 class WorkflowProgressStateDone(AbsWorkflowProgressState):
     state_name = "done"
 
