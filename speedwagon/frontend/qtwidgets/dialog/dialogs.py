@@ -393,7 +393,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
     def attach_logger(self, logger: logging.Logger) -> None:
         self._parent_logger = logger
-        self._log_handler.signals.messageSent.connect(
+        self._log_handler.signals.messageSent.connect(  # type: ignore
             self.write_html_block_to_console
         )
         formatter = logging_helpers.ConsoleFormatter()

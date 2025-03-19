@@ -1,3 +1,4 @@
+import logging
 import os
 from unittest.mock import Mock
 
@@ -470,13 +471,13 @@ class TestPluginConfig:
         plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
         entry_point = Mock(metadata.EntryPoint)
         entry_point.name = "Spam"
+        entry_point.module = "Bacon"
 
         plugin_widget.model.add_entry_point(entry_point)
         qtbot.addWidget(plugin_widget)
         return plugin_widget
 
     def test_changes_made_signal(self, qtbot, plugin_with_spam):
-
         with qtbot.wait_signal(plugin_with_spam.changes_made):
             plugin_with_spam.model.setData(
                 plugin_with_spam.model.index(0, 0),
@@ -488,7 +489,6 @@ class TestPluginConfig:
     def test_changes_made_signal_reverting_makes_arg_false(
         self, qtbot, plugin_with_spam
     ):
-
         with qtbot.wait_signal(plugin_with_spam.changes_made):
             plugin_with_spam.model.setData(
                 plugin_with_spam.model.index(0, 0),
@@ -503,6 +503,10 @@ class TestPluginConfig:
             )
         assert plugin_with_spam.modified is False
 
+    def test_plugins(self, qtbot, plugin_with_spam):
+        plugins = plugin_with_spam.plugins()
+        qtbot.addWidget(plugin_with_spam)
+        assert "Bacon" in plugins
 
 class TestWorkspace:
     @pytest.fixture()
@@ -776,3 +780,141 @@ class TestFileSystemItemSelectWidget:
             )
         )
         assert "has no layout" in caplog.text
+
+class TestSelectWorkflow:
+    @pytest.fixture
+    def Spam(self):
+        return type("Spam", (Workflow,), {
+            "name": "Spam",
+            "description": "some description"
+        })
+
+    @pytest.fixture
+    def Bacon(self):
+        return type("Bacon", (Workflow,), {
+            "name": "bacon",
+            "description": "some other description"
+        })
+
+    def test_workflow_selected(self, qtbot, Spam):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.SelectWorkflow(
+            parent=parent
+        )
+        qtbot.add_widget(widget)
+
+        widget.add_workflow(Spam)
+        index = widget.model.index(0, 0)
+        with qtbot.wait_signal(widget.workflow_selected):
+            qtbot.mouseClick(
+                widget.workflowSelectionView.viewport(),
+                QtCore.Qt.LeftButton,
+                pos=widget.workflowSelectionView.visualRect(index).center(),
+            )
+
+    @pytest.mark.parametrize("name", ["Spam", "bacon"])
+    def test_set_current_by_name_emit_workflow_selected(self, qtbot, name, Spam, Bacon):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.SelectWorkflow(
+            parent=parent
+        )
+        widget.add_workflow(Spam)
+        widget.add_workflow(Bacon)
+        qtbot.add_widget(widget)
+        with qtbot.wait_signal(widget.workflow_selected) as signal:
+            widget.set_current_by_name(name)
+        assert len(signal.args) == 1
+        assert signal.args[0].name == name
+
+    @pytest.mark.parametrize("name", ["Spam", "bacon"])
+    def test_set_current_by_name_sets_selected(self, qtbot, name, Spam, Bacon):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.SelectWorkflow(
+            parent=parent
+        )
+        qtbot.add_widget(widget)
+        widget.add_workflow(Spam)
+        widget.add_workflow(Bacon)
+        widget.set_current_by_name(name)
+        assert len(widget.workflowSelectionView.selectedIndexes()) == 1
+        assert widget.model.data(
+            widget.workflowSelectionView.selectedIndexes()[0]
+        ) == name
+
+    def test_set_current_by_name_invalid(self, qtbot, Spam, Bacon):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.SelectWorkflow(
+            parent=parent
+        )
+        qtbot.add_widget(widget)
+        widget.add_workflow(Spam)
+        widget.add_workflow(Bacon)
+        with pytest.raises(ValueError) as error:
+            widget.set_current_by_name("Invalid Workflow")
+        assert "Invalid Workflow" in str(error.value)
+
+    def test_get_current_workflow_type(self, qtbot, Spam):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.SelectWorkflow(
+            parent=parent
+        )
+        qtbot.add_widget(widget)
+        widget.add_workflow(Spam)
+        widget.set_current_by_name("Spam")
+        assert widget.get_current_workflow_type() == Spam
+
+    def test_workflows(self, qtbot, Spam):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.SelectWorkflow(
+            parent=parent
+        )
+        qtbot.add_widget(widget)
+        widget.add_workflow(Spam)
+        assert "Spam" in widget.workflows
+
+class TestToolConsole:
+    def test_starts_with_no_text(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.ToolConsole(
+            parent=parent
+        )
+        qtbot.add_widget(widget)
+        assert widget.text == ""
+
+    def test_adding_message(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.ToolConsole(
+            parent=parent
+        )
+        qtbot.add_widget(widget)
+        widget.add_message("hello")
+        assert widget.text == "hello"
+
+    def test_attach_logger(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.ToolConsole(
+            parent=parent
+        )
+        qtbot.add_widget(widget)
+        logger = logging.getLogger("test_attach_logger")
+        logger.setLevel(logging.INFO)
+        widget.attach_logger(logger)
+        try:
+            with qtbot.wait_signal(widget.log_handler.signals.messageSent) as signal:
+                logger.info("hello")
+            assert widget.text.strip() == "hello"
+        finally:
+            widget.detach_logger()
+
+    def test_close_detaches_logger(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.ToolConsole(
+            parent=parent
+        )
+        qtbot.add_widget(widget)
+        logger = logging.getLogger('test_close_detaches_logger')
+        logger.setLevel(logging.INFO)
+        widget.attach_logger(logger)
+        assert len(logger.handlers) == 1
+        widget.close()
+        assert len(logger.handlers) == 0
