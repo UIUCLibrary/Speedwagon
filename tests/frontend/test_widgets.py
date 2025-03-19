@@ -217,6 +217,15 @@ class TestFileSelectWidget:
         )
         assert widget.extract_path_from_event(event) == "fakepath"
 
+    def test_open_default_file_dialog(self, qtbot, monkeypatch):
+        parent = QtWidgets.QWidget()
+        qtbot.addWidget(parent)
+        getOpenFileName = Mock(return_value=("filepath", "..." ))
+        monkeypatch.setattr(speedwagon.frontend.qtwidgets.widgets.QtWidgets.QFileDialog, "getOpenFileName", getOpenFileName)
+        widget = speedwagon.frontend.qtwidgets.widgets.FileSelectWidget(
+            widget_metadata={}, parent=parent
+        )
+        assert widget.open_default_file_dialog() == "filepath"
 
 class TestDirectorySelectWidget:
     def test_empty_widget_metadata(self, qtbot):
@@ -516,22 +525,35 @@ class TestWorkspace:
         )
         return speedwagon.frontend.qtwidgets.widgets.Workspace()
 
-    def test_show_workflow_name(self, qtbot, sample_workflow_klass, workspace):
+    def test_set_workflow_with_missing_configuration(self, qtbot, workspace):
+        workspace.session_config = Mock(application_settings=Mock(side_effect=speedwagon.exceptions.MissingConfiguration('nope')))
+        qtbot.addWidget(workspace)
+        class Spam(speedwagon.Workflow):
+            pass
+        workspace.set_workflow(Spam)
+        assert "Workflow unavailable" in workspace.workflow_description_value.toHtml()
+
+    @pytest.mark.parametrize(
+        "workspace_param, expected_value",
+        [
+            ("description", "some description"),
+            ("name", "Spam bacon eggs"),
+            ("configuration", {}),
+        ]
+    )
+    def test_qt_properties(self, qtbot, workspace, sample_workflow_klass, workspace_param, expected_value):
+        qtbot.addWidget(workspace)
         workspace.session_config = Mock()
         workspace.set_workflow(sample_workflow_klass)
-        assert workspace.workflow_name == sample_workflow_klass.name
+        assert getattr(workspace, workspace_param) == expected_value
 
-    def test_show_workflow_description(
-        self, qtbot, sample_workflow_klass, workspace
-    ):
+    @pytest.mark.parametrize("truthy", [True, False])
+    def test_is_valid_matches_setting_form(self, qtbot, workspace, sample_workflow_klass, truthy):
+        qtbot.addWidget(workspace)
         workspace.session_config = Mock()
-        workspace.set_workflow(sample_workflow_klass)
-        assert (
-            workspace.workflow_description == sample_workflow_klass.description
-        )
+        workspace.settings_form.is_valid = Mock(return_value=truthy)
+        assert workspace.is_valid() is truthy
 
-
-#
 class TestWorkflowSettingsEditor:
     class GenWorkflow(speedwagon.Workflow):
         name = "Generate OCR Files!"
@@ -709,6 +731,36 @@ class TestLineEditWidget:
             )
         )
         assert "has no layout" in caplog.text
+
+    def test_edit(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.LineEditWidget(
+            widget_metadata={}, parent=parent
+        )
+        qtbot.addWidget(widget)
+        with qtbot.wait_signal(widget.dataChanged):
+            qtbot.keyClicks(widget.text_box, "hello")
+        assert widget.data == "hello"
+
+    def test_data_assignment(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.LineEditWidget(
+            widget_metadata={}, parent=parent
+        )
+        qtbot.addWidget(widget)
+        with qtbot.wait_signal(widget.dataChanged):
+            widget.data = "hello"
+        assert widget.data == "hello"
+
+    def test_editing_finished(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.LineEditWidget(
+            widget_metadata={}, parent=parent
+        )
+        qtbot.addWidget(widget)
+        with qtbot.wait_signal(widget.editingFinished):
+            qtbot.keyClicks(widget.text_box, "hello")
+            qtbot.keyPress(widget.text_box, QtCore.Qt.Key.Key_Enter)
 
 class TestFileSystemItemSelectWidget:
     def test_no_layout(self, caplog, qtbot, monkeypatch):
