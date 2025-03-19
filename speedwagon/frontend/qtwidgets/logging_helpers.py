@@ -162,7 +162,7 @@ class QtSignalLogHandler(BufferingHandler):
         self.signals = None
         self._register()
         if self._parent:
-            self._parent.destroyed.connect(lambda: self._unregister)
+            self._parent.destroyed.connect(self._unregister)
 
         self.flush_timer = QtCore.QTimer(parent)
         self.flush_timer.timeout.connect(self.flush)
@@ -172,6 +172,9 @@ class QtSignalLogHandler(BufferingHandler):
         self.signals = self.Signals(self._parent)
 
     def _unregister(self) -> None:
+        self.flush_timer.timeout.disconnect(self.flush)
+        self.flush_timer.stop()
+        self._parent = None
         self.signals = None
 
     def flush(self) -> None:

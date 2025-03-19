@@ -1,6 +1,7 @@
 """Specialize widgets."""
 from __future__ import annotations
 import abc
+import functools
 import json
 import os.path
 import typing
@@ -111,6 +112,7 @@ class LineEditWidget(EditDelegateWidget):
         self.text_box.textChanged.connect(  # type: ignore
             self._update_data_from_line_edit
         )
+        self.text_box.editingFinished.connect(self.editingFinished)
 
     def _update_data_from_line_edit(self) -> None:
         self._data = self.text_box.text()
@@ -257,6 +259,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         self.edit.textChanged.connect(  # type: ignore
             self._update_data_from_line_edit
         )
+        self.edit.editingFinished.connect(self.editingFinished)
 
     def _update_data_from_line_edit(self) -> None:
         self._data = self.edit.text()
@@ -323,13 +326,13 @@ class DirectorySelectWidget(FileSystemItemSelectWidget):
         self,
         get_file_callback: Optional[typing.Callable[[], Optional[str]]] = None,
     ) -> None:
-        def default_use_qt_dialog() -> Optional[str]:
-            return QtWidgets.QFileDialog.getExistingDirectory(parent=self)
-
         selection: Optional[str] = (
-            get_file_callback or default_use_qt_dialog
+            get_file_callback or
+            functools.partial(
+                QtWidgets.QFileDialog.getExistingDirectory,
+                parent=self
+            )
         )()
-
         if selection:
             data = selection
             self.data = data
@@ -363,20 +366,18 @@ class FileSelectWidget(FileSystemItemSelectWidget):
         super().__init__(widget_metadata=widget_metadata, parent=parent)
         self.filter = widget_metadata.get("filter")
 
+    def open_default_file_dialog(self) -> Optional[str]:
+        result = QtWidgets.QFileDialog.getOpenFileName(
+            parent=self,
+            filter=self.filter if self.filter is not None else "",
+        )
+        return result[0] if result else None
+
     def browse_file(
         self,
         get_file_callback: Optional[typing.Callable[[], Optional[str]]] = None,
     ) -> None:
-        def use_qt_file_dialog() -> Optional[str]:
-            if self.filter is None:
-                result = QtWidgets.QFileDialog.getOpenFileName(parent=self)
-            else:
-                result = QtWidgets.QFileDialog.getOpenFileName(
-                    parent=self, filter=self.filter
-                )
-            return result[0] if result else None
-
-        selection = (get_file_callback or use_qt_file_dialog)()
+        selection = (get_file_callback or self.open_default_file_dialog)()
         if selection:
             data = selection
             self.data = data
@@ -662,11 +663,6 @@ class Workspace(QtWidgets.QWidget):
         """Get workflow configuration."""
         return self._get_configuration()
 
-    @property
-    def workflow_name(self) -> str:
-        """Get workflow name."""
-        return self._get_workflow_name()
-
     @QtCore.Property(str)
     def name(self) -> str:
         """Get workflow name."""
@@ -674,11 +670,6 @@ class Workspace(QtWidgets.QWidget):
 
     def _get_workflow_name(self) -> str:
         return self.workflow_name_value.text()
-
-    @property
-    def workflow_description(self) -> str:
-        """Get workflow description."""
-        return self._get_workflow_description()
 
     @QtCore.Property(str)
     def description(self) -> str:
@@ -708,7 +699,7 @@ class SelectWorkflow(QtWidgets.QWidget):
             )
         ) as ui_file:
             ui_loader.load_ui(str(ui_file), self)
-        self.workflowSelectionView.setModel(models.WorkflowList())
+        self.model = models.WorkflowList()
 
     @property
     def model(self) -> QtCore.QAbstractItemModel:
@@ -962,6 +953,7 @@ class ToolConsole(QtWidgets.QWidget):
         """Attach Python logger."""
         logger_.addHandler(self.log_handler)
         self._attached_logger = logger_
+        self.destroyed.connect(self.detach_logger)
 
     def detach_logger(self) -> None:
         """Detach Python logger."""
@@ -969,3 +961,7 @@ class ToolConsole(QtWidgets.QWidget):
             self.log_handler.flush()
             self._attached_logger.removeHandler(self.log_handler)
             self._attached_logger = None
+
+    def closeEvent(self, event):
+        self.detach_logger()
+        super().closeEvent(event)
