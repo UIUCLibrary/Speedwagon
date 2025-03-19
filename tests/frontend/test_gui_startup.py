@@ -309,11 +309,11 @@ class TestStartQtThreaded:
             lambda *_: "app_data_dir"
         )
 
-        monkeypatch.setattr(
-            speedwagon.config.config.pathlib.Path,
-            "home",
-            lambda *_: pathlib.Path("/usr/home")
-        )
+        # monkeypatch.setattr(
+        #     speedwagon.config.config.pathlib.Path,
+        #     "home",
+        #     lambda *_: pathlib.Path("/usr/home")
+        # )
 
         app = Mock()
         config = Mock(
@@ -321,26 +321,6 @@ class TestStartQtThreaded:
             application_settings=Mock(return_value={"GLOBAL": {}})
         )
         startup = gui_startup.StartQtThreaded(app=app, config=config)
-        class SettingsFileLocatorDummy(
-            speedwagon.config.config.AbsSettingLocator
-        ):
-            def get_app_data_dir(self):
-                return ""
-
-            def get_config_file(self):
-                return ""
-            def get_tabs_file(self):
-                return ""
-            def get_user_data_dir(self):
-                return ""
-        # startup.config_loader_strategy = SettingsFileLocatorDummy()
-        def read_settings_file_plugins(*args, **kwargs):
-            return {}
-        # monkeypatch.setattr(
-        #     speedwagon.config,
-        #     "ConfigLoader",
-        #     Mock(name="ConfigLoader", read_settings_file_plugins=read_settings_file_plugins)
-        # )
         yield startup
         if startup.windows is not None:
             startup.windows.close()
