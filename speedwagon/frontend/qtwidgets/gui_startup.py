@@ -30,7 +30,7 @@ from typing import (
     TypeVar,
     Mapping,
     Protocol,
-    Iterable,
+    Iterable
 )
 import traceback as tb
 import webbrowser
@@ -60,7 +60,7 @@ from speedwagon.config import plugins as plugin_config
 from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
 from speedwagon.utils import get_desktop_path, validate_user_input
 from speedwagon.tasks import system as system_tasks
-from speedwagon import plugins, info
+from speedwagon import info, startup
 from . import user_interaction
 from . import dialog
 from . import runners
@@ -85,6 +85,8 @@ if typing.TYPE_CHECKING:
     import pluggy
 
 __all__ = ["AbsGuiStarter", "StartQtThreaded", "SingleWorkflowJSON"]
+
+T = TypeVar("T")
 
 system_info_report_formatters: DefaultDict[
     str, Callable[[info.SystemInfo], str]
@@ -111,7 +113,7 @@ class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
     def __init__(
         self,
         app: Optional[QtWidgets.QApplication],
-        config: speedwagon.config.AbsConfigSettings,
+        config: AbsConfigSettings,
     ) -> None:
         """Create a new gui starter object."""
         super().__init__()
@@ -331,7 +333,7 @@ class MainWindowBuilder:
         open_help: Callable[[], None] = lambda: None
 
     def __init__(self) -> None:
-        self.config: Optional[speedwagon.config.AbsConfigSettings] = None
+        self.config: Optional[AbsConfigSettings] = None
         self.logger: Optional[logging.Logger] = None
         self.submit_job: Callable[
             [str, Dict[str, AbsOutputOptionDataType]], None
@@ -400,46 +402,44 @@ def load_help_web_page(
         logger.warning("No help link available. Reason: %s", error)
 
 
-class StartupTaskBuilder:
-
-    def __init__(
-        self,
-        config_backend: speedwagon.config.AbsConfigSettings
-    ) -> None:
-        self._tasks: List[system_tasks.AbsSystemTask] = []
-        self.config_backend = config_backend
-
-    def add(self, task: system_tasks.AbsSystemTask) -> None:
-        self._tasks.append(task)
-
-    def iter_tasks(self) -> Iterable[system_tasks.AbsSystemTask]:
-        for task in self._tasks:
-            task.set_config_backend(self.config_backend)
-            yield task
+def request_system_info(parent: Optional[QtWidgets.QWidget] = None) -> None:
+    """Action to open up system info dialog box."""
+    system_info_dialog = dialog.dialogs.SystemInfoDialog(
+        system_info=info.SystemInfo(), parent=parent
+    )
+    system_info_dialog.export_to_file.connect(export_system_info_to_file)
+    system_info_dialog.exec()
 
 
-def get_startup_tasks(
-    config_backend: speedwagon.config.AbsConfigSettings,
-    config_file_locations: AbsSettingLocator,
-    logger: logging.Logger
-) -> Iterable[system_tasks.AbsSystemTask]:
-    task_builder = StartupTaskBuilder(config_backend=config_backend)
-    task_builder.add(
-        system_tasks.EnsureGlobalConfigFiles(
-            logger,
-            directory_prefix=config_file_locations.get_app_data_dir(),
-        )
+def import_workflow_config(
+    parent: gui.MainWindow3,
+    dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
+    serialization_strategy: typing.Optional[
+        AbsJobConfigSerializationStrategy
+    ] = None,
+) -> None:
+    """Import workflow configuration to parent."""
+    serialization_strategy = (
+            serialization_strategy or speedwagon.job.ConfigJSONSerialize()
     )
 
-    plugin_manager = plugins.get_plugin_manager(
-        plugins.register_whitelisted_plugins
+    dialog_box = dialog_box or QtWidgets.QFileDialog()
+    load_file, _ = dialog_box.getOpenFileName(
+        parent,
+        "Import Job Configuration",
+        "",
+        "Job Configuration JSON (*.json);;All Files (*)",
     )
 
-    for plugin_tasks in plugin_manager.hook.registered_initialization_tasks():
-        for task in plugin_tasks:
-            task_builder.add(task)
+    if load_file == "":
+        # Return if cancelled
+        return
 
-    return list(task_builder.iter_tasks())
+    serialization_strategy.file_name = load_file
+    workflow_name, data = serialization_strategy.load()
+    parent.logger.debug(f"Loading {workflow_name}")
+    parent.set_active_workflow(workflow_name)
+    parent.set_current_workflow_settings(data)
 
 
 class StartQtThreaded(AbsGuiStarter):
@@ -447,7 +447,7 @@ class StartQtThreaded(AbsGuiStarter):
 
     def __init__(
         self,
-        config: Optional[speedwagon.config.AbsConfigSettings] = None,
+        config: Optional[AbsConfigSettings] = None,
         app: Optional[QtWidgets.QApplication] = None,
     ) -> None:
         """Create a new starter object."""
@@ -480,42 +480,12 @@ class StartQtThreaded(AbsGuiStarter):
 
         speedwagon.frontend.qtwidgets.gui.set_app_display_metadata(self.app)
         self._request_window = user_interaction.QtRequestMoreInfo(self.windows)
+        self.startup_tasks = []
 
     @property
     def config_locations(self) -> AbsSettingLocator:
         """Get config."""
         return self.config_files_locator
-
-    @staticmethod
-    def import_workflow_config(
-        parent: gui.MainWindow3,
-        dialog_box: typing.Optional[QtWidgets.QFileDialog] = None,
-        serialization_strategy: typing.Optional[
-            AbsJobConfigSerializationStrategy
-        ] = None,
-    ) -> None:
-        """Import workflow configuration to parent."""
-        serialization_strategy = (
-            serialization_strategy or speedwagon.job.ConfigJSONSerialize()
-        )
-
-        dialog_box = dialog_box or QtWidgets.QFileDialog()
-        load_file, _ = dialog_box.getOpenFileName(
-            parent,
-            "Import Job Configuration",
-            "",
-            "Job Configuration JSON (*.json);;All Files (*)",
-        )
-
-        if load_file == "":
-            # Return if cancelled
-            return
-
-        serialization_strategy.file_name = load_file
-        workflow_name, data = serialization_strategy.load()
-        parent.logger.debug(f"Loading {workflow_name}")
-        parent.set_active_workflow(workflow_name)
-        parent.set_current_workflow_settings(data)
 
     def set_application_name(self, name: str) -> None:
         """Set the Qt application name and the window matching."""
@@ -537,10 +507,17 @@ class StartQtThreaded(AbsGuiStarter):
 
     def initialize(self) -> None:
         """Initialize the application before opening the main window."""
-        for task in get_startup_tasks(
+        self.startup_tasks.append(
+            system_tasks.EnsureGlobalConfigFiles(
+                self.logger,
+                directory_prefix=self.config_locations.get_app_data_dir(),
+            )
+        )
+
+        for task in startup.get_startup_tasks(
             config_backend=self.config,
-            config_file_locations=self.config_locations,
-            logger=self.logger
+            config_file_locator=self.config_files_locator,
+            user_tasks=self.startup_tasks
         ):
             task.run()
 
@@ -633,17 +610,6 @@ class StartQtThreaded(AbsGuiStarter):
         if log_saved:
             self.logger.info("Saved log to %s", log_saved)
 
-    @staticmethod
-    def request_system_info(
-        parent: Optional[QtWidgets.QWidget] = None,
-    ) -> None:
-        """Action to open up system info dialog box."""
-        system_info_dialog = dialog.dialogs.SystemInfoDialog(
-            system_info=info.SystemInfo(), parent=parent
-        )
-        system_info_dialog.export_to_file.connect(export_system_info_to_file)
-        system_info_dialog.exec()
-
     def request_settings(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
@@ -720,8 +686,8 @@ class StartQtThreaded(AbsGuiStarter):
         builder.actions = actions or MainWindowBuilder.WindowActions(
             export_logs=self.save_log,
             export_workflow_config=save_workflow_config,
-            import_workflow_config=self.import_workflow_config,
-            open_system_info_dialog=self.request_system_info,
+            import_workflow_config=import_workflow_config,
+            open_system_info_dialog=request_system_info,
             open_settings_dialog=self.request_settings,
             open_help=lambda: load_help_web_page(
                 logger=self.logger, landing_page=get_help_url()
@@ -981,7 +947,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
     def __init__(
         self,
         app,
-        config: Optional[speedwagon.config.AbsConfigSettings] = None,
+        config: Optional[AbsConfigSettings] = None,
         logger: Optional[logging.Logger] = None,
     ) -> None:
         """Create an environment where the workflow is loaded from a json file.
@@ -1169,9 +1135,6 @@ class ResolveSettingsStrategyConfigAdapter(AbsConfigSettings):
         self, workflow: speedwagon.job.Workflow
     ) -> Mapping[str, SettingsDataType]:
         return self.workflow_backend(workflow)
-
-
-T = TypeVar("T")
 
 
 class LocalSettingsBuilder:

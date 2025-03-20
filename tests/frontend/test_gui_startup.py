@@ -28,12 +28,12 @@ gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor, GlobalSettingsTab, SettingsBuilder
 from speedwagon.frontend.qtwidgets.models.tabs import AbsLoadTabDataModelStrategy
-from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp
+from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp, import_workflow_config
 from speedwagon.frontend.qtwidgets.models import tabs as tab_models
-from speedwagon.config import StandardConfigFileLocator
 import speedwagon.workflows.builtin
 from speedwagon.tasks import system as system_tasks
 from speedwagon.job import AbsWorkflowFinder
+import speedwagon.startup
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
     TabsEditorApp = MagicMock()
@@ -394,7 +394,7 @@ class TestStartQtThreaded:
 
         serialization_strategy = MagicMock()
         serialization_strategy.load = Mock(return_value=("name", {}))
-        starter.import_workflow_config(
+        import_workflow_config(
             parent=Mock(),
             dialog_box=dialog,
             serialization_strategy=serialization_strategy
@@ -407,7 +407,7 @@ class TestStartQtThreaded:
 
         serialization_strategy = MagicMock()
         serialization_strategy.load = Mock(return_value=("name", {}))
-        starter.import_workflow_config(
+        import_workflow_config(
             parent=Mock(),
             dialog_box=dialog,
             serialization_strategy=serialization_strategy
@@ -686,7 +686,7 @@ class TestStartQtThreaded:
         start = gui_startup.StartQtThreaded(app=Mock())
         get_startup_tasks = Mock(name="get_startup_tasks", return_value=[])
         monkeypatch.setattr(
-            gui_startup,
+            speedwagon.startup,
             "get_startup_tasks",
             get_startup_tasks
         )
@@ -1333,12 +1333,35 @@ class TestLocalSettingsBuilder2:
             ]
         )
 def test_get_startup_tasks_includes_global_config_file_task():
-    config_backend = Mock()
-    config_file_locations = Mock()
-    logger = Mock()
-    tasks = gui_startup.get_startup_tasks(
-        config_backend,
-        config_file_locations,
-        logger
+    startup_task = Mock(spec_set=system_tasks.AbsSystemTask)
+    tasks = speedwagon.startup.get_startup_tasks(
+        config_backend = Mock(spec_set=speedwagon.config.AbsConfigSettings),
+        config_file_locator = Mock(spec_set=speedwagon.config.config.AbsSettingLocator),
+        user_tasks=[startup_task]
     )
-    assert any([isinstance(a, system_tasks.EnsureGlobalConfigFiles) for a in tasks])
+    assert startup_task in tasks
+
+def test_get_startup_tasks_add_callable():
+    startup_task = Mock()
+    tasks = speedwagon.startup.get_startup_tasks(
+        Mock(spec_set=speedwagon.config.AbsConfigSettings),
+        config_file_locator = Mock(spec_set=speedwagon.config.config.AbsSettingLocator),
+        user_tasks=[startup_task]
+    )
+    assert any([
+        task.callback == startup_task
+        for task in tasks
+        if isinstance(task, system_tasks.CallbackSystemTask)
+    ])
+
+def test_request_system_info(qtbot, monkeypatch):
+    dialog = Mock(name="SystemInfoDialog")
+    monkeypatch.setattr(
+        gui_startup.dialog.dialogs,
+        "SystemInfoDialog",
+        Mock(return_value=dialog)
+    )
+    parent = QtWidgets.QWidget()
+    qtbot.add_widget(parent)
+    gui_startup.request_system_info(parent)
+    dialog.exec.assert_called_once()

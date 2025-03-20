@@ -1,7 +1,7 @@
 import argparse
 import os.path
 
-from unittest.mock import Mock, MagicMock, mock_open, patch
+from unittest.mock import Mock, MagicMock, mock_open, patch, ANY
 
 import logging
 import os
@@ -14,7 +14,7 @@ import speedwagon.startup
 import speedwagon.config
 import speedwagon.job
 import speedwagon.runner_strategies
-
+from speedwagon.tasks.system import AbsSystemTask
 
 def test_version_exits_after_being_called(monkeypatch):
 
@@ -250,3 +250,47 @@ def test_run_command_valid(monkeypatch):
         command=command
     )
     assert good.run.called is True
+
+class TestStartupTaskBuilder:
+    @pytest.fixture
+    def config_file_locator(self):
+        return Mock(name='config_file_locator')
+
+    @pytest.fixture
+    def config_backend(self):
+        return Mock(
+            name='config_backend',
+            spec_set=speedwagon.config.AbsConfigSettings
+        )
+    @pytest.fixture
+    def task_builder(self, config_backend, config_file_locator):
+        return speedwagon.startup.StartupTaskBuilder(
+            config_backend=config_backend,
+            config_file_locator=config_file_locator
+        )
+
+    def test_empty_list(self, task_builder):
+        assert list(task_builder.iter_tasks()) == []
+
+    def test_add_task(self, task_builder):
+        my_task = Mock(spec_set=AbsSystemTask)
+        task_builder.add_task(my_task)
+        assert list(task_builder.iter_tasks()) == [my_task]
+
+    def test_add_callable(self, task_builder, config_backend, config_file_locator):
+        def my_task(config, config_file_locations):
+            return None
+        my_task = Mock(name="my_task", side_effect=my_task)
+        task_builder.add_callable(my_task)
+        list(map(lambda t: t.run(), task_builder.iter_tasks()))
+        my_task.assert_called_once_with(config_backend, ANY)
+        expected_keys = {
+            "app_data_directory",
+            "user_data_directory",
+            "tab_config_file"
+        }
+        actual_keys = my_task.call_args_list[0].args[1].keys()
+        assert all(
+            key in actual_keys
+            for key in expected_keys
+        ), f"Argument 1 expected {expected_keys}, actual {actual_keys}"
