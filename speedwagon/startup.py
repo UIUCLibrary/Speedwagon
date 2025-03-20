@@ -20,23 +20,44 @@ import logging
 import os
 import sys
 from typing import (
-    Dict, Iterator, Tuple, List, Type, TYPE_CHECKING, Optional, Callable, Any,
-    Collection, TypeVar, Mapping, Union
+    Dict,
+    Iterator,
+    Tuple,
+    List,
+    Type,
+    TYPE_CHECKING,
+    Optional,
+    Callable,
+    Any,
+    Collection,
+    TypeVar,
+    Mapping,
+    Union,
+    Iterable,
+    Sequence,
 )
 
 import speedwagon.job
 import speedwagon.config
 from speedwagon.config.workflow import (
-    default_backend_factory, AbsWorkflowBackend
+    default_backend_factory,
+    AbsWorkflowBackend,
 )
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import StandardConfigFileLocator
 from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
+from speedwagon.tasks.system import CallbackSystemTask, AbsSystemTask
+from speedwagon.tasks.utils import TaskBuilder
+from speedwagon import plugins
 
 if TYPE_CHECKING:
     import speedwagon.frontend.qtwidgets.gui_startup
     from speedwagon.config.common import SettingsData
-    from speedwagon.config.config import AbsSettingLocator, AbsConfigSettings
+    from speedwagon.config.config import (
+        AbsSettingLocator,
+        AbsConfigSettings,
+        SettingsLocations,
+    )
 
 __all__ = [
     "ApplicationLauncher",
@@ -55,7 +76,7 @@ def parse_args() -> argparse.ArgumentParser:
 
 class AbsTabFileReader(abc.ABC):  # pylint: disable=too-few-public-methods
     def __init__(
-            self, all_workflows: Dict[str, Type[speedwagon.job.Workflow]]
+        self, all_workflows: Dict[str, Type[speedwagon.job.Workflow]]
     ) -> None:
         """Load all workflows supported.
 
@@ -66,7 +87,7 @@ class AbsTabFileReader(abc.ABC):  # pylint: disable=too-few-public-methods
 
     @abc.abstractmethod
     def load_custom_tabs(
-            self, strategy: speedwagon.config.tabs.AbsTabsConfigDataManagement
+        self, strategy: speedwagon.config.tabs.AbsTabsConfigDataManagement
     ) -> Iterator[Tuple[str, dict]]:
         """Get custom tabs data from file.
 
@@ -83,8 +104,7 @@ class CustomTabsFileReader(AbsTabFileReader):
     """Reads the tab file data."""
 
     def _load_workflow(
-        self,
-        workflow_name: str
+        self, workflow_name: str
     ) -> Type[speedwagon.job.Workflow[_T]]:
         workflow = self.all_workflows[workflow_name]
         if workflow.active is False:
@@ -110,12 +130,13 @@ class CustomTabsFileReader(AbsTabFileReader):
                         tab_entity.tab_name,
                         self.gather_registered_workflows(
                             tab_entity.workflow_names
-                        )
+                        ),
                     )
                 except TabLoadFailure as error:
                     logger.error(
-                        'Custom tab %s failed to load. Reason: %s',
-                        tab_entity.tab_name, error
+                        "Custom tab %s failed to load. Reason: %s",
+                        tab_entity.tab_name,
+                        error,
                     )
                     raise
         except TabLoadFailure as error:
@@ -128,8 +149,7 @@ class CustomTabsFileReader(AbsTabFileReader):
             )
 
     def gather_registered_workflows(
-        self,
-        workflow_names: Collection[str]
+        self, workflow_names: Collection[str]
     ) -> Dict[str, Type[speedwagon.job.Workflow[_T]]]:
         new_tab_items: Dict[str, Type[speedwagon.job.Workflow[_T]]] = {}
         for item_name in workflow_names:
@@ -151,7 +171,7 @@ class CustomTabsFileReader(AbsTabFileReader):
 def get_custom_tabs(
     all_workflows: Dict[str, Type[speedwagon.job.Workflow]],
     yaml_file: str,
-    reader_klass: Type[AbsTabFileReader] = CustomTabsFileReader
+    reader_klass: Type[AbsTabFileReader] = CustomTabsFileReader,
 ) -> Iterator[Tuple[str, dict]]:
     """Load custom tab yaml file."""
     getter = reader_klass(all_workflows)
@@ -182,11 +202,12 @@ class ApplicationLauncher:
         self.application_name = "speedwagon"
         self.application_config_directory_name = "Speedwagon"
         self.settings_resolver: Optional[ResolveSettings] = None
+        self.startup_tasks: List[AbsSystemTask] = []
         try:
             from speedwagon.frontend.qtwidgets.gui_startup import (
                 StartQtThreaded,
                 ResolveSettings,
-                ResolveSettingsStrategyConfigAdapter
+                ResolveSettingsStrategyConfigAdapter,
             )
 
             self.settings_resolver = ResolveSettings()
@@ -198,16 +219,13 @@ class ApplicationLauncher:
 
             config_backend_factory = functools.partial(
                 speedwagon.config.workflow.default_backend_factory,
-                config_directory_name=self.application_config_directory_name
+                config_directory_name=self.application_config_directory_name,
             )
-            self.strategy = (
-                strategy or
-                StartQtThreaded(
-                    config=ResolveSettingsStrategyConfigAdapter(
-                        source_application_settings=self.settings_resolver,
-                        workflow_backend=config_backend_factory,
-                    ),
-                )
+            self.strategy = strategy or StartQtThreaded(
+                config=ResolveSettingsStrategyConfigAdapter(
+                    source_application_settings=self.settings_resolver,
+                    workflow_backend=config_backend_factory,
+                ),
             )
         except ImportError:
             self.strategy = strategy or CLIStarter()
@@ -217,6 +235,8 @@ class ApplicationLauncher:
         self.strategy.config_files_locator = StandardConfigFileLocator(
             self.application_config_directory_name
         )
+        self.strategy.set_application_name(self.application_name)
+        self.strategy.startup_tasks = self.startup_tasks
         self.strategy.initialize()
 
     def run(self, app=None) -> int:
@@ -224,16 +244,14 @@ class ApplicationLauncher:
         self.strategy.set_application_name(self.application_name)
         config_backend = functools.partial(
             default_backend_factory,
-            config_directory_name=self.application_config_directory_name
+            config_directory_name=self.application_config_directory_name,
         )
 
-        self.strategy.set_workflow_config_backend_factory(
-            config_backend
-        )
+        self.strategy.set_workflow_config_backend_factory(config_backend)
         if app:
             try:
                 from speedwagon.frontend.qtwidgets.gui_startup import (
-                    AbsGuiStarter
+                    AbsGuiStarter,
                 )
 
                 if isinstance(self.strategy, AbsGuiStarter):
@@ -265,7 +283,7 @@ class RunCommand(SubCommand):
     def json_startup(self) -> None:
         startup_strategy: Union[
             SingleWorkflowJSON,
-            speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON
+            speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON,
         ]
         try:
             startup_strategy = self.get_gui_strategy()
@@ -294,10 +312,11 @@ class RunCommand(SubCommand):
 
 
 def get_global_options(
-    config_file_strategy: Callable[[], str] =
-        lambda: speedwagon.config.StandardConfigFileLocator(
-            config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
-        ).get_config_file(),
+    config_file_strategy: Callable[
+        [], str
+    ] = lambda: speedwagon.config.StandardConfigFileLocator(
+        config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+    ).get_config_file(),
 ) -> Dict[str, Any]:
     loader = speedwagon.config.config.MixedConfigLoader()
     loader.resolution_strategy_order = [
@@ -311,7 +330,7 @@ def get_global_options(
 def run_command(
     command_name: str,
     args: argparse.Namespace,
-    command: Optional[Type[RunCommand]] = None
+    command: Optional[Type[RunCommand]] = None,
 ) -> None:
     commands = {"run": RunCommand}
     command = command or commands.get(command_name)
@@ -325,7 +344,13 @@ def run_command(
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
-    config_files_locator: speedwagon.config.config.AbsSettingLocator
+    config_files_locator: AbsSettingLocator
+    startup_tasks: Sequence[
+        Union[
+            AbsSystemTask,
+            Callable[[AbsConfigSettings, SettingsLocations], None],
+        ]
+    ]
 
     def set_application_name(self, name: str) -> None:  # noqa: B027
         """Set the application name if environment supports changing name.
@@ -336,8 +361,7 @@ class AbsStarter(metaclass=abc.ABCMeta):
         """
 
     def set_workflow_config_backend_factory(  # noqa: B027
-        self,
-        factory: Callable[[speedwagon.job.Workflow], AbsWorkflowBackend]
+        self, factory: Callable[[speedwagon.job.Workflow], AbsWorkflowBackend]
     ) -> None:
         """Set the workflow config backend factory.
 
@@ -409,6 +433,87 @@ class CLIStarter(AbsStarter):
     def run(self) -> int:
         print("Try running --help for info on the commands")
         return 0
+
+
+class StartupTaskBuilder:
+    def __init__(
+        self,
+        config_backend: AbsConfigSettings,
+        config_file_locator: AbsSettingLocator,
+    ) -> None:
+        self._tasks: List[AbsSystemTask] = []
+        self.config_backend = config_backend
+        self.config_file_locator = config_file_locator
+
+    def add_task(self, task: AbsSystemTask) -> None:
+        self._tasks.append(task)
+
+    def add_callable(
+        self,
+        task: Callable[[AbsConfigSettings, SettingsLocations], None],
+    ) -> None:
+        self._tasks.append(CallbackSystemTask(task, "Startup Task"))
+
+    def iter_tasks(self) -> Iterable[AbsSystemTask]:
+        for task in self._tasks:
+            task.set_config_backend(self.config_backend)
+            task.set_config_file_locator(self.config_file_locator)
+            yield task
+
+
+def configure_startup_task(
+    task: Union[
+        AbsSystemTask,
+        Callable[[AbsConfigSettings, SettingsLocations], None],
+    ],
+    config_backend: AbsConfigSettings,
+    config_file_locator: AbsSettingLocator,
+) -> AbsSystemTask:
+    if not isinstance(task, AbsSystemTask):
+        task = CallbackSystemTask(task, "Startup Task")
+    task.set_config_backend(config_backend)
+    task.set_config_file_locator(config_file_locator)
+    return task
+
+
+def get_startup_tasks(
+    config_backend: AbsConfigSettings,
+    config_file_locator: AbsSettingLocator,
+    user_tasks: Optional[
+        Sequence[
+            Union[
+                AbsSystemTask,
+                Callable[[AbsConfigSettings, SettingsLocations], None],
+            ]
+        ]
+    ] = None,
+) -> Iterable[AbsSystemTask]:
+    task_builder: TaskBuilder[
+        Union[
+            AbsSystemTask,
+            Callable[[AbsConfigSettings, SettingsLocations], None],
+        ],
+        AbsSystemTask,
+    ] = TaskBuilder(
+        functools.partial(
+            configure_startup_task,
+            config_backend=config_backend,
+            config_file_locator=config_file_locator,
+        )
+    )
+
+    for task in user_tasks or []:
+        task_builder.add(task)
+
+    plugin_manager = plugins.get_plugin_manager(
+        plugins.register_whitelisted_plugins
+    )
+
+    for plugin_tasks in plugin_manager.hook.registered_initialization_tasks():
+        for task in plugin_tasks:
+            task_builder.add(task)
+
+    return list(task_builder.iter_tasks())
 
 
 def main(argv: Optional[List[str]] = None) -> None:

@@ -51,6 +51,7 @@ __all__ = [
     "generate_default",
     "get_platform_settings",
     "IniConfigManager",
+    "SettingsLocations",
     "StandardConfig",
     "StandardConfigFileLocator",
     "WindowsConfig",
@@ -462,6 +463,14 @@ def ensure_settings_files(
     strategy.ensure_tabs_file()
     strategy.ensure_user_data_dir()
     strategy.ensure_app_data_dir()
+
+
+class SettingsLocations(typing.TypedDict):
+    """Settings locations."""
+
+    user_data_directory: str
+    app_data_directory: str
+    tab_config_file: str
 
 
 class AbsSettingLocator(abc.ABC):

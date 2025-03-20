@@ -282,6 +282,14 @@ class TestAbsSystemTask:
         # Note: set_config_backend has not been set
         assert spam_task.config is None
 
+    def test_call(self, spam_task):
+        config = Mock()
+        config_file_locator = Mock()
+        spam_task.run = Mock()
+        spam_task(config, config_file_locator)
+        spam_task.run.assert_called_once()
+
+
 class TestSubtask:
     def test_status_default_to_idle(self):
         task = speedwagon.tasks.Subtask()
