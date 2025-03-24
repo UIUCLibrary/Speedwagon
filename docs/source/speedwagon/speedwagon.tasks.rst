@@ -10,3 +10,4 @@ speedwagon.tasks
 .. autoclass:: speedwagon.tasks.Result
     :members:
 
+.. autodecorator:: speedwagon.tasks.workflow_task

@@ -28,3 +28,20 @@ after the job is submitted but before :py:meth:`get_additional_info()
 methods. It is useful for gathering information about potential tasks will be
 run. For example: This could run a task that is traversing a path with many
 items.
+
+Create a Custom Task
+====================
+To create a custom task, the easiest way is to create a new function decorated with the
+:py:func:`workflow_task <speedwagon.tasks.workflow_task>` decorator.
+
+.. code-block:: python
+
+    from speedwagon.tasks import workflow_task
+
+    @workflow_task
+    def my_custom_adding_task(a: int, b: int) -> int:
+        return a + b
+
+The value returned by the function will be stored and provided in the
+:py:meth:`Workflow.generate_report() <speedwagon.Workflow.generate_report>`
+method.

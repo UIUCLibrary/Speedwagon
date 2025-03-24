@@ -150,3 +150,17 @@ class CallbackSystemTask(AbsSystemTask):
     def description(self) -> str:
         """Get human-readable information about current task."""
         return self._description
+
+    def __call__(self, *args, **kwargs):
+        """Called callback function."""
+        return self.callback(*args, **kwargs)
+
+
+def system_task(*args, description=None):
+    def decorator(func):
+        if description:
+            return CallbackSystemTask(func, description=description)
+        return CallbackSystemTask(func)
+    if len(args) == 1 and callable(args[0]):
+        return decorator(args[0])
+    return decorator

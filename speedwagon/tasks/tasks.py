@@ -1,15 +1,35 @@
 """Tasks."""
+
 from __future__ import annotations
 import abc
 import collections
+from dataclasses import dataclass
 import enum
 import os
 import sys
 import queue
 import pickle
 import typing
-from typing import Optional, Any, Deque, Type, List, Generic, TypeVar
-from dataclasses import dataclass
+from typing import (
+    Optional,
+    Any,
+    Deque,
+    Type,
+    List,
+    Generic,
+    TypeVar,
+    Tuple,
+    Dict,
+    Callable,
+)
+
+import speedwagon.exceptions
+
+if sys.version_info < (3, 10):  # pragma: no cover
+    from typing_extensions import ParamSpec
+else:
+    from typing import ParamSpec
+
 
 __all__ = [
     "QueueAdapter",
@@ -20,8 +40,6 @@ __all__ = [
     "Subtask",
     "TaskStatus",
 ]
-
-import speedwagon.exceptions
 
 
 class TaskStatus(enum.IntEnum):
@@ -50,7 +68,7 @@ class AbsSubtask(Generic[_T], metaclass=abc.ABCMeta):
         """Log a message to the console on the main window."""
 
     @property
-    def task_result(self) -> Optional[Result[_T]]:
+    def task_result(self) -> Optional[Result[Any, _T]]:
         """Get the results of the subtask."""
         return None
 
@@ -89,8 +107,11 @@ class AbsSubtask(Generic[_T], metaclass=abc.ABCMeta):
         pass
 
 
+_S = TypeVar("_S")
+
+
 @dataclass
-class Result(Generic[_T]):
+class Result(Generic[_S, _T]):
     """Subtask result.
 
     Attributes:
@@ -98,29 +119,49 @@ class Result(Generic[_T]):
         data: Payload of the result data.
     """
 
-    source: Type[AbsSubtask]
+    source: _S
     data: _T
 
 
-class Subtask(AbsSubtask, Generic[_T]):
-    """Base class for defining a new task for a :py:class:`Workflow` to create.
-
-    Subclass this generate a new task
-    """
+class BaseTask(AbsSubtask, Generic[_T]):
+    def __init__(self) -> None:
+        """Create a new sub-task."""
+        # TODO: refactor into state machine
+        self._status = TaskStatus.IDLE
+        self._working_dir = ""
+        self.task_working_dir = ""
+        self._parent_task_log_q: Optional[Deque[str]] = None
 
     def task_description(self) -> Optional[str]:
         """Get user readable information about what the subtask is doing."""
         return None
 
-    def __init__(self) -> None:
-        """Create a new sub-task."""
-        self._result: Optional[Result[_T]] = None
-        # TODO: refactor into state machine
-        self._status = TaskStatus.IDLE
-        self._working_dir = ""
-        self.task_working_dir = ""
+    def log(self, message: str) -> None:
+        """Generate text message for the subtask."""
+        if self._parent_task_log_q is not None:
+            self._parent_task_log_q.append(message)
 
-        self._parent_task_log_q: Optional[Deque[str]] = None
+    @property
+    def status(self) -> TaskStatus:
+        """Get the status of the subtask."""
+        return self._status
+
+    @status.setter
+    def status(self, value: TaskStatus) -> None:
+        self._status = value
+
+    def work(self) -> bool:
+        """Perform work.
+
+        This method is called when the task's work should be done.
+
+        Override this method to accomplish the task.
+
+        Note:
+            Currently expects to return a boolean value to indicate if the task
+            has succeeded or failed. However, this is likely to change.
+        """
+        raise NotImplementedError()
 
     @property
     def subtask_working_dir(self) -> str:
@@ -149,32 +190,22 @@ class Subtask(AbsSubtask, Generic[_T]):
     def parent_task_log_q(self, value: Deque[str]) -> None:
         self._parent_task_log_q = value
 
+
+class Subtask(BaseTask, Generic[_T], abc.ABC):
+    """Base class for defining a new task for a :py:class:`Workflow` to create.
+
+    Subclass this generate a new task
+    """
+
+    def __init__(self) -> None:
+        """Create a new sub-task."""
+        super().__init__()
+        self._result: Optional[Result[Type["Subtask"], _T]] = None
+
     @property
-    def task_result(self) -> Optional[Result[_T]]:
+    def task_result(self) -> Optional[Result[Type["Subtask"], _T]]:
         """Get the result of the subtask."""
         return self._result
-
-    @property
-    def status(self) -> TaskStatus:
-        """Get the status of the subtask."""
-        return self._status
-
-    @status.setter
-    def status(self, value: TaskStatus) -> None:
-        self._status = value
-
-    def work(self) -> bool:
-        """Perform work.
-
-        This method is called when the task's work should be done.
-
-        Override this method to accomplish the task.
-
-        Note:
-            Currently expects to return a boolean value to indicate if the task
-            has succeeded or failed. However, this is likely to change.
-        """
-        raise NotImplementedError()
 
     @property
     def results(self) -> Optional[_T]:
@@ -186,11 +217,6 @@ class Subtask(AbsSubtask, Generic[_T]):
     def set_results(self, results: _T) -> None:
         """Set the results of the subtask."""
         self._result = Result(self.__class__, results)
-
-    def log(self, message: str) -> None:
-        """Generate text message for the subtask."""
-        if self._parent_task_log_q is not None:
-            self._parent_task_log_q.append(message)
 
     def exec(self) -> None:
         """Execute subtask."""
@@ -248,6 +274,61 @@ class PreTask(AbsSubtask):
 
         Defaults to none.
         """
+
+
+Param = ParamSpec("Param")
+
+
+class DynamicSubtask(BaseTask[_T], Generic[Param, _T]):
+    def __init__(
+        self, func: Callable[Param, _T], description: str
+    ) -> None:
+        super().__init__()
+        self._task_description = description
+        self.func = func
+        self.args: Tuple[Any, ...] = ()
+        self.kwargs: Dict[str, Any] = {}
+        self._result: Optional[Result[Callable[Param, _T], _T]] = (
+            None
+        )
+
+    def task_description(self) -> Optional[str]:
+        return self._task_description
+
+    def __call__(
+        self, *args: Param.args, **kwargs: Param.kwargs
+    ) -> "DynamicSubtask":
+        new_task = DynamicSubtask[Param, _T](
+            func=self.func, description=self._task_description
+        )
+        new_task.args = args
+        new_task.kwargs = kwargs
+        return new_task
+
+    def work(self) -> bool:
+        results = self.func(*self.args, **self.kwargs)
+        self.set_results(results)
+        return True
+
+    def set_results(self, results: _T) -> None:
+        self._result = Result(self.func, results)
+
+    @property
+    def task_result(
+        self,
+    ) -> Optional[Result[Callable[Param, _T], _T]]:
+        """Get the result of the function."""
+        return self._result
+
+    def exec(self) -> None:
+        """Execute subtask."""
+        self.status = TaskStatus.WORKING
+        try:
+            self.work()
+            self.status = TaskStatus.SUCCESS
+        except Exception as e:
+            self.status = TaskStatus.FAILED
+            raise e
 
 
 class AbsTask(metaclass=abc.ABCMeta):
@@ -654,3 +735,14 @@ class MultiStageTaskBuilder(BaseTaskBuilder):
         task = MultiStageTask()
         task.working_dir = self._working_dir
         return task
+
+
+def workflow_task(
+    description: str,
+) -> typing.Callable[[Callable[Param, _T]], DynamicSubtask]:
+    """Decorator for creating a subtasks from functions."""
+
+    def decorator(func: Callable[Param, _T]) -> DynamicSubtask:
+        return DynamicSubtask(func, description=description)
+
+    return decorator
