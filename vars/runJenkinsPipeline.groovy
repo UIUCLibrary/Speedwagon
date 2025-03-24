@@ -554,8 +554,8 @@ def call(){
                                     script{
                                         def envs = []
                                         node('docker && windows'){
-                                            docker.image('python').inside("--mount source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
-                                                try{
+                                            try{
+                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
                                                     checkout scm
                                                     bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
                                                     envs = bat(
@@ -563,15 +563,16 @@ def call(){
                                                         script: '@.\\venv\\Scripts\\uvx --quiet --with tox-uv tox list -d --no-desc',
                                                         returnStdout: true,
                                                     ).trim().split('\r\n')
-                                                } finally{
-                                                    cleanWs(
-                                                        patterns: [
-                                                            [pattern: 'venv/', type: 'INCLUDE'],
-                                                            [pattern: '.tox/', type: 'INCLUDE'],
-                                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                        ]
-                                                    )
                                                 }
+                                            } finally{
+                                                cleanWs(
+                                                    patterns: [
+                                                        [pattern: 'venv/', type: 'INCLUDE'],
+                                                        [pattern: '.tox/', type: 'INCLUDE'],
+                                                        [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                                    ]
+                                                )
+                                                bat "${tool(name: 'Default', type: 'git')} clean -dfx"
                                             }
                                         }
                                         parallel(
@@ -582,7 +583,7 @@ def call(){
                                                     {
                                                         node('docker && windows'){
                                                             try{
-                                                                docker.image('python').inside("--mount source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
+                                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
                                                                     checkout scm
                                                                     retry(3){
                                                                         bat(label: 'Running Tox',
@@ -609,6 +610,7 @@ def call(){
                                                                                 [pattern: '**/__pycache__/', type: 'INCLUDE'],
                                                                             ]
                                                                         )
+                                                                        bat "${tool(name: 'Default', type: 'git')} clean -dfx"
                                                                     }
                                                                 }
                                                             }
@@ -688,11 +690,11 @@ def call(){
                                         axes: [
                                             [
                                                 name: 'PYTHON_VERSION',
-                                                values: ['3.9', '3.10', '3.11', '3.12','3.13']
+                                                values: ['3.9', '3.10', '3.11', '3.12', '3.13']
                                             ],
                                             [
                                                 name: 'OS',
-                                                values: ['linux','macos','windows']
+                                                values: ['linux','macos', 'windows']
                                             ],
                                             [
                                                 name: 'ARCHITECTURE',
@@ -724,7 +726,7 @@ def call(){
                                                             checkout scm
                                                             unstash 'PYTHON_PACKAGES'
                                                             if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
-                                                                docker.image('python').inside(isUnix() ? '': "--mount type=volume,source=uv_python_install_dir,target=C:\\Users\\ContainerUser\\Documents\\uvpython --mount source=msvc-runtime,target=c:\\msvc_runtime\\"){
+                                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside(isUnix() ? '': "--mount type=volume,source=uv_python_install_dir,target=C:\\Users\\ContainerUser\\Documents\\uvpython --mount source=msvc-runtime,target=c:\\msvc_runtime\\"){
                                                                      if(isUnix()){
                                                                         withEnv([
                                                                             'PIP_CACHE_DIR=/tmp/pipcache',
@@ -747,6 +749,7 @@ def call(){
                                                                             'UV_TOOL_DIR=C:\\Users\\ContainerUser\\Documents\\uvtools',
                                                                             'UV_PYTHON_INSTALL_DIR=C:\\Users\\ContainerUser\\Documents\\uvpython',
                                                                             'UV_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\uvcache',
+                                                                            'UV_LINK_MODE=copy'
                                                                         ]){
                                                                             installMSVCRuntime('c:\\msvc_runtime\\')
                                                                             bat(
