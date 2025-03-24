@@ -1,10 +1,14 @@
 """Tasks related to doing something with files on a file system."""
 
 import abc
+import logging
 import os
+import warnings
 from typing import Optional
 
-import speedwagon
+import speedwagon.tasks.tasks
+logger = logging.getLogger(__name__)
+__all__ = ["delete_file", "delete_directory"]
 
 
 class DeleteFileSystemItem(speedwagon.tasks.Subtask[str]):
@@ -34,6 +38,14 @@ class DeleteFileSystemItem(speedwagon.tasks.Subtask[str]):
 class DeleteFile(DeleteFileSystemItem):
     """Remove a file from the file system."""
 
+    def __init__(self, path: str) -> None:
+        warnings.warn(
+            "use delete_file instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(path)
+
     def task_description(self) -> Optional[str]:
         """Explain what os being removed."""
         return "Deleting file"
@@ -53,6 +65,14 @@ class DeleteFile(DeleteFileSystemItem):
 class DeleteDirectory(DeleteFileSystemItem):
     """Remove a directory from the file system."""
 
+    def __init__(self, path: str) -> None:
+        warnings.warn(
+            "use delete_directory instead",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(path)
+
     def remove(self) -> None:
         """Remove item in path attribute."""
         os.rmdir(self.path)
@@ -60,3 +80,35 @@ class DeleteDirectory(DeleteFileSystemItem):
     def task_description(self) -> Optional[str]:
         """Explain what os being removed."""
         return "Removing directory"
+
+
+@speedwagon.tasks.workflow_task(description='Removing directory')
+def delete_directory(path: str, verbosity: int = logging.WARN) -> str:
+    """Create a task to remove a directory.
+
+    Args:
+        path: path to directory to remove.
+        verbosity: Log verbosity level.
+    """
+    func_logger = logger.getChild('delete_directory')
+    func_logger.setLevel(verbosity)
+    func_logger.debug(f"Deleting {path}")
+    os.rmdir(path)
+    func_logger.info(f"Deleted {path}")
+    return path
+
+
+@speedwagon.tasks.workflow_task(description='Removing file')
+def delete_file(path: str, verbosity: int = logging.WARN) -> str:
+    """Create a task to remove a file .
+
+    Args:
+        path: path to file to remove.
+        verbosity: Log verbosity level.
+    """
+    func_logger = logger.getChild('delete_file')
+    func_logger.setLevel(verbosity)
+    func_logger.debug(f"Deleting {path}")
+    os.remove(path)
+    func_logger.info(f"Deleted {path}")
+    return path

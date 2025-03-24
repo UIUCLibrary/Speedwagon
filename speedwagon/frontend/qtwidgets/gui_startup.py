@@ -712,7 +712,7 @@ class StartQtThreaded(AbsGuiStarter):
         self,
         workflow: speedwagon.job.Workflow,
         options: Mapping[str, object],
-        pre_results: List[speedwagon.tasks.Result[typing.Any]],
+        pre_results: List[speedwagon.tasks.Result[typing.Any, typing.Any]],
         wait_condition: Optional[threading.Condition] = None,
     ) -> Optional[Mapping[str, typing.Any]]:
         """Request more information from the user."""

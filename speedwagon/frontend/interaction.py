@@ -36,7 +36,7 @@ class AbsUserWidget(abc.ABC):
     def get_user_response(
         self,
         options: Mapping[str, Any],
-        pretask_results: List[speedwagon.tasks.Result[Any]]
+        pretask_results: List[speedwagon.tasks.Result[Any, Any]]
     ) -> Mapping[str, Any]:
         """Get response from the user."""
 

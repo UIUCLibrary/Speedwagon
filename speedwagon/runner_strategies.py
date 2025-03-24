@@ -152,7 +152,7 @@ class TaskGenerator:
         return self.workflow.generate_report(results, **self.options)
 
     def tasks(self) -> typing.Iterable[speedwagon.tasks.Subtask]:
-        pretask_results: List[speedwagon.tasks.Result[Any]] = []
+        pretask_results: List[speedwagon.tasks.Result[Any, Any]] = []
 
         results = []
 
@@ -504,7 +504,7 @@ class TaskScheduler:
             [
                 Workflow,
                 Mapping[str, object],
-                List[speedwagon.tasks.Result[Any]],
+                List[speedwagon.tasks.Result[Any, Any]],
             ],
             typing.Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
@@ -516,7 +516,7 @@ class TaskScheduler:
         [
             Workflow,
             Mapping[str, object],
-            List[speedwagon.tasks.Result[Any]],
+            List[speedwagon.tasks.Result[Any, Any]],
         ],
         typing.Optional[Mapping[str, Any]]
     ]:
@@ -530,7 +530,7 @@ class TaskScheduler:
             [
                 Workflow,
                 Mapping[str, object],
-                List[speedwagon.tasks.Result[Any]],
+                List[speedwagon.tasks.Result[Any, Any]],
             ],
             typing.Optional[Mapping[str, Any]]
         ],
@@ -673,7 +673,7 @@ class BackgroundJobManager(AbsJobManager2):
             [
                 Workflow[Any],
                 Mapping[str, object],
-                List[speedwagon.tasks.Result[Any]],
+                List[speedwagon.tasks.Result[Any, Any]],
                 Optional[threading.Condition]
             ],
             Optional[Mapping[str, Any]]
@@ -876,7 +876,7 @@ def simple_api_run_workflow(
         def request_more_info(
             workflow: Workflow[_T],
             options: _T,
-            pretask_results: List[speedwagon.tasks.Result[Any]],
+            pretask_results: List[speedwagon.tasks.Result[Any, Any]],
         ) -> typing.Optional[Mapping[str, Any]]:
             factory = (
                 request_factory

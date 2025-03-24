@@ -6,6 +6,7 @@ from .tasks import (
     TaskBuilder,
     Result,
     Subtask,
+    workflow_task,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "TaskBuilder",
     "Result",
     "Subtask",
+    "workflow_task"
 ]
