@@ -480,7 +480,10 @@ class StartQtThreaded(AbsGuiStarter):
 
         speedwagon.frontend.qtwidgets.gui.set_app_display_metadata(self.app)
         self._request_window = user_interaction.QtRequestMoreInfo(self.windows)
-        self.startup_tasks = []
+        self.startup_tasks: List[
+            AbsSystemTask
+            | Callable[[AbsConfigSettings, SettingsLocations], None]
+        ] = []
 
     @property
     def config_locations(self) -> AbsSettingLocator:
