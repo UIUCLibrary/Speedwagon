@@ -71,6 +71,10 @@ class WorkflowList(AbsWorkflowList):
             else None
         )
 
+    def index(self, row, column=0, /, parent=DEFAULT_QMODEL_INDEX):
+        """Get index."""
+        return super().index(row, column, parent)
+
     def insertRow(  # pylint: disable=invalid-name
         self,
         row: int,
@@ -112,8 +116,18 @@ class WorkflowList(AbsWorkflowList):
             return True
         return super().setData(index, value, role)
 
+    def columnCount(
+        self,
+        /,
+        parent: Union[  # pylint: disable=unused-argument
+            QtCore.QModelIndex, QtCore.QPersistentModelIndex
+        ] = DEFAULT_QMODEL_INDEX,
+    ):
+        """Only use the first column."""
+        return 1
 
-class WorkflowListProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
+
+class WorkflowListProxyModel(QtCore.QAbstractProxyModel):
     """Proxy model for workflows.
 
     Uses the tab index of tree model to proxy list model data.
@@ -206,12 +220,10 @@ class WorkflowListProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
     @overload
     def parent(
         self, index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
-    ) -> QtCore.QModelIndex:
-        ...
+    ) -> QtCore.QModelIndex: ...
 
     @overload
-    def parent(self) -> QtCore.QObject:
-        ...
+    def parent(self) -> QtCore.QObject: ...
 
     def parent(
         self,

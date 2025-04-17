@@ -21,7 +21,7 @@ from PySide6 import QtCore, QtGui
 
 import speedwagon.config.tabs as tabs_config
 import speedwagon.job
-from .common import WorkflowItem, WorkflowClassRole, AbsWorkflowList
+from .common import WorkflowItem, WorkflowClassRole
 if TYPE_CHECKING:
     from speedwagon.config import AbsTabsConfigDataManagement
 
@@ -275,7 +275,7 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         return super().setData(index, value, role)
 
 
-class TabProxyModel(QtCore.QAbstractProxyModel, AbsWorkflowList):
+class TabProxyModel(QtCore.QAbstractProxyModel):
     """Proxy model for tab tree model data.
 
     For limiting the scope to a single tab.
