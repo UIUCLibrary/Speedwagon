@@ -5,6 +5,16 @@ Change Log
 ----------
 
 
+0.4.0b16 (2025-04-17)
+=====================
+
+Fix
+---
+
+- Create New Tab button parent is tab editor
+- plugins fallbacks to false
+- inheritance problem TabProxyModel using WorkflowList and QtCore.QAbstractProxyModel
+
 0.4.0b15 (2025-04-17)
 =====================
 

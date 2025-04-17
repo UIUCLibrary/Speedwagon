@@ -145,6 +145,9 @@ class WorkflowsTab3(WorkflowsTab3UI):
     @property
     def workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
         """Get all workflows."""
+        if self._model is None:
+            return {}
+
         workflows = {}
         for row_id in range(self._model.rowCount()):
             index = self._model.index(row_id, 0)
