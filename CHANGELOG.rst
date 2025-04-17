@@ -5,6 +5,26 @@ Change Log
 ----------
 
 
+0.4.0b15 (2025-04-17)
+=====================
+
+Feat
+----
+
+- Added @workflow_task & @system_task decorator to make generating tasks easier
+- speedwagon.startup.ApplicationLauncher gained startup_tasks property
+
+Fix
+---
+
+- Adding workflows when no tab is selected would crash speedwagon gui
+
+Refactor
+--------
+
+- simplify config file usage
+- StartQtThreaded.build_main_window uses a builder function
+
 0.4.0b14 (2025-03-03)
 =====================
 
