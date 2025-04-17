@@ -620,7 +620,7 @@ class TabEditor(TabEditorWidgetUI):
             new_tab_name: str
             accepted: bool
             new_tab_name, accepted = QtWidgets.QInputDialog.getText(
-                self.parentWidget(), "Create New Tab", "Tab name"
+                self, "Create New Tab", "Tab name"
             )
 
             # The user cancelled
