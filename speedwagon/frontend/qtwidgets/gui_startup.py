@@ -30,7 +30,7 @@ from typing import (
     TypeVar,
     Mapping,
     Protocol,
-    Iterable
+    Iterable,
 )
 import traceback as tb
 import webbrowser
@@ -77,10 +77,11 @@ if typing.TYPE_CHECKING:
         Workflow,
     )
     from speedwagon.config.common import SettingsDataType, SettingsData
-    from speedwagon.config.config import AbsSettingLocator
+    from speedwagon.config.config import AbsSettingLocator, SettingsLocations
     from speedwagon.config import FullSettingsData
     from speedwagon.config.workflow import AbsWorkflowBackend
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
+    from speedwagon.tasks.system import AbsSystemTask
     from speedwagon.workflow import AbsOutputOptionDataType
     import pluggy
 
@@ -420,7 +421,7 @@ def import_workflow_config(
 ) -> None:
     """Import workflow configuration to parent."""
     serialization_strategy = (
-            serialization_strategy or speedwagon.job.ConfigJSONSerialize()
+        serialization_strategy or speedwagon.job.ConfigJSONSerialize()
     )
 
     dialog_box = dialog_box or QtWidgets.QFileDialog()
@@ -480,7 +481,10 @@ class StartQtThreaded(AbsGuiStarter):
 
         speedwagon.frontend.qtwidgets.gui.set_app_display_metadata(self.app)
         self._request_window = user_interaction.QtRequestMoreInfo(self.windows)
-        self.startup_tasks = []
+        self.startup_tasks: List[
+            AbsSystemTask
+            | Callable[[AbsConfigSettings, SettingsLocations], None]
+        ] = []
 
     @property
     def config_locations(self) -> AbsSettingLocator:
@@ -492,17 +496,17 @@ class StartQtThreaded(AbsGuiStarter):
         self._application_name = name
 
     def set_workflow_config_backend_factory(
-        self,
-        factory: Callable[[speedwagon.job.Workflow], AbsWorkflowBackend]
+        self, factory: Callable[[speedwagon.job.Workflow], AbsWorkflowBackend]
     ) -> None:
         """Set backend for gui app."""
         settings_resolver = ResolveSettings()
-        settings_resolver.config_file_locator_strategy =\
+        settings_resolver.config_file_locator_strategy = (
             self.config_locations.get_config_file
+        )
 
         self.config = ResolveSettingsStrategyConfigAdapter(
             source_application_settings=settings_resolver,
-            workflow_backend=factory
+            workflow_backend=factory,
         )
 
     def initialize(self) -> None:
@@ -517,7 +521,7 @@ class StartQtThreaded(AbsGuiStarter):
         for task in startup.get_startup_tasks(
             config_backend=self.config,
             config_file_locator=self.config_files_locator,
-            user_tasks=self.startup_tasks
+            user_tasks=self.startup_tasks,
         ):
             task.run()
 
@@ -652,9 +656,7 @@ class StartQtThreaded(AbsGuiStarter):
                 speedwagon.runner_strategies.BackgroundJobManager() as
                 job_manager
             ):
-                job_manager.global_settings = self.settings.get(
-                    "GLOBAL", {}
-                )
+                job_manager.global_settings = self.settings.get("GLOBAL", {})
 
                 self.windows = self.build_main_window(job_manager)
                 self._request_window = user_interaction.QtRequestMoreInfo(
@@ -740,7 +742,7 @@ class StartQtThreaded(AbsGuiStarter):
         )
 
         def serialize_options(
-            options: Dict[str, AbsOutputOptionDataType]
+            options: Dict[str, AbsOutputOptionDataType],
         ) -> Dict[str, Any]:
             return {
                 option.setting_name
@@ -807,9 +809,7 @@ class StartQtThreaded(AbsGuiStarter):
     ) -> typing.Iterable[typing.Tuple[str, str]]:
         for title, workflow in workflows.copy().items():
             try:
-                workflow(
-                    global_settings=self.settings.get("GLOBAL", {})
-                )
+                workflow(global_settings=self.settings.get("GLOBAL", {}))
             except (
                 speedwagon.exceptions.SpeedwagonException,
                 AttributeError,
@@ -1068,9 +1068,8 @@ def export_system_info_to_file(
     file: str,
     file_type: str,
     writer: Callable[
-        [info.SystemInfo, str, Callable[[info.SystemInfo], str]],
-        None
-    ] = info.write_system_info_to_file
+        [info.SystemInfo, str, Callable[[info.SystemInfo], str]], None
+    ] = info.write_system_info_to_file,
 ) -> None:
     writer(info.SystemInfo(), file, system_info_report_formatters[file_type])
 
@@ -1140,12 +1139,14 @@ class ResolveSettingsStrategyConfigAdapter(AbsConfigSettings):
 class LocalSettingsBuilder:
     # Until Python 3.11 NamedTuple can't have multiple inheritance
     if sys.version_info < (3, 11):
+
         class TabData(typing.NamedTuple):
             name: str
             setup_function: Callable[[], dialog.settings.SettingsTab[T]]
             save_data_func: Callable[[T], bool]
             active: bool
     else:
+
         class TabData(typing.NamedTuple, Generic[T]):
             name: str
             setup_function: Callable[[], dialog.settings.SettingsTab[T]]
@@ -1208,7 +1209,7 @@ def build_request_settings_dialog(
     settings_builder.on_open_config_dir = functools.partial(
         dialog.settings.open_settings_dir,
         settings_locator.get_app_data_dir(),
-        None
+        None,
     )
 
     settings_builder.add_tab(

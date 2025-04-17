@@ -299,7 +299,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         return urls[0].toLocalFile()
 
     @abc.abstractmethod
-    def drop_acceptable_data(self, param) -> bool:
+    def drop_acceptable_data(self, mime_data: QtCore.QMimeData) -> bool:
         """Check if dropped item is accessible."""
 
 

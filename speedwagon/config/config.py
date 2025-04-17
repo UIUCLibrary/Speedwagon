@@ -191,14 +191,16 @@ class ConfigManager(contextlib.AbstractContextManager):
         """Get plugin information from the config file."""
         if self.cfg_parser is None:
             return {}
-        plugins = {}
+        plugins: Dict[str, Dict[str, bool]] = {}
 
         plugin_prefix = "PLUGINS."
         for section in self.cfg_parser.sections():
             if not section.startswith(plugin_prefix):
                 continue
             plugins[section.replace(plugin_prefix, "")] = {
-                entry: self.cfg_parser[section].getboolean(entry)
+                entry: self.cfg_parser[section].getboolean(
+                    entry, fallback=False
+                )
                 for entry in self.cfg_parser[section].keys()
             }
         return plugins

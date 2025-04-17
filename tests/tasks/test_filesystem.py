@@ -10,7 +10,8 @@ from speedwagon.tasks.tasks import TaskStatus
 class TestDeleteFile:
     @pytest.fixture
     def task(self):
-        return filesystem.DeleteFile("some_file.txt")
+        with pytest.deprecated_call():
+            return filesystem.DeleteFile("some_file.txt")
 
     def test_removal_called(self, monkeypatch, task):
         remove = Mock()
@@ -25,7 +26,8 @@ class TestDeleteFile:
 class TestDeleteDirectory:
     @pytest.fixture
     def task(self):
-        return filesystem.DeleteDirectory("somedirectory")
+        with pytest.deprecated_call():
+            return filesystem.DeleteDirectory("somedirectory")
 
     def test_removal_called(self, monkeypatch, task):
         remove = Mock()

@@ -9,7 +9,8 @@ authors = [
     {name="University Library at The University of Illinois at Urbana Champaign: Preservation Services", email="prescons@library.illinois.edu"}
 ]
 requires-python = ">=3.9"
-license = { file="LICENSE"}
+license = "NCSA"
+license-files = ["LICENSE"]
 dependencies =[
     "pyyaml",
     'importlib-metadata;python_version<"3.10"',
@@ -23,7 +24,6 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
     "Natural Language :: English",
     "Programming Language :: Python :: 3.9",
-    "License :: OSI Approved :: University of Illinois/NCSA Open Source License",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
@@ -83,7 +83,7 @@ changelog_file="CHANGELOG.rst"
 template="contrib/CHANGELOG.rst.jinja"
 
 [build-system]
-requires = ["setuptools>=40.8.0", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
