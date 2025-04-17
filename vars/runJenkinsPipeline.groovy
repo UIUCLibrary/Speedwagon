@@ -685,73 +685,122 @@ def call(){
                                 environment{
                                     UV_INDEX_STRATEGY='unsafe-best-match'
                                 }
-                                steps{
-                                    customMatrix(
-                                        axes: [
-                                            [
-                                                name: 'PYTHON_VERSION',
-                                                values: ['3.9', '3.10', '3.11', '3.12', '3.13']
-                                            ],
-                                            [
-                                                name: 'OS',
-                                                values: ['linux','macos', 'windows']
-                                            ],
-                                            [
-                                                name: 'ARCHITECTURE',
-                                                values: ['x86_64', 'arm64']
-                                            ],
-                                            [
-                                                name: 'PACKAGE_TYPE',
-                                                values: ['wheel', 'sdist'],
-                                            ]
-                                        ],
-                                        excludes: [
-                                            [
-                                                [
-                                                    name: 'OS',
-                                                    values: 'windows'
+                                stages{
+                                    stage('Twine Check'){
+                                        agent{
+                                            docker{
+                                                image 'python'
+                                                label 'linux && docker'
+                                                args '--mount source=python-tmp-speedwagon,target=/tmp'
+                                            }
+                                        }
+                                        environment{
+                                            UV_TOOL_DIR='/tmp/uvtools'
+                                            UV_CACHE_DIR='/tmp/uvcache'
+                                        }
+                                        steps{
+                                            catchError(buildResult: 'UNSTABLE', message: 'twine check found issues', stageResult: 'UNSTABLE') {
+                                                unstash 'PYTHON_PACKAGES'
+                                                sh(
+                                                    label: 'Checking with twine check',
+                                                    script: '''python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv
+                                                               trap "rm -rf venv" EXIT
+                                                               . ./venv/bin/activate
+                                                               uvx --with $(grep \'^twine\' requirements-dev.txt) twine check --strict  dist/*
+                                                            '''
+                                                )
+                                            }
+                                        }
+                                    }
+                                    stage('Packages Test Matrix'){
+                                        steps{
+                                            customMatrix(
+                                                axes: [
+                                                    [
+                                                        name: 'PYTHON_VERSION',
+                                                        values: ['3.9', '3.10', '3.11', '3.12', '3.13']
+                                                    ],
+                                                    [
+                                                        name: 'OS',
+                                                        values: ['linux','macos', 'windows']
+                                                    ],
+                                                    [
+                                                        name: 'ARCHITECTURE',
+                                                        values: ['x86_64', 'arm64']
+                                                    ],
+                                                    [
+                                                        name: 'PACKAGE_TYPE',
+                                                        values: ['wheel', 'sdist'],
+                                                    ]
                                                 ],
-                                                [
-                                                    name: 'ARCHITECTURE',
-                                                    values: 'arm64',
-                                                ]
-                                            ]
-                                        ],
-                                        when: {entry -> "INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase() && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]},
-                                        stages: [
-                                            { entry ->
-                                                stage('Test Package') {
-                                                    node("${entry.OS} && ${entry.ARCHITECTURE} ${['linux', 'windows'].contains(entry.OS) ? '&& docker': ''}"){
-                                                        try{
-                                                            checkout scm
-                                                            unstash 'PYTHON_PACKAGES'
-                                                            if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
-                                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside(isUnix() ? '': "--mount type=volume,source=uv_python_install_dir,target=C:\\Users\\ContainerUser\\Documents\\uvpython --mount source=msvc-runtime,target=c:\\msvc_runtime\\"){
-                                                                     if(isUnix()){
-                                                                        withEnv([
-                                                                            'PIP_CACHE_DIR=/tmp/pipcache',
-                                                                            'UV_TOOL_DIR=/tmp/uvtools',
-                                                                            'UV_PYTHON_INSTALL_DIR=/tmp/uvpython',
-                                                                            'UV_CACHE_DIR=/tmp/uvcache',
-                                                                        ]){
-                                                                             sh(
+                                                excludes: [
+                                                    [
+                                                        [
+                                                            name: 'OS',
+                                                            values: 'windows'
+                                                        ],
+                                                        [
+                                                            name: 'ARCHITECTURE',
+                                                            values: 'arm64',
+                                                        ]
+                                                    ]
+                                                ],
+                                                when: {entry -> "INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase() && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]},
+                                                stages: [
+                                                    { entry ->
+                                                        stage('Test Package') {
+                                                            node("${entry.OS} && ${entry.ARCHITECTURE} ${['linux', 'windows'].contains(entry.OS) ? '&& docker': ''}"){
+                                                                try{
+                                                                    checkout scm
+                                                                    unstash 'PYTHON_PACKAGES'
+                                                                    if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
+                                                                        docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside(isUnix() ? '': "--mount type=volume,source=uv_python_install_dir,target=C:\\Users\\ContainerUser\\Documents\\uvpython --mount source=msvc-runtime,target=c:\\msvc_runtime\\"){
+                                                                             if(isUnix()){
+                                                                                withEnv([
+                                                                                    'PIP_CACHE_DIR=/tmp/pipcache',
+                                                                                    'UV_TOOL_DIR=/tmp/uvtools',
+                                                                                    'UV_PYTHON_INSTALL_DIR=/tmp/uvpython',
+                                                                                    'UV_CACHE_DIR=/tmp/uvcache',
+                                                                                ]){
+                                                                                     sh(
+                                                                                        label: 'Testing with tox',
+                                                                                        script: """python3 -m venv venv
+                                                                                                   ./venv/bin/pip install --disable-pip-version-check uv
+                                                                                                   ./venv/bin/uv python install cpython-${entry.PYTHON_VERSION}
+                                                                                                   ./venv/bin/uvx --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                                                """
+                                                                                    )
+                                                                                }
+                                                                             } else {
+                                                                                withEnv([
+                                                                                    'PIP_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\pipcache',
+                                                                                    'UV_TOOL_DIR=C:\\Users\\ContainerUser\\Documents\\uvtools',
+                                                                                    'UV_PYTHON_INSTALL_DIR=C:\\Users\\ContainerUser\\Documents\\uvpython',
+                                                                                    'UV_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\uvcache',
+                                                                                    'UV_LINK_MODE=copy'
+                                                                                ]){
+                                                                                    installMSVCRuntime('c:\\msvc_runtime\\')
+                                                                                    bat(
+                                                                                        label: 'Testing with tox',
+                                                                                        script: """python -m venv venv
+                                                                                                   .\\venv\\Scripts\\pip install --disable-pip-version-check uv
+                                                                                                   .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
+                                                                                                   .\\venv\\Scripts\\uvx --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                                                """
+                                                                                    )
+                                                                                }
+                                                                             }
+                                                                        }
+                                                                    } else {
+                                                                        if(isUnix()){
+                                                                            sh(
                                                                                 label: 'Testing with tox',
                                                                                 script: """python3 -m venv venv
                                                                                            ./venv/bin/pip install --disable-pip-version-check uv
-                                                                                           ./venv/bin/uv python install cpython-${entry.PYTHON_VERSION}
                                                                                            ./venv/bin/uvx --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                                         """
                                                                             )
-                                                                        }
-                                                                     } else {
-                                                                        withEnv([
-                                                                            'PIP_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\pipcache',
-                                                                            'UV_TOOL_DIR=C:\\Users\\ContainerUser\\Documents\\uvtools',
-                                                                            'UV_PYTHON_INSTALL_DIR=C:\\Users\\ContainerUser\\Documents\\uvpython',
-                                                                            'UV_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\uvcache',
-                                                                            'UV_LINK_MODE=copy'
-                                                                        ]){
-                                                                            installMSVCRuntime('c:\\msvc_runtime\\')
+                                                                        } else {
                                                                             bat(
                                                                                 label: 'Testing with tox',
                                                                                 script: """python -m venv venv
@@ -761,40 +810,21 @@ def call(){
                                                                                         """
                                                                             )
                                                                         }
-                                                                     }
+                                                                    }
+                                                                } finally{
+                                                                    if(isUnix()){
+                                                                        sh "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                                    } else {
+                                                                        bat "${tool(name: 'Default', type: 'git')} clean -dfx"
+                                                                    }
                                                                 }
-                                                            } else {
-                                                                if(isUnix()){
-                                                                    sh(
-                                                                        label: 'Testing with tox',
-                                                                        script: """python3 -m venv venv
-                                                                                   ./venv/bin/pip install --disable-pip-version-check uv
-                                                                                   ./venv/bin/uvx --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
-                                                                                """
-                                                                    )
-                                                                } else {
-                                                                    bat(
-                                                                        label: 'Testing with tox',
-                                                                        script: """python -m venv venv
-                                                                                   .\\venv\\Scripts\\pip install --disable-pip-version-check uv
-                                                                                   .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                                   .\\venv\\Scripts\\uvx --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
-                                                                                """
-                                                                    )
-                                                                }
-                                                            }
-                                                        } finally{
-                                                            if(isUnix()){
-                                                                sh "${tool(name: 'Default', type: 'git')} clean -dfx"
-                                                            } else {
-                                                                bat "${tool(name: 'Default', type: 'git')} clean -dfx"
                                                             }
                                                         }
                                                     }
-                                                }
-                                            }
-                                        ]
-                                    )
+                                                ]
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -862,7 +892,7 @@ def call(){
                                                    trap "rm -rf venv" EXIT
                                                    . ./venv/bin/activate
                                                    pip install --disable-pip-version-check uv
-                                                   uvx --with-requirements=requirements-dev.txt twine upload --disable-progress-bar --non-interactive dist/*
+                                                   uvx --with $(grep \'^twine\' requirements-dev.txt) twine upload --disable-progress-bar --non-interactive dist/*
                                                 '''
                                     )
                                 }
