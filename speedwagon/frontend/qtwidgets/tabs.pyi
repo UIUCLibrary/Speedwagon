@@ -1,3 +1,5 @@
+# pylint: disable=unused-argument
+
 from typing import List, Type, Optional, Dict
 
 from PySide6 import QtWidgets, QtCore
