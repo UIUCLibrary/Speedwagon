@@ -423,8 +423,9 @@ def call(){
                                     SONAR_USER_HOME='/tmp/sonar'
                                 }
                                 steps{
-                                   script{
-                                       withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
+                                    script{
+                                        milestone label: 'sonarcloud'
+                                        withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
                                            def sourceInstruction
                                            if (env.CHANGE_ID){
                                                sourceInstruction = '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME'
@@ -437,22 +438,19 @@ def call(){
                                                            uv tool run pysonar-scanner -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}
                                                        """
                                            )
-                                       }
-                                       timeout(time: 1, unit: 'HOURS') {
-                                           def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                                           if (sonarqube_result.status != 'OK') {
-                                               unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                                        }
+                                        timeout(time: 1, unit: 'HOURS') {
+                                            def sonarqube_result = waitForQualityGate(abortPipeline: false)
+                                            if (sonarqube_result.status != 'OK') {
+                                                unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                                            }
+                                            if(env.BRANCH_IS_PRIMARY){
+                                                def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
+                                                writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+                                                recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                            }
-                                           def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
-                                           writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
-                                       }
-                                       milestone label: 'sonarcloud'
+                                        }
                                    }
-                                }
-                                post {
-                                    always{
-                                        recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                                    }
                                 }
                             }
                         }
