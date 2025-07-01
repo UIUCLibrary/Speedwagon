@@ -221,23 +221,37 @@ def call(){
                                         steps{
                                             discoverGitReferenceBuild(latestBuildIfNotFound: true)
                                             mineRepository()
-                                            sh(
-                                                label: 'Create virtual environment',
-                                                script: '''python3 -m venv bootstrap_uv
-                                                           bootstrap_uv/bin/pip install --disable-pip-version-check uv
-                                                           bootstrap_uv/bin/uv venv venv
-                                                           . ./venv/bin/activate
-                                                           bootstrap_uv/bin/uv pip install uv
-                                                           rm -rf bootstrap_uv
-                                                           uv pip install -r requirements-dev.txt
-                                                           '''
-                                                       )
-                                            sh(
-                                                label: 'Install package in development mode',
-                                                script: '''. ./venv/bin/activate
-                                                           uv pip install -e .
-                                                        '''
-                                                )
+                                            retry(3){
+                                                script{
+                                                    try{
+                                                        sh(
+                                                            label: 'Create virtual environment',
+                                                            script: '''python3 -m venv bootstrap_uv
+                                                                       bootstrap_uv/bin/pip install --disable-pip-version-check uv
+                                                                       bootstrap_uv/bin/uv venv venv
+                                                                       . ./venv/bin/activate
+                                                                       bootstrap_uv/bin/uv pip install uv
+                                                                       rm -rf bootstrap_uv
+                                                                       uv pip install -r requirements-dev.txt
+                                                                       '''
+                                                                   )
+                                                        sh(
+                                                            label: 'Install package in development mode',
+                                                            script: '''. ./venv/bin/activate
+                                                                       uv pip install -e .
+                                                                    '''
+                                                            )
+                                                    } catch (e) {
+                                                        cleanWs(
+                                                            patterns: [
+                                                                [pattern: 'venv', type: 'INCLUDE'],
+                                                                [pattern: 'bootstrap_uv', type: 'INCLUDE'],
+                                                            ]
+                                                        )
+                                                        throw e
+                                                    }
+                                                }
+                                            }
                                             sh(
                                                 label: 'Creating logging and report directories',
                                                 script: '''mkdir -p logs
