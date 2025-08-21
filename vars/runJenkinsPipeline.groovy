@@ -130,6 +130,7 @@ def call(){
                         docker{
                             image 'sphinxdoc/sphinx-latexpdf'
                             label 'linux && docker && x86'
+                            args '--mount source=python-tmp-speedwagon,target=/tmp'
                         }
                 }
                 options {
@@ -595,7 +596,11 @@ def call(){
                                                     {
                                                         node('docker && windows'){
                                                             try{
-                                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
+                                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside(
+                                                                "--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"
+                                                                + " --mount type=volume,source=pipcache,target=${env.PIP_CACHE_DIR}"
+                                                                + " --mount type=volume,source=uv_cache_dir,target=${env.UV_CACHE_DIR}"
+                                                                ){
                                                                     checkout scm
                                                                     retry(3){
                                                                         bat(label: 'Running Tox',
@@ -766,7 +771,15 @@ def call(){
                                                                     checkout scm
                                                                     unstash 'PYTHON_PACKAGES'
                                                                     if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
-                                                                        docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside(isUnix() ? '': "--mount type=volume,source=uv_python_install_dir,target=C:\\Users\\ContainerUser\\Documents\\uvpython --mount source=msvc-runtime,target=c:\\msvc_runtime\\"){
+                                                                        docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside(
+                                                                            isUnix() ?
+                                                                                '--mount source=python-tmp-speedwagon,target=/tmp'
+                                                                            :
+                                                                                '--mount type=volume,source=uv_python_install_dir,target=c:\\Users\\ContainerUser\\Documents\\cache\\uvpython'
+                                                                                + ' --mount type=volume,source=msvc-runtime,target=c:\\msvc_runtime'
+                                                                                + ' --mount type=volume,source=pipcache,target=c:\\Users\\ContainerUser\\Documents\\cache\\pipcache'
+                                                                                + ' --mount type=volume,source=uv_cache_dir,target=c:\\Users\\ContainerUser\\Documents\\cache\\uvcache'
+                                                                            ){
                                                                              if(isUnix()){
                                                                                 withEnv([
                                                                                     'PIP_CACHE_DIR=/tmp/pipcache',
@@ -785,10 +798,10 @@ def call(){
                                                                                 }
                                                                              } else {
                                                                                 withEnv([
-                                                                                    'PIP_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\pipcache',
-                                                                                    'UV_TOOL_DIR=C:\\Users\\ContainerUser\\Documents\\uvtools',
-                                                                                    'UV_PYTHON_INSTALL_DIR=C:\\Users\\ContainerUser\\Documents\\uvpython',
-                                                                                    'UV_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\uvcache',
+                                                                                    'PIP_CACHE_DIR=c:\\Users\\ContainerUser\\Documents\\cache\\pipcache',
+                                                                                    'UV_TOOL_DIR=c:\\Users\\ContainerUser\\Documents\\uvtools',
+                                                                                    'UV_PYTHON_INSTALL_DIR=c:\\Users\\ContainerUser\\Documents\\cache\\uvpython',
+                                                                                    'UV_CACHE_DIR=c:\\Users\\ContainerUser\\Documents\\cache\\uvcache',
                                                                                     'UV_LINK_MODE=copy'
                                                                                 ]){
                                                                                     installMSVCRuntime('c:\\msvc_runtime\\')
