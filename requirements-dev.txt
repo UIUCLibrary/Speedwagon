@@ -4,36 +4,44 @@ alabaster==0.7.16 ; python_full_version < '3.10'
     # via sphinx
 alabaster==1.0.0 ; python_full_version >= '3.10'
     # via sphinx
-argcomplete==3.5.3
+argcomplete==3.6.3
     # via commitizen
-astroid==3.3.9
+astroid==3.3.11 ; python_full_version < '3.10'
     # via pylint
-attrs==25.3.0
+astroid==4.0.4 ; python_full_version >= '3.10'
+    # via pylint
+attrs==26.1.0
     # via
     #   -r requirements/requirements-dev.in
     #   flake8-bugbear
-babel==2.17.0
+babel==2.18.0
     # via sphinx
 backports-tarfile==1.2.0 ; python_full_version < '3.12' and platform_machine != 'ppc64le' and platform_machine != 's390x'
     # via jaraco-context
-bcrypt==4.3.0
+bcrypt==5.0.0
     # via paramiko
-build==1.2.2.post1
+build==1.4.0
     # via -r requirements/requirements-dev.in
-cachetools==5.5.2
+cachetools==6.2.6 ; python_full_version < '3.10'
+    # via tox
+cachetools==7.0.5 ; python_full_version >= '3.10'
     # via tox
 certifi==2025.1.31
     # via
     #   -r requirements-gui.txt
     #   -r requirements.txt
     #   requests
-cffi==1.17.1
+cffi==2.0.0 ; platform_python_implementation != 'PyPy'
     # via
     #   cryptography
     #   pynacl
-cfgv==3.4.0
+cfgv==3.4.0 ; python_full_version < '3.10'
     # via pre-commit
-chardet==5.2.0
+cfgv==3.5.0 ; python_full_version >= '3.10'
+    # via pre-commit
+chardet==5.2.0 ; python_full_version < '3.10'
+    # via tox
+chardet==7.2.0 ; python_full_version >= '3.10'
     # via tox
 charset-normalizer==3.4.1
     # via
@@ -49,42 +57,63 @@ colorama==0.4.6
     #   pytest
     #   sphinx
     #   tox
-commitizen==4.6.0
+commitizen==4.10.1 ; python_full_version < '3.10'
     # via -r requirements/requirements-dev.in
-coverage==7.8.0
+commitizen==4.13.9 ; python_full_version >= '3.10'
     # via -r requirements/requirements-dev.in
-cryptography==44.0.2
+coverage==7.10.7 ; python_full_version < '3.10'
+    # via -r requirements/requirements-dev.in
+coverage==7.13.5 ; python_full_version >= '3.10'
+    # via -r requirements/requirements-dev.in
+cryptography==46.0.5
     # via
     #   paramiko
     #   secretstorage
-decli==0.6.2
+decli==0.6.3
     # via commitizen
-dill==0.4.0
+deprecated==1.3.1
+    # via commitizen
+dill==0.4.1
     # via pylint
-distlib==0.3.9
+distlib==0.4.0
     # via virtualenv
 docopt==0.6.2
     # via pyqt-distutils
-docutils==0.21.2
+docutils==0.21.2 ; python_full_version < '3.11'
     # via
     #   readme-renderer
     #   sphinx
     #   sphinx-argparse
-exceptiongroup==1.2.2 ; python_full_version < '3.11'
-    # via pytest
-filelock==3.18.0
+docutils==0.22.4 ; python_full_version >= '3.11'
     # via
+    #   readme-renderer
+    #   sphinx
+    #   sphinx-argparse
+exceptiongroup==1.3.1 ; python_full_version < '3.11'
+    # via pytest
+filelock==3.19.1 ; python_full_version < '3.10'
+    # via
+    #   python-discovery
     #   tox
     #   virtualenv
-flake8==7.2.0
+filelock==3.25.2 ; python_full_version >= '3.10'
+    # via
+    #   python-discovery
+    #   tox
+    #   virtualenv
+flake8==7.3.0
     # via
     #   -r requirements/requirements-dev.in
     #   flake8-bugbear
-flake8-bugbear==24.12.12
+flake8-bugbear==24.12.12 ; python_full_version < '3.10'
     # via -r requirements/requirements-dev.in
-id==1.5.0
+flake8-bugbear==25.11.29 ; python_full_version >= '3.10'
+    # via -r requirements/requirements-dev.in
+id==1.6.1
     # via twine
-identify==2.6.9
+identify==2.6.15 ; python_full_version < '3.10'
+    # via pre-commit
+identify==2.6.18 ; python_full_version >= '3.10'
     # via pre-commit
 idna==3.10
     # via
@@ -92,9 +121,11 @@ idna==3.10
     #   -r requirements.txt
     #   requests
     #   yarl
-imagesize==1.4.1
+imagesize==1.5.0 ; python_full_version < '3.10'
     # via sphinx
-importlib-metadata==8.6.1
+imagesize==2.0.0 ; python_full_version >= '3.10'
+    # via sphinx
+importlib-metadata==8.6.1 ; python_full_version < '3.10'
     # via
     #   -r requirements/requirements-dev.in
     #   -r requirements-gui.txt
@@ -102,20 +133,35 @@ importlib-metadata==8.6.1
     #   speedwagon (pyproject.toml)
     #   build
     #   commitizen
+    #   isort
     #   keyring
     #   sphinx
     #   twine
+importlib-metadata==8.8.0 ; python_full_version >= '3.10'
+    # via
+    #   -r requirements/requirements-dev.in
+    #   -r requirements-gui.txt
+    #   -r requirements.txt
+    #   speedwagon (pyproject.toml)
+    #   build
+    #   keyring
 importlib-resources==6.5.2
     # via -r requirements/requirements-dev.in
-iniconfig==2.1.0
+iniconfig==2.1.0 ; python_full_version < '3.10'
     # via pytest
-isort==6.0.1
+iniconfig==2.3.0 ; python_full_version >= '3.10'
+    # via pytest
+invoke==2.2.1
+    # via paramiko
+isort==6.1.0 ; python_full_version < '3.10'
+    # via pylint
+isort==8.0.1 ; python_full_version >= '3.10'
     # via pylint
 jaraco-classes==3.4.0 ; platform_machine != 'ppc64le' and platform_machine != 's390x'
     # via keyring
-jaraco-context==6.0.1 ; platform_machine != 'ppc64le' and platform_machine != 's390x'
+jaraco-context==6.1.1 ; platform_machine != 'ppc64le' and platform_machine != 's390x'
     # via keyring
-jaraco-functools==4.1.0 ; platform_machine != 'ppc64le' and platform_machine != 's390x'
+jaraco-functools==4.4.0 ; platform_machine != 'ppc64le' and platform_machine != 's390x'
     # via keyring
 jeepney==0.9.0 ; platform_machine != 'ppc64le' and platform_machine != 's390x' and sys_platform == 'linux'
     # via
@@ -125,17 +171,21 @@ jinja2==3.1.6
     # via
     #   commitizen
     #   sphinx
-keyring==25.6.0 ; platform_machine != 'ppc64le' and platform_machine != 's390x'
+keyring==25.7.0 ; platform_machine != 'ppc64le' and platform_machine != 's390x'
     # via twine
+librt==0.8.1 ; platform_python_implementation != 'PyPy'
+    # via mypy
 lxml==5.3.2
     # via
     #   -r requirements/requirements-dev.in
     #   -r requirements-gui.txt
     #   -r requirements.txt
     #   speedwagon (pyproject.toml)
-markdown-it-py==3.0.0
+markdown-it-py==3.0.0 ; python_full_version < '3.10'
     # via rich
-markupsafe==3.0.2
+markdown-it-py==4.0.0 ; python_full_version >= '3.10'
+    # via rich
+markupsafe==3.0.3
     # via jinja2
 mccabe==0.7.0
     # via
@@ -143,23 +193,23 @@ mccabe==0.7.0
     #   pylint
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.6.0 ; platform_machine != 'ppc64le' and platform_machine != 's390x'
+more-itertools==10.8.0 ; platform_machine != 'ppc64le' and platform_machine != 's390x'
     # via
     #   jaraco-classes
     #   jaraco-functools
-multidict==6.4.3
+multidict==6.7.1
     # via yarl
-mypy==1.15.0
+mypy==1.19.1
     # via -r requirements/requirements-dev.in
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via
     #   -r requirements/requirements-dev.in
     #   mypy
-nh3==0.2.21
+nh3==0.3.3
     # via readme-renderer
-nodeenv==1.9.1
+nodeenv==1.10.0
     # via pre-commit
-packaging==24.2
+packaging==26.0
     # via
     #   build
     #   commitizen
@@ -168,11 +218,20 @@ packaging==24.2
     #   sphinx
     #   tox
     #   twine
-paramiko==3.5.1
+paramiko==4.0.0
     # via -r requirements/requirements-dev.in
-platformdirs==4.3.7
+pathspec==1.0.4
+    # via mypy
+platformdirs==4.4.0 ; python_full_version < '3.10'
     # via
     #   pylint
+    #   python-discovery
+    #   tox
+    #   virtualenv
+platformdirs==4.9.4 ; python_full_version >= '3.10'
+    # via
+    #   pylint
+    #   python-discovery
     #   tox
     #   virtualenv
 pluggy==1.5.0
@@ -184,63 +243,82 @@ pluggy==1.5.0
     #   pytest
     #   pytest-qt
     #   tox
-pre-commit==4.2.0
+pre-commit==4.3.0 ; python_full_version < '3.10'
+    # via -r requirements/requirements-dev.in
+pre-commit==4.5.1 ; python_full_version >= '3.10'
     # via -r requirements/requirements-dev.in
 prompt-toolkit==3.0.51
-    # via questionary
-propcache==0.3.1
+    # via
+    #   commitizen
+    #   questionary
+propcache==0.4.1
     # via yarl
-pycodestyle==2.13.0
+pycodestyle==2.14.0
     # via
     #   -r requirements/requirements-dev.in
     #   flake8
-pycparser==2.22
+pycparser==2.23 ; python_full_version < '3.10' and implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
+    # via cffi
+pycparser==3.0 ; python_full_version >= '3.10' and implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
 pydocstyle==6.3.0
     # via -r requirements/requirements-dev.in
-pyflakes==3.3.2
+pyflakes==3.4.0
     # via flake8
-pygments==2.19.1
+pygments==2.19.2
     # via
+    #   pytest
     #   readme-renderer
     #   rich
     #   sphinx
-pylint==3.3.6
+pylint==3.3.9 ; python_full_version < '3.10'
     # via -r requirements/requirements-dev.in
-pynacl==1.5.0
+pylint==4.0.5 ; python_full_version >= '3.10'
+    # via -r requirements/requirements-dev.in
+pynacl==1.6.2
     # via paramiko
-pyproject-api==1.9.0
+pyproject-api==1.9.1 ; python_full_version < '3.10'
+    # via tox
+pyproject-api==1.10.0 ; python_full_version >= '3.10'
     # via tox
 pyproject-hooks==1.2.0
     # via build
 pyqt-distutils==0.7.3
     # via -r requirements/requirements-dev.in
-pyside6==6.9.0
+pyside6==6.9.3
     # via
     #   -r requirements/requirements-dev.in
     #   -r requirements-gui.txt
     #   speedwagon (pyproject.toml)
-pyside6-addons==6.9.0
+pyside6-addons==6.9.3
     # via
     #   -r requirements-gui.txt
     #   pyside6
-pyside6-essentials==6.9.0
+pyside6-essentials==6.9.3
     # via
     #   -r requirements-gui.txt
     #   pyside6
     #   pyside6-addons
-pytest==8.3.5
+pytest==8.4.2 ; python_full_version < '3.10'
     # via
     #   -r requirements/requirements-dev.in
     #   pytest-mock
     #   pytest-qt
     #   pytest-xvfb
-pytest-mock==3.14.0
+pytest==9.0.2 ; python_full_version >= '3.10'
+    # via
+    #   -r requirements/requirements-dev.in
+    #   pytest-mock
+    #   pytest-qt
+    #   pytest-xvfb
+pytest-mock==3.15.1
     # via -r requirements/requirements-dev.in
-pytest-qt==4.4.0
+pytest-qt==4.5.0
     # via -r requirements/requirements-dev.in
 pytest-xvfb==3.1.1
     # via -r requirements/requirements-dev.in
+python-discovery==1.2.0
+    # via virtualenv
 pyvirtualdisplay==3.0
     # via pytest-xvfb
 pywin32-ctypes==0.2.3 ; platform_machine != 'ppc64le' and platform_machine != 's390x' and sys_platform == 'win32'
@@ -253,7 +331,7 @@ pyyaml==6.0.2
     #   speedwagon (pyproject.toml)
     #   commitizen
     #   pre-commit
-questionary==2.1.0
+questionary==2.1.1
     # via commitizen
 readme-renderer==44.0
     # via twine
@@ -263,7 +341,6 @@ requests==2.32.3
     #   -r requirements-gui.txt
     #   -r requirements.txt
     #   speedwagon (pyproject.toml)
-    #   id
     #   requests-toolbelt
     #   sphinx
     #   twine
@@ -271,15 +348,17 @@ requests-toolbelt==1.0.0
     # via twine
 rfc3986==2.0.0
     # via twine
-rich==14.0.0
+rich==14.3.3
     # via twine
-roman-numerals-py==3.1.0 ; python_full_version >= '3.11'
+roman-numerals==4.1.0 ; python_full_version >= '3.11'
     # via sphinx
-ruff==0.11.6
+ruff==0.15.7
     # via -r requirements/requirements-dev.in
-secretstorage==3.3.3 ; platform_machine != 'ppc64le' and platform_machine != 's390x' and sys_platform == 'linux'
+secretstorage==3.3.3 ; python_full_version < '3.10' and platform_machine != 'ppc64le' and platform_machine != 's390x' and sys_platform == 'linux'
     # via keyring
-shiboken6==6.9.0
+secretstorage==3.5.0 ; python_full_version >= '3.10' and platform_machine != 'ppc64le' and platform_machine != 's390x' and sys_platform == 'linux'
+    # via keyring
+shiboken6==6.9.3
     # via
     #   -r requirements-gui.txt
     #   pyside6
@@ -287,7 +366,7 @@ shiboken6==6.9.0
     #   pyside6-essentials
 six==1.17.0
     # via -r requirements/requirements-dev.in
-snowballstemmer==2.2.0
+snowballstemmer==3.0.1
     # via
     #   pydocstyle
     #   sphinx
@@ -299,7 +378,11 @@ sphinx==8.1.3 ; python_full_version == '3.10.*'
     # via
     #   -r requirements/requirements-dev.in
     #   sphinx-argparse
-sphinx==8.2.3 ; python_full_version >= '3.11'
+sphinx==9.0.4 ; python_full_version == '3.11.*'
+    # via
+    #   -r requirements/requirements-dev.in
+    #   sphinx-argparse
+sphinx==9.1.0 ; python_full_version >= '3.12'
     # via
     #   -r requirements/requirements-dev.in
     #   sphinx-argparse
@@ -329,9 +412,11 @@ sphinxcontrib-qthelp==2.0.0
     #   sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
-termcolor==2.5.0
+termcolor==3.1.0 ; python_full_version < '3.10'
     # via commitizen
-tomli==2.2.1 ; python_full_version < '3.11'
+termcolor==3.3.0 ; python_full_version >= '3.10'
+    # via commitizen
+tomli==2.4.0 ; python_full_version < '3.11'
     # via
     #   build
     #   mypy
@@ -340,17 +425,17 @@ tomli==2.2.1 ; python_full_version < '3.11'
     #   pytest
     #   sphinx
     #   tox
-tomlkit==0.13.2
+tomlkit==0.14.0
     # via
     #   commitizen
     #   pylint
-tox==4.25.0
+tox==4.27.0
     # via -r requirements/requirements-dev.in
-twine==6.1.0
+twine==6.2.0
     # via -r requirements/requirements-dev.in
-types-pyyaml==6.0.12.20250402
+types-pyyaml==6.0.12.20250915
     # via -r requirements/requirements-dev.in
-types-requests==2.32.0.20250328
+types-requests==2.32.4.20260107
     # via -r requirements/requirements-dev.in
 typing-extensions==4.13.2
     # via
@@ -360,29 +445,42 @@ typing-extensions==4.13.2
     #   speedwagon (pyproject.toml)
     #   astroid
     #   commitizen
+    #   cryptography
+    #   exceptiongroup
     #   multidict
     #   mypy
     #   pylint
-    #   rich
+    #   pytest-qt
     #   tox
+    #   virtualenv
 urllib3==2.4.0
     # via
     #   -r requirements-gui.txt
     #   -r requirements.txt
+    #   id
     #   requests
     #   twine
     #   types-requests
-virtualenv==20.30.0
+virtualenv==21.2.0
     # via
     #   pre-commit
     #   tox
-wcwidth==0.2.13
+wcwidth==0.6.0
     # via prompt-toolkit
-yarl==1.20.0
+wrapt==2.1.2
+    # via deprecated
+yarl==1.22.0 ; python_full_version < '3.10'
     # via -r requirements/requirements-dev.in
-zipp==3.21.0
+yarl==1.23.0 ; python_full_version >= '3.10'
+    # via -r requirements/requirements-dev.in
+zipp==3.21.0 ; python_full_version < '3.10'
     # via
     #   -r requirements-gui.txt
     #   -r requirements.txt
     #   importlib-metadata
     #   importlib-resources
+zipp==3.23.0 ; python_full_version >= '3.10'
+    # via
+    #   -r requirements-gui.txt
+    #   -r requirements.txt
+    #   importlib-metadata
