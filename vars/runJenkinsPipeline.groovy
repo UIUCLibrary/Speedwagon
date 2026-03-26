@@ -44,13 +44,19 @@ def run_pylint(){
 
 def get_sonarqube_unresolved_issues(report_task_file){
     script{
-
-        def props = readProperties  file: '.scannerwork/report-task.txt'
-        def response = httpRequest url : props['serverUrl'] + "/api/issues/search?componentKeys=" + props['projectKey'] + "&resolved=no"
+        if(! fileExists(report_task_file)){
+            error "Could not find ${report_task_file}"
+        }
+        def props = readProperties  file: report_task_file
+        if(! props['serverUrl'] || ! props['projectKey']){
+            error "Could not find serverUrl or projectKey in ${report_task_file}"
+        }
+        def response = httpRequest url : props['serverUrl'] + '/api/issues/search?componentKeys=' + props['projectKey'] + '&resolved=no'
         def outstandingIssues = readJSON text: response.content
         return outstandingIssues
     }
 }
+
 
 def installMSVCRuntime(cacheLocation){
     def cachedFile = "${cacheLocation}\\vc_redist.x64.exe".replaceAll(/\\\\+/, '\\\\')
@@ -413,8 +419,7 @@ def call(){
                                                 unstable "SonarQube quality gate: ${sonarqube_result.status}"
                                             }
                                             if(env.BRANCH_IS_PRIMARY){
-                                                def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
-                                                writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
+                                                writeJSON(file: 'reports/sonar-report.json', json: get_sonarqube_unresolved_issues('.sonar/report-task.txt'))
                                                 recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                            }
                                         }
