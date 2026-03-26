@@ -36,12 +36,58 @@ project = "https://www.library.illinois.edu/dccdocs/speedwagon"
 download = "https://github.com/UIUCLibrary/Speedwagon/releases"
 
 [project.optional-dependencies]
-QT = ["PySide6~=6.8"]
+QT = ["PySide6~=6.9.0"]
 
 [project.gui-scripts]
 speedwagon = "speedwagon.__main__:main"
 sw-tab-editor = "speedwagon.startup:standalone_tab_editor"
 
+[dependency-groups]
+audit-dependencies = ["uv-secure"]
+code-style = ["pydocstyle", "flake8"]
+type-checking = [
+    "mypy",
+    "mypy-extensions",
+    "types-PyYAML",
+    "types-requests",
+    'typing-extensions;python_version<"3.11"'
+]
+lint = [
+    {include-group = "code-style"},
+    "flake8-bugbear",
+    "pylint",
+    "ruff"
+]
+docs = ["sphinx", "sphinx-argparse"]
+test = ["pytest", "pytest-mock"]
+test-gui = [
+    {include-group = "test"},
+    "pytest-qt>=3.3.0",
+    "PySide6~=6.9.0"
+]
+tox = ["tox"]
+tox-uv = [
+    {include-group = "tox"},
+    "tox-uv-bare"
+]
+publish = ["twine"]
+dev = [
+    "coverage",
+    "pre_commit",
+    "lxml",
+    {include-group = "type-checking"},
+    {include-group = "lint"},
+    {include-group = "docs"},
+    {include-group = "tox"},
+    {include-group = "test"},
+    {include-group = "test-gui"},
+    {include-group = "publish"},
+]
+ci = [
+    "pysonar",
+    {include-group = "dev"},
+    {include-group = "audit-dependencies"},
+]
 [tool.setuptools]
 include-package-data = true
 packages=[

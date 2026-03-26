@@ -24,8 +24,7 @@ jobs:
           sudo apt-get install freeglut3-dev
       - name: Install requirements
         run: |
-          pip install wheel uv
-          uv pip install --system -r requirements-dev.txt tox-uv
+          pip install uv
       - uses: actions/github-script@v6
         id: tox-env
         with:
@@ -38,7 +37,7 @@ jobs:
             return "py${{matrix.python-version}}".replace('.','') + "-${{matrix.frontend}}"
           result-encoding: string
       - name: Run tox
-        run: tox -e ${{ steps.tox-env.outputs.result }}
+        run: uv run --only-group=tox-uv tox --runner uv-venv-lock-runner -e ${{ steps.tox-env.outputs.result }}
         env:
           UV_EXTRA_INDEX_URL: ${{vars.PIP_EXTRA_INDEX_URL}}
           UV_INDEX_STRATEGY: "unsafe-best-match"
