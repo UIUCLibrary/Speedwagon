@@ -23,13 +23,12 @@ jobs:
         with:
           python-version: '3.13'
           cache: 'pip' # caching pip dependencies
-          cache-dependency-path: 'requirements-dev.txt'
       - name: Install Galatea with dependencies
         run: |
-          pip install -r requirements-dev.txt .
+          pip install uv
       - name: Sphinx build
         run: |
-          sphinx-build docs/source _build
+          uv run --frozen --group=docs --no-dev sphinx-build docs/source _build
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true'

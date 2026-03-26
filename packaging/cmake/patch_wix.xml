@@ -1,5 +1,0 @@
-<CPackWiXPatch>
-  <CPackWiXFragment Id="#PRODUCTFEATURE">
-    <ComponentGroupRef Id="CM_SHORTCUTS"/>
-  </CPackWiXFragment>
-</CPackWiXPatch>

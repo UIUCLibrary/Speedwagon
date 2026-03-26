@@ -1,2 +1,0 @@
-@echo off
-cd bin && @SPEEDWAGON_PYTHON_INTERP@ -m speedwagon
