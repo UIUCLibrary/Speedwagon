@@ -577,24 +577,7 @@ def call(){
                                                                     }
                                                                 }
                                                             } finally{
-                                                                retry(3){
-                                                                    try{
-                                                                        bat "${tool(name: 'Default', type: 'git')} clean -dfx"
-                                                                    } catch(e) {
-                                                                        echo 'failed to run git clean, sleeping for one second before moving forward to see if any processes are still running'
-                                                                        sleep 1
-                                                                        throw e
-                                                                    } finally{
-                                                                        cleanWs(
-                                                                            patterns: [
-                                                                                [pattern: 'venv/', type: 'INCLUDE'],
-                                                                                [pattern: '.tox', type: 'INCLUDE'],
-                                                                                [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                                            ]
-                                                                        )
-                                                                        bat "${tool(name: 'Default', type: 'git')} clean -dfx"
-                                                                    }
-                                                                }
+                                                                bat "${tool(name: 'Default', type: 'git')} clean -dfx"
                                                             }
                                                         }
                                                     }
