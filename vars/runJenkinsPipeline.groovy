@@ -85,6 +85,27 @@ def installMSVCRuntime(cacheLocation){
 }
 
 
+def createWindowUVConfig(){
+    def scriptFile = "ci\\jenkins\\scripts\\new-uv-global-config.ps1"
+    if(! fileExists(scriptFile)){
+        checkout scm
+    }
+    return powershell(
+        label: 'Setting up uv.toml config file',
+        script: "& ${scriptFile} \$env:UV_INDEX_URL \$env:UV_EXTRA_INDEX_URL",
+        returnStdout: true
+    ).trim()
+}
+
+def createUnixUvConfig(){
+
+    def scriptFile = 'ci/jenkins/scripts/create_uv_config.sh'
+    if(! fileExists(scriptFile)){
+        checkout scm
+    }
+    return sh(label: 'Setting up uv.toml config file', script: "sh ${scriptFile} " + '$UV_INDEX_URL $UV_EXTRA_INDEX_URL', returnStdout: true).trim()
+}
+
 
 def hasSonarCreds(credentialsId){
     try{
@@ -210,6 +231,7 @@ def call(){
                             UV_CACHE_DIR='/tmp/uvcache'
                             UV_PYTHON='3.11'
                             QT_QPA_PLATFORM='offscreen'
+                            UV_CONFIG_FILE=createUnixUvConfig()
                             UV_FROZEN='1'
                         }
                         options {
@@ -464,11 +486,13 @@ def call(){
                                             checkout scm
                                             docker.image('ghcr.io/astral-sh/uv:debian').inside('--mount source=python-tmp-speedwagon,target=/tmp'){
                                                 try{
-                                                    envs = sh(
-                                                        label: 'Get tox environments',
-                                                        script: 'uv run --isolated --only-group=tox --frozen --quiet tox list -d --no-desc',
-                                                        returnStdout: true,
-                                                    ).trim().split('\n')
+                                                    withEnv(["UV_CONFIG_FILE=${createUnixUvConfig()}"]){
+                                                        envs = sh(
+                                                            label: 'Get tox environments',
+                                                            script: 'uv run --isolated --only-group=tox --frozen --quiet tox list -d --no-desc',
+                                                            returnStdout: true,
+                                                        ).trim().split('\n')
+                                                    }
                                                 } finally{
                                                     cleanWs(
                                                         patterns: [
@@ -492,11 +516,13 @@ def call(){
                                                                 def image = docker.build(UUID.randomUUID().toString(), '-f ci/docker/python/linux/jenkins/Dockerfile .')
                                                                 try{
                                                                     image.inside('--mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.local/bin:exec'){
-                                                                        sh( label: 'Running Tox',
-                                                                            script: """uv python install cpython-${version}
-                                                                                       uv run -p ${version} --frozen --only-group=tox-uv --isolated tox run --runner uv-venv-lock-runner -e ${toxEnv}
-                                                                                    """
-                                                                            )
+                                                                        withEnv(["UV_CONFIG_FILE=${createUnixUvConfig()}"]){
+                                                                            sh( label: 'Running Tox',
+                                                                                script: """uv python install cpython-${version}
+                                                                                           uv run -p ${version} --frozen --only-group=tox-uv --isolated tox run --runner uv-venv-lock-runner -e ${toxEnv}
+                                                                                        """
+                                                                                )
+                                                                        }
                                                                     }
                                                                 } finally {
                                                                     sh "docker image rm --force ${image.imageName()}"
@@ -533,14 +559,16 @@ def call(){
                                         def envs = []
                                         node('docker && windows'){
                                             try{
+                                                checkout scm
                                                 docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount source=uv_python_cache_dir,target=${env.UV_PYTHON_CACHE_DIR}"){
-                                                    checkout scm
-                                                    bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
-                                                    envs = bat(
-                                                        label: 'Get tox environments',
-                                                        script: '@.\\venv\\Scripts\\uv run --isolated --only-group tox --frozen --quiet tox list -d --no-desc',
-                                                        returnStdout: true,
-                                                    ).trim().split('\r\n')
+                                                    withEnv(["UV_CONFIG_FILE=${createWindowUVConfig()}"]){
+                                                        bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
+                                                        envs = bat(
+                                                            label: 'Get tox environments',
+                                                            script: '@.\\venv\\Scripts\\uv run --isolated --only-group tox --frozen --quiet tox list -d --no-desc',
+                                                            returnStdout: true,
+                                                        ).trim().split('\r\n')
+                                                    }
                                                 }
                                             } finally{
                                                 bat "${tool(name: 'Default', type: 'git')} clean -dfx"
@@ -562,7 +590,10 @@ def call(){
                                                                 ){
                                                                     retry(3){
                                                                         try{
-                                                                            withEnv(["TOX_UV_PATH=${env.WORKSPACE}\\venv\\Scripts\\uv.exe"]){
+                                                                            withEnv([
+                                                                                "TOX_UV_PATH=${env.WORKSPACE}\\venv\\Scripts\\uv.exe",
+                                                                                "UV_CONFIG_FILE=${createWindowUVConfig()}"
+                                                                            ]){
                                                                                 bat(label: 'Running Tox',
                                                                                     script: """python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                                                venv\\Scripts\\uv python install cpython-${version}
@@ -731,6 +762,7 @@ def call(){
                                                                                     'UV_TOOL_DIR=/tmp/uvtools',
                                                                                     'UV_PYTHON_CACHE_DIR=/tmp/uvpython',
                                                                                     'UV_CACHE_DIR=/tmp/uvcache',
+                                                                                    "UV_CONFIG_FILE=${createUnixUvConfig()}"
                                                                                 ]){
                                                                                      sh(
                                                                                         label: 'Testing with tox',
@@ -746,7 +778,8 @@ def call(){
                                                                                     'UV_PYTHON_CACHE_DIR=c:\\Users\\ContainerUser\\Documents\\cache\\uvpython',
                                                                                     'UV_CACHE_DIR=c:\\Users\\ContainerUser\\Documents\\cache\\uvcache',
                                                                                     'UV_LINK_MODE=copy',
-                                                                                    "TOX_UV_PATH=${env.WORKSPACE}\\venv\\Scripts\\uv.exe"
+                                                                                    "TOX_UV_PATH=${env.WORKSPACE}\\venv\\Scripts\\uv.exe",
+                                                                                    "UV_CONFIG_FILE=${createWindowUVConfig()}"
                                                                                 ]){
                                                                                     installMSVCRuntime('c:\\msvc_runtime\\')
                                                                                     bat(
@@ -762,7 +795,10 @@ def call(){
                                                                         }
                                                                     } else {
                                                                         if(isUnix()){
-                                                                            withEnv(["TOX_UV_PATH=${env.WORKSPACE}/venv/bin/uv"]){
+                                                                            withEnv([
+                                                                                "TOX_UV_PATH=${env.WORKSPACE}/venv/bin/uv",
+                                                                                "UV_CONFIG_FILE=${createUnixUvConfig()}"
+                                                                            ]){
                                                                                 sh(
                                                                                     label: 'Testing with tox',
                                                                                     script: """python3 -m venv venv
@@ -772,14 +808,19 @@ def call(){
                                                                                 )
                                                                             }
                                                                         } else {
-                                                                            bat(
-                                                                                label: 'Testing with tox',
-                                                                                script: """python -m venv venv
-                                                                                           .\\venv\\Scripts\\pip install --disable-pip-version-check uv
-                                                                                           .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                                           .\\venv\\Scripts\\uv run --only-group=tox-uv --isolated --frozen tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
-                                                                                        """
-                                                                            )
+                                                                            withEnv([
+                                                                                "TOX_UV_PATH=${env.WORKSPACE}\\venv\\Scripts\\uv.exe",
+                                                                                "UV_CONFIG_FILE=${createWindowUVConfig()}"
+                                                                            ]){
+                                                                                bat(
+                                                                                    label: 'Testing with tox',
+                                                                                    script: """python -m venv venv
+                                                                                               .\\venv\\Scripts\\pip install --disable-pip-version-check uv
+                                                                                               .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
+                                                                                               .\\venv\\Scripts\\uv run --only-group=tox-uv --isolated --frozen tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                                            """
+                                                                                )
+                                                                            }
                                                                         }
                                                                     }
                                                                 } finally{
