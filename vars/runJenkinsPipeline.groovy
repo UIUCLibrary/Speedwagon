@@ -158,7 +158,6 @@ def call(){
                 }
                 environment{
                     PIP_CACHE_DIR = '/tmp/pipcache'
-                    UV_INDEX_STRATEGY = 'unsafe-best-match'
                     UV_TOOL_DIR = '/tmp/uvtools'
                     UV_PYTHON_CACHE_DIR = '/tmp/uvpython'
                     UV_CACHE_DIR = '/tmp/uvcache'
@@ -225,7 +224,6 @@ def call(){
                         }
                         environment{
                             PIP_CACHE_DIR='/tmp/pipcache'
-                            UV_INDEX_STRATEGY='unsafe-best-match'
                             UV_TOOL_DIR='/tmp/uvtools'
                             UV_PYTHON_CACHE_DIR='/tmp/uvpython'
                             UV_CACHE_DIR='/tmp/uvcache'
@@ -474,7 +472,6 @@ def call(){
                                 }
                                 environment{
                                     PIP_CACHE_DIR='/tmp/pipcache'
-                                    UV_INDEX_STRATEGY='unsafe-best-match'
                                     UV_TOOL_DIR='/tmp/uvtools'
                                     UV_PYTHON_CACHE_DIR='/tmp/uvpython'
                                     UV_CACHE_DIR='/tmp/uvcache'
@@ -547,7 +544,6 @@ def call(){
                                     expression {return nodesByLabel('windows && docker && x86').size() > 0}
                                 }
                                 environment{
-                                     UV_INDEX_STRATEGY='unsafe-best-match'
                                      PIP_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\pipcache'
                                      UV_TOOL_DIR='C:\\Users\\ContainerUser\\Documents\\uvtools'
                                      UV_PYTHON_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\uvpython'
@@ -645,7 +641,6 @@ def call(){
                                 }
                                 environment{
                                     PIP_CACHE_DIR='/tmp/pipcache'
-                                    UV_INDEX_STRATEGY='unsafe-best-match'
                                     UV_CACHE_DIR='/tmp/uvcache'
                                 }
                                 options {
@@ -678,9 +673,6 @@ def call(){
                             stage('Testing Packages'){
                                 when{
                                     equals expected: true, actual: params.TEST_PACKAGES
-                                }
-                                environment{
-                                    UV_INDEX_STRATEGY='unsafe-best-match'
                                 }
                                 stages{
                                     stage('Twine Check'){
@@ -848,7 +840,6 @@ def call(){
                     stage('Deploy to pypi') {
                         environment{
                             PIP_CACHE_DIR='/tmp/pipcache'
-                            UV_INDEX_STRATEGY='unsafe-best-match'
                             UV_TOOL_DIR='/tmp/uvtools'
                             UV_PYTHON_CACHE_DIR='/tmp/uvpython'
                             UV_CACHE_DIR='/tmp/uvcache'

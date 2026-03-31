@@ -40,7 +40,6 @@ jobs:
         run: uv run --only-group=tox-uv tox --runner uv-venv-lock-runner -e ${{ steps.tox-env.outputs.result }}
         env:
           UV_EXTRA_INDEX_URL: ${{vars.PIP_EXTRA_INDEX_URL}}
-          UV_INDEX_STRATEGY: "unsafe-best-match"
           QT_QPA_PLATFORM: "offscreen"
           DISPLAY: ':99.0'
 
