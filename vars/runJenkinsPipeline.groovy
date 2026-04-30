@@ -150,7 +150,7 @@ def call(){
                         docker{
                             image 'sphinxdoc/sphinx-latexpdf'
                             label 'linux && docker && x86'
-                            args '--mount source=python-tmp-speedwagon,target=/tmp --tmpfs /ci_temp:exec -e UV_PROJECT_ENVIRONMENT=/ci_temp/venv'
+                            args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-speedwagon,target=/tmp --tmpfs /ci_temp:exec -e UV_PROJECT_ENVIRONMENT=/ci_temp/venv"
                         }
                 }
                 options {
@@ -218,8 +218,9 @@ def call(){
                         agent {
                             dockerfile {
                                 filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                                additionalBuildArgs '--label=purpose=ci'
                                 label 'linux && docker && x86'
-                                args '--mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.config:exec --tmpfs /.tree-sitter:exec'
+                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.config:exec --tmpfs /.tree-sitter:exec"
                             }
                         }
                         environment{
@@ -481,7 +482,9 @@ def call(){
                                         def envs = []
                                         node('docker && linux'){
                                             checkout scm
-                                            docker.image('ghcr.io/astral-sh/uv:debian').inside('--mount source=python-tmp-speedwagon,target=/tmp'){
+                                            docker.image('ghcr.io/astral-sh/uv:debian').inside(
+                                                "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\"  --mount source=python-tmp-speedwagon,target=/tmp"
+                                            ){
                                                 try{
                                                     withEnv(["UV_CONFIG_FILE=${createUnixUvConfig()}"]){
                                                         envs = sh(
@@ -512,7 +515,9 @@ def call(){
                                                             retry(3){
                                                                 def image = docker.build(UUID.randomUUID().toString(), '-f ci/docker/python/linux/jenkins/Dockerfile .')
                                                                 try{
-                                                                    image.inside('--mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.local/bin:exec'){
+                                                                    image.inside(
+                                                                        "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.local/bin:exec"
+                                                                    ){
                                                                         withEnv(["UV_CONFIG_FILE=${createUnixUvConfig()}"]){
                                                                             sh( label: 'Running Tox',
                                                                                 script: """uv python install cpython-${version}
@@ -556,7 +561,9 @@ def call(){
                                         node('docker && windows'){
                                             try{
                                                 checkout scm
-                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount source=uv_python_cache_dir,target=${env.UV_PYTHON_CACHE_DIR}"){
+                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside(
+                                                    "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=uv_python_cache_dir,target=${env.UV_PYTHON_CACHE_DIR}"
+                                                ){
                                                     withEnv(["UV_CONFIG_FILE=${createWindowUVConfig()}"]){
                                                         bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
                                                         envs = bat(
@@ -580,7 +587,8 @@ def call(){
                                                             try{
                                                                 checkout scm
                                                                 docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside(
-                                                                "--mount type=volume,source=uv_python_cache_dir,target=${env.UV_PYTHON_CACHE_DIR}"
+                                                                  " --label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\""
+                                                                + " --mount type=volume,source=uv_python_cache_dir,target=${env.UV_PYTHON_CACHE_DIR}"
                                                                 + " --mount type=volume,source=pipcache,target=${env.PIP_CACHE_DIR}"
                                                                 + " --mount type=volume,source=uv_cache_dir,target=${env.UV_CACHE_DIR}"
                                                                 ){
@@ -680,7 +688,7 @@ def call(){
                                             docker{
                                                 image 'ghcr.io/astral-sh/uv:debian'
                                                 label 'linux && docker'
-                                                args '--mount source=python-tmp-speedwagon,target=/tmp'
+                                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\"  --mount source=python-tmp-speedwagon,target=/tmp"
                                             }
                                         }
                                         environment{
@@ -740,13 +748,16 @@ def call(){
                                                                     unstash 'PYTHON_PACKAGES'
                                                                     if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
                                                                         docker.image(isUnix() ? 'ghcr.io/astral-sh/uv:debian': 'python').inside(
-                                                                            isUnix() ?
-                                                                                '--mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.local/bin:exec'
-                                                                            :
-                                                                                '--mount type=volume,source=uv_python_cache_dir,target=c:\\Users\\ContainerUser\\Documents\\cache\\uvpython'
-                                                                                + ' --mount type=volume,source=msvc-runtime,target=c:\\msvc_runtime'
-                                                                                + ' --mount type=volume,source=pipcache,target=c:\\Users\\ContainerUser\\Documents\\cache\\pipcache'
-                                                                                + ' --mount type=volume,source=uv_cache_dir,target=c:\\Users\\ContainerUser\\Documents\\cache\\uvcache'
+                                                                            "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" " +
+                                                                            (
+                                                                                isUnix() ?
+                                                                                    '--mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.local/bin:exec'
+                                                                                :
+                                                                                    '--mount type=volume,source=uv_python_cache_dir,target=c:\\Users\\ContainerUser\\Documents\\cache\\uvpython'
+                                                                                    + ' --mount type=volume,source=msvc-runtime,target=c:\\msvc_runtime'
+                                                                                    + ' --mount type=volume,source=pipcache,target=c:\\Users\\ContainerUser\\Documents\\cache\\pipcache'
+                                                                                    + ' --mount type=volume,source=uv_cache_dir,target=c:\\Users\\ContainerUser\\Documents\\cache\\uvcache'
+                                                                            )
                                                                             ){
                                                                              if(isUnix()){
                                                                                 withEnv([
@@ -848,7 +859,7 @@ def call(){
                             docker{
                                 image 'ghcr.io/astral-sh/uv:debian'
                                 label 'docker && linux'
-                                args '--mount source=python-tmp-speedwagon,target=/tmp'
+                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-speedwagon,target=/tmp"
                             }
                         }
                         when{
@@ -912,7 +923,8 @@ def call(){
                             dockerfile {
                                 filename 'ci/docker/python/linux/jenkins/Dockerfile'
                                 label 'linux && docker'
-                                additionalBuildArgs ' --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                additionalBuildArgs '--label=purpose=ci'
+                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\""
                               }
                         }
                         options{
