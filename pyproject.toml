@@ -43,7 +43,6 @@ speedwagon = "speedwagon.__main__:main"
 sw-tab-editor = "speedwagon.startup:standalone_tab_editor"
 
 [dependency-groups]
-audit-dependencies = ["uv-secure"]
 code-style = ["pydocstyle", "flake8"]
 type-checking = [
     "mypy",
@@ -86,7 +85,6 @@ dev = [
 ci = [
     "pysonar",
     {include-group = "dev"},
-    {include-group = "audit-dependencies"},
 ]
 [tool.setuptools]
 include-package-data = true
