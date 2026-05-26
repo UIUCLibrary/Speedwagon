@@ -124,6 +124,24 @@ class TestCheckBoxWidget:
         )
         assert "has no layout" in caplog.text
 
+class TestFileSaveWidget:
+    def test_empty_widget_metadata(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.FileSaveWidget(widget_metadata={}, parent=parent)
+        qtbot.addWidget(widget)
+        assert isinstance(widget, QtWidgets.QWidget)
+
+    def test_browse_file_valid(self, qtbot):
+        parent = QtWidgets.QWidget()
+        widget = speedwagon.frontend.qtwidgets.widgets.FileSaveWidget(
+            widget_metadata={}, parent=parent
+        )
+        fake_file_path = "/some/directory/file.txt"
+        with qtbot.wait_signal(widget.dataChanged):
+            widget.browse_file(get_file_callback=lambda: fake_file_path)
+        assert widget.data == fake_file_path
+
+
 class TestFileSelectWidget:
     def test_empty_widget_metadata(self, qtbot):
         parent = QtWidgets.QWidget()

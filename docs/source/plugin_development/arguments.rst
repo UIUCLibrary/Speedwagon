@@ -14,6 +14,7 @@ This includes the following.
 
 * :py:class:`DirectorySelect <speedwagon.workflow.DirectorySelect>` for selecting a folder.
 * :py:class:`FileSelectData <speedwagon.workflow.FileSelectData>` for selecting a file.
+* :py:class:`FileSave <speedwagon.workflow.FileSave>` for saving a file.
 * :py:class:`ChoiceSelection <speedwagon.workflow.ChoiceSelection>` for selecting a value with a pre-determined set
   of possible values.
 * :py:class:`BooleanSelect <speedwagon.workflow.BooleanSelect>` for selecting a value that is True or False.

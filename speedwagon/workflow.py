@@ -31,10 +31,12 @@ _T = TypeVar("_T")
 __all__ = [
     "AbsOutputOptionDataType",
     "ChoiceSelection",
+    "FileSave",
     "FileSelectData",
     "TextLineEditData",
     "DirectorySelect",
     "BooleanSelect",
+
 ]
 
 
@@ -178,6 +180,39 @@ class FileSelectData(AbsOutputOptionDataType):
     """
 
     widget_name: str = "FileSelect"
+    filter: Optional[str]
+
+    def __init__(self, label: str, required: bool = True) -> None:
+        """Select a file."""
+        super().__init__(label, required)
+        self.filter: Optional[str] = None
+
+    def serialize(self) -> Dict[str, Any]:
+        """Serialize the data.
+
+        Notes:
+            filter is added for selecting certain file types.
+        """
+        data = super().serialize()
+        data["filter"] = self.filter
+        return data
+
+
+class FileSave(AbsOutputOptionDataType):
+    r"""File saving.
+
+    Attributes:
+        filter:
+            File selection type filter. This uses the same convention used
+            by Qt
+
+            See https://doc.qt.io/qt-6/qfiledialog.html for more info.
+
+            For example: "Text file (\*.txt)"
+    """
+
+    widget_name = "FileSave"
+
     filter: Optional[str]
 
     def __init__(self, label: str, required: bool = True) -> None:

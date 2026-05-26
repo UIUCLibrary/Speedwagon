@@ -303,6 +303,49 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         """Check if dropped item is accessible."""
 
 
+class FileSaveWidget(FileSystemItemSelectWidget):
+    def __init__(
+        self,
+        widget_metadata: WidgetMetadata,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ) -> None:
+        super().__init__(widget_metadata, parent)
+        self.filter = widget_metadata.get("filter")
+
+    def get_browse_action(self) -> QtGui.QAction:
+        icon = QtWidgets.QApplication.style().standardIcon(
+            QtWidgets.QStyle.StandardPixmap.SP_DialogOpenButton
+        )
+        browse_file_action = QtGui.QAction(icon, "Browse", parent=self)
+        # pylint: disable=no-member
+        browse_file_action.triggered.connect(self.browse_file)  # type: ignore
+        return browse_file_action
+
+    def browse_file(
+        self,
+        get_file_callback: Optional[typing.Callable[[], Optional[str]]] = None,
+    ) -> None:
+        selection = (get_file_callback or self.open_default_file_dialog)()
+        if selection:
+            data = selection
+            self.data = data
+            self.dataChanged.emit()
+
+    def open_default_file_dialog(self) -> Optional[str]:
+        result = QtWidgets.QFileDialog.getSaveFileName(
+            dir=(
+                self.edit.text()
+                if os.path.exists(os.path.dirname(self.edit.text()))
+                else ""
+            ),
+            parent=self,
+            filter=self.filter if self.filter is not None else "",
+        )
+        return result[0] if result else None
+
+    def drop_acceptable_data(self, mime_data: QtCore.QMimeData) -> bool:
+        return False
+
 class DirectorySelectWidget(FileSystemItemSelectWidget):
     def drop_acceptable_data(self, mime_data: QtCore.QMimeData) -> bool:
         if not mime_data.hasUrls():
@@ -411,6 +454,7 @@ class InnerForm(QtWidgets.QWidget):
             "ChoiceSelection": ComboWidget,
             "BooleanSelect": CheckBoxWidget,
             "TextInput": LineEditWidget,
+            "FileSave": FileSaveWidget,
         }
         return widget_types[widget_name](widget_metadata=data, parent=self)
 

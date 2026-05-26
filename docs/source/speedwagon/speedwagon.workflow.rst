@@ -16,6 +16,9 @@ speedwagon.workflow
 .. autoclass:: FileSelectData
     :members: filter
 
+.. autoclass:: FileSave
+    :members: filter
+
 .. autoclass:: TextLineEditData
 .. autoclass:: DirectorySelect
 .. autoclass:: BooleanSelect

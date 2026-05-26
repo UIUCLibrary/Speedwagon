@@ -64,3 +64,41 @@ class TestAbsOutputOptionDataType:
         )
         assert name_argument.get_findings() == []
         assert validation.validate.called is False
+
+@pytest.mark.parametrize(
+    "option, label, expected_comparison",
+    [
+        (
+            speedwagon.workflow.ChoiceSelection,
+            "spam",
+            lambda serialization: serialization['label'] == "spam"
+        ),
+        (
+            speedwagon.workflow.FileSave,
+            "spam",
+            lambda serialization: serialization['label'] == "spam"
+        ),
+        (
+            speedwagon.workflow.FileSelectData,
+            "spam",
+            lambda serialization: serialization['label'] == "spam"
+        ),
+        (
+            speedwagon.workflow.TextLineEditData,
+            "spam",
+            lambda serialization: serialization['label'] == "spam"
+        ),
+        (
+            speedwagon.workflow.DirectorySelect,
+            "spam",
+            lambda serialization: serialization['label'] == "spam"
+        ),(
+            speedwagon.workflow.BooleanSelect,
+            "spam",
+            lambda serialization: serialization['label'] == "spam"
+        ),
+    ]
+)
+def test_serialization(option, label, expected_comparison):
+    assert expected_comparison(option(label=label).serialize())
+
