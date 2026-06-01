@@ -346,6 +346,7 @@ class FileSaveWidget(FileSystemItemSelectWidget):
     def drop_acceptable_data(self, mime_data: QtCore.QMimeData) -> bool:
         return False
 
+
 class DirectorySelectWidget(FileSystemItemSelectWidget):
     def drop_acceptable_data(self, mime_data: QtCore.QMimeData) -> bool:
         if not mime_data.hasUrls():
