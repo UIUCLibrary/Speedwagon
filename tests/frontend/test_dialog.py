@@ -3,6 +3,7 @@ import platform
 import pytest
 from unittest.mock import Mock, patch, mock_open
 import sys
+
 if sys.version_info >= (3, 10):
     from importlib import metadata
 else:
@@ -301,3 +302,23 @@ def test_open_settings_dir_open_unsupported(monkeypatch):
         settings_location,
     )
     mocked_open.assert_called_once()
+
+class TestAbsOpenSettings:
+    def test_validate_user_option_is_valid(self, tmpdir):
+        somewhere = tmpdir.mkdir("somewhere")
+        speedwagon.frontend.qtwidgets.dialog.settings.AbsOpenSettings.validate_user_option(str(somewhere))
+
+    def test_validate_user_option_invalid_path_not_is_valid(self, tmpdir):
+        somewhere = tmpdir.mkdir("somewhere")
+        invalidate_somewhere = somewhere / "invalidate_somewhere"
+        assert invalidate_somewhere.exists() is False
+        with pytest.raises(FileNotFoundError):
+            speedwagon.frontend.qtwidgets.dialog.settings.AbsOpenSettings.validate_user_option(str(invalidate_somewhere))
+
+    def test_validate_user_option_using_a_file_not_is_valid(self, tmpdir):
+        somewhere = tmpdir.mkdir("somewhere")
+        a_file = somewhere / "invalidate_somewhere.txt"
+        a_file.write_text("", encoding="utf-8")
+        # assert invalidate_somewhere.exists() is False
+        with pytest.raises(NotADirectoryError):
+            speedwagon.frontend.qtwidgets.dialog.settings.AbsOpenSettings.validate_user_option(str(a_file))

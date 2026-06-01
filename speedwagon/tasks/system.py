@@ -152,7 +152,7 @@ class CallbackSystemTask(AbsSystemTask):
         return self._description
 
     def __call__(self, *args, **kwargs):
-        """Called callback function."""
+        """Run callback function."""
         return self.callback(*args, **kwargs)
 
 

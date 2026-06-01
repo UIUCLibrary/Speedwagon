@@ -54,7 +54,11 @@ class SettingsModel(QtCore.QAbstractTableModel):
         self.dataChanged.connect(self._update_modified)
 
     def _update_modified(self) -> None:
-        for original, current in zip(self._unmodified_data, self._data):
+        for original, current in zip(
+            self._unmodified_data,
+            self._data,
+            strict=True
+        ):
             if original[1] != current[1]:
                 self.data_modified = True
                 return

@@ -4,7 +4,10 @@ import abc
 import logging
 import os
 import platform
-import subprocess
+
+# This is fine! It's only used to open a settings directory on a mac.
+import subprocess  # nosec
+
 import typing
 from typing import (
     Optional,
@@ -67,6 +70,18 @@ class TabsSettingsData(TypedDict):
 
 
 class AbsOpenSettings(abc.ABC):
+    @staticmethod
+    def validate_user_option(settings_directory: str) -> None:
+        if not os.path.exists(settings_directory):
+            raise FileNotFoundError(
+                f"Settings directory {settings_directory} does not exist."
+            )
+
+        if not os.path.isdir(settings_directory):
+            raise NotADirectoryError(
+                f"Settings directory {settings_directory} is not a directory."
+            )
+
     def __init__(self, settings_directory: str) -> None:
         super().__init__()
         self.settings_dir = settings_directory
@@ -200,13 +215,20 @@ class SettingsDialog(QtWidgets.QDialog):
 
 class DarwinOpenSettings(AbsOpenSettings):
     def system_open_directory(self, settings_directory: str) -> None:
-        subprocess.call(["/usr/bin/open", settings_directory])
+        self.validate_user_option(settings_directory)
+        subprocess.check_output(
+            ["/usr/bin/open", settings_directory],
+            shell=False  # nosec: B603
+        )
 
 
 class WindowsOpenSettings(AbsOpenSettings):
     def system_open_directory(self, settings_directory: str) -> None:
+        self.validate_user_option(settings_directory)
         # pylint: disable=no-member
-        os.startfile(settings_directory)  # type: ignore[attr-defined]
+        os.startfile(
+            settings_directory
+        )  # type: ignore[attr-defined] # nosec: B606
 
 
 DEFAULT_SETTINGS_DIR_STRATEGIES: Dict[str, Type[AbsOpenSettings]] = {
