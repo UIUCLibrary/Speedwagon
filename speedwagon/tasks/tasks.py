@@ -740,7 +740,7 @@ class MultiStageTaskBuilder(BaseTaskBuilder):
 def workflow_task(
     description: str,
 ) -> typing.Callable[[Callable[Param, _T]], DynamicSubtask]:
-    """Decorator for creating a subtasks from functions."""
+    """Decorate a function to create subtasks."""
 
     def decorator(func: Callable[Param, _T]) -> DynamicSubtask:
         return DynamicSubtask(func, description=description)
