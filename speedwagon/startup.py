@@ -277,8 +277,10 @@ class RunCommand(SubCommand):
         self,
     ) -> speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON:
         from speedwagon import frontend
-
-        return frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
+        try:
+            return frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
+        except AttributeError as error:
+            raise ImportError("GUI strategy not available") from error
 
     def json_startup(self) -> None:
         startup_strategy: Union[
@@ -305,7 +307,7 @@ class RunCommand(SubCommand):
         sys.exit(app_launcher.run())
 
     def run(self) -> None:
-        if "json" in self.args:
+        if "json" in self.args and self.args.json:
             self.json_startup()
         else:
             print(f"Invalid {self.args}")
