@@ -24,7 +24,7 @@ def calculate_md5_hash(file_path: str) -> str:
     if not os.path.isfile(file_path):
         raise ValueError(f"Not a valid file: '{file_path}'")
 
-    md5_hash = hashlib.md5()
+    md5_hash = hashlib.md5(usedforsecurity=False)
     with open(file_path, "rb") as file:
         for chunk in iter(lambda: file.read(CHUNK_SIZE), b""):
             md5_hash.update(chunk)

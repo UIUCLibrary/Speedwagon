@@ -25,12 +25,13 @@ class TestOpenSettings:
     def test_open_darwin_settings(self, monkeypatch):
         settings_directory = "some/settings/path"
         opening_strategy = settings.DarwinOpenSettings(settings_directory)
+        opening_strategy.validate_user_option = lambda _: None
         import subprocess
-        call = Mock()
-        monkeypatch.setattr(subprocess, "call", call)
+        check_output = Mock()
+        monkeypatch.setattr(subprocess, "check_output", check_output)
         opening_strategy.open()
-        assert call.called is True and \
-               settings_directory in call.call_args_list[0][0][0]
+        assert check_output.called is True and \
+               settings_directory in check_output.call_args_list[0][0][0]
 
     def test_open_unsupported_settings(self, qtbot, monkeypatch):
         from PySide6 import QtWidgets
@@ -44,6 +45,7 @@ class TestOpenSettings:
     def test_open_windows_settings(self, monkeypatch):
         settings_directory = "some\\settings\\path"
         opening_strategy = settings.WindowsOpenSettings(settings_directory)
+        opening_strategy.validate_user_option = lambda _: None
         import os
         startfile = Mock()
         if platform.system() != "Windows":
