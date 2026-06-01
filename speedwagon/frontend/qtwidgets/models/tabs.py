@@ -588,7 +588,8 @@ class TabStandardItem(QtGui.QStandardItem):
         return any(
             current.workflow != unmodified.workflow
             for current, unmodified in zip(
-                self.workflows, self._unmodified_workflows
+                self.workflows, self._unmodified_workflows,
+                strict=True
             )
         )
 
