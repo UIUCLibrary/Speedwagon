@@ -36,7 +36,7 @@ project = "https://www.library.illinois.edu/dccdocs/speedwagon"
 download = "https://github.com/UIUCLibrary/Speedwagon/releases"
 
 [project.optional-dependencies]
-QT = ["PySide6~=6.9.0"]
+QT = ["PySide6~=6.11"]
 
 [project.gui-scripts]
 speedwagon = "speedwagon.__main__:main"
@@ -62,7 +62,7 @@ test = ["pytest", "pytest-mock"]
 test-gui = [
     {include-group = "test"},
     "pytest-qt>=3.3.0",
-    "PySide6~=6.9.0"
+    "PySide6~=6.11"
 ]
 tox = ["tox"]
 tox-uv = [
