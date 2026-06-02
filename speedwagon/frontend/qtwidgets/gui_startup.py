@@ -35,11 +35,7 @@ from typing import (
 import traceback as tb
 import webbrowser
 
-# pylint: disable=wrong-import-position
-if sys.version_info >= (3, 10):
-    from importlib import metadata
-else:
-    import importlib_metadata as metadata
+import importlib.metadata
 
 from PySide6 import QtWidgets, QtCore
 
@@ -283,9 +279,8 @@ def _setup_plugins_tab(config_file: str) -> dialog.settings.PluginsTab:
 
 
 def get_help_url() -> Optional[str]:
-    pkg_metadata: metadata.PackageMetadata = metadata.metadata(
-        speedwagon.__name__
-    )
+    pkg_metadata: importlib.metadata.PackageMetadata =\
+        importlib.metadata.metadata(speedwagon.__name__)
     if urls := pkg_metadata.get_all("Project-URL"):
         for value in urls:
             try:
@@ -399,7 +394,7 @@ def load_help_web_page(
                 "Reason: no project url located in Project-URL package "
                 "metadata"
             )
-    except metadata.PackageNotFoundError as error:
+    except importlib.metadata.PackageNotFoundError as error:
         logger.warning("No help link available. Reason: %s", error)
 
 

@@ -7,10 +7,7 @@ import collections.abc
 import configparser
 import contextlib
 
-try:  # pragma: no cover
-    from importlib import metadata
-except ImportError:  # pragma: no cover
-    import importlib_metadata as metadata  # type: ignore
+from importlib import metadata
 import io
 import logging
 import os

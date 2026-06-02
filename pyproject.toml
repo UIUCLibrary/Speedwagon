@@ -13,7 +13,6 @@ license = "NCSA"
 license-files = ["LICENSE"]
 dependencies =[
     "pyyaml",
-    'importlib-metadata;python_version<"3.10"',
     'typing-extensions;python_version<"3.11"',
     'lxml',
     "requests",
@@ -36,13 +35,14 @@ project = "https://www.library.illinois.edu/dccdocs/speedwagon"
 download = "https://github.com/UIUCLibrary/Speedwagon/releases"
 
 [project.optional-dependencies]
-QT = ["PySide6~=6.9.0"]
+QT = ["PySide6~=6.11"]
 
 [project.gui-scripts]
 speedwagon = "speedwagon.__main__:main"
 sw-tab-editor = "speedwagon.startup:standalone_tab_editor"
 
 [dependency-groups]
+security = ["bandit"]
 code-style = ["pydocstyle", "flake8"]
 type-checking = [
     "mypy",
@@ -53,7 +53,6 @@ type-checking = [
 ]
 lint = [
     {include-group = "code-style"},
-    "flake8-bugbear",
     "pylint",
     "ruff"
 ]
@@ -62,7 +61,7 @@ test = ["pytest", "pytest-mock"]
 test-gui = [
     {include-group = "test"},
     "pytest-qt>=3.3.0",
-    "PySide6~=6.9.0"
+    "PySide6~=6.11"
 ]
 tox = ["tox"]
 tox-uv = [
@@ -74,6 +73,7 @@ dev = [
     "coverage",
     "pre_commit",
     "lxml",
+    {include-group = "security"},
     {include-group = "type-checking"},
     {include-group = "lint"},
     {include-group = "docs"},

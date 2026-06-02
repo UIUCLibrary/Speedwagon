@@ -2,11 +2,7 @@
 from __future__ import annotations
 from typing import Sequence, TypeVar, Callable, Union, TypedDict
 import platform
-import sys
-if sys.version_info >= (3, 10):
-    from importlib import metadata
-else:
-    import importlib_metadata as metadata
+import importlib.metadata
 
 __all__ = [
     'SystemInfo',
@@ -19,7 +15,7 @@ _T = TypeVar("_T")
 
 
 def convert_package_metadata_to_string(
-        package_metadata: metadata.PackageMetadata
+        package_metadata: importlib.metadata.PackageMetadata
 ) -> str:
     """Generate a string including name and version number of the package."""
     return f"{package_metadata['Name']} {package_metadata['Version']}"
@@ -35,14 +31,14 @@ class SystemInfo:
     @staticmethod
     def get_installed_packages(
             formatter: Union[
-                Callable[[metadata.PackageMetadata], _T],
-                Callable[[metadata.PackageMetadata], str]
+                Callable[[importlib.metadata.PackageMetadata], _T],
+                Callable[[importlib.metadata.PackageMetadata], str]
             ] = convert_package_metadata_to_string
     ) -> Sequence[_T | str]:
         """Get list of installed packages."""
         return [
             formatter(x.metadata) for x in sorted(
-                metadata.distributions(),
+                importlib.metadata.distributions(),
                 key=lambda x: x.metadata["Name"].upper()
             )
         ]

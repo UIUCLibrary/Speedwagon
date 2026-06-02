@@ -3,22 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import cast, Optional, List, Union, Any
-import sys
-
+from typing import cast, Optional, List, Union, Any, TYPE_CHECKING
 from PySide6 import QtCore
 
-if sys.version_info < (3, 10):  # pragma: no cover
-    import importlib_metadata as metadata
-else:  # pragma: no cover
-    from importlib import metadata
+if TYPE_CHECKING:
+    import importlib.metadata
 
 __all__ = ["PluginActivationModel"]
 
 
 @dataclass
 class PluginModelItem:
-    entrypoint: metadata.EntryPoint
+    entrypoint: importlib.metadata.EntryPoint
     enabled: bool
 
 
@@ -63,7 +59,7 @@ class PluginActivationModel(QtCore.QAbstractListModel):
         return len(self._data)
 
     def add_entry_point(
-        self, entry_point: metadata.EntryPoint, enabled: bool = False
+        self, entry_point: importlib.metadata.EntryPoint, enabled: bool = False
     ) -> None:
         """Add an entry point to the model."""
         self._starting_data.append(PluginModelItem(entry_point, enabled))

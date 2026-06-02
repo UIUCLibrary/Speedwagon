@@ -11,13 +11,8 @@ import logging
 import logging.handlers
 import typing
 from typing import Optional, TYPE_CHECKING
-import sys
 
-# pylint: disable=wrong-import-position
-if sys.version_info < (3, 10):  # pragma: no cover
-    import importlib_metadata as metadata
-else:
-    from importlib import metadata
+import importlib.metadata
 from importlib import resources
 from importlib.resources import as_file
 
@@ -195,7 +190,7 @@ def set_app_display_metadata(app: QtWidgets.QApplication) -> None:
         resources.files("speedwagon").joinpath("favicon.ico")
     ) as favicon_file:
         app.setWindowIcon(QtGui.QIcon(str(favicon_file)))
-    with contextlib.suppress(metadata.PackageNotFoundError):
-        app.setApplicationVersion(metadata.version(__package__))
+    with contextlib.suppress(importlib.metadata.PackageNotFoundError):
+        app.setApplicationVersion(importlib.metadata.version(__package__))
     app.setApplicationDisplayName("Speedwagon")
     QtWidgets.QApplication.processEvents()

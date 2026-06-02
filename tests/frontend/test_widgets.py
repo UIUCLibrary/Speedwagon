@@ -7,12 +7,8 @@ import pytest
 QtCore = pytest.importorskip("PySide6.QtCore")
 from PySide6 import QtWidgets, QtGui, QtCore
 from typing import List, TypedDict, Sequence
-import sys
 
-if sys.version_info < (3, 10):
-    import importlib_metadata as metadata
-else:
-    from importlib import metadata
+import importlib.metadata
 
 import speedwagon.workflow
 import speedwagon.frontend.qtwidgets.widgets
@@ -469,7 +465,7 @@ class TestPluginConfig:
 
     def test_checkbox_selection(self, qtbot):
         plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
-        entry_point = Mock(metadata.EntryPoint)
+        entry_point = Mock(importlib.metadata.EntryPoint)
         entry_point.name = "Spam"
         entry_point.module = "SpamPlugins"
 
@@ -487,7 +483,7 @@ class TestPluginConfig:
     @pytest.fixture()
     def plugin_with_spam(self, qtbot):
         plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
-        entry_point = Mock(metadata.EntryPoint)
+        entry_point = Mock(importlib.metadata.EntryPoint)
         entry_point.name = "Spam"
         entry_point.module = "Bacon"
 

@@ -22,8 +22,6 @@ from typing import (
     TYPE_CHECKING,
     Type,
 )
-import sys
-# pylint: disable=wrong-import-position
 from importlib import resources
 from importlib.resources import as_file
 
@@ -49,10 +47,7 @@ if TYPE_CHECKING:
     from speedwagon.job import Workflow
 
 
-if sys.version_info < (3, 10):  # pragma: no cover
-    import importlib_metadata as metadata
-else:
-    from importlib import metadata
+import importlib.metadata
 
 __all__ = ["GlobalSettingsTab", "TabsConfigurationTab", "TabEditor"]
 
@@ -278,7 +273,9 @@ class PluginsTab(SettingsTab[Dict[str, List[Tuple[str, bool]]]]):
 
     def load(self, settings_ini: str) -> None:
         settings = config.plugins.read_settings_file_plugins(settings_ini)
-        for entry_point in metadata.entry_points(group="speedwagon.plugins"):
+        for entry_point in importlib.metadata.entry_points(
+            group="speedwagon.plugins"
+        ):
             active = False
             if (
                 entry_point.module in settings

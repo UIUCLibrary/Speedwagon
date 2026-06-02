@@ -26,11 +26,7 @@ from typing import (
 )
 
 
-# pylint: disable=wrong-import-position
-if sys.version_info >= (3, 10):
-    from importlib import metadata
-else:
-    import importlib_metadata as metadata
+import importlib.metadata
 
 import speedwagon.plugins
 from speedwagon.config import plugins as plugin_config
@@ -350,7 +346,9 @@ class OnlyActivatedPluginsWorkflows(AbsWorkflowFinder):
 
     @classmethod
     def iter_plugins(cls):
-        yield from metadata.entry_points(group=cls.entry_points_group)
+        yield from importlib.metadata.entry_points(
+            group=cls.entry_points_group
+        )
 
     def locate(self) -> Dict[str, Type[Workflow]]:
         all_active_workflows: Dict[str, Type[Workflow]] = {}

@@ -4,12 +4,7 @@ from typing import List, Any, Dict, Optional
 from unittest.mock import Mock
 import sys
 
-
-if sys.version_info < (3, 10):
-    import importlib_metadata as metadata
-else:
-    from importlib import metadata
-
+import importlib.metadata
 
 import pytest
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
@@ -294,13 +289,13 @@ class TestPluginActivationModel:
     def test_adding_plugin_adds_row(self):
         plugin_model = models.PluginActivationModel()
         assert plugin_model.rowCount() == 0
-        plugin_entry = Mock(spec=metadata.EntryPoint)
+        plugin_entry = Mock(spec=importlib.metadata.EntryPoint)
         plugin_model.add_entry_point(plugin_entry)
         assert plugin_model.rowCount() == 1
 
     def test_name_is_displayed(self):
         plugin_model = models.PluginActivationModel()
-        plugin_entry = Mock(spec=metadata.EntryPoint)
+        plugin_entry = Mock(spec=importlib.metadata.EntryPoint)
         plugin_entry.name = "spam"
         plugin_model.add_entry_point(plugin_entry)
         value = plugin_model.data(
@@ -318,14 +313,14 @@ class TestPluginActivationModel:
     )
     def test_flags(self, expected_flag):
         plugin_model = models.PluginActivationModel()
-        plugin_entry = Mock(spec=metadata.EntryPoint)
+        plugin_entry = Mock(spec=importlib.metadata.EntryPoint)
         plugin_entry.name = "spam"
         plugin_model.add_entry_point(plugin_entry)
         assert expected_flag in plugin_model.flags(plugin_model.index(0))
 
     def test_default_checked_role_unchecked(self):
         plugin_model = models.PluginActivationModel()
-        plugin_entry = Mock(spec=metadata.EntryPoint)
+        plugin_entry = Mock(spec=importlib.metadata.EntryPoint)
         plugin_entry.name = "spam"
         plugin_model.add_entry_point(plugin_entry)
         assert (
@@ -345,7 +340,7 @@ class TestPluginActivationModel:
     )
     def test_data_role(self, role, attribute):
         plugin_model = models.PluginActivationModel()
-        plugin_entry = Mock(spec=metadata.EntryPoint)
+        plugin_entry = Mock(spec=importlib.metadata.EntryPoint)
         plugin_entry.name = "spam"
 
         plugin_model.add_entry_point(plugin_entry)

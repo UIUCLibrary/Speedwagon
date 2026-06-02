@@ -22,10 +22,7 @@ from typing import (
 from importlib import resources
 from importlib.resources import as_file
 
-if sys.version_info >= (3, 10):
-    from importlib import metadata
-else:
-    import importlib_metadata as metadata
+from importlib import metadata
 
 from PySide6 import QtWidgets, QtGui, QtCore  # type: ignore
 

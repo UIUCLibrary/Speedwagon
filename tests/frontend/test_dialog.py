@@ -2,12 +2,8 @@ import platform
 
 import pytest
 from unittest.mock import Mock, patch, mock_open
-import sys
 
-if sys.version_info >= (3, 10):
-    from importlib import metadata
-else:
-    import importlib_metadata as metadata
+import importlib.metadata
 
 import speedwagon.info
 
@@ -32,7 +28,7 @@ def test_about_dialog_box(qtbot, monkeypatch):
 
     with monkeypatch.context() as mp:
         mp.setattr(QtWidgets.QMessageBox, "about", mock_about)
-        mp.setattr(metadata, "metadata", mock_metadata)
+        mp.setattr(importlib.metadata, "metadata", mock_metadata)
         dialogs.about_dialog_box(None)
 
 
@@ -41,11 +37,11 @@ def test_about_dialog_box_no_metadata(qtbot, monkeypatch):
         assert "Speedwagon" == message
 
     def mock_metadata(*args, **kwargs):
-        raise metadata.PackageNotFoundError()
+        raise importlib.metadata.PackageNotFoundError()
 
     with monkeypatch.context() as mp:
         mp.setattr(QtWidgets.QMessageBox, "about", mock_about)
-        mp.setattr(metadata, "metadata", mock_metadata)
+        mp.setattr(importlib.metadata, "metadata", mock_metadata)
         dialogs.about_dialog_box(None)
 
 
