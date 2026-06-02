@@ -53,7 +53,6 @@ type-checking = [
 ]
 lint = [
     {include-group = "code-style"},
-    "flake8-bugbear",
     "pylint",
     "ruff"
 ]
