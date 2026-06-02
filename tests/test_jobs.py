@@ -5,10 +5,7 @@ import json
 
 import sys
 
-if sys.version_info >= (3, 10):
-    from importlib import metadata
-else:
-    import importlib_metadata as metadata
+import importlib.metadata
 
 import pytest
 import speedwagon.plugins
@@ -169,6 +166,6 @@ class TestOnlyActivatedPluginsWorkflows:
 
     def test_iter_plugins_looks_for_entry_points(self, monkeypatch):
         mock_entry_points = Mock(name="entry_points()", return_value=iter([]))
-        monkeypatch.setattr(metadata, "entry_points", mock_entry_points)
+        monkeypatch.setattr(importlib.metadata, "entry_points", mock_entry_points)
         list(speedwagon.job.OnlyActivatedPluginsWorkflows.iter_plugins())
         assert mock_entry_points.called

@@ -15,10 +15,7 @@ from speedwagon.frontend.qtwidgets.models.tabs import (
     AbsLoadTabDataModelStrategy,
     TabDataModelYAMLFileLoader,
 )
-if sys.version_info < (3, 10):
-    import importlib_metadata as metadata
-else:
-    from importlib import metadata
+import importlib.metadata
 
 
 class TestOpenSettings:
@@ -1009,7 +1006,7 @@ myworkflow = True
             config_file = "config.ini"
             tab = settings.PluginsTab()
             entry_point = Mock(
-                metadata.EntryPoint,
+                importlib.metadata.EntryPoint,
                 name="EntryPoint",
                 module="mysampleplugin"
             )
@@ -1020,7 +1017,7 @@ myworkflow = True
             )
             with monkeypatch.context() as mp:
                 mp.setattr(
-                    settings.metadata,
+                    settings.importlib.metadata,
                     "entry_points",
                     lambda *_, **__: [entry_point]
                 )

@@ -1569,6 +1569,7 @@ qt = [
 
 [package.dev-dependencies]
 ci = [
+    { name = "bandit" },
     { name = "coverage" },
     { name = "flake8" },
     { name = "lxml" },
@@ -1598,6 +1599,7 @@ code-style = [
     { name = "pydocstyle" },
 ]
 dev = [
+    { name = "bandit" },
     { name = "coverage" },
     { name = "flake8" },
     { name = "lxml" },
@@ -1636,6 +1638,9 @@ lint = [
 publish = [
     { name = "twine" },
 ]
+security = [
+    { name = "bandit" },
+]
 test = [
     { name = "pytest" },
     { name = "pytest-mock" },
@@ -1663,7 +1668,6 @@ type-checking = [
 
 [package.metadata]
 requires-dist = [
-    { name = "importlib-metadata", marker = "python_full_version < '3.10'" },
     { name = "lxml" },
     { name = "pluggy", specifier = ">=1.0" },
     { name = "pyside6", marker = "extra == 'qt'", specifier = "~=6.11" },
@@ -1675,6 +1679,7 @@ provides-extras = ["qt"]
 
 [package.metadata.requires-dev]
 ci = [
+    { name = "bandit" },
     { name = "coverage" },
     { name = "flake8" },
     { name = "lxml" },
@@ -1702,6 +1707,7 @@ code-style = [
     { name = "pydocstyle" },
 ]
 dev = [
+    { name = "bandit" },
     { name = "coverage" },
     { name = "flake8" },
     { name = "lxml" },
@@ -1734,6 +1740,7 @@ lint = [
     { name = "ruff" },
 ]
 publish = [{ name = "twine" }]
+security = [{ name = "bandit" }]
 test = [
     { name = "pytest" },
     { name = "pytest-mock" },

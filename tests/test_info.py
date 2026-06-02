@@ -1,10 +1,6 @@
 from unittest.mock import Mock, mock_open, patch
 
-import sys
-if sys.version_info >= (3, 10):
-    from importlib import metadata
-else:
-    import importlib_metadata as metadata
+import importlib.metadata
 
 import speedwagon.info
 
@@ -29,7 +25,7 @@ def test_get_install_packages(monkeypatch):
         return [Mock(metadata=d) for d in fake_distributions]
 
     with monkeypatch.context() as ctx:
-        ctx.setattr(metadata, "distributions", mock_distributions)
+        ctx.setattr(importlib.metadata, "distributions", mock_distributions)
         system_info = speedwagon.info.SystemInfo()
         assert system_info.get_installed_packages(
             formatter=speedwagon.info.convert_package_metadata_to_string

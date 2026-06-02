@@ -2,19 +2,13 @@ import argparse
 import json
 import logging
 import os
-import pathlib
 import webbrowser
 
 import pytest
 from unittest.mock import Mock, MagicMock, patch, mock_open, ANY, call
 import io
-import sys
 
-
-if sys.version_info >= (3, 10):  # pragma: no cover
-    import importlib.metadata as importlib_metadata
-else:  # pragma: no cover
-    import importlib_metadata
+import importlib.metadata
 
 from speedwagon.workflow import FileSelectData
 import speedwagon.config
@@ -584,7 +578,7 @@ class TestStartQtThreaded:
             gui_startup,
             "get_help_url",
             Mock(
-                side_effect=importlib_metadata.PackageNotFoundError(
+                side_effect=importlib.metadata.PackageNotFoundError(
                     'speedwagon'
                 )
             )
@@ -1063,9 +1057,9 @@ def test_get_help_url(monkeypatch):
         )
     )
     monkeypatch.setattr(
-        gui_startup.metadata, "metadata",
+        gui_startup.importlib.metadata, "metadata",
         Mock(
-            spec_set=importlib_metadata.PackageMetadata,
+            spec_set=importlib.metadata.PackageMetadata,
             return_value=pkg_metadata
         )
     )
@@ -1077,9 +1071,9 @@ def test_get_help_url_nothing_on_missing(monkeypatch):
         get_all=Mock(return_value=[])
     )
     monkeypatch.setattr(
-        gui_startup.metadata, "metadata",
+        gui_startup.importlib.metadata, "metadata",
         Mock(
-            spec_set=importlib_metadata.PackageMetadata,
+            spec_set=importlib.metadata.PackageMetadata,
             return_value=pkg_metadata
         )
     )
@@ -1093,9 +1087,9 @@ def test_get_help_url_malformed_data(monkeypatch):
         )
     )
     monkeypatch.setattr(
-        gui_startup.metadata, "metadata",
+        gui_startup.importlib.metadata, "metadata",
         Mock(
-            spec_set=importlib_metadata.PackageMetadata,
+            spec_set=importlib.metadata.PackageMetadata,
             return_value=pkg_metadata
         )
     )
@@ -1181,7 +1175,7 @@ def test_build_request_settings_dialog2(qtbot, monkeypatch):
         return [
             entry_point_1
         ]
-    monkeypatch.setattr(importlib_metadata, "entry_points", entry_points)
+    monkeypatch.setattr(importlib.metadata, "entry_points", entry_points)
 
     def get_active_workflows(config_file, workflow_finder=None):
         return {}
