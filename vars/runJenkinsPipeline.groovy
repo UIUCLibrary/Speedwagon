@@ -144,6 +144,9 @@ def call(){
             booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
             booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
         }
+        options {
+            preserveStashes()
+        }
         stages {
             stage('Build Sphinx Documentation'){
                 agent {
