@@ -43,6 +43,7 @@ speedwagon = "speedwagon.__main__:main"
 sw-tab-editor = "speedwagon.startup:standalone_tab_editor"
 
 [dependency-groups]
+security = ["bandit"]
 code-style = ["pydocstyle", "flake8"]
 type-checking = [
     "mypy",
@@ -73,6 +74,7 @@ dev = [
     "coverage",
     "pre_commit",
     "lxml",
+    {include-group = "security"},
     {include-group = "type-checking"},
     {include-group = "lint"},
     {include-group = "docs"},
