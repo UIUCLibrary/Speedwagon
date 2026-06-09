@@ -151,7 +151,7 @@ class TaskGenerator:
     ) -> typing.Optional[str]:
         return self.workflow.generate_report(results, **self.options)
 
-    def tasks(self) -> typing.Iterable[speedwagon.tasks.Subtask]:
+    def tasks(self) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
         pretask_results: List[speedwagon.tasks.Result[Any, Any]] = []
 
         results = []
@@ -185,7 +185,7 @@ class TaskGenerator:
 
     def get_pre_tasks(
         self, working_directory: str
-    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
+    ) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
         task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory,
@@ -201,7 +201,7 @@ class TaskGenerator:
         working_directory: str,
         pretask_results,
         additional_data,
-    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
+    ) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
         metadata_tasks = (
             self.workflow.discover_task_metadata(
                 pretask_results, additional_data, user_args=self.options
@@ -229,7 +229,7 @@ class TaskGenerator:
         self,
         working_directory: str,
         results: typing.List[speedwagon.tasks.Result],
-    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
+    ) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
         task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory,

@@ -418,11 +418,11 @@ class MultiStageTask(Task):
         """Create a new multi-stage task."""
         super().__init__()
         # Todo: use the results builder from validate
-        self._main_subtasks: List[Subtask] = []
+        self._main_subtasks: List[BaseTask] = []
         self.working_dir = ""
 
     @property
-    def main_subtasks(self) -> List[Subtask]:
+    def main_subtasks(self) -> List[BaseTask]:
         return self._main_subtasks
 
     @property
@@ -538,11 +538,11 @@ class BaseTaskBuilder(AbsTaskBuilder):
 
     def __init__(self) -> None:
         """Create base structure of a task builder class."""
-        self._main_subtasks: List[Subtask] = []
+        self._main_subtasks: List[BaseTask] = []
         self._pretask: Optional[AbsSubtask] = None
         self._posttask: Optional[AbsSubtask] = None
 
-    def add_subtask(self, task: Subtask) -> None:
+    def add_subtask(self, task: BaseTask) -> None:
         self._main_subtasks.append(task)
 
     def build_task(self) -> MultiStageTask:
@@ -593,7 +593,7 @@ class TaskBuilder:
         """Build Multi stage task."""
         return self._builder.build_task()
 
-    def add_subtask(self, subtask: Subtask) -> None:
+    def add_subtask(self, subtask: BaseTask) -> None:
         """Add subtask to builder."""
         self._subtask_counter += 1
 
