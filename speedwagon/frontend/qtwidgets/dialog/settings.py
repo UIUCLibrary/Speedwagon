@@ -24,6 +24,7 @@ from typing import (
 )
 from importlib import resources
 from importlib.resources import as_file
+import importlib.metadata
 
 from PySide6 import QtWidgets, QtCore  # type: ignore
 
@@ -45,9 +46,6 @@ from speedwagon.config.tabs import NullTabsConfig
 if TYPE_CHECKING:
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
     from speedwagon.job import Workflow
-
-
-import importlib.metadata
 
 __all__ = ["GlobalSettingsTab", "TabsConfigurationTab", "TabEditor"]
 

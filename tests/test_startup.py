@@ -39,7 +39,7 @@ def test_start_up_calls_default(monkeypatch):
 
 def test_load_as_module(monkeypatch):
 
-    monkeypatch.setattr(logging, "getLogger", Mock())
+    monkeypatch.setattr(logging, "getLogger", Mock(return_value=MagicMock()))
     import speedwagon.__main__
     main_mock = Mock()
     monkeypatch.setattr(speedwagon.startup, "main", main_mock)
@@ -48,7 +48,7 @@ def test_load_as_module(monkeypatch):
 
 
 def test_load_module_self_test(monkeypatch):
-    monkeypatch.setattr(logging, "getLogger", Mock())
+    monkeypatch.setattr(logging, "getLogger", Mock(return_value=MagicMock()))
 
     pytest_mock = MagicMock()
     monkeypatch.setattr(importlib, "import_module", lambda x: pytest_mock)
