@@ -294,3 +294,18 @@ class TestStartupTaskBuilder:
             key in actual_keys
             for key in expected_keys
         ), f"Argument 1 expected {expected_keys}, actual {actual_keys}"
+
+class TestInfoCommand:
+    def test_run_write_to_logging(self, caplog):
+        command = speedwagon.startup.InfoCommand(Mock(spec=argparse.Namespace))
+        command.build_report = Mock(return_value="some logging")
+        with caplog.at_level(logging.INFO):
+            command.run()
+        assert "some logging" in caplog.text
+
+    def test_build_report_runs_report_builder_strategy(self):
+        command = speedwagon.startup.InfoCommand(Mock(spec=argparse.Namespace))
+        mock_report_builder_strategy = Mock(name="report_builder_strategy", return_value="some logging")
+        command.report_builder_strategy = mock_report_builder_strategy
+        command.build_report()
+        mock_report_builder_strategy.assert_called_once()

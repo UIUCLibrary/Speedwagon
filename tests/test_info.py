@@ -1,6 +1,9 @@
+import json
 from unittest.mock import Mock, mock_open, patch
 
 import importlib.metadata
+
+import pytest
 
 import speedwagon.info
 
@@ -48,6 +51,22 @@ def test_system_info_to_text_formatter():
     report = speedwagon.info.system_info_to_text_formatter(system_info)
     assert "Whoosh 2.7.4" in report
 
+def test_system_info_to_json_formatter(monkeypatch):
+    system_info =\
+        Mock(
+            spec=speedwagon.info.SystemInfo,
+            get_installed_packages=Mock(return_value=[
+                "Whoosh 2.7.4",
+                "Dummy 1.2.3"
+            ]),
+            get_runtime_information=Mock(
+                return_value={'python_version': '3.11.2'}
+            ),
+        )
+    report = speedwagon.info.system_info_to_json_formatter(system_info)
+    json_report = json.loads(report)
+    assert "Whoosh 2.7.4" in json_report['installed_packages']
+
 
 def test_write_system_info_to_file_calls_write():
     system_info = \
@@ -79,3 +98,17 @@ class TestSystemInfo:
         )
         runtime_info = system_info.get_runtime_information()
         assert runtime_info['python_version'] == "3.11.2"
+
+
+def test_system_report():
+    speedwagon.info.REPORT_FORMATTERS = {
+        speedwagon.info.ReportFormats.PLAIN_TEXT: Mock(return_value="report")
+    }
+    system_info = Mock(spec=speedwagon.info.SystemInfo)
+    report = speedwagon.info.system_report(system_info, report_format=speedwagon.info.ReportFormats.PLAIN_TEXT)
+    assert "report" == report
+
+def test_invalid_report_format():
+    with pytest.raises(speedwagon.info.InvalidReportType):
+        system_info = Mock(spec=speedwagon.info.SystemInfo)
+        speedwagon.info.system_report(system_info, report_format="something invalid")

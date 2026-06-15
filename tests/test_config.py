@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch, mock_open, ANY, call
 import pytest
 
 import speedwagon.config
+from speedwagon.info import ReportFormats
 from speedwagon.config.config import ensure_settings_files
 from yaml import YAMLError
 
@@ -319,7 +320,30 @@ class TestCliArgsSetter:
                 'debug': True,
             }
         }
+    @pytest.mark.parametrize("args", [
+        ["--version"],
+        ["--help"],
+        ["run", "--help"],
+        ["info", "--help"],
+    ])
+    def test_get_arg_parser_help(self, args, monkeypatch):
+        arg_parser = speedwagon.config.config.CliArgsSetter().get_arg_parser()
+        with pytest.raises(SystemExit) as exit_code:
+            arg_parser.parse_args(args)
+        assert exit_code.value.code == 0
 
+    @pytest.mark.parametrize("args, expected", [
+        (["--debug"], {"debug": True}),
+        (["info"], {"command": "info"}),
+        (["info", "--format=json"], {"report_format": ReportFormats.JSON}),
+        (["info", "--format=plain-text"], {"report_format": ReportFormats.PLAIN_TEXT}),
+    ])
+    def test_get_arg_parser(self, args, expected, monkeypatch):
+        arg_parser = speedwagon.config.config.CliArgsSetter().get_arg_parser()
+        result = arg_parser.parse_args(args)
+        assert {
+            key: getattr(result, key) for key, value in expected.items()
+        } == expected
 
 class TestCreateBasicMissingConfigFile:
     def test_ensure_config_file_calls_generate_default(self, monkeypatch):
