@@ -39,6 +39,7 @@ from typing import (
 
 import speedwagon.job
 import speedwagon.config
+import speedwagon.info
 from speedwagon.config.workflow import (
     default_backend_factory,
     AbsWorkflowBackend,
@@ -272,6 +273,35 @@ class SubCommand(abc.ABC):
         """Run the command."""
 
 
+class InfoCommand(SubCommand):
+    """Info command for speedwagon.
+
+    .. versionadded:: 0.4.0
+        speedwagon info command added for quering information about speedwagon.
+    """
+
+    def __init__(self, args: argparse.Namespace) -> None:
+        super().__init__(args)
+        self.report_builder_strategy: Callable[[], str] = lambda: (
+            speedwagon.info.system_report(
+                speedwagon.info.SystemInfo(),
+                report_format=self.args.report_format
+            )
+        )
+
+    def run(self) -> None:
+        """Build a system info report and write it to stdout."""
+        report = self.build_report()
+        logger.info(report)
+
+    def build_report(self) -> str:
+        """Build a system info report as a string.
+
+        Use self.report_builder_strategy() to build a system info report.
+        """
+        return self.report_builder_strategy()
+
+
 class RunCommand(SubCommand):
     def get_gui_strategy(
         self,
@@ -332,9 +362,11 @@ def get_global_options(
 def run_command(
     command_name: str,
     args: argparse.Namespace,
-    command: Optional[Type[RunCommand]] = None,
+    command: Optional[Type[SubCommand]] = None,
 ) -> None:
-    commands = {"run": RunCommand}
+    commands: Dict[str, Type[SubCommand]] = {
+        "run": RunCommand, "info": InfoCommand
+    }
     command = command or commands.get(command_name)
 
     if command is None:

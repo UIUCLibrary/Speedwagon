@@ -34,6 +34,7 @@ except ImportError:  # pragma: no cover
 from types import TracebackType
 
 import speedwagon.job
+import speedwagon.info
 from .common import DEFAULT_CONFIG_DIRECTORY_NAME
 
 if typing.TYPE_CHECKING:
@@ -407,6 +408,40 @@ class CliArgsSetter(AbsSetting):
         subparsers = parser.add_subparsers(
             dest="command", help="sub-command help"
         )
+
+        info_parser = subparsers.add_parser(
+            "info",
+            help="get information about Speedwagon"
+        )
+        if sys.version_info >= (3, 11):
+            info_parser.add_argument(
+                "--format",
+                default=speedwagon.info.ReportFormats.PLAIN_TEXT.value,
+                type=speedwagon.info.ReportFormats,
+                dest="report_format",
+                choices=list(speedwagon.info.ReportFormats),
+                help="report format",
+            )
+        else:
+            class ConvertToCorrectEnum(argparse.Action):
+                def __call__(
+                    self, parser, namespace, values, option_string=None
+                ):
+                    setattr(
+                        namespace,
+                        self.dest,
+                        speedwagon.info.ReportFormats(values)
+                    )
+
+            info_parser.add_argument(
+                "--format",
+                default=speedwagon.info.ReportFormats.PLAIN_TEXT.value,
+                action=ConvertToCorrectEnum,
+                type=str,
+                dest="report_format",
+                choices=[a.value for a in speedwagon.info.ReportFormats],
+                help="report format",
+            )
 
         run_parser = subparsers.add_parser("run", help="run help")
 
