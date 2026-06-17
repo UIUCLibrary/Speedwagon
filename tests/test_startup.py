@@ -1,5 +1,6 @@
 import argparse
 import os.path
+from unittest import result
 
 from unittest.mock import Mock, MagicMock, mock_open, patch, ANY
 
@@ -310,3 +311,31 @@ class TestInfoCommand:
         command.report_builder_strategy = mock_report_builder_strategy
         command.build_report()
         mock_report_builder_strategy.assert_called_once()
+
+def test_get_global_options():
+    resolution_order = [
+        Mock(spec_set=speedwagon.config.config.AbsSetting, update=Mock()),
+    ]
+    assert speedwagon.startup.get_global_options(resolution_order)
+
+def test_get_global_options_resolution_order_config_file_exists(tmp_path):
+    config_file = tmp_path / "config.ini"
+    config_file.write_text("")
+    config_file_strategy = Mock(return_value=config_file)
+    resolution_order = speedwagon.startup.get_global_options_resolution_order(config_file_strategy)
+
+    assert any(
+        isinstance(resolution_strategy_type, speedwagon.config.config.ConfigFileSetter)
+        for resolution_strategy_type in resolution_order
+    )
+
+def test_get_global_options_resolution_order_config_file_does_not_exists(tmp_path):
+    config_file = tmp_path / "non_existant.ini"
+    assert config_file.exists() is False
+    config_file_strategy = Mock(return_value=config_file)
+    resolution_order = speedwagon.startup.get_global_options_resolution_order(config_file_strategy)
+
+    assert any(
+        isinstance(resolution_strategy_type, speedwagon.config.config.ConfigFileSetter)
+        for resolution_strategy_type in resolution_order
+    ) is False

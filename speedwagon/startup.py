@@ -345,19 +345,40 @@ class RunCommand(SubCommand):
             print(f"Invalid {self.args}")
 
 
-def get_global_options(
+def get_global_options_resolution_order(
     config_file_strategy: Callable[
         [], str
     ] = lambda: speedwagon.config.StandardConfigFileLocator(
         config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
     ).get_config_file(),
-) -> Dict[str, Any]:
-    loader = speedwagon.config.config.MixedConfigLoader()
-    loader.resolution_strategy_order = [
+) -> List[speedwagon.config.config.AbsSetting]:
+
+    resolution_order: List[speedwagon.config.config.AbsSetting] = [
         speedwagon.config.config.DefaultsSetter(),
-        speedwagon.config.config.ConfigFileSetter(config_file_strategy()),
-        speedwagon.config.config.CliArgsSetter(),
     ]
+    config_file = config_file_strategy()
+    if os.path.exists(config_file):
+        resolution_order.append(
+            speedwagon.config.config.ConfigFileSetter(config_file)
+        )
+    else:
+        logger.warning("no config file found")
+    resolution_order.append(speedwagon.config.config.CliArgsSetter())
+    return resolution_order
+
+
+def get_global_options(
+    resolution_order: Optional[
+        List[speedwagon.config.config.AbsSetting]
+    ] = None
+) -> Dict[str, Any]:
+    resolution_order = (
+        resolution_order or
+        get_global_options_resolution_order()
+    )
+
+    loader = speedwagon.config.config.MixedConfigLoader()
+    loader.resolution_strategy_order = resolution_order
     return loader.get_settings().get("GLOBAL", {})
 
 
