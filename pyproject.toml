@@ -125,6 +125,9 @@ major_version_zero = true
 changelog_start_rev = "0.2.2"
 changelog_file="CHANGELOG.rst"
 template="contrib/CHANGELOG.rst.jinja"
+pre_bump_hooks = [
+    "uv lock"
+]
 
 [build-system]
 requires = ["setuptools>=77.0.0", "wheel"]
