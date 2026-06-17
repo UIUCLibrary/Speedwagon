@@ -298,6 +298,7 @@ class TestStartupTaskBuilder:
 class TestInfoCommand:
     def test_run_write_to_logging(self, caplog):
         command = speedwagon.startup.InfoCommand(Mock(spec=argparse.Namespace))
+        command.exit_strategy = Mock(name="exit_strategy")
         command.build_report = Mock(return_value="some logging")
         with caplog.at_level(logging.INFO):
             command.run()
