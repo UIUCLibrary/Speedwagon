@@ -1552,7 +1552,7 @@ wheels = [
 
 [[package]]
 name = "speedwagon"
-version = "0.4.0.dev19"
+version = "0.4.0b19"
 source = { editable = "." }
 dependencies = [
     { name = "lxml" },
