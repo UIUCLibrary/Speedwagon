@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import logging
 import os
+import sys
 import platform
 
 # This is fine! It's only used to open a settings directory on a mac.
@@ -216,12 +217,21 @@ class DarwinOpenSettings(AbsOpenSettings):
 
 
 class WindowsOpenSettings(AbsOpenSettings):
+
+    def __init__(self, settings_directory: str) -> None:
+        super().__init__(settings_directory)
+        if sys.platform == "win32":
+            self.startfile = os.startfile
+        else:
+            self.startfile =\
+                lambda _: logger.error(
+                    "os.startfile is for the Windows platform only"
+                )
+
     def system_open_directory(self, settings_directory: str) -> None:
         self.validate_user_option(settings_directory)
         # pylint: disable=no-member
-        os.startfile(
-            settings_directory
-        )  # type: ignore[attr-defined] # nosec: B606
+        self.startfile(settings_directory)
 
 
 DEFAULT_SETTINGS_DIR_STRATEGIES: Dict[str, Type[AbsOpenSettings]] = {

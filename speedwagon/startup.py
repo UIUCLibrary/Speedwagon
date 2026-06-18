@@ -288,13 +288,18 @@ class InfoCommand(SubCommand):
                 report_format=self.args.report_format
             )
         )
-        self.exit_strategy: Callable[[], None] = lambda: sys.exit(0)
+        self.exit_strategy: Callable[[int], None] = sys.exit
 
     def run(self) -> None:
         """Build a system info report and write it to stdout."""
         report = self.build_report()
-        logger.info(report)
-        self.exit_strategy()
+        try:
+            logger.info(report)
+            sys.stdout.flush()
+        except BrokenPipeError:
+            print("Broken pipe")
+        finally:
+            self.exit_strategy(0)
 
     def build_report(self) -> str:
         """Build a system info report as a string.

@@ -45,10 +45,7 @@ class TestOpenSettings:
         opening_strategy.validate_user_option = lambda _: None
         import os
         startfile = Mock()
-        if platform.system() != "Windows":
-            setattr(os, "startfile", startfile)
-        else:
-            monkeypatch.setattr(os, "startfile", startfile)
+        opening_strategy.startfile = startfile
         opening_strategy.open()
         assert startfile.called is True
 
