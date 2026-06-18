@@ -312,6 +312,23 @@ class TestInfoCommand:
         command.build_report()
         mock_report_builder_strategy.assert_called_once()
 
+    def test_run_calls_exit_strategy(self):
+        command = speedwagon.startup.InfoCommand(Mock(spec=argparse.Namespace))
+        command.exit_strategy = Mock(name="exit_strategy")
+        command.build_report = Mock(return_value="some logging")
+        command.run()
+        command.exit_strategy.assert_called_once_with(0)
+
+    def test_run_calls_exit_strategy_with_broken_pipe(self, monkeypatch):
+        command = speedwagon.startup.InfoCommand(Mock(spec=argparse.Namespace))
+        command.exit_strategy = Mock(name="exit_strategy")
+        command.build_report = Mock(return_value="some logging")
+        info = Mock(side_effect=BrokenPipeError)
+        monkeypatch.setattr(speedwagon.startup.logger, "info", info)
+        command.run()
+        info.assert_called_once()
+        command.exit_strategy.assert_called_once_with(0)
+
 def test_get_global_options():
     resolution_order = [
         Mock(spec_set=speedwagon.config.config.AbsSetting, update=Mock()),
