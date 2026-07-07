@@ -18,29 +18,6 @@ def getPypiConfig() {
 }
 
 
-def run_pylint(){
-    def MAX_TIME = 10
-    withEnv(['PYLINTHOME=.']) {
-        catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-            timeout(MAX_TIME){
-                tee('reports/pylint_issues.txt'){
-                    sh(
-                        label: 'Running pylint',
-                        script: 'uv run pylint speedwagon -j 2 -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
-                    )
-                }
-            }
-        }
-        timeout(MAX_TIME){
-            sh(
-                label: 'Running pylint for sonarqube',
-                script: 'uv run pylint speedwagon -j 2 -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
-                returnStatus: true
-            )
-        }
-    }
-}
-
 
 def get_sonarqube_unresolved_issues(report_task_file){
     script{
@@ -220,7 +197,7 @@ def call(){
                                 filename 'ci/docker/python/linux/jenkins/Dockerfile'
                                 additionalBuildArgs '--label=purpose=ci'
                                 label 'linux && docker && x86'
-                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.config:exec --tmpfs /.tree-sitter:exec"
+                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.config:exec --tmpfs /.tree-sitter:exec --tmpfs /.cache/pylint"
                             }
                         }
                         environment{
@@ -347,12 +324,22 @@ def call(){
                                                 }
                                             }
                                             stage('Run Pylint Static Analysis') {
+                                                options{
+                                                    timeout(10)
+                                                }
                                                 steps{
-                                                    run_pylint()
+                                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                                        tee('reports/pylint.txt'){
+                                                            sh(
+                                                                label: 'Running pylint',
+                                                                script: 'uv run pylint speedwagon -j 2 -d duplicate-code --output-format=parseable',
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                                 post{
                                                     always{
-                                                        recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
+                                                        recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
                                                     }
                                                 }
                                             }
@@ -414,22 +401,16 @@ def call(){
                                     SONAR_USER_HOME='/tmp/sonar'
                                 }
                                 steps{
+                                    milestone label: 'sonarcloud', ordinal: 1
+                                    withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
+                                       withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'token')]) {
+                                           sh(
+                                               label: 'Running Sonar Scanner',
+                                               script: "uv run pysonar -t \$token -Dsonar.projectVersion=\$VERSION -Dsonar.buildString=\"\$BUILD_TAG\" " + '-Dsonar.sourceEncoding=UTF-8 ' + (env.CHANGE_ID ? '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME' : '-Dsonar.branch.name=$BRANCH_NAME')
+                                           )
+                                       }
+                                    }
                                     script{
-                                        milestone label: 'sonarcloud'
-                                        withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
-                                           def sourceInstruction
-                                           if (env.CHANGE_ID){
-                                               sourceInstruction = '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME'
-                                           } else{
-                                               sourceInstruction = '-Dsonar.branch.name=$BRANCH_NAME'
-                                           }
-                                           withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'token')]) {
-                                               sh(
-                                                   label: 'Running Sonar Scanner',
-                                                   script: "uv run pysonar -t \$token -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}"
-                                               )
-                                           }
-                                        }
                                         timeout(time: 1, unit: 'HOURS') {
                                             def sonarqube_result = waitForQualityGate(abortPipeline: false)
                                             if (sonarqube_result.status != 'OK') {
