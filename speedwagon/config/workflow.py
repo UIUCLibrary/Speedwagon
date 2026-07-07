@@ -132,7 +132,7 @@ class WorkflowSettingsYAMLResolver(
             yaml.load(self.read_file(config_file), Loader=yaml.SafeLoader)
             if os.path.exists(config_file)
             else {}
-        )
+        ) or {}
 
     def get_response(self, workflow: Workflow) -> SettingsData:
         """Get response."""

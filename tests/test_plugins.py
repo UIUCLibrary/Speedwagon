@@ -7,9 +7,6 @@ from speedwagon import plugins
 from speedwagon.exceptions import SpeedwagonException
 
 def test_register_whitelisted_plugins(monkeypatch):
-
-    monkeypatch.setattr(plugins, "get_whitelisted_plugins", lambda: [
-        ("root", 'plugin 1')])
     plugin_manager = Mock(
         pluggy.PluginManager,
         unregister=Mock(),
@@ -19,7 +16,8 @@ def test_register_whitelisted_plugins(monkeypatch):
             ]
         )
     )
-    plugins.register_whitelisted_plugins(plugin_manager)
+    get_whitelisted_plugins = Mock(return_value=[("root", 'plugin 1')])
+    plugins.register_whitelisted_plugins(plugin_manager, get_whitelisted_plugins)
     plugin_manager.unregister.assert_not_called()
 
 def test_get_workflows_from_plugin_with_no_workflows_produces_warning(caplog):

@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import typing
-from typing import Callable, Type, Dict, Optional
+from typing import Callable, Type, Dict, Optional, Set, Tuple
 import importlib
 import logging
 
 import pluggy
 
-from speedwagon.config.plugins import get_whitelisted_plugins
 from speedwagon import hookspecs, job
 from speedwagon.exceptions import SpeedwagonException
 
@@ -26,10 +25,13 @@ def register_all_plugins(plugin_manager: pluggy.PluginManager) -> None:
     plugin_manager.load_setuptools_entrypoints('speedwagon.plugins')
 
 
-def register_whitelisted_plugins(plugin_manager: pluggy.PluginManager) -> None:
+def register_whitelisted_plugins(
+    plugin_manager: pluggy.PluginManager,
+    get_whitelist_strategy: Callable[[], Set[Tuple[str, str]]]
+) -> None:
     register_all_plugins(plugin_manager)
     whitelisted_plugin_names = [
-        plugin[-1] for plugin in get_whitelisted_plugins()
+        plugin[-1] for plugin in get_whitelist_strategy()
     ]
     for plugin_name, _ in plugin_manager.list_name_plugin():
         if plugin_name == "speedwagon.workflows.builtin":
@@ -39,9 +41,9 @@ def register_whitelisted_plugins(plugin_manager: pluggy.PluginManager) -> None:
 
 
 def get_plugin_manager(
-        register_strategy: Callable[
-            [pluggy.PluginManager], None
-        ] = register_all_plugins
+    register_strategy: Callable[
+        [pluggy.PluginManager], None
+    ] = register_all_plugins
 ) -> pluggy.PluginManager:
     """Get plugin manager."""
     plugin_manager = pluggy.PluginManager('speedwagon')

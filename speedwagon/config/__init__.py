@@ -30,7 +30,7 @@ from .tabs import (
     CustomTabData,
     CustomTabsYamlConfig,
 )
-from .plugins import get_whitelisted_plugins
+from .plugins import get_whitelisted_plugins_from_config_file
 
 __all__ = [
     "AbsConfig",
@@ -43,7 +43,7 @@ __all__ = [
     "generate_default",
     "get_config_backend",
     "get_platform_settings",
-    "get_whitelisted_plugins",
+    "get_whitelisted_plugins_from_config_file",
     "IniConfigManager",
     "NixConfig",
     "SettingsData",

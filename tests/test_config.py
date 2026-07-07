@@ -493,6 +493,13 @@ Bacon:
         monkeypatch.setattr(speedwagon.config.config.os.path, "exists", lambda _: True)
         assert "Bacon" in resolver.get_config_data()
 
+    def test_get_config_data_with_empty_config(self, monkeypatch):
+        resolver = speedwagon.config.WorkflowSettingsYAMLResolver("workflows.yml")
+        text = ""
+        monkeypatch.setattr(resolver, 'read_file', lambda _: text)
+        monkeypatch.setattr(speedwagon.config.config.os.path, "exists", lambda _: True)
+        assert resolver.get_config_data() is not None
+
     def test_get_response(self, monkeypatch):
 
         workflow = TestWorkflowSettingsYAMLResolver.BaconWorkflow()
