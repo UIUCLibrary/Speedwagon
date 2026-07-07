@@ -18,29 +18,6 @@ def getPypiConfig() {
 }
 
 
-def run_pylint(){
-    def MAX_TIME = 10
-    withEnv(['PYLINTHOME=.']) {
-        catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-            timeout(MAX_TIME){
-                tee('reports/pylint_issues.txt'){
-                    sh(
-                        label: 'Running pylint',
-                        script: 'uv run pylint speedwagon -j 2 -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"',
-                    )
-                }
-            }
-        }
-        timeout(MAX_TIME){
-            sh(
-                label: 'Running pylint for sonarqube',
-                script: 'uv run pylint speedwagon -j 2 -d duplicate-code --output-format=parseable | tee reports/pylint.txt',
-                returnStatus: true
-            )
-        }
-    }
-}
-
 
 def get_sonarqube_unresolved_issues(report_task_file){
     script{
@@ -142,7 +119,6 @@ def call(){
             booleanParam(name: 'INCLUDE_WINDOWS-X86_64', defaultValue: true, description: 'Include x86_64 architecture for Windows')
             booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages by installing them and running tests on the installed package')
             booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
-            booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
         }
         options {
             preserveStashes()
@@ -189,12 +165,10 @@ def call(){
                         recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx_html.log')])
                     }
                     success{
-                        stash includes: 'dist/docs/*.pdf', name: 'SPEEDWAGON_DOC_PDF'
                         script{
                             def props = readTOML( file: 'pyproject.toml')['project']
                             zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
                         }
-                        stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                         archiveArtifacts artifacts: 'dist/docs/*.pdf'
                     }
                     cleanup{
@@ -223,7 +197,7 @@ def call(){
                                 filename 'ci/docker/python/linux/jenkins/Dockerfile'
                                 additionalBuildArgs '--label=purpose=ci'
                                 label 'linux && docker && x86'
-                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.config:exec --tmpfs /.tree-sitter:exec"
+                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\" --mount source=python-tmp-speedwagon,target=/tmp --tmpfs /.local/share:exec --tmpfs /.config:exec --tmpfs /.tree-sitter:exec --tmpfs /.cache/pylint"
                             }
                         }
                         environment{
@@ -285,7 +259,6 @@ def call(){
                                                 post {
                                                     always {
                                                         junit(allowEmptyResults: true, testResults: 'reports/tests/pytest/pytest-junit.xml')
-                                                        stash(allowEmpty: true, includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS')
                                                     }
                                                 }
                                             }
@@ -345,19 +318,36 @@ def call(){
                                                 steps{
                                                     catchError(buildResult: 'SUCCESS', message: 'Ruff found issues', stageResult: 'UNSTABLE') {
                                                         sh(label: 'Running Ruff',
-                                                           script: 'mkdir -p reports && uv run ruff check --config=pyproject.toml -o reports/ruffoutput.json --output-format json'
+                                                           script: '''mkdir -p reports
+                                                                      uv run ruff check --config=pyproject.toml -o reports/ruffoutput.txt --output-format pylint --exit-zero
+                                                                      uv run ruff check --config=pyproject.toml -o reports/ruffoutput.json --output-format json
+                                                                   '''
                                                         )
+                                                    }
+                                                }
+                                                post{
+                                                    always{
+                                                        recordIssues(tools: [pyLint(pattern: 'reports/ruffoutput.txt', name: 'Ruff', id: 'Ruff')])
                                                     }
                                                 }
                                             }
                                             stage('Run Pylint Static Analysis') {
+                                                options{
+                                                    timeout(10)
+                                                }
                                                 steps{
-                                                    run_pylint()
+                                                    catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                                        tee('reports/pylint.txt'){
+                                                            sh(
+                                                                label: 'Running pylint',
+                                                                script: 'uv run pylint speedwagon -j 2 -d duplicate-code --output-format=parseable',
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                                 post{
                                                     always{
-                                                        stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
-                                                        recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
+                                                        recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt', name: 'PyLint', id: 'PyLint')] )
                                                     }
                                                 }
                                             }
@@ -369,7 +359,6 @@ def call(){
                                                 }
                                                 post {
                                                     always {
-                                                          stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
                                                           recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
                                                     }
                                                 }
@@ -396,7 +385,6 @@ def call(){
                                                       uv run coverage xml -o reports/coverage.xml
                                                       uv run coverage html -d reports/coverage
                                                    '''
-                                                stash includes: 'reports/coverage.xml', name: 'COVERAGE_REPORT_DATA'
                                                 recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
                                             }
                                         }
@@ -421,22 +409,16 @@ def call(){
                                     SONAR_USER_HOME='/tmp/sonar'
                                 }
                                 steps{
+                                    milestone label: 'sonarcloud', ordinal: 1
+                                    withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
+                                       withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'token')]) {
+                                           sh(
+                                               label: 'Running Sonar Scanner',
+                                               script: "uv run pysonar -t \$token -Dsonar.projectVersion=\$VERSION -Dsonar.buildString=\"\$BUILD_TAG\" " + '-Dsonar.sourceEncoding=UTF-8 ' + (env.CHANGE_ID ? '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME' : '-Dsonar.branch.name=$BRANCH_NAME')
+                                           )
+                                       }
+                                    }
                                     script{
-                                        milestone label: 'sonarcloud'
-                                        withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
-                                           def sourceInstruction
-                                           if (env.CHANGE_ID){
-                                               sourceInstruction = '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME'
-                                           } else{
-                                               sourceInstruction = '-Dsonar.branch.name=$BRANCH_NAME'
-                                           }
-                                           withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'token')]) {
-                                               sh(
-                                                   label: 'Running Sonar Scanner',
-                                                   script: "uv run pysonar -t \$token -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}"
-                                               )
-                                           }
-                                        }
                                         timeout(time: 1, unit: 'HOURS') {
                                             def sonarqube_result = waitForQualityGate(abortPipeline: false)
                                             if (sonarqube_result.status != 'OK') {
@@ -937,44 +919,6 @@ def call(){
                                     patterns: [
                                             [pattern: 'dist/', type: 'INCLUDE']
                                         ]
-                                )
-                            }
-                        }
-                    }
-                    stage('Deploy Online Documentation') {
-                        when{
-                            equals expected: true, actual: params.DEPLOY_DOCS
-                            beforeAgent true
-                            beforeInput true
-                        }
-                        agent {
-                            dockerfile {
-                                filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                label 'linux && docker'
-                                additionalBuildArgs '--label=purpose=ci'
-                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\""
-                              }
-                        }
-                        options{
-                            timeout(time: 1, unit: 'DAYS')
-                        }
-                        input {
-                            message 'Update project documentation?'
-                        }
-                        steps{
-                            unstash 'DOCS_ARCHIVE'
-                            withCredentials([usernamePassword(credentialsId: 'dccdocs-server', passwordVariable: 'docsPassword', usernameVariable: 'docsUsername')]) {
-                                sh 'python utils/upload_docs.py --username=$docsUsername --password=$docsPassword --subroute=speedwagon build/docs/html apache-ns.library.illinois.edu'
-                            }
-                        }
-                        post{
-                            cleanup{
-                                cleanWs(
-                                    deleteDirs: true,
-                                    patterns: [
-                                        [pattern: 'build/', type: 'INCLUDE'],
-                                        [pattern: 'dist/', type: 'INCLUDE'],
-                                    ]
                                 )
                             }
                         }

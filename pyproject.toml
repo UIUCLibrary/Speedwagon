@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=77.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "speedwagon"
 version = "0.4.0.dev23"
@@ -101,19 +105,9 @@ packages=[
     "speedwagon.workflows",
 ]
 
-[tool.setuptools.package-data]
-speedwagon = ["favicon.ico", "logo.png", 'py.typed']
-"speedwagon.frontend.qtwidgets.ui" = [
-     "console.ui",
-     "main_window3.ui",
-     "main_window_shell.ui",
-     "plugin_settings.ui",
-     "select_workflow_widget.ui",
-     'setup_job.ui',
-     "tab_editor.ui",
-     "workflow_progress.ui",
-     "workspace.ui",
- ]
+
+[tool.black]
+line-length = 79
 
 [tool.commitizen]
 name = "cz_conventional_commits"
@@ -129,9 +123,11 @@ pre_bump_hooks = [
     "uv lock"
 ]
 
-[build-system]
-requires = ["setuptools>=77.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+[tool.mypy]
+python_version = "3.11"
+follow_imports_for_stubs=true
+# incremental is problematic because of dependency ruamel.yaml
+#incremental=false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -152,14 +148,7 @@ filterwarnings = [
 # Ignore files that end in _ui.py because they are machine generated
 match="((?!test).*)(^(?!.*(ui)).*)\\.py"
 
-[tool.mypy]
-python_version = "3.11"
-follow_imports_for_stubs=true
-# incremental is problematic because of dependency ruamel.yaml
-#incremental=false
-
 [tool.ruff]
-
 exclude = [
     "packaging",
     "utils",
@@ -178,7 +167,18 @@ select = ["E", "F", "W", "D", "B"]
 convention = "google"
 
 #match = "((?!test).*)(^(?!.*(ui)).*)\\.py"
-[tool.black]
-line-length = 79
 
 [tool.nuitka]
+[tool.setuptools.package-data]
+speedwagon = ["favicon.ico", "logo.png", 'py.typed']
+"speedwagon.frontend.qtwidgets.ui" = [
+     "console.ui",
+     "main_window3.ui",
+     "main_window_shell.ui",
+     "plugin_settings.ui",
+     "select_workflow_widget.ui",
+     'setup_job.ui',
+     "tab_editor.ui",
+     "workflow_progress.ui",
+     "workspace.ui",
+]

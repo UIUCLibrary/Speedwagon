@@ -1,43 +1,52 @@
 on: [push, pull_request]
 name: Tox Multi-platform Compatibility Test
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
 jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      tox_matrix: ${{ steps.dataStep.outputs.myoutput }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        name: Get tox environments
+        with:
+          cache: 'pip'
+          python-version: '3.13'
+      - id: dataStep
+        run: |
+          python -m pip install uv
+          echo "myoutput=$(uv run --isolated --only-group=tox --frozen --quiet tox list -d --no-desc | jq  --raw-input . | jq -c --slurp)" >> $GITHUB_OUTPUT
+
   build:
+    needs: setup
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
-        frontend: ["", "PySide6"]
+        tox-env: ${{ fromJson(needs.setup.outputs.tox_matrix) }}
       fail-fast: false
-    name: Python ${{ matrix.python-version }} ${{ matrix.os }} ${{ matrix.frontend }} build
+    name: Python ${{ matrix.tox-env }} ${{ matrix.os }} build
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip' # caching pip dependencies
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
       - name: Install Linux system dependencies for PySide
         if: |
-          contains(matrix.os, 'ubuntu') && contains(matrix.frontend, 'PySide6')
+          contains(matrix.os, 'ubuntu') && contains(matrix.tox-env, 'PySide6')
         run: |
           sudo apt update
           sudo apt-get install freeglut3-dev
-      - name: Install requirements
+      - name: Install uv
         run: |
           pip install uv
-      - uses: actions/github-script@v6
-        id: tox-env
-        with:
-          script: |
-            const frontend = "${{matrix.frontend}}"
-            const toxEnv = "py${{matrix.python-version}}".replace('.','') 
-            if(frontend === ""){
-              return toxEnv
-            }
-            return "py${{matrix.python-version}}".replace('.','') + "-${{matrix.frontend}}"
-          result-encoding: string
       - name: Run tox
-        run: uv run --only-group=tox-uv tox --runner uv-venv-lock-runner -e ${{ steps.tox-env.outputs.result }}
+        run: uv run --only-group=tox-uv tox --runner uv-venv-lock-runner -e ${{ matrix.tox-env }}
         env:
           UV_EXTRA_INDEX_URL: ${{vars.PIP_EXTRA_INDEX_URL}}
           QT_QPA_PLATFORM: "offscreen"
