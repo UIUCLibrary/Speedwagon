@@ -5,6 +5,75 @@ Change Log
 ----------
 
 
+0.4.0b22 (2026-07-07)
+=====================
+
+Fix
+---
+
+- whitelisted plugins respect alternative config file locations
+- WorkflowSettingsYAMLResolver.get_config_data() no longer returns None if yaml file is empty.
+
+v0.4.0b21 (2026-06-18)
+======================
+
+Fix
+---
+
+- fixed typehint for WindowsOpenSettings
+- broken pipe when running speedwagon info no longer exits with an error
+
+v0.4.0b20 (2026-06-17)
+======================
+
+Fix
+---
+
+- missing config file does not throw exception.
+
+v0.4.0b19 (2026-06-17)
+======================
+
+Fix
+---
+
+- info command explicitly exits speedwagon after completion
+
+v0.4.0b18 (2026-06-15)
+======================
+
+Feat
+----
+
+- added subcommand command "speedwagon info"
+
+Fix
+---
+
+- tests failing with logging due to wrong type of mock
+- add_subtask typehint is BaseTask
+
+v0.4.0b17 (2026-06-02)
+======================
+
+Feat
+----
+
+- remove all conditional imports supporting Python < 3.10
+- added FileSave option
+
+Fix
+---
+
+- fix security issues found with bandit
+- zip is run with strict=True
+- RunCommand throws an import error if no gui is available instead of a AttributeError
+
+Refactor
+--------
+
+- improve docstrings for clarity and consistency
+
 0.4.0b16 (2025-04-17)
 =====================
 
