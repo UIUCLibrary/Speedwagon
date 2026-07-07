@@ -318,8 +318,16 @@ def call(){
                                                 steps{
                                                     catchError(buildResult: 'SUCCESS', message: 'Ruff found issues', stageResult: 'UNSTABLE') {
                                                         sh(label: 'Running Ruff',
-                                                           script: 'mkdir -p reports && uv run ruff check --config=pyproject.toml -o reports/ruffoutput.json --output-format json'
+                                                           script: '''mkdir -p reports
+                                                                      uv run ruff check --config=pyproject.toml -o reports/ruffoutput.txt --output-format pylint --exit-zero
+                                                                      uv run ruff check --config=pyproject.toml -o reports/ruffoutput.json --output-format json
+                                                                   '''
                                                         )
+                                                    }
+                                                }
+                                                post{
+                                                    always{
+                                                        recordIssues(tools: [pyLint(pattern: 'reports/ruffoutput.txt', name: 'Ruff', id: 'Ruff')])
                                                     }
                                                 }
                                             }
@@ -339,7 +347,7 @@ def call(){
                                                 }
                                                 post{
                                                     always{
-                                                        recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                        recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt', name: 'PyLint', id: 'PyLint')] )
                                                     }
                                                 }
                                             }
