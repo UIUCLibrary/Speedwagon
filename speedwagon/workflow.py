@@ -279,14 +279,20 @@ def default_back_end_yaml() -> str:
 
 
 def initialize_workflows(
+    backend_config_file,
     backend_yaml_file_locator_strategy: Callable[
         [], str
     ] = default_back_end_yaml,
 ) -> List[speedwagon.job.Workflow]:
     """Initialize workflow for use."""
-    workflows = []
+    workflows_ = []
+    locate_workflows_strategy =\
+        speedwagon.job.FindAllWorkflowsPluggyStrategy(
+            config_file=backend_config_file,
+        )
+
     for workflow_klass in sorted(
-        speedwagon.job.available_workflows().values(),
+        speedwagon.job.available_workflows(locate_workflows_strategy).values(),
         key=lambda workflow: workflow.name,
     ):
         config_backend = speedwagon.config.YAMLWorkflowConfigBackend()
@@ -294,5 +300,5 @@ def initialize_workflows(
         config_backend.workflow = workflow
         config_backend.yaml_file = backend_yaml_file_locator_strategy()
         workflow.set_options_backend(config_backend)
-        workflows.append(workflow)
-    return workflows
+        workflows_.append(workflow)
+    return workflows_

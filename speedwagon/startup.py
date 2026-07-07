@@ -44,6 +44,7 @@ from speedwagon.config.workflow import (
     default_backend_factory,
     AbsWorkflowBackend,
 )
+from speedwagon.config.plugins import get_whitelisted_plugins_from_config_file
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import StandardConfigFileLocator
 from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
@@ -567,9 +568,15 @@ def get_startup_tasks(
     for task in user_tasks or []:
         task_builder.add(task)
 
-    plugin_manager = plugins.get_plugin_manager(
-        plugins.register_whitelisted_plugins
+    plugin_manager_strategy = functools.partial(
+        speedwagon.plugins.register_whitelisted_plugins,
+        get_whitelist_strategy=(
+            lambda: get_whitelisted_plugins_from_config_file(
+                find_config_file_strategy=config_file_locator.get_config_file
+            )
+        ),
     )
+    plugin_manager = plugins.get_plugin_manager(plugin_manager_strategy)
 
     for plugin_tasks in plugin_manager.hook.registered_initialization_tasks():
         for task in plugin_tasks:

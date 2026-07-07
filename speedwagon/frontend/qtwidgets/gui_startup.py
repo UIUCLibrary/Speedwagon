@@ -57,6 +57,7 @@ from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
 from speedwagon.utils import get_desktop_path, validate_user_input
 from speedwagon.tasks import system as system_tasks
 from speedwagon import info, startup
+import speedwagon.plugins
 from . import user_interaction
 from . import dialog
 from . import runners
@@ -1212,6 +1213,7 @@ def build_request_settings_dialog(
         functools.partial(
             _setup_workflow_settings_tab,
             get_workflows=lambda: initialize_workflows(
+                settings_locator.get_config_file(),
                 lambda: workflow_settings_yaml
             ),
         ),

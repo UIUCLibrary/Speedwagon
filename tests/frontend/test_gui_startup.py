@@ -156,7 +156,7 @@ class TestSingleWorkflowJSON:
     def test_runner_strategies_called(self, monkeypatch, qtbot):
         monkeypatch.setattr(
             speedwagon.config,
-            "get_whitelisted_plugins",
+            "get_whitelisted_plugins_from_config_file",
             lambda: []
         )
         workflow = Mock()
@@ -264,7 +264,7 @@ class TestSingleWorkflowJSON:
     def test_load_json(self, monkeypatch):
         monkeypatch.setattr(
             speedwagon.config,
-            "get_whitelisted_plugins",
+            "get_whitelisted_plugins_from_config_file",
             lambda: []
         )
         startup = gui_startup.SingleWorkflowJSON(app=None)
@@ -1330,7 +1330,11 @@ def test_get_startup_tasks_includes_global_config_file_task():
     startup_task = Mock(spec_set=system_tasks.AbsSystemTask)
     tasks = speedwagon.startup.get_startup_tasks(
         config_backend = Mock(spec_set=speedwagon.config.AbsConfigSettings),
-        config_file_locator = Mock(spec_set=speedwagon.config.config.AbsSettingLocator),
+        config_file_locator =\
+            Mock(
+                spec_set=speedwagon.config.config.AbsSettingLocator,
+                get_config_file=Mock(return_value="some_value.ini"),
+            ),
         user_tasks=[startup_task]
     )
     assert startup_task in tasks
@@ -1339,7 +1343,9 @@ def test_get_startup_tasks_add_callable():
     startup_task = Mock()
     tasks = speedwagon.startup.get_startup_tasks(
         Mock(spec_set=speedwagon.config.AbsConfigSettings),
-        config_file_locator = Mock(spec_set=speedwagon.config.config.AbsSettingLocator),
+        config_file_locator = Mock(
+            spec_set=speedwagon.config.config.AbsSettingLocator,
+            get_config_file=Mock(return_value="some_value.ini")),
         user_tasks=[startup_task]
     )
     assert any([

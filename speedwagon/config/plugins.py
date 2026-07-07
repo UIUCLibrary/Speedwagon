@@ -13,7 +13,7 @@ import io
 
 from speedwagon.config import config, common
 
-__all__ = ["get_whitelisted_plugins"]
+__all__ = ["get_whitelisted_plugins_from_config_file"]
 
 PluginDataType = Dict[str, Dict[str, bool]]
 
@@ -23,14 +23,14 @@ def read_settings_file_plugins(settings_file: str) -> PluginDataType:
         return config_manager.plugins
 
 
-def get_whitelisted_plugins(
-    config_file_strategy: Callable[[], str] =
+def get_whitelisted_plugins_from_config_file(
+    find_config_file_strategy: Callable[[], str] =
         lambda: config.StandardConfigFileLocator(
             config_directory_prefix=common.DEFAULT_CONFIG_DIRECTORY_NAME
         ).get_config_file()
 ) -> Set[Tuple[str, str]]:
     """Get whitelisted plugins."""
-    plugin_settings = read_settings_file_plugins(config_file_strategy())
+    plugin_settings = read_settings_file_plugins(find_config_file_strategy())
 
     white_listed_plugins = set()
     for module, entry_points in plugin_settings.items():
