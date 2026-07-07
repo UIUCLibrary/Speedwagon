@@ -188,12 +188,10 @@ def call(){
                         recordIssues(tools: [sphinxBuild(pattern: 'logs/build_sphinx_html.log')])
                     }
                     success{
-                        stash includes: 'dist/docs/*.pdf', name: 'SPEEDWAGON_DOC_PDF'
                         script{
                             def props = readTOML( file: 'pyproject.toml')['project']
                             zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
                         }
-                        stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                         archiveArtifacts artifacts: 'dist/docs/*.pdf'
                     }
                     cleanup{
@@ -284,7 +282,6 @@ def call(){
                                                 post {
                                                     always {
                                                         junit(allowEmptyResults: true, testResults: 'reports/tests/pytest/pytest-junit.xml')
-                                                        stash(allowEmpty: true, includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS')
                                                     }
                                                 }
                                             }
@@ -355,7 +352,6 @@ def call(){
                                                 }
                                                 post{
                                                     always{
-                                                        stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
                                                         recordIssues(tools: [pyLint(pattern: 'reports/pylint_issues.txt')])
                                                     }
                                                 }
@@ -368,7 +364,6 @@ def call(){
                                                 }
                                                 post {
                                                     always {
-                                                          stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
                                                           recordIssues(tools: [flake8(pattern: 'logs/flake8.log')])
                                                     }
                                                 }
@@ -395,7 +390,6 @@ def call(){
                                                       uv run coverage xml -o reports/coverage.xml
                                                       uv run coverage html -d reports/coverage
                                                    '''
-                                                stash includes: 'reports/coverage.xml', name: 'COVERAGE_REPORT_DATA'
                                                 recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
                                             }
                                         }
