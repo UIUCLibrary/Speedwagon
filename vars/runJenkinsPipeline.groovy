@@ -142,7 +142,6 @@ def call(){
             booleanParam(name: 'INCLUDE_WINDOWS-X86_64', defaultValue: true, description: 'Include x86_64 architecture for Windows')
             booleanParam(name: 'TEST_PACKAGES', defaultValue: true, description: 'Test Python packages by installing them and running tests on the installed package')
             booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
-            booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
         }
         options {
             preserveStashes()
@@ -937,44 +936,6 @@ def call(){
                                     patterns: [
                                             [pattern: 'dist/', type: 'INCLUDE']
                                         ]
-                                )
-                            }
-                        }
-                    }
-                    stage('Deploy Online Documentation') {
-                        when{
-                            equals expected: true, actual: params.DEPLOY_DOCS
-                            beforeAgent true
-                            beforeInput true
-                        }
-                        agent {
-                            dockerfile {
-                                filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                                label 'linux && docker'
-                                additionalBuildArgs '--label=purpose=ci'
-                                args "--label=purpose=ci --label \"JOB_NAME=\$JOB_NAME\" --label \"absoluteUrl=${currentBuild.absoluteUrl}\" --label \"BUILD_NUMBER=${currentBuild.number}\""
-                              }
-                        }
-                        options{
-                            timeout(time: 1, unit: 'DAYS')
-                        }
-                        input {
-                            message 'Update project documentation?'
-                        }
-                        steps{
-                            unstash 'DOCS_ARCHIVE'
-                            withCredentials([usernamePassword(credentialsId: 'dccdocs-server', passwordVariable: 'docsPassword', usernameVariable: 'docsUsername')]) {
-                                sh 'python utils/upload_docs.py --username=$docsUsername --password=$docsPassword --subroute=speedwagon build/docs/html apache-ns.library.illinois.edu'
-                            }
-                        }
-                        post{
-                            cleanup{
-                                cleanWs(
-                                    deleteDirs: true,
-                                    patterns: [
-                                        [pattern: 'build/', type: 'INCLUDE'],
-                                        [pattern: 'dist/', type: 'INCLUDE'],
-                                    ]
                                 )
                             }
                         }
