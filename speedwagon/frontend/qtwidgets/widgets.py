@@ -273,7 +273,7 @@ class FileSystemItemSelectWidget(EditDelegateWidget):
         self._data = value
         self.edit.setText(value)
 
-    def eventFilter(
+    def eventFilter(  # pylint: disable=invalid-name
         self, watched: QtCore.QObject, event: QtCore.QEvent
     ) -> bool:
         if event.type() == event.Type.DragEnter:
@@ -530,7 +530,10 @@ class InnerForm(QtWidgets.QWidget):
         for y_pos in range(last_height, device.height(), default_row_height):
             yield QtCore.QRect(0, y_pos, device.width(), default_row_height)
 
-    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+    def paintEvent(  # pylint: disable=invalid-name
+        self,
+        event: QtGui.QPaintEvent
+    ) -> None:
         options = QtWidgets.QStyleOptionViewItem()
         painter = QtWidgets.QStylePainter(self)
         for i, rect in enumerate(
@@ -1007,6 +1010,6 @@ class ToolConsole(QtWidgets.QWidget):
             self._attached_logger.removeHandler(self.log_handler)
             self._attached_logger = None
 
-    def closeEvent(self, event):
+    def closeEvent(self, event):  # pylint: disable=invalid-name
         self.detach_logger()
         super().closeEvent(event)

@@ -161,7 +161,7 @@ class ItemTableModel(QtCore.QAbstractTableModel, Generic[T, _RT]):
             Sequence[T]
         ] = lambda value, existing_row, index: existing_row
 
-    def columnCount(
+    def columnCount(  # pylint: disable=invalid-name
         self,
         parent: Optional[  # pylint: disable=unused-argument
             Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
@@ -170,7 +170,7 @@ class ItemTableModel(QtCore.QAbstractTableModel, Generic[T, _RT]):
         """Column count."""
         return len(self.keys)
 
-    def rowCount(
+    def rowCount(  # pylint: disable=invalid-name
         self,
         parent: Optional[  # pylint: disable=unused-argument
             Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
@@ -230,7 +230,12 @@ class ItemTableModel(QtCore.QAbstractTableModel, Generic[T, _RT]):
             return self.display_role(row, index)
         return None
 
-    def setData(self, index, value, role=QtCore.Qt.ItemDataRole.EditRole):
+    def setData(  # pylint: disable=invalid-name
+        self,
+        index,
+        value,
+        role=QtCore.Qt.ItemDataRole.EditRole
+    ):
         """Set data."""
         if role == QtCore.Qt.ItemDataRole.EditRole:
             existing_row = deepcopy(self.rows[index.row()])

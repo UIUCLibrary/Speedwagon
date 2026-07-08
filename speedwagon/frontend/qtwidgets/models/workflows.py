@@ -116,7 +116,7 @@ class WorkflowList(AbsWorkflowList):
             return True
         return super().setData(index, value, role)
 
-    def columnCount(
+    def columnCount(  # pylint: disable=invalid-name
         self,
         /,
         parent: Union[  # pylint: disable=unused-argument

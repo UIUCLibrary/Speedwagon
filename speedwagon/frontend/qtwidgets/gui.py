@@ -174,7 +174,10 @@ class MainWindow3(MainWindow3UI):
         if current_tab:
             current_tab.set_current_workflow_settings(data)
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+    def closeEvent(  # pylint: disable=invalid-name
+        self,
+        event: QtGui.QCloseEvent
+    ) -> None:
         """Run closing event."""
         self.console.detach_logger()
         super().closeEvent(event)
