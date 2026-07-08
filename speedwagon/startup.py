@@ -208,6 +208,7 @@ class ApplicationLauncher:
         ] = None
         self.startup_tasks: List[AbsSystemTask] = []
         try:
+            # Avoid circular imports!  pylint: disable=import-outside-toplevel
             from speedwagon.frontend.qtwidgets.gui_startup import (
                 StartQtThreaded,
                 ResolveSettings,
@@ -254,6 +255,8 @@ class ApplicationLauncher:
         self.strategy.set_workflow_config_backend_factory(config_backend)
         if app:
             try:
+                # Avoid circular imports!
+                # pylint: disable=import-outside-toplevel
                 from speedwagon.frontend.qtwidgets.gui_startup import (
                     AbsGuiStarter,
                 )
@@ -316,6 +319,7 @@ class RunCommand(SubCommand):
     def get_gui_strategy(
         self,
     ) -> speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON:
+        # Avoid circular imports! pylint: disable=import-outside-toplevel
         from speedwagon import frontend
         try:
             return frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)

@@ -387,7 +387,10 @@ class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
     def get_plugin_manager(self) -> PluginManager:
 
         def get_whitelist_with_config_file():
-            from speedwagon.config import plugins as plugin_config
+            # Avoid circular imports!  pylint: disable=import-outside-toplevel
+            from speedwagon.config import (
+                plugins as plugin_config
+            )
             return plugin_config.get_whitelisted_plugins_from_config_file(
                 find_config_file_strategy=lambda: self.config_file
             )
