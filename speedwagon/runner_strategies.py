@@ -30,6 +30,7 @@ _T = TypeVar("_T", bound=Mapping[str, object])
 if typing.TYPE_CHECKING:
     from speedwagon.job import AbsWorkflow, Workflow
     from speedwagon.config import SettingsData
+    from speedwagon.config.config import AbsSettingLocator
     import speedwagon.tasks
 
 __all__ = [
@@ -680,7 +681,7 @@ class BackgroundJobManager(AbsJobManager2):
             Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
         self.global_settings: Optional[SettingsData] = None
-        self.config_file_location_strategy =\
+        self.config_file_location_strategy: AbsSettingLocator =\
             StandardConfigFileLocator(DEFAULT_CONFIG_DIRECTORY_NAME)
 
     def __enter__(self) -> "BackgroundJobManager":
