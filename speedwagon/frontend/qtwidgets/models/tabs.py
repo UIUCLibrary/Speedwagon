@@ -481,7 +481,11 @@ class AbsTabDataModelYAMLLoader(AbsLoadTabDataModelStrategy, abc.ABC):
         all_workflows = get_all_active_workflows_strategy()
 
         sorted_workflows = sorted(
-            list(all_workflows.values()), key=lambda item: item.name
+            list(all_workflows.values()),
+            key=lambda item: (
+                item.name if item.name is not None
+                else item.__name__
+            )
         )
 
         workflow_tabs_data: Dict[str, List[Type[speedwagon.Workflow]]] = {

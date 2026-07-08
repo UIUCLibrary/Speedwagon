@@ -647,7 +647,9 @@ class Run(TaskScheduler):
     def __init__(self, working_directory: str) -> None:
         super().__init__(working_directory)
         self.valid_workflows = None
-        self.workflow_loader_strategy = speedwagon.job.available_workflows
+        self.workflow_loader_strategy: Callable[
+            [], Dict[str, Type[Workflow]]
+        ] = speedwagon.job.available_workflows
 
     def get_workflow(self, workflow_name: str) -> typing.Type[Workflow]:
         if self.valid_workflows is None:

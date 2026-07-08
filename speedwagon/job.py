@@ -406,7 +406,9 @@ class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
         }
 
 
-def available_workflows(strategy: Optional[AbsWorkflowFinder] = None) -> dict:
+def available_workflows(
+    strategy: Optional[AbsWorkflowFinder] = None
+) -> Dict[str, Type[Workflow]]:
     """Locate all workflow class in workflows subpackage.
 
     This looks for a workflow prefix in the naming.

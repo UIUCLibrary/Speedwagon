@@ -293,7 +293,10 @@ def initialize_workflows(
 
     for workflow_klass in sorted(
         speedwagon.job.available_workflows(locate_workflows_strategy).values(),
-        key=lambda workflow: workflow.name,
+        key=lambda workflow: (
+            workflow.name if workflow.name
+            else str(workflow.__name__)
+        )
     ):
         config_backend = speedwagon.config.YAMLWorkflowConfigBackend()
         workflow = workflow_klass()
