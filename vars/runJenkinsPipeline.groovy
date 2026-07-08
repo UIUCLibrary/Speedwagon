@@ -302,7 +302,7 @@ def call(){
                                                     catchError(buildResult: 'SUCCESS', message: 'MyPy found issues', stageResult: 'UNSTABLE') {
                                                         tee('logs/mypy.log'){
                                                             sh(label: 'Running MyPy',
-                                                               script: 'uv run mypy -p speedwagon --html-report reports/mypy/html'
+                                                               script: 'uv run mypy -p speedwagon --html-report reports/mypy/html --cobertura-xml-report reports/mypy/coverage --txt-report=reports/mypy/txt'
                                                             )
                                                         }
                                                     }
@@ -310,6 +310,13 @@ def call(){
                                                 post {
                                                     always {
                                                         recordIssues(tools: [myPy(pattern: 'logs/mypy.log')])
+                                                        script{
+                                                            if( fileExists('reports/mypy/txt/index.txt')){
+                                                                echo(readFile('reports/mypy/txt/index.txt'))
+                                                                archiveArtifacts 'reports/mypy/txt/index.txt'
+                                                            }
+                                                        }
+                                                        recordCoverage(name: 'MyPy Coverage', id: 'mypycoverage', tools: [[parser: 'COBERTURA', pattern: 'reports/mypy/coverage/cobertura.xml']])
                                                         publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/html/', reportFiles: 'index.html', reportName: 'MyPy HTML Report', reportTitles: ''])
                                                     }
                                                 }
@@ -385,7 +392,7 @@ def call(){
                                                       uv run coverage xml -o reports/coverage.xml
                                                       uv run coverage html -d reports/coverage
                                                    '''
-                                                recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
+                                                recordCoverage(name: 'Test Coverage', tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
                                             }
                                         }
                                     }

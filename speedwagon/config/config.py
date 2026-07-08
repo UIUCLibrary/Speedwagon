@@ -671,6 +671,7 @@ class StandardConfig(AbsConfigSettings):
 
         """
         # This is needed to avoid circular imports!
+        # pylint: disable=import-outside-toplevel
         from .workflow import default_backend_factory
 
         return default_backend_factory(workflow, self._config_directory_prefix)

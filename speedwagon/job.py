@@ -5,6 +5,7 @@ from __future__ import annotations
 import abc
 import functools
 import importlib.util
+import importlib.metadata
 import inspect
 import json
 import logging
@@ -27,10 +28,8 @@ from typing import (
 )
 
 
-import importlib.metadata
-
 import speedwagon.plugins
-from speedwagon.config import plugins as plugin_config
+
 from speedwagon.config import common, StandardConfigFileLocator
 import speedwagon.workflows
 
@@ -40,6 +39,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.tasks import TaskBuilder, Result
     from speedwagon.config import SettingsData, SettingsDataType
     from speedwagon.config.workflow import AbsWorkflowBackend
+    from speedwagon.config import plugins as plugin_config
     from pluggy import PluginManager
 
 
@@ -387,6 +387,10 @@ class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
     def get_plugin_manager(self) -> PluginManager:
 
         def get_whitelist_with_config_file():
+            # Avoid circular imports!  pylint: disable=import-outside-toplevel
+            from speedwagon.config import (
+                plugins as plugin_config
+            )
             return plugin_config.get_whitelisted_plugins_from_config_file(
                 find_config_file_strategy=lambda: self.config_file
             )
@@ -407,7 +411,9 @@ class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
         }
 
 
-def available_workflows(strategy: Optional[AbsWorkflowFinder] = None) -> dict:
+def available_workflows(
+    strategy: Optional[AbsWorkflowFinder] = None
+) -> Dict[str, Type[Workflow]]:
     """Locate all workflow class in workflows subpackage.
 
     This looks for a workflow prefix in the naming.

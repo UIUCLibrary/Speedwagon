@@ -116,7 +116,7 @@ class WorkflowList(AbsWorkflowList):
             return True
         return super().setData(index, value, role)
 
-    def columnCount(
+    def columnCount(  # pylint: disable=invalid-name
         self,
         /,
         parent: Union[  # pylint: disable=unused-argument
@@ -218,12 +218,12 @@ class WorkflowListProxyModel(QtCore.QAbstractProxyModel):
         )
 
     @overload
+    def parent(self) -> QtCore.QObject: ...
+
+    @overload
     def parent(
         self, index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> QtCore.QModelIndex: ...
-
-    @overload
-    def parent(self) -> QtCore.QObject: ...
 
     def parent(
         self,

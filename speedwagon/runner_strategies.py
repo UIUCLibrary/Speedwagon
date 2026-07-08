@@ -30,6 +30,7 @@ _T = TypeVar("_T", bound=Mapping[str, object])
 if typing.TYPE_CHECKING:
     from speedwagon.job import AbsWorkflow, Workflow
     from speedwagon.config import SettingsData
+    from speedwagon.config.config import AbsSettingLocator
     import speedwagon.tasks
 
 __all__ = [
@@ -646,10 +647,13 @@ class Run(TaskScheduler):
     def __init__(self, working_directory: str) -> None:
         super().__init__(working_directory)
         self.valid_workflows = None
+        self.workflow_loader_strategy: Callable[
+            [], Dict[str, Type[Workflow]]
+        ] = speedwagon.job.available_workflows
 
     def get_workflow(self, workflow_name: str) -> typing.Type[Workflow]:
         if self.valid_workflows is None:
-            workflow_class = speedwagon.job.available_workflows().get(
+            workflow_class = self.workflow_loader_strategy().get(
                 workflow_name
             )
         elif workflow_name is None:
@@ -679,8 +683,8 @@ class BackgroundJobManager(AbsJobManager2):
             Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
         self.global_settings: Optional[SettingsData] = None
-        self.config_file_location_strategy =\
-            lambda: StandardConfigFileLocator(DEFAULT_CONFIG_DIRECTORY_NAME)
+        self.config_file_location_strategy: AbsSettingLocator =\
+            StandardConfigFileLocator(DEFAULT_CONFIG_DIRECTORY_NAME)
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
@@ -696,6 +700,18 @@ class BackgroundJobManager(AbsJobManager2):
         with tempfile.TemporaryDirectory() as tmp_dir:
             try:
                 task_scheduler = Run(tmp_dir)
+                job_lookup_strategy =\
+                    speedwagon.job.FindAllWorkflowsPluggyStrategy(
+                        config_file=(
+                            self.config_file_location_strategy
+                            .get_config_file()
+                        )
+                    )
+
+                task_scheduler.workflow_loader_strategy =\
+                    lambda: speedwagon.job.available_workflows(
+                        job_lookup_strategy
+                    )
                 task_scheduler.request_more_info = functools.partial(
                     self.request_more_info
                 )
@@ -709,7 +725,7 @@ class BackgroundJobManager(AbsJobManager2):
                 )
                 options_backend = speedwagon.config.YAMLWorkflowConfigBackend()
                 backend_yaml = os.path.join(
-                    self.config_file_location_strategy().get_app_data_dir(),
+                    self.config_file_location_strategy.get_app_data_dir(),
                     speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
                 )
                 options_backend.workflow = workflow

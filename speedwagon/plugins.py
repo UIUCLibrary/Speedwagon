@@ -9,8 +9,10 @@ import logging
 
 import pluggy
 
-from speedwagon import hookspecs, job
+from speedwagon import hookspecs
 from speedwagon.exceptions import SpeedwagonException
+
+from speedwagon import job
 
 __all__ = [
     'get_plugin_manager',
