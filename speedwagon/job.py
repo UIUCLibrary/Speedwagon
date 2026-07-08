@@ -5,6 +5,7 @@ from __future__ import annotations
 import abc
 import functools
 import importlib.util
+import importlib.metadata
 import inspect
 import json
 import logging
@@ -26,8 +27,6 @@ from typing import (
     Generic,
 )
 
-
-import importlib.metadata
 
 import speedwagon.plugins
 from speedwagon.config import plugins as plugin_config
