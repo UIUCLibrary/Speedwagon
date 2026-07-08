@@ -105,12 +105,12 @@ class TabsTreeModel(QtCore.QAbstractItemModel):
         return QtCore.QModelIndex()
 
     @overload
+    def parent(self) -> QtCore.QObject: ...
+
+    @overload
     def parent(
         self, child: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex], /
     ) -> QtCore.QModelIndex: ...
-
-    @overload
-    def parent(self) -> QtCore.QObject: ...
 
     def parent(
         self,
@@ -433,12 +433,12 @@ class TabProxyModel(QtCore.QAbstractProxyModel):
         )
 
     @overload
+    def parent(self) -> QtCore.QObject: ...
+
+    @overload
     def parent(
         self, index: Union[QtCore.QModelIndex, QtCore.QPersistentModelIndex]
     ) -> QtCore.QModelIndex: ...
-
-    @overload
-    def parent(self) -> QtCore.QObject: ...
 
     def parent(
         self,
