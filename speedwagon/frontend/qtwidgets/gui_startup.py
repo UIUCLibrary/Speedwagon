@@ -733,9 +733,15 @@ class StartQtThreaded(AbsGuiStarter):
         main_app: typing.Optional[gui.MainWindow3] = None,
     ) -> None:
         """Submit job."""
-        workflow_class = speedwagon.job.available_workflows().get(
-            workflow_name
-        )
+        locate_jobs_strategy =\
+            speedwagon.job.FindAllWorkflowsPluggyStrategy(
+                config_file=self.config_files_locator.get_config_file()
+            )
+
+        workflow_class =\
+            speedwagon.job.available_workflows(
+                strategy=locate_jobs_strategy
+            ).get(workflow_name)
 
         def serialize_options(
             options: Dict[str, AbsOutputOptionDataType],
@@ -790,6 +796,9 @@ class StartQtThreaded(AbsGuiStarter):
 
         dialog_box.attach_logger(self.logger)
         job_manager.request_more_info = self.request_more_info
+        job_manager.config_file_location_strategy =\
+            self.config_files_locator
+
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=serialize_options(options),

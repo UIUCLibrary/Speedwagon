@@ -627,7 +627,7 @@ class TestStartQtThreaded:
 
         # Simulate no valid workflow
         monkeypatch.setattr(
-            speedwagon.job, "available_workflows", lambda: {}
+            speedwagon.job, "available_workflows", lambda *_, **__: {}
         )
 
         starter.submit_job(
@@ -661,7 +661,7 @@ class TestStartQtThreaded:
         monkeypatch.setattr(
             speedwagon.job,
             "available_workflows",
-            lambda: {"spam": spam_workflow}
+            lambda *_, **__: {"spam": spam_workflow}
         )
         monkeypatch.setattr(
             speedwagon.frontend.qtwidgets.dialog.dialogs.WorkflowProgress,

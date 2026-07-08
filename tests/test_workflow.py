@@ -16,7 +16,7 @@ def test_AbsOutputOptionDataType_needs_widget_name():
     with pytest.raises(TypeError):
         class BadClass(speedwagon.workflow.AbsOutputOptionDataType):
             pass
-        BadClass(label="Dummy")
+        BadClass(label="Dummy", required=False)
 
 
 class TestAbsOutputOptionDataType:
@@ -37,7 +37,7 @@ class TestAbsOutputOptionDataType:
         name_argument.value = "Henry1"
         name_argument.add_validation(
             validators.CustomValidation[str](
-                query=lambda candidate, _: candidate.isalpha(),
+                query=lambda candidate, _: candidate.isalpha() if candidate else False,
                 failure_message_function=lambda candidate: (
                     f"{candidate} contains non-alphanumerical characters"
                 )
