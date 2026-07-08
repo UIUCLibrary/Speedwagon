@@ -5,12 +5,15 @@ Change Log
 ----------
 
 
-0.4.0b22 (2026-07-07)
+0.4.0b23 (2026-07-08)
 =====================
 
 Fix
 ---
 
+- reduced cyclic-import
+- sorting issues with workflows do that do not have a name uses class name
+- issue with loading workflows when having alternative config file location
 - whitelisted plugins respect alternative config file locations
 - WorkflowSettingsYAMLResolver.get_config_data() no longer returns None if yaml file is empty.
 
