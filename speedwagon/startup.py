@@ -203,7 +203,9 @@ class ApplicationLauncher:
         super().__init__()
         self.application_name = "speedwagon"
         self.application_config_directory_name = "Speedwagon"
-        self.settings_resolver: Optional[ResolveSettings] = None
+        self.settings_resolver: Optional[
+            speedwagon.frontend.qtwidgets.gui_startup.ResolveSettings
+        ] = None
         self.startup_tasks: List[AbsSystemTask] = []
         try:
             from speedwagon.frontend.qtwidgets.gui_startup import (

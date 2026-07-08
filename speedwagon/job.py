@@ -29,7 +29,7 @@ from typing import (
 
 
 import speedwagon.plugins
-from speedwagon.config import plugins as plugin_config
+
 from speedwagon.config import common, StandardConfigFileLocator
 import speedwagon.workflows
 
@@ -39,6 +39,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.tasks import TaskBuilder, Result
     from speedwagon.config import SettingsData, SettingsDataType
     from speedwagon.config.workflow import AbsWorkflowBackend
+    from speedwagon.config import plugins as plugin_config
     from pluggy import PluginManager
 
 
@@ -386,6 +387,7 @@ class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
     def get_plugin_manager(self) -> PluginManager:
 
         def get_whitelist_with_config_file():
+            from speedwagon.config import plugins as plugin_config
             return plugin_config.get_whitelisted_plugins_from_config_file(
                 find_config_file_strategy=lambda: self.config_file
             )
