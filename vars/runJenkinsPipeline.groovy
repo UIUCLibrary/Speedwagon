@@ -94,6 +94,37 @@ def hasSonarCreds(credentialsId){
     }
     return true
 }
+
+@NonCPS
+def getExclusions(config){
+    (config['supporting']['exclusions'] ?: []).collect{ exclusion ->
+        return exclusion.collect{ component ->
+            return ["name": component['name'], "values": component['values']]
+        }
+    }
+}
+
+def getConfig(){
+    def configData = [:]
+    node(){
+        checkout scm
+        def configID = 'speedwagon_pipeline_config'
+        def defaultConfigFile = 'ci/jenkins/jenkins_config.json'
+        try{
+            configFileProvider([configFile(fileId: configID, variable: 'config_file')]) {
+                echo "Using configuration from: \"$configID\""
+                configData = readJSON( file: config_file)
+            }
+        } catch (e){
+            echo "Using default configuration in ${defaultConfigFile}. To override, create a new config file in Jenkins with id: \"${configID}\""
+            configData = readJSON( file: defaultConfigFile)
+        }
+    }
+    configData['supporting']['exclusions'] = getExclusions(configData)
+    return configData
+}
+
+
 def call(){
     library(
         identifier: 'JenkinsPythonHelperLibrary@2024.12.0',
@@ -104,6 +135,7 @@ def call(){
             ]
         )
     )
+    def config = getConfig()
     pipeline {
         agent none
         parameters {
@@ -140,7 +172,7 @@ def call(){
                     UV_TOOL_DIR = '/tmp/uvtools'
                     UV_PYTHON_CACHE_DIR = '/tmp/uvpython'
                     UV_CACHE_DIR = '/tmp/uvcache'
-                    UV_PYTHON = '3.11'
+                    UV_PYTHON = "${config['default_python_version']}"
                     UV_FROZEN = '1'
                 }
                 steps {
@@ -205,7 +237,7 @@ def call(){
                             UV_TOOL_DIR='/tmp/uvtools'
                             UV_PYTHON_CACHE_DIR='/tmp/uvpython'
                             UV_CACHE_DIR='/tmp/uvcache'
-                            UV_PYTHON='3.11'
+                            UV_PYTHON = "${config['default_python_version']}"
                             QT_QPA_PLATFORM='offscreen'
                             UV_CONFIG_FILE=createUnixUvConfig()
                             UV_FROZEN='1'
@@ -703,11 +735,11 @@ def call(){
                                                 axes: [
                                                     [
                                                         name: 'PYTHON_VERSION',
-                                                        values: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
+                                                        values: config['supporting']['pythonVersions']
                                                     ],
                                                     [
                                                         name: 'OS',
-                                                        values: ['linux','macos', 'windows']
+                                                        values: config['supporting']['os']
                                                     ],
                                                     [
                                                         name: 'ARCHITECTURE',
@@ -718,18 +750,7 @@ def call(){
                                                         values: ['wheel', 'sdist'],
                                                     ]
                                                 ],
-                                                excludes: [
-                                                    [
-                                                        [
-                                                            name: 'OS',
-                                                            values: 'windows'
-                                                        ],
-                                                        [
-                                                            name: 'ARCHITECTURE',
-                                                            values: 'arm64',
-                                                        ]
-                                                    ]
-                                                ],
+                                                excludes: config['supporting']['exclusions'],
                                                 when: {entry -> "INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase() && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]},
                                                 stages: [
                                                     { entry ->
