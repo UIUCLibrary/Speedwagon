@@ -156,7 +156,7 @@ class TestSelectWorkflow:
 
         assert selector.workflowSelectionView.model().rowCount() == 0
         selector.add_workflow(FakeWorkflow)
-        with pytest.raises(ValueError):
+        with pytest.raises(speedwagon.exceptions.WorkflowLoadFailure):
             selector.set_current_by_name("invalid workflow")
     def test_model(self, qtbot):
         selector = widgets.SelectWorkflow()

@@ -863,7 +863,7 @@ class TestSelectWorkflow:
         qtbot.add_widget(widget)
         widget.add_workflow(Spam)
         widget.add_workflow(Bacon)
-        with pytest.raises(ValueError) as error:
+        with pytest.raises(speedwagon.exceptions.WorkflowLoadFailure) as error:
             widget.set_current_by_name("Invalid Workflow")
         assert "Invalid Workflow" in str(error.value)
 

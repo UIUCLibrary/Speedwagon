@@ -436,8 +436,11 @@ def import_workflow_config(
     serialization_strategy.file_name = load_file
     workflow_name, data = serialization_strategy.load()
     parent.logger.debug(f"Loading {workflow_name}")
-    parent.set_active_workflow(workflow_name)
-    parent.set_current_workflow_settings(data)
+    try:
+        parent.set_active_workflow(workflow_name)
+        parent.set_current_workflow_settings(data)
+    except speedwagon.exceptions.WorkflowLoadFailure as error:
+        parent.logger.error("Failed to load workflow. Reason: %s", error)
 
 
 class StartQtThreaded(AbsGuiStarter):
