@@ -14,7 +14,6 @@ from __future__ import annotations
 import abc
 import argparse
 import functools
-import io
 import json
 import logging
 import os
@@ -315,26 +314,56 @@ class InfoCommand(SubCommand):
         return self.report_builder_strategy()
 
 
-class RunCommand(SubCommand):
-    def get_gui_strategy(
-        self,
-    ) -> speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON:
-        # Avoid circular imports! pylint: disable=import-outside-toplevel
-        from speedwagon import frontend
-        try:
-            return frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
-        except AttributeError as error:
-            raise ImportError("GUI strategy not available") from error
+def get_gui_json_strategy():
+    # Avoid circular imports! pylint: disable=import-outside-toplevel
+    from speedwagon import frontend
 
-    def json_startup(self) -> None:
+    try:
+        return frontend.qtwidgets.gui_startup.SingleWorkflowJSON(app=None)
+    except AttributeError as error:
+        raise ImportError("GUI strategy not available") from error
+
+
+def get_cli_json_strategy():
+    return SingleWorkflowJSON()
+
+
+JSON_STRATEGIES_TRY_ORDER = [
+    get_gui_json_strategy,
+    get_cli_json_strategy
+]
+
+
+def get_best_json_strategy(
+    strategy_order: Optional[List[Callable[[], AbsStarter]]] = None
+) -> AbsStarter:
+    strategy_order = strategy_order \
+        if strategy_order is not None \
+        else JSON_STRATEGIES_TRY_ORDER
+
+    for json_strategy in strategy_order:
+        try:
+            return json_strategy()
+        except ImportError:
+            continue
+    raise ImportError("No json strategy not available")
+
+
+class RunCommand(SubCommand):
+
+    def __init__(self, args: argparse.Namespace) -> None:
+        super().__init__(args)
+        self.default_json_strategy = get_best_json_strategy
+
+    def json_startup(
+        self,
         startup_strategy: Union[
             SingleWorkflowJSON,
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON,
-        ]
-        try:
-            startup_strategy = self.get_gui_strategy()
-        except ImportError:
-            startup_strategy = SingleWorkflowJSON()
+            None
+        ] = None
+    ) -> None:
+        startup_strategy = startup_strategy or self.default_json_strategy()
 
         startup_strategy.global_settings = self.global_settings
         try:
@@ -427,13 +456,16 @@ class AbsStarter(metaclass=abc.ABCMeta):
             Callable[[AbsConfigSettings, SettingsLocations], None],
         ]
     ]
+
     @property
     def available_workflows(self):
         return self.locate_available_workflows()
 
     @abc.abstractmethod
-    def locate_available_workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
-        """locate available workflows."""
+    def locate_available_workflows(
+        self
+    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        """Locate available workflows."""
 
     def set_application_name(self, name: str) -> None:  # noqa: B027
         """Set the application name if environment supports changing name.
@@ -492,20 +524,27 @@ class SingleWorkflowJSON(AbsStarter):
             )
         return 0
 
-    def load(self, file_pointer: io.TextIOBase) -> None:
+    @staticmethod
+    def read_json_file(json_file: str, parser=json.load) -> Dict[str, Any]:
+        with open(json_file, "r") as file_pointer:
+            return parser(file_pointer)
+
+    def load(self, json_file: str) -> None:
         """Load the information from the json.
 
         Args:
-            file_pointer: File pointer to json file
+            json_file: json file
 
         """
-        loaded_data = json.load(file_pointer)
+        loaded_data = self.read_json_file(json_file)
         self.options = loaded_data["Configuration"]
         self._set_workflow(loaded_data["Workflow"])
-    @property
-    def available_workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
+
+    def locate_available_workflows(
+        self
+    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
         return speedwagon.job.available_workflows()
-        
+
     def _set_workflow(self, workflow_name: str) -> None:
         self.workflow = self.available_workflows[workflow_name](
             global_settings=self.config.application_settings().get(
@@ -518,6 +557,11 @@ class CLIStarter(AbsStarter):
     def run(self) -> int:
         print("Try running --help for info on the commands")
         return 0
+
+    def locate_available_workflows(
+        self
+    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        return speedwagon.job.available_workflows()
 
 
 class StartupTaskBuilder:

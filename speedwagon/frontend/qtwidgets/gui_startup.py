@@ -491,7 +491,10 @@ class StartQtThreaded(AbsGuiStarter):
         """Get config."""
         return self.config_files_locator
 
-    def locate_available_workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
+    def locate_available_workflows(
+        self
+    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        """Locate available workflows."""
         loading_workflows_stream = io.StringIO()
         with contextlib.redirect_stderr(loading_workflows_stream):
             all_workflows = speedwagon.job.available_workflows(
@@ -510,8 +513,6 @@ class StartQtThreaded(AbsGuiStarter):
             self.windows.console.add_message(error_message)
             del all_workflows[workflow_name]
         return all_workflows
-
-
 
     def set_application_name(self, name: str) -> None:
         """Set the Qt application name and the window matching."""
@@ -979,6 +980,20 @@ class SingleWorkflowJSON(AbsGuiStarter):
         self.workflow: typing.Optional[AbsWorkflow] = None
         self.logger = logger or logging.getLogger(__name__)
 
+    @staticmethod
+    def parse_json_file(
+        json_file: str,
+        json_parser=json.load
+    ) -> FullSettingsData:
+        """Parse a json file and return a dict with workflow information.
+
+        Args:
+            json_file: Path to the json file
+            json_parser: Optional json parser
+        """
+        with open(json_file, "r") as file_pointer:
+            return json_parser(file_pointer)
+
     def load_json_string(self, data: str) -> None:
         """Load json data containing options and workflow info.
 
@@ -990,18 +1005,20 @@ class SingleWorkflowJSON(AbsGuiStarter):
         self.options = loaded_data["Configuration"]
         self._set_workflow(loaded_data["Workflow"])
 
-    def load(self, file_pointer: io.TextIOBase) -> None:
+    def load(self, json_file: str) -> None:
         """Load the information from the json.
 
         Args:
-            file_pointer: File pointer to json file
+            json_file: Path to the JSON file
 
         """
-        loaded_data = json.load(file_pointer)
+        loaded_data = self.parse_json_file(json_file)
         self.options = loaded_data["Configuration"]
         self._set_workflow(loaded_data["Workflow"])
 
-    def locate_available_workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
+    def locate_available_workflows(
+        self
+    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
         """Locate available workflows."""
         return speedwagon.job.available_workflows()
 

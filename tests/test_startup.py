@@ -356,3 +356,24 @@ def test_get_global_options_resolution_order_config_file_does_not_exists(tmp_pat
         isinstance(resolution_strategy_type, speedwagon.config.config.ConfigFileSetter)
         for resolution_strategy_type in resolution_order
     ) is False
+
+def test_get_best_json_strategy():
+    mock_strategy = Mock(name="mock_strategy")
+    speedwagon.startup.get_best_json_strategy(strategy_order=[mock_strategy])
+    mock_strategy.assert_called_once()
+
+def test_get_best_json_strategy_skips_import_error():
+    bad_strategy = Mock(name="first", side_effect=ImportError)
+    second_strategy = Mock(name="second")
+    resulting = speedwagon.startup.get_best_json_strategy(
+        strategy_order=[
+            bad_strategy,
+            second_strategy
+        ]
+    )
+    second_strategy.assert_called_once()
+    assert resulting == second_strategy()
+
+def test_get_best_json_strategy_throws_import_error_after_expiring():
+    with pytest.raises(ImportError):
+        resulting = speedwagon.startup.get_best_json_strategy([])

@@ -447,7 +447,6 @@ class CliArgsSetter(AbsSetting):
 
         run_parser.add_argument(
             "--json",
-            type=argparse.FileType("r", encoding="utf-8"),
             help="Run job from json file",
         )
 

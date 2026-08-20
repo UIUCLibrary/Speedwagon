@@ -936,8 +936,7 @@ class TestQtRequestMoreInfo:
 
 class TestRunCommand:
     def test_application_launcher_called(self, monkeypatch):
-        f = io.StringIO('{"Workflow":"dummy", "Configuration": {}}')
-        args = argparse.Namespace(json=f)
+        args = argparse.Namespace(json="fake.json")
 
         ApplicationLauncher = Mock()
 
@@ -954,6 +953,7 @@ class TestRunCommand:
         )
 
         run_command = speedwagon.startup.RunCommand(args)
+        run_command.default_json_strategy = Mock()
         with pytest.raises(SystemExit):
             run_command.run()
         assert ApplicationLauncher.called is True
@@ -970,9 +970,8 @@ class TestRunCommand:
 
         run_strategy = Mock()
         SingleWorkflowJSON = Mock()
-        monkeypatch.setattr(run_command, "get_gui_strategy", Mock(side_effect=ImportError))
+        monkeypatch.setattr(run_command, "default_json_strategy", SingleWorkflowJSON())
         monkeypatch.setattr(run_command, "_run_strategy", run_strategy)
-        monkeypatch.setattr(speedwagon.startup, "SingleWorkflowJSON", SingleWorkflowJSON)
 
         run_command.run()
         assert SingleWorkflowJSON.called is True
