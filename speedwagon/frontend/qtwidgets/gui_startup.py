@@ -57,6 +57,7 @@ from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
 from speedwagon.utils import get_desktop_path, validate_user_input
 from speedwagon.tasks import system as system_tasks
 from speedwagon import info, startup
+import speedwagon.exceptions
 import speedwagon.plugins
 from . import user_interaction
 from . import dialog
@@ -995,9 +996,14 @@ class SingleWorkflowJSON(AbsGuiStarter):
 
     def _set_workflow(self, workflow_name: str) -> None:
         available_workflows = speedwagon.job.available_workflows()
-        self.workflow = available_workflows[workflow_name](
-            global_settings=self.global_settings or {}
-        )
+        try:
+            self.workflow = available_workflows[workflow_name](
+                global_settings=self.global_settings or {}
+            )
+        except KeyError as exc:
+            raise speedwagon.exceptions.WorkflowLoadFailure(
+                "Workflow not found"
+            ) from exc
 
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Launch Speedwagon."""
