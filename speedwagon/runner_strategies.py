@@ -662,7 +662,7 @@ class Run(TaskScheduler):
             workflow_class = self.valid_workflows.get(workflow_name)
 
         if workflow_class is None:
-            raise AssertionError(f"Workflow not found: {workflow_name}")
+            raise AssertionError(f"Workflow not found: \"{workflow_name}\"")
         return workflow_class
 
 

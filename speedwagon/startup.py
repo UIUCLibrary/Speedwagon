@@ -337,8 +337,15 @@ class RunCommand(SubCommand):
             startup_strategy = SingleWorkflowJSON()
 
         startup_strategy.global_settings = self.global_settings
-        startup_strategy.load(self.args.json)
-        self._run_strategy(startup_strategy)
+        try:
+            startup_strategy.load(self.args.json)
+            self._run_strategy(startup_strategy)
+        except WorkflowLoadFailure as e:
+            message = [f"Failed to load json. {e}",
+                       "Available workflows are:"]
+            for workflow in startup_strategy.available_workflows:
+                message.append(f"- \"{workflow}\"")
+            logger.error("\n".join(message))
 
     @staticmethod
     def _run_strategy(startup_strategy: AbsStarter) -> None:
@@ -420,6 +427,13 @@ class AbsStarter(metaclass=abc.ABCMeta):
             Callable[[AbsConfigSettings, SettingsLocations], None],
         ]
     ]
+    @property
+    def available_workflows(self):
+        return self.locate_available_workflows()
+
+    @abc.abstractmethod
+    def locate_available_workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        """locate available workflows."""
 
     def set_application_name(self, name: str) -> None:  # noqa: B027
         """Set the application name if environment supports changing name.
@@ -488,10 +502,12 @@ class SingleWorkflowJSON(AbsStarter):
         loaded_data = json.load(file_pointer)
         self.options = loaded_data["Configuration"]
         self._set_workflow(loaded_data["Workflow"])
-
+    @property
+    def available_workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        return speedwagon.job.available_workflows()
+        
     def _set_workflow(self, workflow_name: str) -> None:
-        available_workflows = speedwagon.job.available_workflows()
-        self.workflow = available_workflows[workflow_name](
+        self.workflow = self.available_workflows[workflow_name](
             global_settings=self.config.application_settings().get(
                 "GLOBAL", {}
             )
