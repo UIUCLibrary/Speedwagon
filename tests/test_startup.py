@@ -1,5 +1,6 @@
 import argparse
 import os.path
+import sys
 from unittest import result
 
 from unittest.mock import Mock, MagicMock, mock_open, patch, ANY
@@ -377,3 +378,44 @@ def test_get_best_json_strategy_skips_import_error():
 def test_get_best_json_strategy_throws_import_error_after_expiring():
     with pytest.raises(ImportError):
         resulting = speedwagon.startup.get_best_json_strategy([])
+
+class TestRunCommand:
+    def test_json_startup(self, monkeypatch):
+        exit_command = Mock()
+        monkeypatch.setattr(sys, "exit", exit_command)
+        monkeypatch.setattr(speedwagon.startup, "ApplicationLauncher", Mock())
+        args = argparse.Namespace(json="some_json_file.json")
+        cmd = speedwagon.startup.RunCommand(args)
+        startup_strategy = Mock(name="startup_strategy", spec=speedwagon.startup.SingleWorkflowJSON)
+        cmd.create_app_launcher = Mock()
+        cmd.json_startup(startup_strategy)
+        exit_command.assert_called_once()
+
+    def test_json_startup_fails(self, monkeypatch, caplog):
+        exit_command = Mock()
+        monkeypatch.setattr(sys, "exit", exit_command)
+        monkeypatch.setattr(speedwagon.startup, "ApplicationLauncher", Mock())
+        args = argparse.Namespace(json="some_json_file.json")
+        cmd = speedwagon.startup.RunCommand(args)
+        startup_strategy = Mock(
+            name="startup_strategy",
+            spec=speedwagon.startup.SingleWorkflowJSON,
+            load=Mock(side_effect=speedwagon.exceptions.WorkflowLoadFailure),
+            available_workflows={"some_workflow": Mock()}
+        )
+        cmd.create_app_launcher = Mock()
+        cmd.json_startup(startup_strategy)
+
+        assert len([record for record in caplog.records if record.levelno == logging.ERROR]) > 0
+
+def test_get_cli_json_strategy():
+    assert isinstance(speedwagon.startup.get_cli_json_strategy(), speedwagon.startup.AbsStarter)
+
+def test_get_gui_json_strategy():
+    pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
+    assert isinstance(speedwagon.startup.get_gui_json_strategy(), speedwagon.startup.AbsStarter)
+
+def test_get_gui_json_without_qt_raised_import_error(monkeypatch):
+    monkeypatch.setattr(speedwagon.frontend.qtwidgets.gui_startup, "SingleWorkflowJSON", Mock(side_effect=AttributeError))
+    with pytest.raises(ImportError):
+        speedwagon.startup.get_gui_json_strategy()

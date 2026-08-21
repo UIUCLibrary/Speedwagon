@@ -336,7 +336,10 @@ JSON_STRATEGIES_TRY_ORDER = [
 
 def get_best_json_strategy(
     strategy_order: Optional[List[Callable[[], AbsStarter]]] = None
-) -> AbsStarter:
+) -> Union[
+        SingleWorkflowJSON,
+        speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON
+]:
     strategy_order = strategy_order \
         if strategy_order is not None \
         else JSON_STRATEGIES_TRY_ORDER
@@ -350,6 +353,7 @@ def get_best_json_strategy(
 
 
 class RunCommand(SubCommand):
+    create_app_launcher = ApplicationLauncher
 
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__(args)
@@ -378,7 +382,7 @@ class RunCommand(SubCommand):
 
     @staticmethod
     def _run_strategy(startup_strategy: AbsStarter) -> None:
-        app_launcher = speedwagon.startup.ApplicationLauncher(
+        app_launcher = RunCommand.create_app_launcher(
             strategy=startup_strategy
         )
 
