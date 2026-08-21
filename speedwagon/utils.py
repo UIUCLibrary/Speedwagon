@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import pathlib
 from typing import Iterator, Callable, Dict, List, TYPE_CHECKING
@@ -100,3 +101,17 @@ def assign_values_to_job_options(
         elif option.label in option_values:
             option.value = option_values[option.label]
     return job_params
+
+
+def parse_json_file(
+    json_file: str,
+    json_parser=json.load
+) -> dict:
+    """Parse a json file and return a dict.
+
+    Args:
+        json_file: Path to the json file
+        json_parser: Optional json parser
+    """
+    with pathlib.Path(json_file).open("r", encoding="utf-8") as file_pointer:
+        return json_parser(file_pointer)

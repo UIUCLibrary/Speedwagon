@@ -54,7 +54,11 @@ from speedwagon.config.config import (
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import plugins as plugin_config
 from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
-from speedwagon.utils import get_desktop_path, validate_user_input
+from speedwagon.utils import (
+    get_desktop_path,
+    validate_user_input,
+    parse_json_file
+)
 from speedwagon.tasks import system as system_tasks
 from speedwagon import info, startup
 import speedwagon.exceptions
@@ -980,20 +984,6 @@ class SingleWorkflowJSON(AbsGuiStarter):
         self.workflow: typing.Optional[AbsWorkflow] = None
         self.logger = logger or logging.getLogger(__name__)
 
-    @staticmethod
-    def parse_json_file(
-        json_file: str,
-        json_parser=json.load
-    ) -> FullSettingsData:
-        """Parse a json file and return a dict with workflow information.
-
-        Args:
-            json_file: Path to the json file
-            json_parser: Optional json parser
-        """
-        with open(json_file, "r") as file_pointer:
-            return json_parser(file_pointer)
-
     def load_json_string(self, data: str) -> None:
         """Load json data containing options and workflow info.
 
@@ -1012,7 +1002,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
             json_file: Path to the JSON file
 
         """
-        loaded_data = self.parse_json_file(json_file)
+        loaded_data = parse_json_file(json_file)
         self.options = loaded_data["Configuration"]
         self._set_workflow(loaded_data["Workflow"])
 

@@ -14,7 +14,6 @@ from __future__ import annotations
 import abc
 import argparse
 import functools
-import json
 import logging
 import os
 import sys
@@ -50,6 +49,7 @@ from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
 from speedwagon.tasks.system import CallbackSystemTask, AbsSystemTask
 from speedwagon.tasks.utils import TaskBuilder
 from speedwagon import plugins
+from speedwagon.utils import parse_json_file
 
 if TYPE_CHECKING:
     import speedwagon.frontend.qtwidgets.gui_startup
@@ -528,11 +528,6 @@ class SingleWorkflowJSON(AbsStarter):
             )
         return 0
 
-    @staticmethod
-    def read_json_file(json_file: str, parser=json.load) -> Dict[str, Any]:
-        with open(json_file, "r") as file_pointer:
-            return parser(file_pointer)
-
     def load(self, json_file: str) -> None:
         """Load the information from the json.
 
@@ -540,7 +535,7 @@ class SingleWorkflowJSON(AbsStarter):
             json_file: json file
 
         """
-        loaded_data = self.read_json_file(json_file)
+        loaded_data = parse_json_file(json_file)
         self.options = loaded_data["Configuration"]
         self._set_workflow(loaded_data["Workflow"])
 

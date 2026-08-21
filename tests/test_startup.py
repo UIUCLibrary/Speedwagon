@@ -416,6 +416,9 @@ def test_get_gui_json_strategy():
     assert isinstance(speedwagon.startup.get_gui_json_strategy(), speedwagon.startup.AbsStarter)
 
 def test_get_gui_json_without_qt_raised_import_error(monkeypatch):
-    monkeypatch.setattr(speedwagon.frontend.qtwidgets.gui_startup, "SingleWorkflowJSON", Mock(side_effect=AttributeError))
+    try:
+        monkeypatch.setattr(speedwagon.frontend.qtwidgets.gui_startup, "SingleWorkflowJSON", Mock(side_effect=AttributeError))
+    except AttributeError:
+        pass
     with pytest.raises(ImportError):
         speedwagon.startup.get_gui_json_strategy()

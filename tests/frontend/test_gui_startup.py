@@ -10,8 +10,6 @@ import io
 
 import importlib.metadata
 
-from dill.pointers import parent
-
 from speedwagon.workflow import FileSelectData
 import speedwagon.config
 
