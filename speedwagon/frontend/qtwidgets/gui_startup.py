@@ -54,9 +54,14 @@ from speedwagon.config.config import (
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import plugins as plugin_config
 from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
-from speedwagon.utils import get_desktop_path, validate_user_input
+from speedwagon.utils import (
+    get_desktop_path,
+    validate_user_input,
+    parse_json_file
+)
 from speedwagon.tasks import system as system_tasks
 from speedwagon import info, startup
+import speedwagon.exceptions
 import speedwagon.plugins
 from . import user_interaction
 from . import dialog
@@ -435,8 +440,11 @@ def import_workflow_config(
     serialization_strategy.file_name = load_file
     workflow_name, data = serialization_strategy.load()
     parent.logger.debug(f"Loading {workflow_name}")
-    parent.set_active_workflow(workflow_name)
-    parent.set_current_workflow_settings(data)
+    try:
+        parent.set_active_workflow(workflow_name)
+        parent.set_current_workflow_settings(data)
+    except speedwagon.exceptions.WorkflowLoadFailure as error:
+        parent.logger.error("Failed to load workflow. Reason: %s", error)
 
 
 class StartQtThreaded(AbsGuiStarter):
@@ -487,6 +495,29 @@ class StartQtThreaded(AbsGuiStarter):
         """Get config."""
         return self.config_files_locator
 
+    def locate_available_workflows(
+        self
+    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        """Locate available workflows."""
+        loading_workflows_stream = io.StringIO()
+        with contextlib.redirect_stderr(loading_workflows_stream):
+            all_workflows = speedwagon.job.available_workflows(
+                strategy=speedwagon.job.OnlyActivatedPluginsWorkflows(
+                    plugin_settings=plugin_config.read_settings_file_plugins(
+                        self.config_locations.get_config_file()
+                    )
+                )
+            )
+        for workflow_name, error in self._find_invalid(all_workflows):
+            error_message = (
+                f"Unable to load workflow '{workflow_name}'. Reason: {error}"
+            )
+
+            self.logger.error(error_message)
+            self.windows.console.add_message(error_message)
+            del all_workflows[workflow_name]
+        return all_workflows
+
     def set_application_name(self, name: str) -> None:
         """Set the Qt application name and the window matching."""
         self._application_name = name
@@ -527,35 +558,17 @@ class StartQtThreaded(AbsGuiStarter):
             return
 
         self.logger.debug("Loading Workflows")
-        loading_workflows_stream = io.StringIO()
         self.windows.clear_tabs()
 
-        with contextlib.redirect_stderr(loading_workflows_stream):
-            all_workflows = speedwagon.job.available_workflows(
-                strategy=speedwagon.job.OnlyActivatedPluginsWorkflows(
-                    plugin_settings=plugin_config.read_settings_file_plugins(
-                        self.config_locations.get_config_file()
-                    )
-                )
-            )
-
-        for workflow_name, error in self._find_invalid(all_workflows):
-            error_message = (
-                f"Unable to load workflow '{workflow_name}'. Reason: {error}"
-            )
-
-            self.logger.error(error_message)
-            self.windows.console.add_message(error_message)
-            del all_workflows[workflow_name]
-
         # Load every user configured tab
+        all_workflows = self.available_workflows
         self.load_custom_tabs(
             self.windows, self.config_locations.get_tabs_file(), all_workflows
         )
 
         # All Workflows tab
         self.load_all_workflows_tab(self.windows, all_workflows)
-
+        loading_workflows_stream = io.StringIO()
         workflow_errors_msg = loading_workflows_stream.getvalue().strip()
         if workflow_errors_msg:
             for line in workflow_errors_msg.split("\n"):
@@ -982,22 +995,33 @@ class SingleWorkflowJSON(AbsGuiStarter):
         self.options = loaded_data["Configuration"]
         self._set_workflow(loaded_data["Workflow"])
 
-    def load(self, file_pointer: io.TextIOBase) -> None:
+    def load(self, json_file: str) -> None:
         """Load the information from the json.
 
         Args:
-            file_pointer: File pointer to json file
+            json_file: Path to the JSON file
 
         """
-        loaded_data = json.load(file_pointer)
+        loaded_data = parse_json_file(json_file)
         self.options = loaded_data["Configuration"]
         self._set_workflow(loaded_data["Workflow"])
 
+    def locate_available_workflows(
+        self
+    ) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        """Locate available workflows."""
+        return speedwagon.job.available_workflows()
+
     def _set_workflow(self, workflow_name: str) -> None:
-        available_workflows = speedwagon.job.available_workflows()
-        self.workflow = available_workflows[workflow_name](
-            global_settings=self.global_settings or {}
-        )
+
+        try:
+            self.workflow = self.available_workflows[workflow_name](
+                global_settings=self.global_settings or {}
+            )
+        except KeyError as exc:
+            raise speedwagon.exceptions.WorkflowLoadFailure(
+                f"Workflow not found: \"{workflow_name}\""
+            ) from exc
 
     def start_gui(self, app: Optional[QtWidgets.QApplication] = None) -> int:
         """Launch Speedwagon."""

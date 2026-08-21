@@ -719,6 +719,23 @@ class TestStartQtThreaded:
         starter.request_settings(dialog_builder_strategy=settings_builder_strategy)
         settings_builder_strategy.assert_called_once()
 
+    def test_locate_available_workflows(self, qtbot, monkeypatch):
+        def constructor(*args, **kwargs):
+            return Mock(name="my workflow")
+        monkeypatch.setattr(speedwagon.job, "available_workflows", lambda *_, **__: {"spam": constructor})
+        start = gui_startup.StartQtThreaded(app=Mock())
+        start.config.application_settings = Mock(return_value={})
+        assert len(start.locate_available_workflows()) > 0
+
+    def test_locate_available_workflows_error_prints_message(self, qtbot, monkeypatch):
+        def constructor(*args, **kwargs):
+            raise speedwagon.exceptions.SpeedwagonException("Error occurred")
+        monkeypatch.setattr(speedwagon.job, "available_workflows", lambda *_, **__: {"spam": constructor})
+        start = gui_startup.StartQtThreaded(app=Mock())
+        start.windows = Mock()
+        start.config.application_settings = Mock(return_value={})
+        start.locate_available_workflows()
+        start.windows.console.add_message.assert_called_once()
 
 class TestWorkflowProgressCallbacks:
 
@@ -936,8 +953,7 @@ class TestQtRequestMoreInfo:
 
 class TestRunCommand:
     def test_application_launcher_called(self, monkeypatch):
-        f = io.StringIO('{"Workflow":"dummy", "Configuration": {}}')
-        args = argparse.Namespace(json=f)
+        args = argparse.Namespace(json="fake.json")
 
         ApplicationLauncher = Mock()
 
@@ -954,6 +970,7 @@ class TestRunCommand:
         )
 
         run_command = speedwagon.startup.RunCommand(args)
+        run_command.default_json_strategy = Mock()
         with pytest.raises(SystemExit):
             run_command.run()
         assert ApplicationLauncher.called is True
@@ -970,9 +987,8 @@ class TestRunCommand:
 
         run_strategy = Mock()
         SingleWorkflowJSON = Mock()
-        monkeypatch.setattr(run_command, "get_gui_strategy", Mock(side_effect=ImportError))
+        monkeypatch.setattr(run_command, "default_json_strategy", SingleWorkflowJSON())
         monkeypatch.setattr(run_command, "_run_strategy", run_strategy)
-        monkeypatch.setattr(speedwagon.startup, "SingleWorkflowJSON", SingleWorkflowJSON)
 
         run_command.run()
         assert SingleWorkflowJSON.called is True
@@ -1365,3 +1381,20 @@ def test_request_system_info(qtbot, monkeypatch):
     qtbot.add_widget(parent)
     gui_startup.request_system_info(parent)
     dialog.exec.assert_called_once()
+
+def test_import_workflow_config_successful(monkeypatch):
+    workflow_name = "some_workflow"
+    main_window = Mock(spec=MainWindow3, logger=Mock(spec=logging.Logger))
+    dialog_box = Mock(spec=QtWidgets.QFileDialog, getOpenFileName=Mock(return_value=("some_file", '')))
+    serialization_strategy = Mock(load=Mock(return_value=(workflow_name, {})))
+    gui_startup.import_workflow_config(parent=main_window, dialog_box=dialog_box, serialization_strategy=serialization_strategy)
+    main_window.set_active_workflow.assert_called_once_with(workflow_name)
+    main_window.logger.error.assert_not_called()
+
+def test_import_workflow_config_failure_logs_to_console(monkeypatch):
+    workflow_name = "some_workflow_not_exist"
+    main_window = Mock(spec=MainWindow3, logger=Mock(spec=logging.Logger), set_active_workflow=Mock(side_effect=speedwagon.exceptions.WorkflowLoadFailure))
+    dialog_box = Mock(spec=QtWidgets.QFileDialog, getOpenFileName=Mock(return_value=("some_file", '')))
+    serialization_strategy = Mock(load=Mock(return_value=(workflow_name, {})))
+    gui_startup.import_workflow_config(parent=main_window, dialog_box=dialog_box, serialization_strategy=serialization_strategy)
+    main_window.logger.error.assert_called_once()

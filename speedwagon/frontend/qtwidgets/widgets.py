@@ -28,7 +28,6 @@ from PySide6 import QtWidgets, QtCore, QtGui
 from speedwagon.frontend.qtwidgets import ui_loader, ui
 from speedwagon.workflow import AbsOutputOptionDataType, UserDataType
 from speedwagon import Workflow, exceptions, config
-
 from speedwagon.frontend.qtwidgets.models.workflows import AbsWorkflowList
 from speedwagon.frontend.qtwidgets import models, logging_helpers
 
@@ -794,7 +793,9 @@ class SelectWorkflow(QtWidgets.QWidget):
                 )
                 break
         else:
-            raise ValueError(f"{workflow_name} not loaded in model")
+            raise exceptions.WorkflowLoadFailure(
+                f"Workflow \"{workflow_name}\" not loaded in Qt model"
+            )
 
     def get_current_workflow_type(self) -> Optional[typing.Type[Workflow]]:
         """Get current workflow type."""

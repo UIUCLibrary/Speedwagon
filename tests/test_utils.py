@@ -1,6 +1,6 @@
 import logging
 import os
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 import pytest
 
@@ -94,3 +94,10 @@ class TestCallbackLogHandler:
         logger.addHandler(handler)
         logger.info("hello")
         callback.assert_called_once()
+
+def test_parse_json_file(monkeypatch):
+    Path = MagicMock()
+    monkeypatch.setattr(pathlib, "Path", Path)
+    parser = Mock()
+    utils.parse_json_file("some_file", json_parser=parser)
+    parser.assert_called_once()
