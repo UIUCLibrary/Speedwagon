@@ -17,6 +17,7 @@ import functools
 import logging
 import os
 import sys
+import traceback
 from typing import (
     Dict,
     Iterator,
@@ -379,6 +380,8 @@ class RunCommand(SubCommand):
             for workflow in startup_strategy.available_workflows:
                 message.append(f"- \"{workflow}\"")
             logger.error("\n".join(message))
+            if self.args.debug:
+                traceback.print_exc()
 
     @staticmethod
     def _run_strategy(startup_strategy: AbsStarter) -> None:

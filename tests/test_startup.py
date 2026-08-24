@@ -395,7 +395,7 @@ class TestRunCommand:
         exit_command = Mock()
         monkeypatch.setattr(sys, "exit", exit_command)
         monkeypatch.setattr(speedwagon.startup, "ApplicationLauncher", Mock())
-        args = argparse.Namespace(json="some_json_file.json")
+        args = argparse.Namespace(json="some_json_file.json", debug=False)
         cmd = speedwagon.startup.RunCommand(args)
         startup_strategy = Mock(
             name="startup_strategy",
