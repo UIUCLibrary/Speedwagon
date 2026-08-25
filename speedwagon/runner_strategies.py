@@ -16,7 +16,17 @@ import traceback
 import typing
 import warnings
 from types import TracebackType
-from typing import List, Any, Dict, Optional, Type, TypeVar, Mapping, Callable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+)
 import functools
 
 import speedwagon.config
@@ -666,6 +676,53 @@ class Run(TaskScheduler):
         return workflow_class
 
 
+def notify_user_of_config_error(
+    logger: logging.Logger,
+    config_error: speedwagon.exceptions.MissingConfiguration
+) -> None:
+    logger.info(
+        "Unable to start job with missing configurations. %s", config_error
+    )
+
+    if config_error.key and config_error.workflow:
+        logger.debug(
+            "Unable to start job with missing configurations: "
+            '"%s" from "%s". '
+            "\nCheck the Workflow Settings section in "
+            "Speedwagon settings.",
+            config_error.key,
+            config_error.workflow,
+        )
+    else:
+        logger.debug(
+            "Unable to start job with missing configurations. "
+            "\nReason: %s"
+            "\nCheck the Workflow Settings section in "
+            "Speedwagon settings.",
+            config_error,
+        )
+
+
+@contextlib.contextmanager
+def attach_logger_handlers(
+    logger: logging.Logger,
+    handlers: typing.Collection[logging.Handler],
+    level: int = logging.INFO,
+) -> Iterator[None]:
+    attached_handlers: List[logging.Handler] = []
+    try:
+        if logger:
+            for handler in handlers:
+                handler.setLevel(level)
+                logger.addHandler(handler)
+                attached_handlers.append(handler)
+        yield
+    finally:
+        if logger:
+            for handler in attached_handlers:
+                logger.removeHandler(handler)
+
+
 class BackgroundJobManager(AbsJobManager2):
     def __init__(self) -> None:
         super().__init__()
@@ -749,8 +806,11 @@ class BackgroundJobManager(AbsJobManager2):
                     task.parent_task_log_q = type(
                         "logger", (object,), {"append": self.logger.info}
                     )
-
-                    task.exec()
+                    with attach_logger_handlers(
+                        task.logger,
+                        self.logger.handlers
+                    ):
+                        task.exec()
                     liaison.callbacks.update_progress(
                         current=task_scheduler.current_task_progress,
                         total=task_scheduler.total_tasks,
@@ -759,26 +819,14 @@ class BackgroundJobManager(AbsJobManager2):
 
             except speedwagon.exceptions.JobCancelled as job_cancelled:
                 liaison.callbacks.finished(JobSuccess.ABORTED)
-                logging.debug("Job canceled: %s", job_cancelled)
+                self.logger.debug("Job canceled: %s", job_cancelled)
 
             except speedwagon.exceptions.MissingConfiguration as config_error:
                 liaison.callbacks.finished(JobSuccess.ABORTED)
-                if config_error.key and config_error.workflow:
-                    logging.debug(
-                        'Unable to start job with missing configurations: '
-                        '"%s" from "%s". '
-                        '\nCheck the Workflow Settings section in '
-                        'Speedwagon settings.',
-                        config_error.key, config_error.workflow
-                    )
-                else:
-                    logging.debug(
-                        'Unable to start job with missing configurations. '
-                        '\nReason: %s'
-                        '\nCheck the Workflow Settings section in '
-                        'Speedwagon settings.',
-                        config_error
-                    )
+                notify_user_of_config_error(
+                    self.logger,
+                    config_error=config_error
+                )
             except BaseException as exception_thrown:
                 traceback_info = traceback.format_exc()
 

@@ -1,12 +1,10 @@
-import platform
 import logging
-from unittest.mock import Mock, patch, mock_open, MagicMock, ANY
+from unittest.mock import Mock
 import pytest
+
 import speedwagon
 import speedwagon.config
-import sys
-import typing
-import warnings
+
 QtCore = pytest.importorskip("PySide6.QtCore")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from speedwagon.frontend.qtwidgets.dialog import settings, dialogs
@@ -997,7 +995,8 @@ class TestPluginsTab:
 myworkflow = True
 """
         config_file = "config.ini"
-        settings.PluginsTab.read_file = Mock(return_value=data)
+        monkeypatch.setattr(settings.PluginsTab, "read_file", Mock(return_value=data))
+        # settings.PluginsTab.read_file = Mock(return_value=data)
         tab = settings.PluginsTab()
         entry_point = Mock(
             importlib.metadata.EntryPoint,

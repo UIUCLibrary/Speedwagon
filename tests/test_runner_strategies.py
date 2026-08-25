@@ -679,3 +679,21 @@ def test_simple_api_calls_exec_on_task(monkeypatch):
         mock_workflow, workflow_options={}
     )
     assert mock_task.exec.called is True
+@pytest.mark.parametrize(
+    "key,workflow",
+    [
+        ("test_key", "test_workflow"),
+        (None, "test_workflow"),
+        ("test_key", None),
+        (None, None),
+    ]
+)
+def test_notify_user_of_config_error(key,workflow):
+    debug = Mock()
+    logger = Mock(spec=logging.Logger, debug=debug)
+    config_error = Mock(spec=speedwagon.exceptions.MissingConfiguration, key=key, workflow=workflow)
+    runner_strategies.notify_user_of_config_error(logger, config_error)
+
+    a = debug.call_args
+    assert "missing configurations" in a.args[0]
+    debug.assert_called_once()
