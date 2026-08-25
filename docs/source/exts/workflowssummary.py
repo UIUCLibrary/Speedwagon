@@ -15,14 +15,21 @@ Notes:
     Leading and trailing whitespace is ignored when generating descriptions.
 
 """
+import os
 
 from docutils.parsers.rst import Directive, directives
 from docutils import nodes
+import tempfile
 import speedwagon
 from sphinx.util import logging
 from sphinx import addnodes
 
-all_workflows = speedwagon.available_workflows()
+with tempfile.TemporaryDirectory() as tmp:
+    config_file = os.path.join(tmp, "speedwagon.ini")
+    with open(config_file, "w") as f:
+        f.write("")
+    config_strategy = speedwagon.job.FindAllWorkflowsPluggyStrategy(config_file)
+all_workflows = speedwagon.available_workflows(config_strategy)
 
 
 class AutoWorkflowDirective(Directive):

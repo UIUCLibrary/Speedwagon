@@ -57,7 +57,8 @@ from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
 from speedwagon.utils import (
     get_desktop_path,
     validate_user_input,
-    parse_json_file
+    parse_json_file,
+    read_file,
 )
 from speedwagon.tasks import system as system_tasks
 from speedwagon import info, startup
@@ -226,14 +227,17 @@ class ResolveSettings(AbsResolveSettingsStrategy):  # pylint: disable=R0903
         return manager.data()
 
 
-def get_active_workflows(
-    config_file: str, workflow_finder: Optional[AbsWorkflowFinder] = None
+def get_active_workflows_from_config_file(
+    config_file: str,
+    workflow_finder: Optional[AbsWorkflowFinder] = None,
+    file_parser=read_file
 ) -> Dict[str, Type[Workflow]]:
+    config_data = file_parser(config_file)
     workflow_finder = (
         workflow_finder
         or speedwagon.job.OnlyActivatedPluginsWorkflows(
-            plugin_settings=plugin_config.read_settings_file_plugins(
-                config_file
+            plugin_settings=plugin_config.read_settings_data_plugins(
+                config_data
             )
         )
     )
@@ -248,7 +252,7 @@ def _setup_config_tab(
         tabs_manager=CustomTabsYamlConfig(yaml_file)
     )
     model_loader.get_all_active_workflows_strategy = functools.partial(
-        get_active_workflows, config_file=config_ini
+        get_active_workflows_from_config_file, config_file=config_ini
     )
     tabs_config.load_tab_data_model_strategy = model_loader
     tabs_config.editor.load_data()
@@ -503,8 +507,8 @@ class StartQtThreaded(AbsGuiStarter):
         with contextlib.redirect_stderr(loading_workflows_stream):
             all_workflows = speedwagon.job.available_workflows(
                 strategy=speedwagon.job.OnlyActivatedPluginsWorkflows(
-                    plugin_settings=plugin_config.read_settings_file_plugins(
-                        self.config_locations.get_config_file()
+                    plugin_settings=plugin_config.read_settings_data_plugins(
+                        read_file(self.config_locations.get_config_file())
                     )
                 )
             )
@@ -1032,6 +1036,8 @@ class SingleWorkflowJSON(AbsGuiStarter):
         with (
             speedwagon.runner_strategies.BackgroundJobManager() as job_manager
         ):
+
+            # job_manager.config_file_location_strategy = self.config.
             self._run_workflow(job_manager, self.workflow, self.options)
             if app is not None:
                 app.quit()

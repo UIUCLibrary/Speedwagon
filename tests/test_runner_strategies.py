@@ -552,7 +552,11 @@ class TestBackgroundJobManager:
 
     def test_job_finished_called(self, monkeypatch):
         callbacks = Mock(name="callbacks")
-
+        monkeypatch.setattr(
+            speedwagon.config.plugins,
+            "read_file",
+            Mock(return_value="")
+        )
         liaison = runner_strategies.JobManagerLiaison(
             callbacks=callbacks,
             events=Mock()

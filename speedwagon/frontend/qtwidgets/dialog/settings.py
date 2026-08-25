@@ -43,6 +43,7 @@ from speedwagon.frontend.qtwidgets.models.settings import (
 )
 from speedwagon.frontend.qtwidgets import models
 from speedwagon.config.tabs import NullTabsConfig
+from speedwagon import utils
 
 if TYPE_CHECKING:
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
@@ -262,6 +263,9 @@ def open_settings_dir(
 
 
 class PluginsTab(SettingsTab[Dict[str, List[Tuple[str, bool]]]]):
+    load_settings_data = config.plugins.read_settings_data_plugins
+    read_file = utils.read_file
+
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
@@ -280,7 +284,10 @@ class PluginsTab(SettingsTab[Dict[str, List[Tuple[str, bool]]]]):
         return self.plugins_activation.plugins()
 
     def load(self, settings_ini: str) -> None:
-        settings = config.plugins.read_settings_file_plugins(settings_ini)
+        settings = PluginsTab.load_settings_data(
+            PluginsTab.read_file(settings_ini)
+        )
+
         for entry_point in importlib.metadata.entry_points(
             group="speedwagon.plugins"
         ):

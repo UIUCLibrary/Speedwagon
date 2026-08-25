@@ -238,7 +238,7 @@ def test_run_command_valid(monkeypatch):
     monkeypatch.setattr(speedwagon.config.config.sys, "argv", ["speedwagon", "run"])
     monkeypatch.setattr(speedwagon.config.config.sys, "argv", ["speedwagon", "run"])
     monkeypatch.setattr(speedwagon.config.config.pathlib.Path, "home", lambda: "/home/dummy")
-    monkeypatch.setattr(speedwagon.startup, "get_global_options", lambda: {})
+    monkeypatch.setattr(speedwagon.startup, "get_global_options", lambda *_: {})
 
     monkeypatch.setattr(
         speedwagon.config.config.WindowsConfig,

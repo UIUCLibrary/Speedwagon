@@ -144,15 +144,15 @@ class ConfigManager(contextlib.AbstractContextManager):
 
     BOOLEAN_SETTINGS = ["debug"]
 
-    def __init__(self, config_file: str):
+    def __init__(self, config_data: str):
         """Set up configuration manager."""
-        self._config_file = config_file
+        self._raw_data = config_data
         self.cfg_parser: Optional["configparser.ConfigParser"] = None
 
     def __enter__(self) -> "ConfigManager":
         """Open file with parser."""
         self.cfg_parser = configparser.ConfigParser()
-        self.cfg_parser.read(self._config_file)
+        self.cfg_parser.read_string(self._raw_data)
         return self
 
     def __exit__(

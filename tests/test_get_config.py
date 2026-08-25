@@ -86,9 +86,9 @@ def test_read_settings(tmpdir):
         cfg_parser = configparser.ConfigParser()
         cfg_parser["GLOBAL"] = global_settings
         cfg_parser.write(f)
-
-    with speedwagon.config.ConfigManager(config_file) as cfg:
-        assert cfg.global_settings['tessdata'] == "~/mytesseractdata"
+    with open(config_file, "r") as f:
+        with speedwagon.config.ConfigManager(f.read()) as cfg:
+            assert cfg.global_settings['tessdata'] == "~/mytesseractdata"
 
     shutil.rmtree(tmpdir)
     shortcut = os.path.join(tmpdir.dirname, "test_read_settingscurrent")
