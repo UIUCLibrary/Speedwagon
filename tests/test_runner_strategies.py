@@ -553,7 +553,7 @@ class TestBackgroundJobManager:
     def test_job_finished_called(self, monkeypatch):
         callbacks = Mock(name="callbacks")
         monkeypatch.setattr(
-            speedwagon.config.plugins,
+            speedwagon.utils,
             "read_file",
             Mock(return_value="")
         )
@@ -568,6 +568,7 @@ class TestBackgroundJobManager:
         )
         with runner_strategies.BackgroundJobManager() as manager:
             manager.valid_workflows = {"spam": SpamWorkflow}
+            manager.get_workflow_options_strategy = lambda workflow_name: {}
             manager.submit_job(
                 workflow_name="spam",
                 options={},
@@ -679,6 +680,31 @@ def test_simple_api_calls_exec_on_task(monkeypatch):
         mock_workflow, workflow_options={}
     )
     assert mock_task.exec.called is True
+
+def test_simple_api2_calls_exec_on_task(monkeypatch):
+    mock_workflow = Mock(
+        spec=speedwagon.Workflow,
+        name="Workflow",
+        get_additional_info=Mock()
+    )
+    mock_task = Mock(spec=speedwagon.tasks.Subtask)
+    mock_workflow.discover_task_metadata = Mock(return_value=[{}])
+    mock_workflow.request_more_info = Mock(return_value={})
+
+    monkeypatch.setattr(
+        runner_strategies.TaskGenerator,
+        "get_main_tasks",
+        create_autospec(
+            runner_strategies.TaskGenerator.get_main_tasks,
+            return_value=[mock_task]
+        )
+    )
+
+    runner_strategies.simple_api_run_workflow2(
+        mock_workflow, config=runner_strategies.JobSubmitConfig()
+    )
+    assert mock_task.exec.called is True
+
 @pytest.mark.parametrize(
     "key,workflow",
     [

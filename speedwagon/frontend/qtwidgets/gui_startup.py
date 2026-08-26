@@ -3,7 +3,6 @@
 from __future__ import annotations
 import abc
 import collections
-import contextlib
 import dataclasses
 import functools
 import pathlib
@@ -62,6 +61,7 @@ from speedwagon.utils import (
 )
 from speedwagon.tasks import system as system_tasks
 from speedwagon import info, startup
+from speedwagon import runner_strategies
 import speedwagon.exceptions
 import speedwagon.plugins
 from . import user_interaction
@@ -70,7 +70,6 @@ from . import runners
 from . import export
 
 if typing.TYPE_CHECKING:
-    from speedwagon import runner_strategies
     from speedwagon.frontend.qtwidgets import gui
     from speedwagon.frontend.qtwidgets.dialog import dialogs
     from speedwagon.job import (
@@ -123,6 +122,7 @@ class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
         super().__init__()
         self.app = app
         self.config = config
+        self._config_files_locator = None
 
     @property
     def settings(self) -> FullSettingsData:
@@ -503,24 +503,13 @@ class StartQtThreaded(AbsGuiStarter):
         self
     ) -> Dict[str, Type[speedwagon.job.Workflow]]:
         """Locate available workflows."""
-        loading_workflows_stream = io.StringIO()
-        with contextlib.redirect_stderr(loading_workflows_stream):
-            all_workflows = speedwagon.job.available_workflows(
-                strategy=speedwagon.job.OnlyActivatedPluginsWorkflows(
-                    plugin_settings=plugin_config.read_settings_data_plugins(
-                        read_file(self.config_locations.get_config_file())
-                    )
-                )
-            )
-        for workflow_name, error in self._find_invalid(all_workflows):
-            error_message = (
-                f"Unable to load workflow '{workflow_name}'. Reason: {error}"
-            )
-
-            self.logger.error(error_message)
-            self.windows.console.add_message(error_message)
-            del all_workflows[workflow_name]
-        return all_workflows
+        error_loggers: List[Callable[[str], None]] = [self.logger.error]
+        if self.windows is not None:
+            error_loggers.append(self.windows.console.add_message)
+        return startup.locate_workflows_with_reporting(
+            self.settings,
+            error_loggers
+        )
 
     def set_application_name(self, name: str) -> None:
         """Set the Qt application name and the window matching."""
@@ -750,9 +739,25 @@ class StartQtThreaded(AbsGuiStarter):
         main_app: typing.Optional[gui.MainWindow3] = None,
     ) -> None:
         """Submit job."""
+        plugin_config_data =\
+            speedwagon.config.plugins.read_settings_data_plugins(
+                speedwagon.utils.read_file(
+                    self.config_files_locator.get_config_file()
+                )
+            )
+        plugin_manager = speedwagon.plugins.get_plugin_manager(
+            functools.partial(
+                speedwagon.plugins.register_whitelisted_plugins,
+                get_whitelist_strategy=lambda: (
+                    speedwagon.config.plugins.get_whitelisted_plugins_from_config_data(
+                        plugin_config_data
+                    )
+                ),
+            )
+        )
         locate_jobs_strategy =\
-            speedwagon.job.FindAllWorkflowsPluggyStrategy(
-                config_file=self.config_files_locator.get_config_file()
+            speedwagon.job.FindAllWorkflowsPluggyPluginManagerStrategy(
+                plugin_manager
             )
 
         workflow_class =\
@@ -813,9 +818,6 @@ class StartQtThreaded(AbsGuiStarter):
 
         dialog_box.attach_logger(self.logger)
         job_manager.request_more_info = self.request_more_info
-        job_manager.config_file_location_strategy =\
-            self.config_files_locator
-
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=serialize_options(options),
@@ -958,6 +960,33 @@ def standalone_tab_editor(
     sys.exit(app.exec())
 
 
+def default_plugin_data_strategy():
+    return speedwagon.config.plugins.read_settings_data_plugins(
+        speedwagon.utils.read_file(
+            StandardConfigFileLocator(
+                config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+            ).get_config_file()
+        )
+    )
+
+
+def default_get_workflow_options_strategy(
+    workflow_name,
+    config_files_locator: Optional[AbsSettingLocator] = None
+) -> Dict[str, Any]:
+
+    config_files_locator = config_files_locator or StandardConfigFileLocator(
+        config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+    )
+    return speedwagon.config.workflow.get_workflow_options(
+        os.path.join(
+            config_files_locator.get_app_data_dir(),
+            speedwagon.config.workflow.WORKFLOWS_SETTINGS_YML_FILE_NAME,
+        ),
+        workflow_name,
+    )
+
+
 class SingleWorkflowJSON(AbsGuiStarter):
     """Start up class for loading instructions from a JSON file.
 
@@ -987,6 +1016,20 @@ class SingleWorkflowJSON(AbsGuiStarter):
         self.options: typing.Optional[SettingsData] = None
         self.workflow: typing.Optional[AbsWorkflow] = None
         self.logger = logger or logging.getLogger(__name__)
+        self.config_files_locator =\
+            StandardConfigFileLocator(
+                config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+            )
+
+        self.get_workflow_options_strategy: Callable[[str], Dict[str, Any]] =\
+            lambda workflow_name: default_get_workflow_options_strategy(
+                workflow_name,
+                config_files_locator=StandardConfigFileLocator(
+                    config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+                )
+            )
+        self.get_plugin_data_strategy: Callable[[], Dict[str, Any]] =\
+            default_plugin_data_strategy
 
     def load_json_string(self, data: str) -> None:
         """Load json data containing options and workflow info.
@@ -1014,7 +1057,10 @@ class SingleWorkflowJSON(AbsGuiStarter):
         self
     ) -> Dict[str, Type[speedwagon.job.Workflow]]:
         """Locate available workflows."""
-        return speedwagon.job.available_workflows()
+        return startup.locate_workflows_with_reporting(
+            self.settings,
+            error_loggers=[self.logger.error]
+        )
 
     def _set_workflow(self, workflow_name: str) -> None:
 
@@ -1036,8 +1082,12 @@ class SingleWorkflowJSON(AbsGuiStarter):
         with (
             speedwagon.runner_strategies.BackgroundJobManager() as job_manager
         ):
+            job_manager.get_workflow_options_strategy =\
+                self.get_workflow_options_strategy
 
-            # job_manager.config_file_location_strategy = self.config.
+            job_manager.get_plugin_data_strategy =\
+                self.get_plugin_data_strategy
+
             self._run_workflow(job_manager, self.workflow, self.options)
             if app is not None:
                 app.quit()

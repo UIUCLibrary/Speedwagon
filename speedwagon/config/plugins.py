@@ -36,12 +36,13 @@ def parse_plugin_config_strategy(config_file: str) -> PluginDataType:
 
 
 def get_whitelisted_plugins_from_config_file(
-    find_config_file_strategy: Callable[[], str] =
+    find_config_file_strategy: Callable[[], str] = (
         lambda: (
             config.StandardConfigFileLocator(
                 config_directory_prefix=common.DEFAULT_CONFIG_DIRECTORY_NAME
             ).get_config_file()
-        ),
+        )
+    ),
     parse_plugin_strategy: Optional[Callable[[str], PluginDataType]] = None,
 ) -> Set[Tuple[str, str]]:
     """Get whitelisted plugins."""
@@ -95,3 +96,18 @@ class IniSerializer(AbsSerializer):  # pylint: disable=R0903
         with io.StringIO() as string_writer:
             self.parser.write(string_writer)
             return string_writer.getvalue()
+
+
+def parse_plugin_data(settings):
+    sections = {}
+    for setting in settings:
+        if not setting.startswith("PLUGINS."):
+            continue
+        section = {}
+        for k, v in settings[setting].items():
+            if v.upper() not in ["TRUE", "FALSE"]:
+                logging.warning("Invalid plugin setting value: %s = %s", k, v)
+                continue
+            section[k] = v.upper() == "TRUE"
+        sections[setting.removeprefix("PLUGINS.")] = section
+    return sections

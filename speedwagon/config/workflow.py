@@ -7,12 +7,16 @@ import os
 import io
 from typing import Optional, Dict, List, TYPE_CHECKING, Callable
 
+import yaml
+import yaml.emitter
+
+import speedwagon
+
 try:  # pragma: no cover
     from typing import TypedDict
 except ImportError:  # pragma: no cover
     from typing_extensions import TypedDict
-import yaml
-import yaml.emitter
+
 
 from .config import StandardConfigFileLocator
 from .common import DEFAULT_CONFIG_DIRECTORY_NAME
@@ -287,6 +291,21 @@ class WorkflowSettingsManager(AbsWorkflowSettingsManager):
         self.settings_saver_strategy.save(workflow, settings)
 
 
+class ReadOnlyConfigBackend(AbsWorkflowBackend):
+    def __init__(self, data) -> None:
+        super().__init__()
+        self.data = data
+
+    def get(self, key: str, default=None) -> Optional[SettingsDataType]:
+        return self.data.get(key, default)
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __iter__(self):
+        return iter(self.data)
+
+
 class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
     """Yaml based config backend."""
 
@@ -360,3 +379,48 @@ def default_backend_factory(
 
     config_backend.workflow = new_workflow
     return config_backend
+
+
+def get_workflow_config_from_yaml_file(fp, workflow_name):
+    try:
+        yaml_data = yaml.safe_load(fp)
+        if workflow_name not in yaml_data:
+            raise speedwagon.exceptions.MissingConfiguration(
+                f"Workflow '{workflow_name}' not found in YAML data."
+            )
+        workflow_config = yaml_data[workflow_name]
+        try:
+            for section in workflow_config:
+                if any(
+                    (
+                        ("name" not in section),
+                        ("value" not in section)
+                    )
+                ):
+                    raise speedwagon.exceptions.FileFormatError(
+                        f"{section} missing 'name' or 'value'"
+                    )
+        except (
+            TypeError,
+            speedwagon.exceptions.FileFormatError,
+        ) as format_error:
+            raise speedwagon.exceptions.FileFormatError(
+                "Config file format not valid"
+            ) from format_error
+
+        return {
+            entry['name']: entry['value']
+            for entry in workflow_config
+        }
+    except yaml.YAMLError as yaml_error:
+        raise speedwagon.exceptions.FileFormatError(
+            "Error parsing YAML file"
+        ) from yaml_error
+
+
+def get_workflow_options(yml_file, workflow_name):
+    with open(yml_file, "r", encoding="utf-8") as fp:
+        return speedwagon.config.workflow.get_workflow_config_from_yaml_file(
+            fp,
+            workflow_name
+        )

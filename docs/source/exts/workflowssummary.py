@@ -28,7 +28,8 @@ with tempfile.TemporaryDirectory() as tmp:
     config_file = os.path.join(tmp, "speedwagon.ini")
     with open(config_file, "w") as f:
         f.write("")
-    config_strategy = speedwagon.job.FindAllWorkflowsPluggyStrategy(config_file)
+    # config_strategy = speedwagon.job.FindAllWorkflowsPluggyStrategy(config_file)
+    config_strategy = speedwagon.job.FindAllWorkflowsPluggyPluginManagerStrategy(plugin_manager=None)
 all_workflows = speedwagon.available_workflows(config_strategy)
 
 

@@ -873,3 +873,85 @@ debug = False
 bacon_workflows = True
 eggs_workflows = False
 """.strip()
+@pytest.fixture
+def sample_yml_data():
+    return """
+Generate MARC.XML Files:
+  - name: Getmarc server url
+    value: null
+Generate OCR Files:
+  - name: Tesseract data file location
+    value: /Users/speedwagon_user/tesseract_data_location_b
+Make PDF Book:
+  - name: Tesseract data file location
+    value: /Users/speedwagon_user/tesseract_data_location_a
+    """.strip()
+
+def test_get_workflow_config_from_yaml_file(sample_yml_data):
+    WORKFLOW_NAME = "Make PDF Book"
+    file_handler = io.StringIO(sample_yml_data)
+    assert speedwagon.config.workflow.get_workflow_config_from_yaml_file(
+        file_handler, WORKFLOW_NAME
+    )['Tesseract data file location'] == "/Users/speedwagon_user/tesseract_data_location_a"
+
+def test_get_workflow_config_from_yaml_file_missing_workflow(sample_yml_data):
+    WORKFLOW_NAME = "Missing Workflow"
+    file_handler = io.StringIO(sample_yml_data)
+    with pytest.raises(speedwagon.exceptions.MissingConfiguration):
+        speedwagon.config.workflow.get_workflow_config_from_yaml_file(
+            file_handler, WORKFLOW_NAME
+        )
+
+def test_get_workflow_config_from_yaml_file_invalid_yml_data():
+    WORKFLOW_NAME = "Generate MARC.XML Files"
+    bad_yml_data = """
+Generate MARC.XML Files:
+name: Getmarc server url
+  value: null
+"""
+    file_handler = io.StringIO(bad_yml_data)
+    with pytest.raises(speedwagon.exceptions.FileFormatError):
+        speedwagon.config.workflow.get_workflow_config_from_yaml_file(
+            file_handler, WORKFLOW_NAME
+        )
+@pytest.mark.parametrize(
+    "bad_yml_data",
+    [
+"""
+Generate MARC.XML Files:
+    name: Getmarc server url
+    value: null
+""",
+"""
+Generate MARC.XML Files:
+  - name: Getmarc server url
+""",
+"""Generate MARC.XML Files:
+    - value: null
+"""
+
+    ]
+)
+def test_get_workflow_config_from_yaml_file_wrong_format_data(bad_yml_data):
+    file_handler = io.StringIO(bad_yml_data)
+    with pytest.raises(speedwagon.exceptions.FileFormatError):
+        speedwagon.config.workflow.get_workflow_config_from_yaml_file(
+            file_handler, workflow_name="Generate MARC.XML Files"
+        )
+
+def test_parse_plugin_data():
+    settings = {
+        'global': {},
+        'PLUGINS.spam': {"spam": "True"}
+    }
+    results = speedwagon.config.plugins.parse_plugin_data(settings)
+    assert results == {"spam": {"spam": True}}
+def test_parse_plugin_data_warns_on_invalid_data(caplog):
+    settings = {
+        'PLUGINS.spam': {"spam": "123"},
+        'PLUGINS.bacon': {"bacon": "True"},
+    }
+    with caplog.at_level(logging.WARNING):
+        results = speedwagon.config.plugins.parse_plugin_data(settings)
+    assert caplog.messages
+    assert results['bacon'] == {'bacon': True}

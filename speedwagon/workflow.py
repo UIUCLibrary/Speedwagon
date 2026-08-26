@@ -3,15 +3,18 @@
 from __future__ import annotations
 import abc
 import dataclasses
+import functools
 import json
 import os
 import typing
 from typing import (
     Any,
+    Collection,
     Dict,
     List,
     Optional,
     Union,
+    Type,
     TYPE_CHECKING,
     Callable,
     TypeVar,
@@ -22,6 +25,8 @@ import speedwagon.job
 
 if TYPE_CHECKING:
     from speedwagon.validators import AbsOutputValidation
+    from speedwagon.config import FullSettingsData
+    from speedwagon.config.plugins import PluginDataType
 
 UserDataType = Union[str, bool, int, None]
 UserData = Dict[str, UserDataType]
@@ -286,9 +291,24 @@ def initialize_workflows(
 ) -> List[speedwagon.job.Workflow]:
     """Initialize workflow for use."""
     workflows_ = []
+
+    plugin_config_data = speedwagon.config.plugins.read_settings_data_plugins(
+        speedwagon.utils.read_file(backend_config_file)
+    )
+
+    plugin_manager = speedwagon.plugins.get_plugin_manager(
+        functools.partial(
+            speedwagon.plugins.register_whitelisted_plugins,
+            get_whitelist_strategy=lambda: (
+                speedwagon.config.plugins.get_whitelisted_plugins_from_config_data(
+                    plugin_config_data
+                )
+            ),
+        )
+    )
     locate_workflows_strategy =\
-        speedwagon.job.FindAllWorkflowsPluggyStrategy(
-            config_file=backend_config_file,
+        speedwagon.job.FindAllWorkflowsPluggyPluginManagerStrategy(
+            plugin_manager
         )
 
     for workflow_klass in sorted(
@@ -305,3 +325,75 @@ def initialize_workflows(
         workflow.set_options_backend(config_backend)
         workflows_.append(workflow)
     return workflows_
+
+
+class AbsLoadWorkflowsConfig(abc.ABC):
+    @abc.abstractmethod
+    def add_error_logger(self, logger: Callable[[str], None]):
+        """Add a logger to log errors."""
+
+    @abc.abstractmethod
+    def load(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        """Load workflows.
+
+        Verify that the workflows are valid and return a dictionary of
+        workflows. Invalid workflows do not fail but are logged using the
+        error loggers.
+        """
+
+
+class LoadWorkflowsUsingPluginsConfig(AbsLoadWorkflowsConfig):
+    def __init__(self):
+        self._error_loggers: List[Callable[[str], None]] = []
+        # self.config_file: Optional[str] = None
+        self.plugin_config_data: PluginDataType = {}
+        self.workflow_validation_checkers: List[
+            Callable[[[Type[speedwagon.job.Workflow]]], Collection[str]]
+        ] = []
+
+    def get_load_strategy(self) -> speedwagon.job.WorkflowLoadStrategy:
+        return speedwagon.job.OnlyActivatedPluginsWorkflows(
+            plugin_settings=self.plugin_config_data
+        )
+
+    def add_error_logger(self, logger: Callable[[str], None]):
+        self._error_loggers.append(logger)
+
+    def load(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
+        all_workflows = speedwagon.job.available_workflows(
+            strategy=self.get_load_strategy())
+        for workflow_name, workflow in all_workflows.copy().items():
+            for validator in self.workflow_validation_checkers:
+                errors = validator(workflow)
+                if errors:
+                    error_message = (
+                        f"Unable to load workflow '{workflow_name}'. "
+                        f"Reason: {', '.join(errors)}"
+                    )
+                    for logger in self._error_loggers:
+                        logger(error_message)
+                    del all_workflows[workflow_name]
+        return all_workflows
+
+
+def load_workflows(
+    config: AbsLoadWorkflowsConfig,
+    error_loggers: List[Callable[[str], None]] = None
+):
+    for logger in error_loggers or []:
+        config.add_error_logger(logger)
+    return config.load()
+
+
+def locate_errors_in_workflow(
+    workflow: Type[speedwagon.job.Workflow],
+    settings: FullSettingsData
+) -> List[str]:
+    try:
+        workflow(global_settings=settings.get("GLOBAL", {}))
+    except (
+        speedwagon.exceptions.SpeedwagonException,
+        AttributeError,
+    ) as error:
+        return [str(error)]
+    return []

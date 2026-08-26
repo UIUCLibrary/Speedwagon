@@ -214,6 +214,7 @@ class TestSingleWorkflowJSON:
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
                 app=None
             )
+        startup.get_workflow_options_strategy = lambda workflow_name: {}
         exit_calls = []
         monkeypatch.setattr(QtWidgets.QApplication, 'exit', lambda: exit_calls.append(1))
 
@@ -238,6 +239,11 @@ class TestSingleWorkflowJSON:
             "run_job_on_thread",
             lambda *args, **kwargs: Mock()
         )
+        # monkeypatch.setattr(
+        #     speedwagon.runner_strategies.BackgroundJobManager,
+        #     "get_workflow_options",
+        #     lambda *args, **kwargs: {}
+        # )
         monkeypatch.setattr(
             speedwagon.frontend.qtwidgets.gui,
             "MainWindow3",
@@ -626,9 +632,8 @@ class TestStartQtThreaded:
         monkeypatch.setattr(
             speedwagon.job, "available_workflows", lambda *_, **__: {}
         )
-
         monkeypatch.setattr(
-            speedwagon.config.plugins,
+            speedwagon.utils,
             "read_file",
             Mock(return_value="")
         )
@@ -651,6 +656,8 @@ class TestStartQtThreaded:
         )
         def parse_plugin_config_strategy(config_file):
             return {}
+        monkeypatch.setattr(speedwagon.utils, "read_file", lambda *_: "")
+        monkeypatch.setattr(speedwagon.config.plugins, "read_settings_data_plugins", lambda *_: {})
         monkeypatch.setattr(speedwagon.config.plugins, "parse_plugin_config_strategy", parse_plugin_config_strategy)
         monkeypatch.setattr(
             speedwagon.config.config.WindowsConfig,
@@ -1221,7 +1228,7 @@ def test_build_request_settings_dialog2(qtbot, monkeypatch):
     )
     on_success_save_updated_settings = Mock(name="on_success_save_updated_settings")
     monkeypatch.setattr(
-        speedwagon.config.plugins,
+        speedwagon.utils,
         "read_file",
         Mock(return_value="")
     )

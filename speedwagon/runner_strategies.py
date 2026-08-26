@@ -30,17 +30,17 @@ from typing import (
 import functools
 
 import speedwagon.config
-from speedwagon.config import StandardConfigFileLocator
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 import speedwagon.exceptions
+import speedwagon.job
 from speedwagon import runner
+import speedwagon.utils
 
 _T = TypeVar("_T", bound=Mapping[str, object])
 
 if typing.TYPE_CHECKING:
     from speedwagon.job import AbsWorkflow, Workflow
     from speedwagon.config import SettingsData
-    from speedwagon.config.config import AbsSettingLocator
     import speedwagon.tasks
 
 __all__ = [
@@ -723,6 +723,33 @@ def attach_logger_handlers(
                 logger.removeHandler(handler)
 
 
+def get_plugin_data(config_file):
+    return speedwagon.config.plugins.read_settings_data_plugins(
+        speedwagon.utils.read_file(config_file)
+    )
+
+
+def _default_get_plugin_data_strategy():
+    config_file_locator =\
+        speedwagon.config.StandardConfigFileLocator(
+            DEFAULT_CONFIG_DIRECTORY_NAME
+        )
+    return get_plugin_data(config_file_locator.get_config_file())
+
+
+def _default_get_workflow_options_strategy(workflow_name):
+    config_file_locator = speedwagon.config.StandardConfigFileLocator(
+        DEFAULT_CONFIG_DIRECTORY_NAME
+    )
+    return speedwagon.config.workflow.get_workflow_options(
+        os.path.join(
+            config_file_locator.get_app_data_dir(),
+            speedwagon.config.workflow.WORKFLOWS_SETTINGS_YML_FILE_NAME,
+        ),
+        workflow_name,
+    )
+
+
 class BackgroundJobManager(AbsJobManager2):
     def __init__(self) -> None:
         super().__init__()
@@ -740,8 +767,9 @@ class BackgroundJobManager(AbsJobManager2):
             Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
         self.global_settings: Optional[SettingsData] = None
-        self.config_file_location_strategy: AbsSettingLocator =\
-            StandardConfigFileLocator(DEFAULT_CONFIG_DIRECTORY_NAME)
+        self.get_workflow_options_strategy =\
+            _default_get_workflow_options_strategy
+        self.get_plugin_data_strategy = _default_get_plugin_data_strategy
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
@@ -751,18 +779,26 @@ class BackgroundJobManager(AbsJobManager2):
     def run_job_on_thread(
         self,
         workflow_name: str,
-        options: Dict[str, Dict[str, Any]],
+        config: JobSubmitConfig,
         liaison: JobManagerLiaison,
     ) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             try:
                 task_scheduler = Run(tmp_dir)
+
+                plugin_manager = speedwagon.plugins.get_plugin_manager(
+                    functools.partial(
+                        speedwagon.plugins.register_whitelisted_plugins,
+                        get_whitelist_strategy=lambda: (
+                            speedwagon.config.plugins.get_whitelisted_plugins_from_config_data(
+                                self.get_plugin_data_strategy()
+                            )
+                        ),
+                    )
+                )
                 job_lookup_strategy =\
-                    speedwagon.job.FindAllWorkflowsPluggyStrategy(
-                        config_file=(
-                            self.config_file_location_strategy
-                            .get_config_file()
-                        )
+                    speedwagon.job.FindAllWorkflowsPluggyPluginManagerStrategy(
+                        plugin_manager
                     )
 
                 task_scheduler.workflow_loader_strategy =\
@@ -778,20 +814,18 @@ class BackgroundJobManager(AbsJobManager2):
                     task_scheduler.valid_workflows = self.valid_workflows
 
                 workflow = task_scheduler.get_workflow(workflow_name)(
-                    global_settings=options.get("global_settings")
+                    global_settings=config.global_settings
                 )
-                options_backend = speedwagon.config.YAMLWorkflowConfigBackend()
-                backend_yaml = os.path.join(
-                    self.config_file_location_strategy.get_app_data_dir(),
-                    speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
+                workflow_options = config.workflow
+                workflow.set_options_backend(
+                    speedwagon.config.workflow.ReadOnlyConfigBackend(
+                        workflow_options
+                    )
                 )
-                options_backend.workflow = workflow
-                options_backend.yaml_file = backend_yaml
-                workflow.set_options_backend(options_backend)
                 liaison.events.started.wait()
 
                 for task in task_scheduler.iter_tasks(
-                    workflow, options["options"]
+                    workflow, config.job
                 ):
                     if liaison.events.is_stopped() is True:
                         liaison.callbacks.cancelling_complete()
@@ -868,15 +902,19 @@ class BackgroundJobManager(AbsJobManager2):
             self._background_thread is None
             or self._background_thread.is_alive() is False
         ):
+
+            workflow_options =\
+                self.get_workflow_options_strategy(workflow_name)
             new_thread = threading.Thread(
                 target=self.run_job_on_thread,
                 kwargs={
                     "workflow_name": workflow_name,
                     "liaison": liaison,
-                    "options": {
-                        "options": options,
-                        "global_settings": self.global_settings,
-                    },
+                    "config": JobSubmitConfig(
+                        job=options or {},
+                        workflow=workflow_options,
+                        global_settings=self.global_settings or {},
+                    ),
                 },
             )
             new_thread.start()
@@ -925,17 +963,59 @@ def simple_api_run_workflow(
         logger: file stream handle for logging data
         request_factory: factory for generating the user input mid-job
     """
+    warnings.warn(
+        "simple_api_run_workflow is deprecated and now calls "
+        "simple_api_run_workflow2 under the hood. Use "
+        "simple_api_run_workflow2 instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    simple_api_run_workflow2(
+        workflow,
+        config=JobSubmitConfig(
+            workflow=workflow_options
+        ),
+        logger=logger,
+        request_factory=request_factory
+    )
+
+
+@dataclasses.dataclass(frozen=True)
+class JobSubmitConfig:
+    workflow: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    job: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    global_settings: SettingsData = dataclasses.field(default_factory=dict)
+
+
+def simple_api_run_workflow2(
+    workflow: Workflow,
+    config: JobSubmitConfig,
+    logger: Optional[logging.Logger] = None,
+    request_factory: Optional[
+        speedwagon.frontend.interaction.UserRequestFactory
+    ] = None,
+) -> None:
+    """Run a workflow and block until finished.
+
+    This is the simplest API for running a workflow.
+
+    Args:
+        workflow: Workflow
+        config: Job config data
+        logger: file stream handle for logging data
+        request_factory: factory for generating the user input mid-job
+    """
     task_scheduler = speedwagon.runner_strategies.TaskScheduler(".")
     log_handler = None
 
     if logger is None:
         logger = logging.getLogger()
         log_handler = logging.StreamHandler(stream=sys.stdout)
+        log_handler.setLevel(logging.INFO)
         logger.addHandler(log_handler)
+        task_scheduler.logger.setLevel(logging.INFO)
     try:
         task_scheduler.logger = logger
-        logging.StreamHandler(stream=sys.stdout)
-        task_scheduler.logger.setLevel(logging.INFO)
 
         def request_more_info(
             workflow: Workflow[_T],
@@ -950,14 +1030,17 @@ def simple_api_run_workflow(
             return workflow.get_additional_info(
                 factory, options, pretask_results
             )
-
         task_scheduler.request_more_info = request_more_info
+        workflow.set_options_backend(
+            speedwagon.config.workflow.ReadOnlyConfigBackend(config.workflow)
+        )
         for task in task_scheduler.iter_tasks(
-            workflow=workflow, options=workflow_options
+            workflow=workflow, options=config.job
         ):
             task.parent_task_log_q = type(
                 "reporter", (object,), {"append": logger.info}
             )
+            task.logger = logger
             logger.info("%s\n", task.task_description())
             task.exec()
     finally:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import abc
-import functools
 import importlib.util
 import importlib.metadata
 import inspect
@@ -30,7 +29,6 @@ from typing import (
 
 import speedwagon.plugins
 
-from speedwagon.config import common, StandardConfigFileLocator
 import speedwagon.workflows
 
 if typing.TYPE_CHECKING:
@@ -370,37 +368,17 @@ class OnlyActivatedPluginsWorkflows(AbsWorkflowFinder):
         return all_active_workflows
 
 
-class FindAllWorkflowsPluggyStrategy(AbsWorkflowFinder):
-    def __init__(
-        self,
-        config_file: Optional[str] = None,
-        plugin_manager: Optional[PluginManager] = None,
-    ) -> None:
+class FindAllWorkflowsPluggyPluginManagerStrategy(AbsWorkflowFinder):
+    def __init__(self, plugin_manager: Optional[PluginManager] = None) -> None:
         super().__init__()
-        self.config_file = config_file or StandardConfigFileLocator(
-            config_directory_prefix=common.DEFAULT_CONFIG_DIRECTORY_NAME
-        ).get_config_file()
         self.plugin_manager: PluginManager = (
-            plugin_manager or self.get_plugin_manager()
+            plugin_manager or self.get_default_plugin_manager()
         )
 
-    def get_plugin_manager(self) -> PluginManager:
-
-        def get_whitelist_with_config_file():
-            # Avoid circular imports!  pylint: disable=import-outside-toplevel
-            from speedwagon.config import (
-                plugins as plugin_config
-            )
-            return plugin_config.get_whitelisted_plugins_from_config_file(
-                find_config_file_strategy=lambda: self.config_file
-            )
-
-        register_strategy =\
-            functools.partial(
-                speedwagon.plugins.register_whitelisted_plugins,
-                get_whitelist_strategy=get_whitelist_with_config_file
-            )
-        return speedwagon.plugins.get_plugin_manager(register_strategy)
+    def get_default_plugin_manager(self) -> PluginManager:
+        return speedwagon.plugins.get_plugin_manager(
+            speedwagon.plugins.register_all_plugins
+        )
 
     def locate(self) -> Dict[str, Type[Workflow]]:
         registered_workflows = self.plugin_manager.hook.registered_workflows()
@@ -422,7 +400,7 @@ def available_workflows(
         Dictionary of all workflow
 
     """
-    strategy = strategy or FindAllWorkflowsPluggyStrategy()
+    strategy = strategy or FindAllWorkflowsPluggyPluginManagerStrategy()
     return strategy.locate()
 
 
