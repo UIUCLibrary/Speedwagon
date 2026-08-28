@@ -507,7 +507,7 @@ class InnerForm(QtWidgets.QWidget):
 
     @staticmethod
     def iter_row_rect(
-        layout: QtWidgets.QFormLayout, device: InnerForm
+        layout: QtWidgets.QFormLayout, device: QtGui.QPaintDevice
     ) -> Iterable[QtCore.QRect]:
         last_height = 0
         for row in range(layout.rowCount()):
@@ -544,7 +544,7 @@ class InnerForm(QtWidgets.QWidget):
         for i, rect in enumerate(
             self.iter_row_rect(
                 typing.cast(QtWidgets.QFormLayout, self.layout()),
-                typing.cast(InnerForm, painter.device()),
+                painter.device(),
             )
         ):
             if i % 2 == 0:
