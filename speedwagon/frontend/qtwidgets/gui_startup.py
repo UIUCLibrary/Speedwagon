@@ -451,13 +451,6 @@ def import_workflow_config(
         parent.logger.error("Failed to load workflow. Reason: %s", error)
 
 
-def get_workflow_options(workflow_name: str, yaml_file: str) -> SettingsData:
-    return speedwagon.config.workflow.get_workflow_options(
-        yaml_file,
-        workflow_name,
-    )
-
-
 class StartQtThreaded(AbsGuiStarter):
     """Start a Qt Widgets base app using threads for job workers."""
 
@@ -552,11 +545,13 @@ class StartQtThreaded(AbsGuiStarter):
         )
 
         self.get_workflow_options_strategy = (
-            lambda workflow_name: get_workflow_options(
-                workflow_name,
-                os.path.join(
-                    self.config_files_locator.get_app_data_dir(),
-                    WORKFLOWS_SETTINGS_YML_FILE_NAME,
+            lambda workflow_name: (
+                speedwagon.config.workflow.get_workflow_options(
+                    os.path.join(
+                        self.config_files_locator.get_app_data_dir(),
+                        WORKFLOWS_SETTINGS_YML_FILE_NAME,
+                    ),
+                    workflow_name
                 )
             )
         )
