@@ -514,9 +514,15 @@ class InnerForm(QtWidgets.QWidget):
             label = layout.itemAt(
                 row, QtWidgets.QFormLayout.ItemRole.LabelRole
             )
+            if not label:
+                logger.warning("No label found for row %s", row)
+                continue
             widget = layout.itemAt(
                 row, QtWidgets.QFormLayout.ItemRole.FieldRole
             )
+            if not widget:
+                logger.warning("No widget found for row %s", row)
+                continue
 
             y_axis = label.geometry().y()
             bottom_point = widget.geometry().y() + widget.geometry().height()
