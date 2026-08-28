@@ -451,6 +451,13 @@ def import_workflow_config(
         parent.logger.error("Failed to load workflow. Reason: %s", error)
 
 
+def get_workflow_options(workflow_name: str, yaml_file: str) -> SettingsData:
+    return speedwagon.config.workflow.get_workflow_options(
+        yaml_file,
+        workflow_name,
+    )
+
+
 class StartQtThreaded(AbsGuiStarter):
     """Start a Qt Widgets base app using threads for job workers."""
 
@@ -494,10 +501,26 @@ class StartQtThreaded(AbsGuiStarter):
             | Callable[[AbsConfigSettings, SettingsLocations], None]
         ] = []
 
+        self.get_plugin_data_strategy: Callable[[], PluginDataType] =\
+            self._default_get_plugin_data_strategy
+
+        self.get_workflow_options_strategy: Callable[[str], SettingsData] =\
+            lambda workflow_name: default_get_workflow_options_strategy(
+                workflow_name,
+                config_files_locator=StandardConfigFileLocator(
+                    config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+                )
+            )
+
     @property
     def config_locations(self) -> AbsSettingLocator:
         """Get config."""
         return self.config_files_locator
+
+    def _default_get_plugin_data_strategy(self):
+        return runner_strategies.get_plugin_data(
+            self.config_locations.get_config_file()
+        )
 
     def locate_available_workflows(
         self
@@ -523,11 +546,24 @@ class StartQtThreaded(AbsGuiStarter):
         settings_resolver.config_file_locator_strategy = (
             self.config_locations.get_config_file
         )
-
         self.config = ResolveSettingsStrategyConfigAdapter(
             source_application_settings=settings_resolver,
             workflow_backend=factory,
         )
+
+        self.get_workflow_options_strategy = (
+            lambda workflow_name: get_workflow_options(
+                workflow_name,
+                os.path.join(
+                    self.config_files_locator.get_app_data_dir(),
+                    WORKFLOWS_SETTINGS_YML_FILE_NAME,
+                )
+            )
+        )
+        self.get_plugin_data_strategy =\
+            lambda: runner_strategies.get_plugin_data(
+                self.config_locations.get_config_file()
+            )
 
     def initialize(self) -> None:
         """Initialize the application before opening the main window."""
@@ -653,12 +689,16 @@ class StartQtThreaded(AbsGuiStarter):
                     cls, exception, traceback, self.app, self.windows
                 )
             )
-
             with (
                 speedwagon.runner_strategies.BackgroundJobManager() as
                 job_manager
             ):
                 job_manager.global_settings = self.settings.get("GLOBAL", {})
+                job_manager.get_plugin_data_strategy =\
+                    self.get_plugin_data_strategy
+
+                job_manager.get_workflow_options_strategy =\
+                    self.get_workflow_options_strategy
 
                 self.windows = self.build_main_window(job_manager)
                 self._request_window = user_interaction.QtRequestMoreInfo(
@@ -821,6 +861,10 @@ class StartQtThreaded(AbsGuiStarter):
 
         dialog_box.attach_logger(self.logger)
         job_manager.request_more_info = self.request_more_info
+        job_manager.get_workflow_options_strategy =\
+            self.get_workflow_options_strategy
+
+        job_manager.get_plugin_data_strategy = self.get_plugin_data_strategy
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=serialize_options(options),
@@ -976,7 +1020,7 @@ def default_plugin_data_strategy():
 def default_get_workflow_options_strategy(
     workflow_name,
     config_files_locator: Optional[AbsSettingLocator] = None
-) -> Dict[str, Any]:
+) -> SettingsData:
 
     config_files_locator = config_files_locator or StandardConfigFileLocator(
         config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
