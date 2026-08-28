@@ -932,3 +932,27 @@ class TestToolConsole:
         assert len(logger.handlers) == 1
         widget.close()
         assert len(logger.handlers) == 0
+
+class TestInnerForm:
+    def test_iter_row_rect(self, qtbot, ):
+        parent = QtWidgets.QWidget()
+        form_widget = speedwagon.frontend.qtwidgets.widgets.InnerForm(
+            parent=parent
+        )
+        qtbot.add_widget(form_widget)
+        layout = QtWidgets.QFormLayout(form_widget)
+        layout.addRow("Test", QtWidgets.QLineEdit())
+        painter = QtWidgets.QStylePainter(form_widget)
+        assert len(list(form_widget.iter_row_rect(layout, painter.device()))) == 1
+
+    def test_iter_row_rect_no_label(self, qtbot):
+        parent = QtWidgets.QWidget()
+        form_widget = speedwagon.frontend.qtwidgets.widgets.InnerForm(
+            parent=parent
+        )
+        qtbot.add_widget(form_widget)
+        layout = QtWidgets.QFormLayout(form_widget)
+        layout.addRow(QtWidgets.QLineEdit())
+        painter = QtWidgets.QStylePainter(form_widget)
+        assert len(list(form_widget.iter_row_rect(layout, painter.device()))) != 1
+

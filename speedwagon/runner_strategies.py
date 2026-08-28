@@ -713,7 +713,7 @@ def get_plugin_data(config_file: str) -> PluginDataType:
     )
 
 
-def _default_get_plugin_data_strategy() -> PluginDataType:
+def default_get_plugin_data_strategy() -> PluginDataType:
     config_file_locator =\
         speedwagon.config.StandardConfigFileLocator(
             DEFAULT_CONFIG_DIRECTORY_NAME
@@ -755,7 +755,7 @@ class BackgroundJobManager(BaseJobManager):
             _default_get_workflow_options_strategy
 
         self.get_plugin_data_strategy: Callable[[], PluginDataType] =\
-            _default_get_plugin_data_strategy
+            default_get_plugin_data_strategy
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None

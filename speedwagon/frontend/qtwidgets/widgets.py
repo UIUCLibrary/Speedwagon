@@ -507,16 +507,22 @@ class InnerForm(QtWidgets.QWidget):
 
     @staticmethod
     def iter_row_rect(
-        layout: QtWidgets.QFormLayout, device: InnerForm
+        layout: QtWidgets.QFormLayout, device: QtGui.QPaintDevice
     ) -> Iterable[QtCore.QRect]:
         last_height = 0
         for row in range(layout.rowCount()):
             label = layout.itemAt(
                 row, QtWidgets.QFormLayout.ItemRole.LabelRole
             )
+            if not label:
+                logger.warning("No label found for row %s", row)
+                continue
             widget = layout.itemAt(
                 row, QtWidgets.QFormLayout.ItemRole.FieldRole
             )
+            if not widget:
+                logger.warning("No widget found for row %s", row)
+                continue
 
             y_axis = label.geometry().y()
             bottom_point = widget.geometry().y() + widget.geometry().height()
@@ -538,7 +544,7 @@ class InnerForm(QtWidgets.QWidget):
         for i, rect in enumerate(
             self.iter_row_rect(
                 typing.cast(QtWidgets.QFormLayout, self.layout()),
-                typing.cast(InnerForm, painter.device()),
+                painter.device(),
             )
         ):
             if i % 2 == 0:
