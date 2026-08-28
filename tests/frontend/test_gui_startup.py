@@ -740,6 +740,14 @@ class TestStartQtThreaded:
         start.config.application_settings = Mock(return_value={})
         assert len(start.locate_available_workflows()) > 0
 
+    def test_set_workflow_config_backend_factory(self, qtbot, monkeypatch):
+        monkeypatch.setattr(speedwagon.config.config.ConfigFileSetter, "read_config_data", Mock(return_value=""))
+        start = gui_startup.StartQtThreaded(app=Mock())
+        factory = Mock()
+        start.set_workflow_config_backend_factory(factory)
+        start.config.workflow_settings("dummy")
+        factory.assert_called_once()
+
     def test_locate_available_workflows_error_prints_message(self, qtbot, monkeypatch):
         monkeypatch.setattr(gui_startup, "read_file", Mock(return_value=""))
         def constructor(*args, **kwargs):
