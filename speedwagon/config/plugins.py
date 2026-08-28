@@ -18,7 +18,8 @@ from speedwagon.utils import read_file
 
 __all__ = [
     "get_whitelisted_plugins_from_config_file",
-    "get_whitelisted_plugins_from_config_data"
+    "get_whitelisted_plugins_from_config_data",
+    "PluginDataType"
 ]
 
 PluginDataType = Dict[str, Dict[str, bool]]
@@ -98,14 +99,19 @@ class IniSerializer(AbsSerializer):  # pylint: disable=R0903
             return string_writer.getvalue()
 
 
-def parse_plugin_data(settings):
+def parse_plugin_data(settings: common.FullSettingsData) -> PluginDataType:
     sections = {}
     for setting in settings:
         if not setting.startswith("PLUGINS."):
             continue
         section = {}
         for k, v in settings[setting].items():
-            if v.upper() not in ["TRUE", "FALSE"]:
+            try:
+                if not isinstance(v, str):
+                    raise ValueError
+                if v.upper() not in ["TRUE", "FALSE"]:
+                    raise ValueError
+            except ValueError:
                 logging.warning("Invalid plugin setting value: %s = %s", k, v)
                 continue
             section[k] = v.upper() == "TRUE"

@@ -36,6 +36,7 @@ from typing import (
     Mapping,
     Union,
     Iterable,
+    Set,
     Sequence, cast,
 )
 
@@ -61,7 +62,8 @@ from speedwagon.utils import parse_json_file, read_file
 
 if TYPE_CHECKING:
     import speedwagon.frontend.qtwidgets.gui_startup
-    from speedwagon.config.common import SettingsData
+    from speedwagon.config.common import SettingsData, FullSettingsData
+    from speedwagon.config.plugins import PluginDataType
     from speedwagon.config.config import (
         AbsSettingLocator,
         AbsConfigSettings,
@@ -508,7 +510,6 @@ def run_command(
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
-    # config_files_locator: AbsSettingLocator
     startup_tasks: Sequence[
         Union[
             AbsSystemTask,
@@ -517,7 +518,7 @@ class AbsStarter(metaclass=abc.ABCMeta):
     ]
 
     @property
-    def config_files_locator(self):
+    def config_files_locator(self) -> AbsSettingLocator:
         warnings.warn(
             "config_files_locator should be avoided."
             "Try to move to config management object",
@@ -527,11 +528,11 @@ class AbsStarter(metaclass=abc.ABCMeta):
         return self._config_files_locator
 
     @config_files_locator.setter
-    def config_files_locator(self, value) -> None:
+    def config_files_locator(self, value: AbsSettingLocator) -> None:
         self._config_files_locator = value
 
     @property
-    def available_workflows(self):
+    def available_workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
         return self.locate_available_workflows()
 
     @abc.abstractmethod
@@ -570,26 +571,19 @@ class AbsStarter(metaclass=abc.ABCMeta):
         """
 
 
-def default_config_strategy(config_files_locator):
-    config_name = os.path.split(config_files_locator.get_app_data_dir())[
-        -1
-    ]
-    return speedwagon.config.StandardConfig(config_name)
-
-
-def default_get_plugin_data_strategy():
+def default_get_plugin_data_strategy() -> PluginDataType:
     config_files_locator = StandardConfigFileLocator(
         config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
     )
-    speedwagon.config.plugins.read_settings_data_plugins(
+    return speedwagon.config.plugins.read_settings_data_plugins(
         speedwagon.utils.read_file(config_files_locator.get_config_file())
     )
 
 
 def default_get_workflow_options_strategy(
-    workflow_name,
+    workflow_name: str,
     config_files_locator: Optional[AbsSettingLocator] = None
-) -> Dict[str, Any]:
+) -> SettingsData:
 
     config_files_locator = config_files_locator or StandardConfigFileLocator(
         config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
@@ -610,9 +604,10 @@ class SingleWorkflowJSON(AbsStarter):
         self.options: Optional[Dict[str, Any]] = None
         self.global_settings: Optional[SettingsData] = None
         self.workflow: Optional[speedwagon.job.Workflow] = None
-        self.get_workflow_options_strategy: Callable[[str], Dict[str, Any]] =\
+        self.get_workflow_options_strategy: Callable[[str], SettingsData] =\
             default_get_workflow_options_strategy
-        self.get_plugin_data_strategy = default_get_plugin_data_strategy
+        self.get_plugin_data_strategy: Callable[[], PluginDataType] =\
+            default_get_plugin_data_strategy
 
     def run(self) -> int:
         if self.workflow:
@@ -758,7 +753,7 @@ def get_startup_tasks(
     for task in user_tasks or []:
         task_builder.add(task)
 
-    def get_whitelist_strategy():
+    def get_whitelist_strategy() -> Set[Tuple[str, str]]:
         config_file = config_file_locator.get_config_file()
         logger.debug(
             "Using config file to load whitelisted plugins: %s",
@@ -782,7 +777,10 @@ def get_startup_tasks(
     return list(task_builder.iter_tasks())
 
 
-def locate_workflows_with_reporting(settings, error_loggers=None):
+def locate_workflows_with_reporting(
+    settings: FullSettingsData,
+    error_loggers: Optional[List[Callable[[str], None]]] = None
+) -> Dict[str, Type[speedwagon.job.Workflow]]:
     workflow_load_config = (
         speedwagon.workflow.LoadWorkflowsUsingPluginsConfig()
     )

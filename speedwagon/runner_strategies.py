@@ -15,39 +15,48 @@ import threading
 import traceback
 import typing
 import warnings
+from abc import ABC
 from types import TracebackType
 from typing import (
     Any,
     Callable,
+    Collection,
     Dict,
     Iterator,
+    Iterable,
     List,
     Mapping,
     Optional,
+    Set,
+    Tuple,
     Type,
     TypeVar,
 )
 import functools
 
-import speedwagon.config
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
+import speedwagon.config
+import speedwagon.config.plugins as plugins_config
 import speedwagon.exceptions
 import speedwagon.job
-from speedwagon import runner
+import speedwagon.plugins
+import speedwagon.tasks
 import speedwagon.utils
 
 _T = TypeVar("_T", bound=Mapping[str, object])
 
 if typing.TYPE_CHECKING:
-    from speedwagon.job import AbsWorkflow, Workflow
+    from speedwagon.job import Workflow
     from speedwagon.config import SettingsData
-    import speedwagon.tasks
+    from speedwagon.config.plugins import PluginDataType
+    from speedwagon.tasks import Result
+    from speedwagon.tasks.tasks import BaseTask
 
 __all__ = [
-    "RunRunner",
     "TaskDispatcher",
     "TaskScheduler",
     "simple_api_run_workflow",
+    "simple_api_run_workflow2",
 ]
 
 module_logger = logging.getLogger(__name__)
@@ -124,46 +133,26 @@ class AbsJobCallbacks(abc.ABC):
         """Update the job's progress."""
 
 
-class RunRunner:
-    """Context for running AbsRunner2 strategies."""
-
-    def __init__(self, strategy: runner.AbsRunner2) -> None:
-        """Create a new runner executor."""
-        self._strategy = strategy
-
-    def run(
-        self,
-        tool: AbsWorkflow,
-        options: typing.Mapping[str, object],
-        logger: logging.Logger,
-        completion_callback=None,
-    ) -> None:
-        """Execute runner job."""
-        self._strategy.run(tool, options, logger, completion_callback)
-
-
 class TaskGenerator:
     def __init__(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         working_directory: str,
-        caller: typing.Optional["TaskScheduler"] = None,
+        caller: Optional["TaskScheduler"] = None,
     ) -> None:
         self.workflow = workflow
         self.options = options
         self.working_directory = working_directory
-        self.current_task: typing.Optional[int] = None
-        self.total_task: typing.Optional[int] = None
+        self.current_task: Optional[int] = None
+        self.total_task: Optional[int] = None
         self.caller = caller
 
-    def generate_report(
-        self, results: List[speedwagon.tasks.Result]
-    ) -> typing.Optional[str]:
+    def generate_report(self, results: List[Result]) -> Optional[str]:
         return self.workflow.generate_report(results, **self.options)
 
-    def tasks(self) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
-        pretask_results: List[speedwagon.tasks.Result[Any, Any]] = []
+    def tasks(self) -> Iterable[BaseTask]:
+        pretask_results: List[Result[Any, Any]] = []
 
         results = []
 
@@ -194,9 +183,7 @@ class TaskGenerator:
             results=results,
         )
 
-    def get_pre_tasks(
-        self, working_directory: str
-    ) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
+    def get_pre_tasks(self, working_directory: str) -> Iterable[BaseTask]:
         task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory,
@@ -212,7 +199,7 @@ class TaskGenerator:
         working_directory: str,
         pretask_results,
         additional_data,
-    ) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
+    ) -> Iterable[BaseTask]:
         metadata_tasks = (
             self.workflow.discover_task_metadata(
                 pretask_results, additional_data, user_args=self.options
@@ -239,8 +226,8 @@ class TaskGenerator:
     def get_post_tasks(
         self,
         working_directory: str,
-        results: typing.List[speedwagon.tasks.Result],
-    ) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
+        results: List[Result],
+    ) -> Iterable[BaseTask]:
         task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory,
@@ -388,16 +375,16 @@ class TaskDispatcher:
     def __init__(
         self,
         job_queue: queue.Queue,
-        logger: typing.Optional[logging.Logger] = None,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         """Create a new task dispatcher object."""
         super().__init__()
         self.job_queue = job_queue
-        self.signals: typing.Mapping[str, threading.Event] = {
+        self.signals: Mapping[str, threading.Event] = {
             "stop": threading.Event(),
             "finished": threading.Event(),
         }
-        self.thread: typing.Optional[threading.Thread] = None
+        self.thread: Optional[threading.Thread] = None
         self.current_task: Optional[speedwagon.tasks.Subtask] = None
         self.logger = logger or logging.getLogger(__name__)
         self.current_state: AbsTaskDispatcherState = TaskDispatcherIdle(self)
@@ -438,7 +425,7 @@ class AbsTaskGeneratorStrategy(abc.ABC):
     def iterate_tasks(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         task_scheduler: TaskScheduler,
     ):
         """Generate and iterate tasks."""
@@ -447,7 +434,7 @@ class AbsTaskGeneratorStrategy(abc.ABC):
     def generate_report(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         results: List[Any],
     ) -> Optional[str]:
         """Generate Text Report."""
@@ -466,7 +453,7 @@ class TaskGeneratorStrategy(AbsTaskGeneratorStrategy):
     def generate_report(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         results: List[Any],
     ) -> Optional[str]:
         return workflow.generate_report(results, user_args=options)
@@ -474,7 +461,7 @@ class TaskGeneratorStrategy(AbsTaskGeneratorStrategy):
     def iterate_tasks(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         task_scheduler: TaskScheduler,
     ):
         workflow.workflow_options()
@@ -507,29 +494,27 @@ class TaskScheduler:
             speedwagon.frontend.reporter.RunnerDisplay
         ] = None
 
-        self.current_task_progress: typing.Optional[int] = None
-        self.total_tasks: typing.Optional[int] = None
+        self.current_task_progress: Optional[int] = None
+        self.total_tasks: Optional[int] = None
         self._task_queue: "queue.Queue" = queue.Queue(maxsize=1)
 
-        self._request_more_info: typing.Callable[
+        self._request_more_info: Callable[
             [
                 Workflow,
                 Mapping[str, object],
-                List[speedwagon.tasks.Result[Any, Any]],
+                List[Result[Any, Any]],
             ],
-            typing.Optional[Mapping[str, Any]]
+            Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
 
     @property
-    def request_more_info(
-        self,
-    ) -> typing.Callable[
+    def request_more_info(self) -> Callable[
         [
             Workflow,
             Mapping[str, object],
-            List[speedwagon.tasks.Result[Any, Any]],
+            List[Result[Any, Any]],
         ],
-        typing.Optional[Mapping[str, Any]]
+        Optional[Mapping[str, Any]]
     ]:
         """Request more info from the user about the task."""
         return self._request_more_info
@@ -537,20 +522,19 @@ class TaskScheduler:
     @request_more_info.setter
     def request_more_info(
         self,
-        value: typing.Callable[
-            [
+        value: Callable[[
                 Workflow,
                 Mapping[str, object],
-                List[speedwagon.tasks.Result[Any, Any]],
+                List[Result[Any, Any]],
             ],
-            typing.Optional[Mapping[str, Any]]
+            Optional[Mapping[str, Any]]
         ],
     ) -> None:
         self._request_more_info = value
 
     def iter_tasks(
-        self, workflow: Workflow, options: Dict[str, Any]
-    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
+        self, workflow: Workflow, options: Mapping[str, Any]
+    ) -> Iterable[speedwagon.tasks.Subtask]:
         """Get sub-tasks for a workflow.
 
         Args:
@@ -575,7 +559,7 @@ class TaskScheduler:
     def run_workflow_jobs(
         self,
         workflow: Workflow,
-        options: typing.Dict[str, Any],
+        options: Dict[str, Any],
         reporter: Optional[speedwagon.frontend.reporter.RunnerDisplay] = None,
     ) -> None:
         """Add job tasks to queue.
@@ -615,10 +599,6 @@ class TaskScheduler:
             self._task_queue.join()
 
 
-class TerminateConsumerThread(Exception):
-    pass
-
-
 @dataclasses.dataclass
 class TaskPacket:
     class PacketType(enum.Enum):
@@ -627,7 +607,7 @@ class TaskPacket:
         NOOP = 4
 
     packet_type: "PacketType"
-    data: typing.Any
+    data: Any
     finished: threading.Condition = threading.Condition()
 
 
@@ -637,11 +617,8 @@ class JobManagerLiaison:
     events: "ThreadedEvents"
 
 
+# pylint: disable=too-few-public-methods
 class AbsJobManager2(contextlib.AbstractContextManager):
-    def __init__(self) -> None:
-        super().__init__()
-        self.logger = logging.getLogger(__name__)
-
     @abc.abstractmethod
     def submit_job(
         self,
@@ -653,6 +630,13 @@ class AbsJobManager2(contextlib.AbstractContextManager):
         """Submit job to worker."""
 
 
+# pylint: disable=too-few-public-methods
+class BaseJobManager(AbsJobManager2, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+        self.logger = logging.getLogger(__name__)
+
+
 class Run(TaskScheduler):
     def __init__(self, working_directory: str) -> None:
         super().__init__(working_directory)
@@ -661,7 +645,7 @@ class Run(TaskScheduler):
             [], Dict[str, Type[Workflow]]
         ] = speedwagon.job.available_workflows
 
-    def get_workflow(self, workflow_name: str) -> typing.Type[Workflow]:
+    def get_workflow(self, workflow_name: str) -> Type[Workflow]:
         if self.valid_workflows is None:
             workflow_class = self.workflow_loader_strategy().get(
                 workflow_name
@@ -705,8 +689,8 @@ def notify_user_of_config_error(
 
 @contextlib.contextmanager
 def attach_logger_handlers(
-    logger: logging.Logger,
-    handlers: typing.Collection[logging.Handler],
+    logger: Optional[logging.Logger],
+    handlers: Collection[logging.Handler],
     level: int = logging.INFO,
 ) -> Iterator[None]:
     attached_handlers: List[logging.Handler] = []
@@ -723,13 +707,13 @@ def attach_logger_handlers(
                 logger.removeHandler(handler)
 
 
-def get_plugin_data(config_file):
-    return speedwagon.config.plugins.read_settings_data_plugins(
+def get_plugin_data(config_file: str) -> PluginDataType:
+    return plugins_config.read_settings_data_plugins(
         speedwagon.utils.read_file(config_file)
     )
 
 
-def _default_get_plugin_data_strategy():
+def _default_get_plugin_data_strategy() -> PluginDataType:
     config_file_locator =\
         speedwagon.config.StandardConfigFileLocator(
             DEFAULT_CONFIG_DIRECTORY_NAME
@@ -737,7 +721,7 @@ def _default_get_plugin_data_strategy():
     return get_plugin_data(config_file_locator.get_config_file())
 
 
-def _default_get_workflow_options_strategy(workflow_name):
+def _default_get_workflow_options_strategy(workflow_name: str) -> SettingsData:
     config_file_locator = speedwagon.config.StandardConfigFileLocator(
         DEFAULT_CONFIG_DIRECTORY_NAME
     )
@@ -750,10 +734,9 @@ def _default_get_workflow_options_strategy(workflow_name):
     )
 
 
-class BackgroundJobManager(AbsJobManager2):
+class BackgroundJobManager(BaseJobManager):
     def __init__(self) -> None:
         super().__init__()
-        self.logger = logging.getLogger(__name__)
         self._exec: Optional[BaseException] = None
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
@@ -761,20 +744,45 @@ class BackgroundJobManager(AbsJobManager2):
             [
                 Workflow[Any],
                 Mapping[str, object],
-                List[speedwagon.tasks.Result[Any, Any]],
+                List[Result[Any, Any]],
                 Optional[threading.Condition]
             ],
             Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
         self.global_settings: Optional[SettingsData] = None
-        self.get_workflow_options_strategy =\
+
+        self.get_workflow_options_strategy: Callable[[str], SettingsData] =\
             _default_get_workflow_options_strategy
-        self.get_plugin_data_strategy = _default_get_plugin_data_strategy
+
+        self.get_plugin_data_strategy: Callable[[], PluginDataType] =\
+            _default_get_plugin_data_strategy
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
         self._background_thread = None
         return self
+
+    @staticmethod
+    def _get_workflow_loader_strategy(
+        plugin_config_data: PluginDataType
+    ) -> Callable[[], Dict[str, Type[Workflow]]]:
+        def whitelist_plugins_strategy() -> Set[Tuple[str, str]]:
+            return \
+                plugins_config.get_whitelisted_plugins_from_config_data(
+                    plugin_config_data
+                )
+        register_strategy = \
+            functools.partial(
+                speedwagon.plugins.register_whitelisted_plugins,
+                get_whitelist_strategy=whitelist_plugins_strategy,
+            )
+        job_lookup_strategy = \
+            speedwagon.job.FindAllWorkflowsPluggyPluginManagerStrategy(
+                plugin_manager=speedwagon.plugins.get_plugin_manager(
+                    register_strategy
+                )
+            )
+        return lambda: speedwagon.job.available_workflows(job_lookup_strategy)
 
     def run_job_on_thread(
         self,
@@ -785,25 +793,9 @@ class BackgroundJobManager(AbsJobManager2):
         with tempfile.TemporaryDirectory() as tmp_dir:
             try:
                 task_scheduler = Run(tmp_dir)
-
-                plugin_manager = speedwagon.plugins.get_plugin_manager(
-                    functools.partial(
-                        speedwagon.plugins.register_whitelisted_plugins,
-                        get_whitelist_strategy=lambda: (
-                            speedwagon.config.plugins.get_whitelisted_plugins_from_config_data(
-                                self.get_plugin_data_strategy()
-                            )
-                        ),
-                    )
-                )
-                job_lookup_strategy =\
-                    speedwagon.job.FindAllWorkflowsPluggyPluginManagerStrategy(
-                        plugin_manager
-                    )
-
                 task_scheduler.workflow_loader_strategy =\
-                    lambda: speedwagon.job.available_workflows(
-                        job_lookup_strategy
+                    self._get_workflow_loader_strategy(
+                        self.get_plugin_data_strategy()
                     )
                 task_scheduler.request_more_info = functools.partial(
                     self.request_more_info
@@ -982,7 +974,7 @@ def simple_api_run_workflow(
 
 @dataclasses.dataclass(frozen=True)
 class JobSubmitConfig:
-    workflow: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    workflow: SettingsData = dataclasses.field(default_factory=dict)
     job: Mapping[str, Any] = dataclasses.field(default_factory=dict)
     global_settings: SettingsData = dataclasses.field(default_factory=dict)
 
@@ -1020,8 +1012,8 @@ def simple_api_run_workflow2(
         def request_more_info(
             workflow: Workflow[_T],
             options: _T,
-            pretask_results: List[speedwagon.tasks.Result[Any, Any]],
-        ) -> typing.Optional[Mapping[str, Any]]:
+            pretask_results: List[Result[Any, Any]],
+        ) -> Optional[Mapping[str, Any]]:
             factory = (
                 request_factory
                 or speedwagon.frontend.cli.user_interaction.CLIFactory()

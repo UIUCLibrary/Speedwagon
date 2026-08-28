@@ -85,6 +85,7 @@ if typing.TYPE_CHECKING:
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
     from speedwagon.tasks.system import AbsSystemTask
     from speedwagon.workflow import AbsOutputOptionDataType
+    from speedwagon.config.plugins import PluginDataType
     import pluggy
 
 __all__ = ["AbsGuiStarter", "StartQtThreaded", "SingleWorkflowJSON"]
@@ -122,7 +123,6 @@ class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
         super().__init__()
         self.app = app
         self.config = config
-        self._config_files_locator = None
 
     @property
     def settings(self) -> FullSettingsData:
@@ -731,6 +731,24 @@ class StartQtThreaded(AbsGuiStarter):
             raise self._request_window.exc
         return self._request_window.results
 
+    @staticmethod
+    def _get_locate_jobs_strategy(
+        plugin_config_data: PluginDataType
+    ) -> AbsWorkflowFinder:
+        plugin_manager = speedwagon.plugins.get_plugin_manager(
+            functools.partial(
+                speedwagon.plugins.register_whitelisted_plugins,
+                get_whitelist_strategy=lambda: (
+                    plugin_config.get_whitelisted_plugins_from_config_data(
+                        plugin_config_data
+                    )
+                ),
+            )
+        )
+        return speedwagon.job.FindAllWorkflowsPluggyPluginManagerStrategy(
+            plugin_manager
+        )
+
     def submit_job(
         self,
         job_manager: runner_strategies.BackgroundJobManager,
@@ -739,30 +757,15 @@ class StartQtThreaded(AbsGuiStarter):
         main_app: typing.Optional[gui.MainWindow3] = None,
     ) -> None:
         """Submit job."""
-        plugin_config_data =\
-            speedwagon.config.plugins.read_settings_data_plugins(
-                speedwagon.utils.read_file(
-                    self.config_files_locator.get_config_file()
-                )
-            )
-        plugin_manager = speedwagon.plugins.get_plugin_manager(
-            functools.partial(
-                speedwagon.plugins.register_whitelisted_plugins,
-                get_whitelist_strategy=lambda: (
-                    speedwagon.config.plugins.get_whitelisted_plugins_from_config_data(
-                        plugin_config_data
-                    )
-                ),
-            )
-        )
-        locate_jobs_strategy =\
-            speedwagon.job.FindAllWorkflowsPluggyPluginManagerStrategy(
-                plugin_manager
-            )
-
         workflow_class =\
             speedwagon.job.available_workflows(
-                strategy=locate_jobs_strategy
+                strategy=self._get_locate_jobs_strategy(
+                    speedwagon.config.plugins.read_settings_data_plugins(
+                        speedwagon.utils.read_file(
+                            self.config_files_locator.get_config_file()
+                        )
+                    )
+                )
             ).get(workflow_name)
 
         def serialize_options(
@@ -1011,24 +1014,20 @@ class SingleWorkflowJSON(AbsGuiStarter):
         super().__init__(app, config or StandardConfig())
         self.global_settings: Optional[SettingsData] = None
         self.on_exit: typing.Optional[
-            Callable[[speedwagon.frontend.qtwidgets.gui.MainWindow3], None]
+            Callable[[dialog.dialogs.WorkflowProgress], None]
         ] = None
         self.options: typing.Optional[SettingsData] = None
         self.workflow: typing.Optional[AbsWorkflow] = None
         self.logger = logger or logging.getLogger(__name__)
-        self.config_files_locator =\
-            StandardConfigFileLocator(
-                config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
-            )
 
-        self.get_workflow_options_strategy: Callable[[str], Dict[str, Any]] =\
+        self.get_workflow_options_strategy: Callable[[str], SettingsData] =\
             lambda workflow_name: default_get_workflow_options_strategy(
                 workflow_name,
                 config_files_locator=StandardConfigFileLocator(
                     config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
                 )
             )
-        self.get_plugin_data_strategy: Callable[[], Dict[str, Any]] =\
+        self.get_plugin_data_strategy: Callable[[], PluginDataType] =\
             default_plugin_data_strategy
 
     def load_json_string(self, data: str) -> None:
@@ -1135,7 +1134,7 @@ class SingleWorkflowJSON(AbsGuiStarter):
         threaded_events.started.set()
         dialog_box.exec()
         if callable(self.on_exit):
-            self.on_exit()
+            self.on_exit(dialog_box)
 
     @staticmethod
     def _load_main_window(

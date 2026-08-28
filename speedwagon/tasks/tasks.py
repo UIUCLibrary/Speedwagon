@@ -43,6 +43,7 @@ __all__ = [
     "AbsSubtask",
     "Subtask",
     "TaskStatus",
+    "BaseTask"
 ]
 
 
@@ -128,6 +129,11 @@ class Result(Generic[_S, _T]):
 
 
 class BaseTask(AbsSubtask, Generic[_T]):
+    """Base class for defining a new task for a :py:class:`Workflow` to create.
+
+    Subclass this generate a new task
+    """
+
     def __init__(self) -> None:
         """Create a new sub-task."""
         # TODO: refactor into state machine
@@ -286,7 +292,10 @@ Param = ParamSpec("Param")
 
 class DynamicSubtask(BaseTask[_T], Generic[Param, _T]):
     def __init__(
-        self, func: Callable[Param, _T], description: str, logger=None
+        self,
+        func: Callable[Param, _T],
+        description: str,
+        logger: Optional[logging.Logger] = None
     ) -> None:
         super().__init__()
         self._task_description = description
@@ -747,7 +756,7 @@ class MultiStageTaskBuilder(BaseTaskBuilder):
 
 def workflow_task(
     description: str,
-    logger=None
+    logger: Optional[logging.Logger] = None
 ) -> typing.Callable[[Callable[Param, _T]], DynamicSubtask]:
     """Decorate a function to create subtasks."""
 

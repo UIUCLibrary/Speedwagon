@@ -405,12 +405,17 @@ class TabsConfigurationTab(SettingsTab[List[config.tabs.CustomTabData]]):
         self.setLayout(layout)
 
     @property
-    def load_tab_data_model_strategy(self):
+    def load_tab_data_model_strategy(
+        self
+    ) -> tab_models.TabDataModelConfigLoader:
         """Get the load data model strategy."""
         return self.editor.load_tab_data_model_strategy
 
     @load_tab_data_model_strategy.setter
-    def load_tab_data_model_strategy(self, value):
+    def load_tab_data_model_strategy(
+        self,
+        value: tab_models.TabDataModelConfigLoader
+    ) -> None:
         self.editor.load_tab_data_model_strategy = value
 
     def data_is_modified(self) -> bool:
@@ -445,7 +450,7 @@ class ConfigWorkflowSettingsTab(SettingsTab[WorkflowsSettings]):
         self.model = models.WorkflowSettingsModel()
         self._editor.model = self.model
 
-    def set_workflows(self, workflows: Iterable[Workflow]):
+    def set_workflows(self, workflows: Iterable[Workflow]) -> None:
         self.model.clear()
         for workflow in workflows:
             self.model.add_workflow(workflow)

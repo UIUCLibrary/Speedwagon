@@ -22,6 +22,9 @@ from typing import (
 
 import speedwagon.config
 import speedwagon.job
+import speedwagon.utils
+import speedwagon.plugins
+import speedwagon.config.plugins as plugins_config
 
 if TYPE_CHECKING:
     from speedwagon.validators import AbsOutputValidation
@@ -292,7 +295,7 @@ def initialize_workflows(
     """Initialize workflow for use."""
     workflows_ = []
 
-    plugin_config_data = speedwagon.config.plugins.read_settings_data_plugins(
+    plugin_config_data = plugins_config.read_settings_data_plugins(
         speedwagon.utils.read_file(backend_config_file)
     )
 
@@ -300,7 +303,7 @@ def initialize_workflows(
         functools.partial(
             speedwagon.plugins.register_whitelisted_plugins,
             get_whitelist_strategy=lambda: (
-                speedwagon.config.plugins.get_whitelisted_plugins_from_config_data(
+                plugins_config.get_whitelisted_plugins_from_config_data(
                     plugin_config_data
                 )
             ),
@@ -343,15 +346,14 @@ class AbsLoadWorkflowsConfig(abc.ABC):
 
 
 class LoadWorkflowsUsingPluginsConfig(AbsLoadWorkflowsConfig):
-    def __init__(self):
+    def __init__(self) -> None:
         self._error_loggers: List[Callable[[str], None]] = []
-        # self.config_file: Optional[str] = None
         self.plugin_config_data: PluginDataType = {}
         self.workflow_validation_checkers: List[
-            Callable[[[Type[speedwagon.job.Workflow]]], Collection[str]]
+            Callable[[Type[speedwagon.job.Workflow]], Collection[str]]
         ] = []
 
-    def get_load_strategy(self) -> speedwagon.job.WorkflowLoadStrategy:
+    def get_load_strategy(self) -> speedwagon.job.AbsWorkflowFinder:
         return speedwagon.job.OnlyActivatedPluginsWorkflows(
             plugin_settings=self.plugin_config_data
         )
@@ -378,8 +380,8 @@ class LoadWorkflowsUsingPluginsConfig(AbsLoadWorkflowsConfig):
 
 def load_workflows(
     config: AbsLoadWorkflowsConfig,
-    error_loggers: List[Callable[[str], None]] = None
-):
+    error_loggers: Optional[List[Callable[[str], None]]] = None
+) -> Dict[str, Type[speedwagon.job.Workflow]]:
     for logger in error_loggers or []:
         config.add_error_logger(logger)
     return config.load()
