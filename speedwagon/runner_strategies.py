@@ -15,29 +15,48 @@ import threading
 import traceback
 import typing
 import warnings
+from abc import ABC
 from types import TracebackType
-from typing import List, Any, Dict, Optional, Type, TypeVar, Mapping, Callable
+from typing import (
+    Any,
+    Callable,
+    Collection,
+    Dict,
+    Iterator,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+)
 import functools
 
-import speedwagon.config
-from speedwagon.config import StandardConfigFileLocator
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
+import speedwagon.config
+import speedwagon.config.plugins as plugins_config
 import speedwagon.exceptions
-from speedwagon import runner
+import speedwagon.job
+import speedwagon.plugins
+import speedwagon.tasks
+import speedwagon.utils
 
 _T = TypeVar("_T", bound=Mapping[str, object])
 
 if typing.TYPE_CHECKING:
-    from speedwagon.job import AbsWorkflow, Workflow
+    from speedwagon.job import Workflow
     from speedwagon.config import SettingsData
-    from speedwagon.config.config import AbsSettingLocator
-    import speedwagon.tasks
+    from speedwagon.config.plugins import PluginDataType
+    from speedwagon.tasks import Result
+    from speedwagon.tasks.tasks import BaseTask
 
 __all__ = [
-    "RunRunner",
     "TaskDispatcher",
     "TaskScheduler",
     "simple_api_run_workflow",
+    "simple_api_run_workflow2",
 ]
 
 module_logger = logging.getLogger(__name__)
@@ -114,46 +133,26 @@ class AbsJobCallbacks(abc.ABC):
         """Update the job's progress."""
 
 
-class RunRunner:
-    """Context for running AbsRunner2 strategies."""
-
-    def __init__(self, strategy: runner.AbsRunner2) -> None:
-        """Create a new runner executor."""
-        self._strategy = strategy
-
-    def run(
-        self,
-        tool: AbsWorkflow,
-        options: typing.Mapping[str, object],
-        logger: logging.Logger,
-        completion_callback=None,
-    ) -> None:
-        """Execute runner job."""
-        self._strategy.run(tool, options, logger, completion_callback)
-
-
 class TaskGenerator:
     def __init__(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         working_directory: str,
-        caller: typing.Optional["TaskScheduler"] = None,
+        caller: Optional["TaskScheduler"] = None,
     ) -> None:
         self.workflow = workflow
         self.options = options
         self.working_directory = working_directory
-        self.current_task: typing.Optional[int] = None
-        self.total_task: typing.Optional[int] = None
+        self.current_task: Optional[int] = None
+        self.total_task: Optional[int] = None
         self.caller = caller
 
-    def generate_report(
-        self, results: List[speedwagon.tasks.Result]
-    ) -> typing.Optional[str]:
+    def generate_report(self, results: List[Result]) -> Optional[str]:
         return self.workflow.generate_report(results, **self.options)
 
-    def tasks(self) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
-        pretask_results: List[speedwagon.tasks.Result[Any, Any]] = []
+    def tasks(self) -> Iterable[BaseTask]:
+        pretask_results: List[Result[Any, Any]] = []
 
         results = []
 
@@ -184,9 +183,7 @@ class TaskGenerator:
             results=results,
         )
 
-    def get_pre_tasks(
-        self, working_directory: str
-    ) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
+    def get_pre_tasks(self, working_directory: str) -> Iterable[BaseTask]:
         task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory,
@@ -202,7 +199,7 @@ class TaskGenerator:
         working_directory: str,
         pretask_results,
         additional_data,
-    ) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
+    ) -> Iterable[BaseTask]:
         metadata_tasks = (
             self.workflow.discover_task_metadata(
                 pretask_results, additional_data, user_args=self.options
@@ -229,8 +226,8 @@ class TaskGenerator:
     def get_post_tasks(
         self,
         working_directory: str,
-        results: typing.List[speedwagon.tasks.Result],
-    ) -> typing.Iterable[speedwagon.tasks.tasks.BaseTask]:
+        results: List[Result],
+    ) -> Iterable[BaseTask]:
         task_builder = speedwagon.tasks.TaskBuilder(
             speedwagon.tasks.MultiStageTaskBuilder(working_directory),
             working_directory,
@@ -378,16 +375,16 @@ class TaskDispatcher:
     def __init__(
         self,
         job_queue: queue.Queue,
-        logger: typing.Optional[logging.Logger] = None,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         """Create a new task dispatcher object."""
         super().__init__()
         self.job_queue = job_queue
-        self.signals: typing.Mapping[str, threading.Event] = {
+        self.signals: Mapping[str, threading.Event] = {
             "stop": threading.Event(),
             "finished": threading.Event(),
         }
-        self.thread: typing.Optional[threading.Thread] = None
+        self.thread: Optional[threading.Thread] = None
         self.current_task: Optional[speedwagon.tasks.Subtask] = None
         self.logger = logger or logging.getLogger(__name__)
         self.current_state: AbsTaskDispatcherState = TaskDispatcherIdle(self)
@@ -428,7 +425,7 @@ class AbsTaskGeneratorStrategy(abc.ABC):
     def iterate_tasks(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         task_scheduler: TaskScheduler,
     ):
         """Generate and iterate tasks."""
@@ -437,7 +434,7 @@ class AbsTaskGeneratorStrategy(abc.ABC):
     def generate_report(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         results: List[Any],
     ) -> Optional[str]:
         """Generate Text Report."""
@@ -456,7 +453,7 @@ class TaskGeneratorStrategy(AbsTaskGeneratorStrategy):
     def generate_report(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         results: List[Any],
     ) -> Optional[str]:
         return workflow.generate_report(results, user_args=options)
@@ -464,7 +461,7 @@ class TaskGeneratorStrategy(AbsTaskGeneratorStrategy):
     def iterate_tasks(
         self,
         workflow: Workflow,
-        options: typing.Mapping[str, Any],
+        options: Mapping[str, Any],
         task_scheduler: TaskScheduler,
     ):
         workflow.workflow_options()
@@ -497,29 +494,27 @@ class TaskScheduler:
             speedwagon.frontend.reporter.RunnerDisplay
         ] = None
 
-        self.current_task_progress: typing.Optional[int] = None
-        self.total_tasks: typing.Optional[int] = None
+        self.current_task_progress: Optional[int] = None
+        self.total_tasks: Optional[int] = None
         self._task_queue: "queue.Queue" = queue.Queue(maxsize=1)
 
-        self._request_more_info: typing.Callable[
+        self._request_more_info: Callable[
             [
                 Workflow,
                 Mapping[str, object],
-                List[speedwagon.tasks.Result[Any, Any]],
+                List[Result[Any, Any]],
             ],
-            typing.Optional[Mapping[str, Any]]
+            Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
 
     @property
-    def request_more_info(
-        self,
-    ) -> typing.Callable[
+    def request_more_info(self) -> Callable[
         [
             Workflow,
             Mapping[str, object],
-            List[speedwagon.tasks.Result[Any, Any]],
+            List[Result[Any, Any]],
         ],
-        typing.Optional[Mapping[str, Any]]
+        Optional[Mapping[str, Any]]
     ]:
         """Request more info from the user about the task."""
         return self._request_more_info
@@ -527,20 +522,19 @@ class TaskScheduler:
     @request_more_info.setter
     def request_more_info(
         self,
-        value: typing.Callable[
-            [
+        value: Callable[[
                 Workflow,
                 Mapping[str, object],
-                List[speedwagon.tasks.Result[Any, Any]],
+                List[Result[Any, Any]],
             ],
-            typing.Optional[Mapping[str, Any]]
+            Optional[Mapping[str, Any]]
         ],
     ) -> None:
         self._request_more_info = value
 
     def iter_tasks(
-        self, workflow: Workflow, options: Dict[str, Any]
-    ) -> typing.Iterable[speedwagon.tasks.Subtask]:
+        self, workflow: Workflow, options: Mapping[str, Any]
+    ) -> Iterable[speedwagon.tasks.Subtask]:
         """Get sub-tasks for a workflow.
 
         Args:
@@ -565,7 +559,7 @@ class TaskScheduler:
     def run_workflow_jobs(
         self,
         workflow: Workflow,
-        options: typing.Dict[str, Any],
+        options: Dict[str, Any],
         reporter: Optional[speedwagon.frontend.reporter.RunnerDisplay] = None,
     ) -> None:
         """Add job tasks to queue.
@@ -605,10 +599,6 @@ class TaskScheduler:
             self._task_queue.join()
 
 
-class TerminateConsumerThread(Exception):
-    pass
-
-
 @dataclasses.dataclass
 class TaskPacket:
     class PacketType(enum.Enum):
@@ -617,7 +607,7 @@ class TaskPacket:
         NOOP = 4
 
     packet_type: "PacketType"
-    data: typing.Any
+    data: Any
     finished: threading.Condition = threading.Condition()
 
 
@@ -627,11 +617,8 @@ class JobManagerLiaison:
     events: "ThreadedEvents"
 
 
+# pylint: disable=too-few-public-methods
 class AbsJobManager2(contextlib.AbstractContextManager):
-    def __init__(self) -> None:
-        super().__init__()
-        self.logger = logging.getLogger(__name__)
-
     @abc.abstractmethod
     def submit_job(
         self,
@@ -643,6 +630,13 @@ class AbsJobManager2(contextlib.AbstractContextManager):
         """Submit job to worker."""
 
 
+# pylint: disable=too-few-public-methods
+class BaseJobManager(AbsJobManager2, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+        self.logger = logging.getLogger(__name__)
+
+
 class Run(TaskScheduler):
     def __init__(self, working_directory: str) -> None:
         super().__init__(working_directory)
@@ -651,7 +645,7 @@ class Run(TaskScheduler):
             [], Dict[str, Type[Workflow]]
         ] = speedwagon.job.available_workflows
 
-    def get_workflow(self, workflow_name: str) -> typing.Type[Workflow]:
+    def get_workflow(self, workflow_name: str) -> Type[Workflow]:
         if self.valid_workflows is None:
             workflow_class = self.workflow_loader_strategy().get(
                 workflow_name
@@ -666,10 +660,83 @@ class Run(TaskScheduler):
         return workflow_class
 
 
-class BackgroundJobManager(AbsJobManager2):
+def notify_user_of_config_error(
+    logger: logging.Logger,
+    config_error: speedwagon.exceptions.MissingConfiguration
+) -> None:
+    logger.info(
+        "Unable to start job with missing configurations. %s", config_error
+    )
+
+    if config_error.key and config_error.workflow:
+        logger.debug(
+            "Unable to start job with missing configurations: "
+            '"%s" from "%s". '
+            "\nCheck the Workflow Settings section in "
+            "Speedwagon settings.",
+            config_error.key,
+            config_error.workflow,
+        )
+    else:
+        logger.debug(
+            "Unable to start job with missing configurations. "
+            "\nReason: %s"
+            "\nCheck the Workflow Settings section in "
+            "Speedwagon settings.",
+            config_error,
+        )
+
+
+@contextlib.contextmanager
+def attach_logger_handlers(
+    logger: Optional[logging.Logger],
+    handlers: Collection[logging.Handler],
+    level: int = logging.INFO,
+) -> Iterator[None]:
+    attached_handlers: List[logging.Handler] = []
+    try:
+        if logger:
+            for handler in handlers:
+                handler.setLevel(level)
+                logger.addHandler(handler)
+                attached_handlers.append(handler)
+        yield
+    finally:
+        if logger:
+            for handler in attached_handlers:
+                logger.removeHandler(handler)
+
+
+def get_plugin_data(config_file: str) -> PluginDataType:
+    return plugins_config.read_settings_data_plugins(
+        speedwagon.utils.read_file(config_file)
+    )
+
+
+def _default_get_plugin_data_strategy() -> PluginDataType:
+    config_file_locator =\
+        speedwagon.config.StandardConfigFileLocator(
+            DEFAULT_CONFIG_DIRECTORY_NAME
+        )
+    return get_plugin_data(config_file_locator.get_config_file())
+
+
+def _default_get_workflow_options_strategy(workflow_name: str) -> SettingsData:
+    config_file_locator = speedwagon.config.StandardConfigFileLocator(
+        DEFAULT_CONFIG_DIRECTORY_NAME
+    )
+    return speedwagon.config.workflow.get_workflow_options(
+        os.path.join(
+            config_file_locator.get_app_data_dir(),
+            speedwagon.config.workflow.WORKFLOWS_SETTINGS_YML_FILE_NAME,
+        ),
+        workflow_name,
+    )
+
+
+class BackgroundJobManager(BaseJobManager):
     def __init__(self) -> None:
         super().__init__()
-        self.logger = logging.getLogger(__name__)
         self._exec: Optional[BaseException] = None
         self.valid_workflows = None
         self._background_thread: Optional[threading.Thread] = None
@@ -677,40 +744,58 @@ class BackgroundJobManager(AbsJobManager2):
             [
                 Workflow[Any],
                 Mapping[str, object],
-                List[speedwagon.tasks.Result[Any, Any]],
+                List[Result[Any, Any]],
                 Optional[threading.Condition]
             ],
             Optional[Mapping[str, Any]]
         ] = lambda *args, **kwargs: None
         self.global_settings: Optional[SettingsData] = None
-        self.config_file_location_strategy: AbsSettingLocator =\
-            StandardConfigFileLocator(DEFAULT_CONFIG_DIRECTORY_NAME)
+
+        self.get_workflow_options_strategy: Callable[[str], SettingsData] =\
+            _default_get_workflow_options_strategy
+
+        self.get_plugin_data_strategy: Callable[[], PluginDataType] =\
+            _default_get_plugin_data_strategy
 
     def __enter__(self) -> "BackgroundJobManager":
         self._exec = None
         self._background_thread = None
         return self
 
+    @staticmethod
+    def _get_workflow_loader_strategy(
+        plugin_config_data: PluginDataType
+    ) -> Callable[[], Dict[str, Type[Workflow]]]:
+        def whitelist_plugins_strategy() -> Set[Tuple[str, str]]:
+            return \
+                plugins_config.get_whitelisted_plugins_from_config_data(
+                    plugin_config_data
+                )
+        register_strategy = \
+            functools.partial(
+                speedwagon.plugins.register_whitelisted_plugins,
+                get_whitelist_strategy=whitelist_plugins_strategy,
+            )
+        job_lookup_strategy = \
+            speedwagon.job.FindAllWorkflowsPluggyPluginManagerStrategy(
+                plugin_manager=speedwagon.plugins.get_plugin_manager(
+                    register_strategy
+                )
+            )
+        return lambda: speedwagon.job.available_workflows(job_lookup_strategy)
+
     def run_job_on_thread(
         self,
         workflow_name: str,
-        options: Dict[str, Dict[str, Any]],
+        config: JobSubmitConfig,
         liaison: JobManagerLiaison,
     ) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             try:
                 task_scheduler = Run(tmp_dir)
-                job_lookup_strategy =\
-                    speedwagon.job.FindAllWorkflowsPluggyStrategy(
-                        config_file=(
-                            self.config_file_location_strategy
-                            .get_config_file()
-                        )
-                    )
-
                 task_scheduler.workflow_loader_strategy =\
-                    lambda: speedwagon.job.available_workflows(
-                        job_lookup_strategy
+                    self._get_workflow_loader_strategy(
+                        self.get_plugin_data_strategy()
                     )
                 task_scheduler.request_more_info = functools.partial(
                     self.request_more_info
@@ -721,20 +806,18 @@ class BackgroundJobManager(AbsJobManager2):
                     task_scheduler.valid_workflows = self.valid_workflows
 
                 workflow = task_scheduler.get_workflow(workflow_name)(
-                    global_settings=options.get("global_settings")
+                    global_settings=config.global_settings
                 )
-                options_backend = speedwagon.config.YAMLWorkflowConfigBackend()
-                backend_yaml = os.path.join(
-                    self.config_file_location_strategy.get_app_data_dir(),
-                    speedwagon.config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
+                workflow_options = config.workflow
+                workflow.set_options_backend(
+                    speedwagon.config.workflow.ReadOnlyConfigBackend(
+                        workflow_options
+                    )
                 )
-                options_backend.workflow = workflow
-                options_backend.yaml_file = backend_yaml
-                workflow.set_options_backend(options_backend)
                 liaison.events.started.wait()
 
                 for task in task_scheduler.iter_tasks(
-                    workflow, options["options"]
+                    workflow, config.job
                 ):
                     if liaison.events.is_stopped() is True:
                         liaison.callbacks.cancelling_complete()
@@ -749,8 +832,11 @@ class BackgroundJobManager(AbsJobManager2):
                     task.parent_task_log_q = type(
                         "logger", (object,), {"append": self.logger.info}
                     )
-
-                    task.exec()
+                    with attach_logger_handlers(
+                        task.logger,
+                        self.logger.handlers
+                    ):
+                        task.exec()
                     liaison.callbacks.update_progress(
                         current=task_scheduler.current_task_progress,
                         total=task_scheduler.total_tasks,
@@ -759,26 +845,14 @@ class BackgroundJobManager(AbsJobManager2):
 
             except speedwagon.exceptions.JobCancelled as job_cancelled:
                 liaison.callbacks.finished(JobSuccess.ABORTED)
-                logging.debug("Job canceled: %s", job_cancelled)
+                self.logger.debug("Job canceled: %s", job_cancelled)
 
             except speedwagon.exceptions.MissingConfiguration as config_error:
                 liaison.callbacks.finished(JobSuccess.ABORTED)
-                if config_error.key and config_error.workflow:
-                    logging.debug(
-                        'Unable to start job with missing configurations: '
-                        '"%s" from "%s". '
-                        '\nCheck the Workflow Settings section in '
-                        'Speedwagon settings.',
-                        config_error.key, config_error.workflow
-                    )
-                else:
-                    logging.debug(
-                        'Unable to start job with missing configurations. '
-                        '\nReason: %s'
-                        '\nCheck the Workflow Settings section in '
-                        'Speedwagon settings.',
-                        config_error
-                    )
+                notify_user_of_config_error(
+                    self.logger,
+                    config_error=config_error
+                )
             except BaseException as exception_thrown:
                 traceback_info = traceback.format_exc()
 
@@ -820,15 +894,19 @@ class BackgroundJobManager(AbsJobManager2):
             self._background_thread is None
             or self._background_thread.is_alive() is False
         ):
+
+            workflow_options =\
+                self.get_workflow_options_strategy(workflow_name)
             new_thread = threading.Thread(
                 target=self.run_job_on_thread,
                 kwargs={
                     "workflow_name": workflow_name,
                     "liaison": liaison,
-                    "options": {
-                        "options": options,
-                        "global_settings": self.global_settings,
-                    },
+                    "config": JobSubmitConfig(
+                        job=options or {},
+                        workflow=workflow_options,
+                        global_settings=self.global_settings or {},
+                    ),
                 },
             )
             new_thread.start()
@@ -877,23 +955,65 @@ def simple_api_run_workflow(
         logger: file stream handle for logging data
         request_factory: factory for generating the user input mid-job
     """
+    warnings.warn(
+        "simple_api_run_workflow is deprecated and now calls "
+        "simple_api_run_workflow2 under the hood. Use "
+        "simple_api_run_workflow2 instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    simple_api_run_workflow2(
+        workflow,
+        config=JobSubmitConfig(
+            workflow=workflow_options
+        ),
+        logger=logger,
+        request_factory=request_factory
+    )
+
+
+@dataclasses.dataclass(frozen=True)
+class JobSubmitConfig:
+    workflow: SettingsData = dataclasses.field(default_factory=dict)
+    job: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    global_settings: SettingsData = dataclasses.field(default_factory=dict)
+
+
+def simple_api_run_workflow2(
+    workflow: Workflow,
+    config: JobSubmitConfig,
+    logger: Optional[logging.Logger] = None,
+    request_factory: Optional[
+        speedwagon.frontend.interaction.UserRequestFactory
+    ] = None,
+) -> None:
+    """Run a workflow and block until finished.
+
+    This is the simplest API for running a workflow.
+
+    Args:
+        workflow: Workflow
+        config: Job config data
+        logger: file stream handle for logging data
+        request_factory: factory for generating the user input mid-job
+    """
     task_scheduler = speedwagon.runner_strategies.TaskScheduler(".")
     log_handler = None
 
     if logger is None:
         logger = logging.getLogger()
         log_handler = logging.StreamHandler(stream=sys.stdout)
+        log_handler.setLevel(logging.INFO)
         logger.addHandler(log_handler)
+        task_scheduler.logger.setLevel(logging.INFO)
     try:
         task_scheduler.logger = logger
-        logging.StreamHandler(stream=sys.stdout)
-        task_scheduler.logger.setLevel(logging.INFO)
 
         def request_more_info(
             workflow: Workflow[_T],
             options: _T,
-            pretask_results: List[speedwagon.tasks.Result[Any, Any]],
-        ) -> typing.Optional[Mapping[str, Any]]:
+            pretask_results: List[Result[Any, Any]],
+        ) -> Optional[Mapping[str, Any]]:
             factory = (
                 request_factory
                 or speedwagon.frontend.cli.user_interaction.CLIFactory()
@@ -902,14 +1022,17 @@ def simple_api_run_workflow(
             return workflow.get_additional_info(
                 factory, options, pretask_results
             )
-
         task_scheduler.request_more_info = request_more_info
+        workflow.set_options_backend(
+            speedwagon.config.workflow.ReadOnlyConfigBackend(config.workflow)
+        )
         for task in task_scheduler.iter_tasks(
-            workflow=workflow, options=workflow_options
+            workflow=workflow, options=config.job
         ):
             task.parent_task_log_q = type(
                 "reporter", (object,), {"append": logger.info}
             )
+            task.logger = logger
             logger.info("%s\n", task.task_description())
             task.exec()
     finally:

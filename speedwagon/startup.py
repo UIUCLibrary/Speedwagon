@@ -13,10 +13,14 @@ Changes:
 from __future__ import annotations
 import abc
 import argparse
+import contextlib
 import functools
+import io
 import logging
 import os
 import sys
+import traceback
+import warnings
 from typing import (
     Dict,
     Iterator,
@@ -32,7 +36,8 @@ from typing import (
     Mapping,
     Union,
     Iterable,
-    Sequence,
+    Set,
+    Sequence, cast,
 )
 
 import speedwagon.job
@@ -42,18 +47,23 @@ from speedwagon.config.workflow import (
     default_backend_factory,
     AbsWorkflowBackend,
 )
-from speedwagon.config.plugins import get_whitelisted_plugins_from_config_file
+from speedwagon.config.plugins import (
+    get_whitelisted_plugins_from_config_data,
+    read_settings_data_plugins
+)
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import StandardConfigFileLocator
 from speedwagon.exceptions import WorkflowLoadFailure, TabLoadFailure
 from speedwagon.tasks.system import CallbackSystemTask, AbsSystemTask
 from speedwagon.tasks.utils import TaskBuilder
 from speedwagon import plugins
-from speedwagon.utils import parse_json_file
+import speedwagon.workflow
+from speedwagon.utils import parse_json_file, read_file
 
 if TYPE_CHECKING:
     import speedwagon.frontend.qtwidgets.gui_startup
-    from speedwagon.config.common import SettingsData
+    from speedwagon.config.common import SettingsData, FullSettingsData
+    from speedwagon.config.plugins import PluginDataType
     from speedwagon.config.config import (
         AbsSettingLocator,
         AbsConfigSettings,
@@ -268,10 +278,11 @@ class ApplicationLauncher:
 
 
 class SubCommand(abc.ABC):
-    def __init__(self, args: argparse.Namespace) -> None:
+    def __init__(self, args: argparse.Namespace, config_prefix: str) -> None:
         super().__init__()
         self.args = args
         self.global_settings: Optional[SettingsData] = None
+        self.config_prefix = config_prefix
 
     @abc.abstractmethod
     def run(self) -> None:
@@ -285,8 +296,12 @@ class InfoCommand(SubCommand):
         speedwagon info command added for quering information about speedwagon.
     """
 
-    def __init__(self, args: argparse.Namespace) -> None:
-        super().__init__(args)
+    def __init__(
+        self,
+        args: argparse.Namespace,
+        config_dir: str = DEFAULT_CONFIG_DIRECTORY_NAME
+    ) -> None:
+        super().__init__(args, config_dir)
         self.report_builder_strategy: Callable[[], str] = lambda: (
             speedwagon.info.system_report(
                 speedwagon.info.SystemInfo(),
@@ -314,7 +329,7 @@ class InfoCommand(SubCommand):
         return self.report_builder_strategy()
 
 
-def get_gui_json_strategy():
+def get_gui_json_strategy() -> AbsStarter:
     # Avoid circular imports! pylint: disable=import-outside-toplevel
     from speedwagon import frontend
 
@@ -324,11 +339,11 @@ def get_gui_json_strategy():
         raise ImportError("GUI strategy not available") from error
 
 
-def get_cli_json_strategy():
+def get_cli_json_strategy() -> AbsStarter:
     return SingleWorkflowJSON()
 
 
-JSON_STRATEGIES_TRY_ORDER = [
+JSON_STRATEGIES_TRY_ORDER: List[Callable[[], AbsStarter]] = [
     get_gui_json_strategy,
     get_cli_json_strategy
 ]
@@ -336,15 +351,12 @@ JSON_STRATEGIES_TRY_ORDER = [
 
 def get_best_json_strategy(
     strategy_order: Optional[List[Callable[[], AbsStarter]]] = None
-) -> Union[
-        SingleWorkflowJSON,
-        speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON
-]:
-    strategy_order = strategy_order \
-        if strategy_order is not None \
+) -> AbsStarter:
+    order: List[Callable[[], AbsStarter]] =\
+        strategy_order if strategy_order is not None \
         else JSON_STRATEGIES_TRY_ORDER
 
-    for json_strategy in strategy_order:
+    for json_strategy in order:
         try:
             return json_strategy()
         except ImportError:
@@ -355,8 +367,12 @@ def get_best_json_strategy(
 class RunCommand(SubCommand):
     create_app_launcher = ApplicationLauncher
 
-    def __init__(self, args: argparse.Namespace) -> None:
-        super().__init__(args)
+    def __init__(
+        self,
+        args: argparse.Namespace,
+        config_prefix: str = DEFAULT_CONFIG_DIRECTORY_NAME
+    ) -> None:
+        super().__init__(args, config_prefix)
         self.default_json_strategy = get_best_json_strategy
 
     def json_startup(
@@ -367,10 +383,41 @@ class RunCommand(SubCommand):
             None
         ] = None
     ) -> None:
-        startup_strategy = startup_strategy or self.default_json_strategy()
+        startup_strategy =\
+            cast(
+                SingleWorkflowJSON,
+                (startup_strategy or self.default_json_strategy())
+            )
 
         startup_strategy.global_settings = self.global_settings
+        startup_strategy.config =\
+            speedwagon.config.StandardConfig(self.config_prefix)
+        config_file_locator = StandardConfigFileLocator(
+            config_directory_prefix=self.config_prefix
+        )
         try:
+            default_yaml_file_name =\
+                speedwagon.config.workflow.WORKFLOWS_SETTINGS_YML_FILE_NAME
+            startup_strategy.get_workflow_options_strategy = (
+                lambda workflow_name: (
+                    speedwagon.config.workflow.get_workflow_options(
+                        os.path.join(
+                            config_file_locator.get_app_data_dir(),
+                            default_yaml_file_name,
+                        ),
+                        workflow_name,
+                    )
+                )
+            )
+
+            startup_strategy.get_plugin_data_strategy = (
+                lambda: speedwagon.config.plugins.read_settings_data_plugins(
+                    speedwagon.utils.read_file(
+                        config_file_locator.get_config_file()
+                    )
+                )
+            )
+
             startup_strategy.load(self.args.json)
             self._run_strategy(startup_strategy)
         except WorkflowLoadFailure as e:
@@ -379,6 +426,8 @@ class RunCommand(SubCommand):
             for workflow in startup_strategy.available_workflows:
                 message.append(f"- \"{workflow}\"")
             logger.error("\n".join(message))
+            if self.args.debug:
+                traceback.print_exc()
 
     @staticmethod
     def _run_strategy(startup_strategy: AbsStarter) -> None:
@@ -438,6 +487,7 @@ def run_command(
     command_name: str,
     args: argparse.Namespace,
     command: Optional[Type[SubCommand]] = None,
+    config_dir: Optional[str] = None
 ) -> None:
     commands: Dict[str, Type[SubCommand]] = {
         "run": RunCommand, "info": InfoCommand
@@ -447,13 +497,19 @@ def run_command(
     if command is None:
         raise ValueError(f"Unknown command {command_name}")
 
-    new_command = command(args)
-    new_command.global_settings = get_global_options()
+    new_command = command(args, config_dir or DEFAULT_CONFIG_DIRECTORY_NAME)
+
+    def use_user_config_dir_if_available():
+        return speedwagon.config.StandardConfigFileLocator(
+            config_directory_prefix=config_dir or DEFAULT_CONFIG_DIRECTORY_NAME
+        ).get_config_file()
+    resolution_order =\
+        get_global_options_resolution_order(use_user_config_dir_if_available)
+    new_command.global_settings = get_global_options(resolution_order)
     new_command.run()
 
 
 class AbsStarter(metaclass=abc.ABCMeta):
-    config_files_locator: AbsSettingLocator
     startup_tasks: Sequence[
         Union[
             AbsSystemTask,
@@ -462,7 +518,21 @@ class AbsStarter(metaclass=abc.ABCMeta):
     ]
 
     @property
-    def available_workflows(self):
+    def config_files_locator(self) -> AbsSettingLocator:
+        warnings.warn(
+            "config_files_locator should be avoided."
+            "Try to move to config management object",
+            Warning,
+            stacklevel=2,
+        )
+        return self._config_files_locator
+
+    @config_files_locator.setter
+    def config_files_locator(self, value: AbsSettingLocator) -> None:
+        self._config_files_locator = value
+
+    @property
+    def available_workflows(self) -> Dict[str, Type[speedwagon.job.Workflow]]:
         return self.locate_available_workflows()
 
     @abc.abstractmethod
@@ -501,30 +571,68 @@ class AbsStarter(metaclass=abc.ABCMeta):
         """
 
 
+def default_get_plugin_data_strategy() -> PluginDataType:
+    config_files_locator = StandardConfigFileLocator(
+        config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+    )
+    return speedwagon.config.plugins.read_settings_data_plugins(
+        speedwagon.utils.read_file(config_files_locator.get_config_file())
+    )
+
+
+def default_get_workflow_options_strategy(
+    workflow_name: str,
+    config_files_locator: Optional[AbsSettingLocator] = None
+) -> SettingsData:
+
+    config_files_locator = config_files_locator or StandardConfigFileLocator(
+        config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
+    )
+    return speedwagon.config.workflow.get_workflow_options(
+        os.path.join(
+            config_files_locator.get_app_data_dir(),
+            speedwagon.config.workflow.WORKFLOWS_SETTINGS_YML_FILE_NAME,
+        ),
+        workflow_name,
+    )
+
+
 class SingleWorkflowJSON(AbsStarter):
     def __init__(self) -> None:
         super().__init__()
+        self.config: Optional[AbsConfigSettings] = None
         self.options: Optional[Dict[str, Any]] = None
         self.global_settings: Optional[SettingsData] = None
         self.workflow: Optional[speedwagon.job.Workflow] = None
-        self.config_files_locator: AbsSettingLocator = (
-            StandardConfigFileLocator(
-                config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
-            )
-        )
-
-    @property
-    def config(self) -> AbsConfigSettings:
-        config_name = os.path.split(
-            self.config_files_locator.get_app_data_dir()
-        )[-1]
-        return speedwagon.config.StandardConfig(config_name)
+        self.get_workflow_options_strategy: Callable[[str], SettingsData] =\
+            default_get_workflow_options_strategy
+        self.get_plugin_data_strategy: Callable[[], PluginDataType] =\
+            default_get_plugin_data_strategy
 
     def run(self) -> int:
         if self.workflow:
-            speedwagon.simple_api_run_workflow(
+            workflow_options = self.get_workflow_options_strategy(
+                self.workflow.name or ""
+            )
+            workflow_logger = logging.getLogger()
+            workflow_logger.setLevel(logging.INFO)
+            handler = logging.StreamHandler(stream=sys.stdout)
+            handler.setLevel(
+                logging.DEBUG if (
+                    self.global_settings and
+                    self.global_settings.get('debug', False)
+                )
+                else logging.INFO
+            )
+            workflow_logger.addHandler(handler)
+            speedwagon.runner_strategies.simple_api_run_workflow2(
                 self.workflow,
-                self.options,
+                speedwagon.runner_strategies.JobSubmitConfig(
+                    workflow=workflow_options,
+                    job=self.options or {},
+                    global_settings=self.global_settings or {}
+                ),
+                workflow_logger,
             )
         return 0
 
@@ -542,13 +650,25 @@ class SingleWorkflowJSON(AbsStarter):
     def locate_available_workflows(
         self
     ) -> Dict[str, Type[speedwagon.job.Workflow]]:
-        return speedwagon.job.available_workflows()
+        if self.config is None:
+            logger.warning(
+                "running locate_available_workflows without config loaded "
+                "produces no workflows"
+            )
+            return {}
+        return locate_workflows_with_reporting(
+            self.config.application_settings(),
+        )
 
     def _set_workflow(self, workflow_name: str) -> None:
+        if self.config is None:
+            global_settings = {}
+        else:
+            global_settings = self.config.application_settings().get(
+                    "GLOBAL", {}
+                )
         self.workflow = self.available_workflows[workflow_name](
-            global_settings=self.config.application_settings().get(
-                "GLOBAL", {}
-            )
+            global_settings=global_settings
         )
 
 
@@ -633,13 +753,20 @@ def get_startup_tasks(
     for task in user_tasks or []:
         task_builder.add(task)
 
+    def get_whitelist_strategy() -> Set[Tuple[str, str]]:
+        config_file = config_file_locator.get_config_file()
+        logger.debug(
+            "Using config file to load whitelisted plugins: %s",
+            config_file
+        )
+        data = read_file(config_file)
+        return get_whitelisted_plugins_from_config_data(
+            read_settings_data_plugins(data)
+        )
+
     plugin_manager_strategy = functools.partial(
         speedwagon.plugins.register_whitelisted_plugins,
-        get_whitelist_strategy=(
-            lambda: get_whitelisted_plugins_from_config_file(
-                find_config_file_strategy=config_file_locator.get_config_file
-            )
-        ),
+        get_whitelist_strategy=get_whitelist_strategy,
     )
     plugin_manager = plugins.get_plugin_manager(plugin_manager_strategy)
 
@@ -648,6 +775,29 @@ def get_startup_tasks(
             task_builder.add(task)
 
     return list(task_builder.iter_tasks())
+
+
+def locate_workflows_with_reporting(
+    settings: FullSettingsData,
+    error_loggers: Optional[List[Callable[[str], None]]] = None
+) -> Dict[str, Type[speedwagon.job.Workflow]]:
+    workflow_load_config = (
+        speedwagon.workflow.LoadWorkflowsUsingPluginsConfig()
+    )
+    workflow_load_config.plugin_config_data =\
+        speedwagon.config.plugins.parse_plugin_data(settings)
+
+    workflow_load_config.workflow_validation_checkers.append(
+        lambda workflow: speedwagon.workflow.locate_errors_in_workflow(
+            workflow, settings
+        )
+    )
+
+    loading_workflows_stream = io.StringIO()
+    with contextlib.redirect_stderr(loading_workflows_stream):
+        return speedwagon.workflow.load_workflows(
+            workflow_load_config, error_loggers=error_loggers or []
+        )
 
 
 def main(argv: Optional[List[str]] = None) -> None:

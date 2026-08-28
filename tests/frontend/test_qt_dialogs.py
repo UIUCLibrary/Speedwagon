@@ -1,12 +1,10 @@
-import platform
 import logging
-from unittest.mock import Mock, patch, mock_open, MagicMock, ANY
+from unittest.mock import Mock
 import pytest
+
 import speedwagon
 import speedwagon.config
-import sys
-import typing
-import warnings
+
 QtCore = pytest.importorskip("PySide6.QtCore")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from speedwagon.frontend.qtwidgets.dialog import settings, dialogs
@@ -996,30 +994,29 @@ class TestPluginsTab:
 [PLUGINS.mysampleplugin]
 myworkflow = True
 """
-        with patch(
-                'configparser.open',
-                mock_open(read_data=data)
-        ):
-            config_file = "config.ini"
-            tab = settings.PluginsTab()
-            entry_point = Mock(
-                importlib.metadata.EntryPoint,
-                name="EntryPoint",
-                module="mysampleplugin"
+        config_file = "config.ini"
+        monkeypatch.setattr(settings.PluginsTab, "read_file", Mock(return_value=data))
+        # settings.PluginsTab.read_file = Mock(return_value=data)
+        tab = settings.PluginsTab()
+        entry_point = Mock(
+            importlib.metadata.EntryPoint,
+            name="EntryPoint",
+            module="mysampleplugin"
+        )
+
+        entry_point.name = "myworkflow"
+        add_entry_point = mocker.spy(
+            tab.plugins_activation.model,
+            "add_entry_point"
+        )
+        with monkeypatch.context() as mp:
+            mp.setattr(
+                settings.importlib.metadata,
+                "entry_points",
+                lambda *_, **__: [entry_point]
             )
-            entry_point.name = "myworkflow"
-            add_entry_point = mocker.spy(
-                tab.plugins_activation.model,
-                "add_entry_point"
-            )
-            with monkeypatch.context() as mp:
-                mp.setattr(
-                    settings.importlib.metadata,
-                    "entry_points",
-                    lambda *_, **__: [entry_point]
-                )
-                tab.load(config_file)
-            add_entry_point.assert_called_once_with(entry_point, True)
+            tab.load(config_file)
+        add_entry_point.assert_called_once_with(entry_point, True)
 
 
 class TestSettingsDialog:
@@ -1160,7 +1157,11 @@ class TestTabDataModelYAMLFileLoader:
                 ]
             def save(self, tabs):
                 pass
-
+        monkeypatch.setattr(
+            speedwagon.config.plugins,
+            "read_file",
+            Mock(return_value="")
+        )
         assert "All" in loader.prep_data(DummyStrategy())
 
     def test_with_no_file_is_no_op(self, qtbot, tab_widget):

@@ -20,7 +20,7 @@ from speedwagon.frontend.qtwidgets.gui import MainWindow3
 gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 
 from speedwagon.frontend.qtwidgets.dialog import dialogs
-from speedwagon.frontend.qtwidgets.dialog.settings import SettingsDialog, TabEditor, GlobalSettingsTab, SettingsBuilder
+from speedwagon.frontend.qtwidgets.dialog.settings import TabEditor, PluginsTab
 from speedwagon.frontend.qtwidgets.models.tabs import AbsLoadTabDataModelStrategy
 from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp, import_workflow_config
 from speedwagon.frontend.qtwidgets.models import tabs as tab_models
@@ -163,11 +163,6 @@ class TestSingleWorkflowJSON:
         workflow.name = "Zip Packages"
 
         workflow_klass = Mock(return_value=workflow)
-        monkeypatch.setattr(
-            speedwagon.job,
-            "available_workflows",
-            lambda: {"Zip Packages": workflow_klass}
-        )
         import tracemalloc
         tracemalloc.start()
         monkeypatch.setattr(
@@ -177,6 +172,7 @@ class TestSingleWorkflowJSON:
         )
 
         startup = gui_startup.SingleWorkflowJSON(app=None)
+        startup.locate_available_workflows = Mock(return_value={"Zip Packages": workflow_klass})
         startup.load_json_string(
             json.dumps(
                 {
@@ -218,6 +214,7 @@ class TestSingleWorkflowJSON:
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
                 app=None
             )
+        startup.get_workflow_options_strategy = lambda workflow_name: {}
         exit_calls = []
         monkeypatch.setattr(QtWidgets.QApplication, 'exit', lambda: exit_calls.append(1))
 
@@ -242,6 +239,11 @@ class TestSingleWorkflowJSON:
             "run_job_on_thread",
             lambda *args, **kwargs: Mock()
         )
+        # monkeypatch.setattr(
+        #     speedwagon.runner_strategies.BackgroundJobManager,
+        #     "get_workflow_options",
+        #     lambda *args, **kwargs: {}
+        # )
         monkeypatch.setattr(
             speedwagon.frontend.qtwidgets.gui,
             "MainWindow3",
@@ -272,11 +274,7 @@ class TestSingleWorkflowJSON:
         workflow.name = "Zip Packages"
 
         workflow_klass = Mock(return_value=workflow)
-        monkeypatch.setattr(
-            speedwagon.job,
-            "available_workflows",
-            lambda: {"Zip Packages": workflow_klass}
-        )
+        startup.locate_available_workflows = Mock(return_value={"Zip Packages": workflow_klass})
         startup.load_json_string(
             json.dumps(
                 {
@@ -491,6 +489,11 @@ class TestStartQtThreaded:
     def test_run_opens_window(self, qtbot, monkeypatch, starter):
 
         main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
+        monkeypatch.setattr(
+            speedwagon.frontend.qtwidgets.gui_startup,
+            "read_file",
+            Mock(return_value="")
+        )
         main_window3.show = Mock()
         main_window3.session_config = Mock()
         main_window3.update_settings = Mock()
@@ -629,7 +632,11 @@ class TestStartQtThreaded:
         monkeypatch.setattr(
             speedwagon.job, "available_workflows", lambda *_, **__: {}
         )
-
+        monkeypatch.setattr(
+            speedwagon.utils,
+            "read_file",
+            Mock(return_value="")
+        )
         starter.submit_job(
             job_manager,
             workflow_name,
@@ -647,6 +654,11 @@ class TestStartQtThreaded:
         monkeypatch.setattr(
             speedwagon.config.config.pathlib.Path, "home", lambda: "my_home"
         )
+        def parse_plugin_config_strategy(config_file):
+            return {}
+        monkeypatch.setattr(speedwagon.utils, "read_file", lambda *_: "")
+        monkeypatch.setattr(speedwagon.config.plugins, "read_settings_data_plugins", lambda *_: {})
+        monkeypatch.setattr(speedwagon.config.plugins, "parse_plugin_config_strategy", parse_plugin_config_strategy)
         monkeypatch.setattr(
             speedwagon.config.config.WindowsConfig,
             "get_app_data_directory",
@@ -720,6 +732,7 @@ class TestStartQtThreaded:
         settings_builder_strategy.assert_called_once()
 
     def test_locate_available_workflows(self, qtbot, monkeypatch):
+        monkeypatch.setattr(gui_startup, "read_file", Mock(return_value=""))
         def constructor(*args, **kwargs):
             return Mock(name="my workflow")
         monkeypatch.setattr(speedwagon.job, "available_workflows", lambda *_, **__: {"spam": constructor})
@@ -728,6 +741,7 @@ class TestStartQtThreaded:
         assert len(start.locate_available_workflows()) > 0
 
     def test_locate_available_workflows_error_prints_message(self, qtbot, monkeypatch):
+        monkeypatch.setattr(gui_startup, "read_file", Mock(return_value=""))
         def constructor(*args, **kwargs):
             raise speedwagon.exceptions.SpeedwagonException("Error occurred")
         monkeypatch.setattr(speedwagon.job, "available_workflows", lambda *_, **__: {"spam": constructor})
@@ -1124,7 +1138,11 @@ def test_get_active_workflows():
             }
         )
     )
-    assert "spam" in gui_startup.get_active_workflows(config_file, workflow_finder=workflow_finder)
+    assert "spam" in gui_startup.get_active_workflows_from_config_file(
+        config_file,
+        workflow_finder=workflow_finder,
+        file_parser=Mock(return_value={})
+    )
 
 class TestResolveSettingsStrategyConfigAdapter:
     @pytest.fixture()
@@ -1175,16 +1193,14 @@ def test_build_request_settings_dialog2(qtbot, monkeypatch):
         "build_setting_qt_model",
         build_setting_qt_model
     )
-    monkeypatch.setattr(
-        speedwagon.config.plugins,
-        "read_settings_file_plugins",
-        Mock(
-            name="read_settings_file_plugins",
-            return_value={"myplugin": {
+    monkeypatch.setattr(PluginsTab, "read_file", Mock())
+    monkeypatch.setattr(PluginsTab, "load_settings_data", Mock(
+        return_value={
+            "myplugin": {
                 "one": True
-            }}
-        )
-    )
+            }
+        }
+    ))
     def entry_points(*args, **kwargs):
         entry_point_1 = Mock(module='myplugin')
         entry_point_1.name = "one"
@@ -1195,7 +1211,7 @@ def test_build_request_settings_dialog2(qtbot, monkeypatch):
 
     def get_active_workflows(config_file, workflow_finder=None):
         return {}
-    monkeypatch.setattr(gui_startup, "get_active_workflows", get_active_workflows)
+    monkeypatch.setattr(gui_startup, "get_active_workflows_from_config_file", get_active_workflows)
     initialize_workflows = Mock(name="initialize_workflows", return_value=[])
     monkeypatch.setattr(speedwagon.workflow, "initialize_workflows", initialize_workflows)
     monkeypatch.setattr(
@@ -1211,7 +1227,11 @@ def test_build_request_settings_dialog2(qtbot, monkeypatch):
         get_tabs_file=Mock(return_value="sometabs.yml"),
     )
     on_success_save_updated_settings = Mock(name="on_success_save_updated_settings")
-
+    monkeypatch.setattr(
+        speedwagon.utils,
+        "read_file",
+        Mock(return_value="")
+    )
     dialog_box = gui_startup.build_request_settings_dialog(
         config_locations,
         on_success_save_updated_settings
@@ -1342,8 +1362,10 @@ class TestLocalSettingsBuilder2:
                 speedwagon.config.tabs.CustomTabData(tab_name="dummy", workflow_names=["Spam"])
             ]
         )
-def test_get_startup_tasks_includes_global_config_file_task():
+def test_get_startup_tasks_includes_global_config_file_task(monkeypatch):
     startup_task = Mock(spec_set=system_tasks.AbsSystemTask)
+    monkeypatch.setattr(speedwagon.startup, "read_file", Mock(return_value=""))
+    monkeypatch.setattr(speedwagon.config.plugins, "parse_plugin_config_strategy", Mock(return_value={}))
     tasks = speedwagon.startup.get_startup_tasks(
         config_backend = Mock(spec_set=speedwagon.config.AbsConfigSettings),
         config_file_locator =\
@@ -1355,8 +1377,10 @@ def test_get_startup_tasks_includes_global_config_file_task():
     )
     assert startup_task in tasks
 
-def test_get_startup_tasks_add_callable():
+def test_get_startup_tasks_add_callable(monkeypatch):
     startup_task = Mock()
+    monkeypatch.setattr(speedwagon.startup, "read_file", Mock(return_value=""))
+    monkeypatch.setattr(speedwagon.config.plugins, "parse_plugin_config_strategy", Mock(return_value={}))
     tasks = speedwagon.startup.get_startup_tasks(
         Mock(spec_set=speedwagon.config.AbsConfigSettings),
         config_file_locator = Mock(

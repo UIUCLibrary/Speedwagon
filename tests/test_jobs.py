@@ -169,3 +169,13 @@ class TestOnlyActivatedPluginsWorkflows:
         monkeypatch.setattr(importlib.metadata, "entry_points", mock_entry_points)
         list(speedwagon.job.OnlyActivatedPluginsWorkflows.iter_plugins())
         assert mock_entry_points.called
+
+# class TestFindAllWorkflowsPluggyUsingDataStrategy:
+#     def test_locate(self):
+#         data = {
+#             'speedwagon_uiucprescon.active_workflows': {'uiucprescon_active_workflows': True},
+#             'speedwagon_uiucprescon.deprecated_workflows': {'uiucprescon_deprecated_workflows': False}
+#         }
+#         # plugin_manager =
+#         strategy = speedwagon.job.FindAllWorkflowsPluggyUsingDataStrategy(plugin_settings=data)
+#         a = strategy.locate()

@@ -115,3 +115,12 @@ def parse_json_file(
     """
     with pathlib.Path(json_file).open("r", encoding="utf-8") as file_pointer:
         return json_parser(file_pointer)
+
+
+def read_file(file_path: str) -> str:
+    """Read a file and return a string.
+
+    This is to help with testing
+    """
+    with pathlib.Path(file_path).open(encoding="utf-8") as f:
+        return f.read()

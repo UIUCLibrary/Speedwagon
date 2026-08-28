@@ -25,6 +25,10 @@ from typing import (
 
 import speedwagon.exceptions
 
+if typing.TYPE_CHECKING:
+    import logging
+
+
 if sys.version_info < (3, 10):  # pragma: no cover
     from typing_extensions import ParamSpec
 else:
@@ -39,6 +43,7 @@ __all__ = [
     "AbsSubtask",
     "Subtask",
     "TaskStatus",
+    "BaseTask"
 ]
 
 
@@ -124,6 +129,11 @@ class Result(Generic[_S, _T]):
 
 
 class BaseTask(AbsSubtask, Generic[_T]):
+    """Base class for defining a new task for a :py:class:`Workflow` to create.
+
+    Subclass this generate a new task
+    """
+
     def __init__(self) -> None:
         """Create a new sub-task."""
         # TODO: refactor into state machine
@@ -200,6 +210,7 @@ class Subtask(BaseTask, Generic[_T], abc.ABC):
     def __init__(self) -> None:
         """Create a new sub-task."""
         super().__init__()
+        self.logger: Optional[logging.Logger] = None
         self._result: Optional[Result[Type["Subtask"], _T]] = None
 
     @property
@@ -281,10 +292,14 @@ Param = ParamSpec("Param")
 
 class DynamicSubtask(BaseTask[_T], Generic[Param, _T]):
     def __init__(
-        self, func: Callable[Param, _T], description: str
+        self,
+        func: Callable[Param, _T],
+        description: str,
+        logger: Optional[logging.Logger] = None
     ) -> None:
         super().__init__()
         self._task_description = description
+        self.logger = logger
         self.func = func
         self.args: Tuple[Any, ...] = ()
         self.kwargs: Dict[str, Any] = {}
@@ -299,7 +314,9 @@ class DynamicSubtask(BaseTask[_T], Generic[Param, _T]):
         self, *args: Param.args, **kwargs: Param.kwargs
     ) -> "DynamicSubtask":
         new_task = DynamicSubtask[Param, _T](
-            func=self.func, description=self._task_description
+            func=self.func,
+            description=self._task_description,
+            logger=self.logger
         )
         new_task.args = args
         new_task.kwargs = kwargs
@@ -739,10 +756,11 @@ class MultiStageTaskBuilder(BaseTaskBuilder):
 
 def workflow_task(
     description: str,
+    logger: Optional[logging.Logger] = None
 ) -> typing.Callable[[Callable[Param, _T]], DynamicSubtask]:
     """Decorate a function to create subtasks."""
 
     def decorator(func: Callable[Param, _T]) -> DynamicSubtask:
-        return DynamicSubtask(func, description=description)
+        return DynamicSubtask(func, description=description, logger=logger)
 
     return decorator

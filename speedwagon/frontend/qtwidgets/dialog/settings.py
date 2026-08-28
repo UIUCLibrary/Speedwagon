@@ -43,6 +43,7 @@ from speedwagon.frontend.qtwidgets.models.settings import (
 )
 from speedwagon.frontend.qtwidgets import models
 from speedwagon.config.tabs import NullTabsConfig
+from speedwagon import utils
 
 if TYPE_CHECKING:
     from speedwagon.config.tabs import AbsTabsConfigDataManagement
@@ -262,6 +263,9 @@ def open_settings_dir(
 
 
 class PluginsTab(SettingsTab[Dict[str, List[Tuple[str, bool]]]]):
+    load_settings_data = config.plugins.read_settings_data_plugins
+    read_file = utils.read_file
+
     def __init__(
         self,
         parent: Optional[QtWidgets.QWidget] = None,
@@ -280,7 +284,10 @@ class PluginsTab(SettingsTab[Dict[str, List[Tuple[str, bool]]]]):
         return self.plugins_activation.plugins()
 
     def load(self, settings_ini: str) -> None:
-        settings = config.plugins.read_settings_file_plugins(settings_ini)
+        settings = PluginsTab.load_settings_data(
+            PluginsTab.read_file(settings_ini)
+        )
+
         for entry_point in importlib.metadata.entry_points(
             group="speedwagon.plugins"
         ):
@@ -398,12 +405,17 @@ class TabsConfigurationTab(SettingsTab[List[config.tabs.CustomTabData]]):
         self.setLayout(layout)
 
     @property
-    def load_tab_data_model_strategy(self):
+    def load_tab_data_model_strategy(
+        self
+    ) -> tab_models.TabDataModelConfigLoader:
         """Get the load data model strategy."""
         return self.editor.load_tab_data_model_strategy
 
     @load_tab_data_model_strategy.setter
-    def load_tab_data_model_strategy(self, value):
+    def load_tab_data_model_strategy(
+        self,
+        value: tab_models.TabDataModelConfigLoader
+    ) -> None:
         self.editor.load_tab_data_model_strategy = value
 
     def data_is_modified(self) -> bool:
@@ -438,7 +450,7 @@ class ConfigWorkflowSettingsTab(SettingsTab[WorkflowsSettings]):
         self.model = models.WorkflowSettingsModel()
         self._editor.model = self.model
 
-    def set_workflows(self, workflows: Iterable[Workflow]):
+    def set_workflows(self, workflows: Iterable[Workflow]) -> None:
         self.model.clear()
         for workflow in workflows:
             self.model.add_workflow(workflow)

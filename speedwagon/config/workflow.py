@@ -5,20 +5,33 @@ import abc
 import collections.abc
 import os
 import io
-from typing import Optional, Dict, List, TYPE_CHECKING, Callable
+from typing import (
+    Optional,
+    Dict,
+    List,
+    TYPE_CHECKING,
+    Callable,
+    TextIO,
+    Any,
+    Iterator,
+)
+
+import yaml
+import yaml.emitter
+
+import speedwagon
 
 try:  # pragma: no cover
     from typing import TypedDict
 except ImportError:  # pragma: no cover
     from typing_extensions import TypedDict
-import yaml
-import yaml.emitter
+
 
 from .config import StandardConfigFileLocator
-from .common import DEFAULT_CONFIG_DIRECTORY_NAME
+from .common import DEFAULT_CONFIG_DIRECTORY_NAME, SettingsDataType
 
 if TYPE_CHECKING:
-    from .common import SettingsData, SettingsDataType
+    from .common import SettingsData
     from speedwagon.job import Workflow
 
 __all__ = [
@@ -49,7 +62,7 @@ WORKFLOWS_SETTINGS_YML_FILE_NAME = "workflows_settings.yml"
 
 
 class AbsWorkflowBackend(
-    collections.abc.Mapping,
+    collections.abc.Mapping[str, SettingsDataType],
     abc.ABC
 ):  # pylint: disable=R0903
     """Abstract workflow backend."""
@@ -59,10 +72,14 @@ class AbsWorkflowBackend(
         self.workflow: Optional[Workflow] = None
 
     @abc.abstractmethod
-    def get(self, key: str, default=None) -> Optional[SettingsDataType]:
+    def get(
+        self,
+        key: str,
+        default: Optional[Any] = None
+    ) -> Optional[SettingsDataType]:
         """Get data for some key."""
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str) -> SettingsDataType:
         """Get config for the workflow."""
         return self.get(item)
 
@@ -287,6 +304,25 @@ class WorkflowSettingsManager(AbsWorkflowSettingsManager):
         self.settings_saver_strategy.save(workflow, settings)
 
 
+class ReadOnlyConfigBackend(AbsWorkflowBackend):
+    def __init__(self, data: SettingsData) -> None:
+        super().__init__()
+        self.data = data
+
+    def get(
+        self,
+        key: str,
+        default: Optional[Any] = None
+    ) -> Optional[SettingsDataType]:
+        return self.data.get(key, default)
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.data)
+
+
 class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
     """Yaml based config backend."""
 
@@ -304,24 +340,28 @@ class YAMLWorkflowConfigBackend(AbsWorkflowBackend):
             raise AttributeError("yaml_file not set")
         return WorkflowSettingsYAMLResolver(self.yaml_file)
 
-    def _get_workflow_configuration(self):
+    def _get_workflow_configuration(self) -> Optional[SettingsData]:
         if self.yaml_file is None or self.workflow is None:
             return None
         return self.get_yaml_strategy().get_response(self.workflow)
 
-    def get(self, key: str, default=None) -> Optional[SettingsDataType]:
+    def get(
+        self,
+        key: str,
+        default: Optional[Any] = None
+    ) -> Optional[SettingsDataType]:
         """Get value for key."""
         if config := self._get_workflow_configuration():
             return config.get(key, default)
         return None
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Iterate over configurations."""
         if config := self._get_workflow_configuration():
             return iter(config)
         raise StopIteration
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Get the number of configurations."""
         if config := self._get_workflow_configuration():
             return len(config)
@@ -360,3 +400,50 @@ def default_backend_factory(
 
     config_backend.workflow = new_workflow
     return config_backend
+
+
+def get_workflow_config_from_yaml_file(
+    fp: TextIO, workflow_name: str
+) -> SettingsData:
+    try:
+        yaml_data = yaml.safe_load(fp)
+        if workflow_name not in yaml_data:
+            raise speedwagon.exceptions.MissingConfiguration(
+                f"Workflow '{workflow_name}' not found in YAML data."
+            )
+        workflow_config = yaml_data[workflow_name]
+        try:
+            for section in workflow_config:
+                if any(
+                    (
+                        ("name" not in section),
+                        ("value" not in section)
+                    )
+                ):
+                    raise speedwagon.exceptions.FileFormatError(
+                        f"{section} missing 'name' or 'value'"
+                    )
+        except (
+            TypeError,
+            speedwagon.exceptions.FileFormatError,
+        ) as format_error:
+            raise speedwagon.exceptions.FileFormatError(
+                "Config file format not valid"
+            ) from format_error
+
+        return {
+            entry['name']: entry['value']
+            for entry in workflow_config
+        }
+    except yaml.YAMLError as yaml_error:
+        raise speedwagon.exceptions.FileFormatError(
+            "Error parsing YAML file"
+        ) from yaml_error
+
+
+def get_workflow_options(yml_file: str, workflow_name: str) -> SettingsData:
+    with open(yml_file, "r", encoding="utf-8") as fp:
+        return speedwagon.config.workflow.get_workflow_config_from_yaml_file(
+            fp,
+            workflow_name
+        )
