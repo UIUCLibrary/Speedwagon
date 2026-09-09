@@ -61,7 +61,7 @@ class TestMainWindow3:
     def test_add_tab_add_a_tab(self, qtbot):
         window = speedwagon.frontend.qtwidgets.gui.MainWindow3()
         starting_count = window.tab_widget.count()
-        bacon_workflow = Mock(spec_set=Workflow)
+        bacon_workflow = Mock(spec=Workflow)
         bacon_workflow.name = "bacon"
         window.add_tab(
             tab_name="spam",

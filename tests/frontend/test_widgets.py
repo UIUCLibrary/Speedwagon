@@ -480,7 +480,7 @@ class TestPluginConfig:
 
         assert plugin_widget.enabled_plugins() == {"SpamPlugins": ["Spam"]}
 
-    @pytest.fixture()
+    @pytest.fixture
     def plugin_with_spam(self, qtbot):
         plugin_widget = speedwagon.frontend.qtwidgets.widgets.PluginConfig()
         entry_point = Mock(importlib.metadata.EntryPoint)
@@ -523,7 +523,7 @@ class TestPluginConfig:
         assert "Bacon" in plugins
 
 class TestWorkspace:
-    @pytest.fixture()
+    @pytest.fixture
     def sample_workflow_klass(self, qtbot):
         class Spam(Workflow):
             name = "Spam bacon eggs"
@@ -536,7 +536,7 @@ class TestWorkspace:
 
         return Spam
 
-    @pytest.fixture()
+    @pytest.fixture
     def workspace(self, monkeypatch):
         monkeypatch.setattr(
             StandardConfigFileLocator, "get_app_data_dir", lambda _: "."
@@ -547,7 +547,7 @@ class TestWorkspace:
         workspace.session_config = Mock(application_settings=Mock(side_effect=speedwagon.exceptions.MissingConfiguration('nope')))
         qtbot.addWidget(workspace)
         class Spam(speedwagon.Workflow):
-            pass
+            name = "Spam"
         workspace.set_workflow(Spam)
         assert "Workflow unavailable" in workspace.workflow_description_value.toHtml()
 

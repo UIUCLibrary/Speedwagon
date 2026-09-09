@@ -3,11 +3,12 @@ from __future__ import annotations
 import contextlib
 import abc
 import typing
+import warnings
 from types import TracebackType
 from typing import Optional, Type
 
 if typing.TYPE_CHECKING:
-    from speedwagon.runner_strategies import TaskDispatcher, TaskScheduler
+    from speedwagon.runner import TaskDispatcher, TaskScheduler
 
 
 class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
@@ -15,6 +16,7 @@ class RunnerDisplay(contextlib.AbstractContextManager, abc.ABC):
 
     def __init__(self) -> None:
         """Create a new runner display object."""
+        warnings.warn("Don't use Deprecated", DeprecationWarning, stacklevel=2)
         super().__init__()
 
         self.task_runner: typing.Optional[TaskDispatcher] = None

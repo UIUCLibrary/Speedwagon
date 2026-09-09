@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import os
+import warnings
 
 import pytest
 from unittest.mock import Mock, MagicMock, create_autospec
@@ -8,6 +9,7 @@ from typing import List, Any, Dict, TYPE_CHECKING, Mapping
 
 import speedwagon.exceptions
 from speedwagon import runner_strategies, tasks
+import speedwagon.runner
 import speedwagon
 # from tasks import TaskBuilder
 
@@ -200,7 +202,7 @@ class TestTaskGenerator:
     @pytest.mark.filterwarnings(
         "ignore:No way to request info from user:UserWarning")
     def test_tasks_call_init_task(self, workflow):
-        task_generator = runner_strategies.TaskGenerator(
+        task_generator = speedwagon.runner.TaskGenerator(
             workflow=workflow,
             options={},
             working_directory=os.path.join("some", "real", "directory")
@@ -214,7 +216,7 @@ class TestTaskGenerator:
     @pytest.mark.filterwarnings(
         "ignore:No way to request info from user:UserWarning")
     def test_tasks_runs_discover_metadata(self, workflow):
-        task_generator = runner_strategies.TaskGenerator(
+        task_generator = speedwagon.runner.TaskGenerator(
             workflow=workflow,
             options={},
             working_directory=os.path.join("some", "real", "directory")
@@ -227,7 +229,7 @@ class TestTaskGenerator:
     @pytest.mark.filterwarnings(
         "ignore:No way to request info from user:UserWarning")
     def test_tasks_runs_create_new_task(self, workflow):
-        task_generator = runner_strategies.TaskGenerator(
+        task_generator = speedwagon.runner.TaskGenerator(
             workflow=workflow,
             options={},
             working_directory=os.path.join("some", "real", "directory")
@@ -240,7 +242,7 @@ class TestTaskGenerator:
     @pytest.mark.filterwarnings(
         "ignore:No way to request info from user:UserWarning")
     def test_tasks_runs_completion_task(self, workflow):
-        task_generator = runner_strategies.TaskGenerator(
+        task_generator = speedwagon.runner.TaskGenerator(
             workflow=workflow,
             options={},
             working_directory=os.path.join("some", "real", "directory")
@@ -252,7 +254,7 @@ class TestTaskGenerator:
 
     def test_tasks_request_more_info(self, workflow):
         caller = Mock()
-        task_generator = runner_strategies.TaskGenerator(
+        task_generator = speedwagon.runner.TaskGenerator(
             workflow=workflow,
             options={},
             working_directory=os.path.join("some", "real", "directory"),
@@ -264,7 +266,7 @@ class TestTaskGenerator:
 
     def test_pretask_calls_initial_task(self, workflow):
         caller = Mock()
-        task_generator = runner_strategies.TaskGenerator(
+        task_generator = speedwagon.runner.TaskGenerator(
             workflow=workflow,
             options={},
             working_directory=os.path.join("some", "real", "directory"),
@@ -275,7 +277,7 @@ class TestTaskGenerator:
 
     def test_main_task(self, workflow):
         caller = Mock()
-        task_generator = runner_strategies.TaskGenerator(
+        task_generator = speedwagon.runner.TaskGenerator(
             workflow=workflow,
             options={},
             working_directory=os.path.join("some", "real", "directory"),
@@ -286,7 +288,7 @@ class TestTaskGenerator:
 
     def test_get_post_tasks(self, workflow):
         caller = Mock()
-        task_generator = runner_strategies.TaskGenerator(
+        task_generator = speedwagon.runner.TaskGenerator(
             workflow=workflow,
             options={},
             working_directory=os.path.join("some", "real", "directory"),
@@ -298,7 +300,7 @@ class TestTaskGenerator:
 
 class TestRunnerDisplay:
 
-    @pytest.fixture()
+    @pytest.fixture
     def dummy_runner(self):
         class DummyRunner(speedwagon.frontend.reporter.RunnerDisplay):
             def refresh(self):
@@ -329,7 +331,7 @@ class TestRunnerDisplay:
 
 class TestTaskDispatcher:
     def test_stop_is_noop_if_not_started(self):
-        dispatcher = runner_strategies.TaskDispatcher(
+        dispatcher = speedwagon.runner.TaskDispatcher(
             job_queue=Mock()
         )
         assert dispatcher.active is False and \
@@ -341,22 +343,22 @@ class TestTaskDispatcher:
             (
                     None,
                     False,
-                    runner_strategies.TaskDispatcherIdle
+                    speedwagon.runner.TaskDispatcherIdle
             ),
             (
                     Mock(is_alive=Mock(return_value=False)),
                     False,
-                    runner_strategies.TaskDispatcherIdle
+                    speedwagon.runner.TaskDispatcherIdle
             ),
             (
                     Mock(is_alive=Mock(return_value=True)),
                     True,
-                    runner_strategies.TaskDispatcherRunning
+                    speedwagon.runner.TaskDispatcherRunning
             )
         ]
     )
     def test_active(self, thread_status, expected_active, state):
-        dispatcher = runner_strategies.TaskDispatcher(
+        dispatcher = speedwagon.runner.TaskDispatcher(
             job_queue=Mock()
         )
         dispatcher.current_state = state(dispatcher)
@@ -364,12 +366,12 @@ class TestTaskDispatcher:
         assert dispatcher.active is expected_active
 
     def test_start_set_state_to_running(self):
-        dispatcher = runner_strategies.TaskDispatcher(
+        dispatcher = speedwagon.runner.TaskDispatcher(
             job_queue=Mock()
         )
 
         dispatcher.current_state = \
-            runner_strategies.TaskDispatcherIdle(dispatcher)
+            speedwagon.runner.TaskDispatcherIdle(dispatcher)
 
         try:
             dispatcher.start()
@@ -378,7 +380,7 @@ class TestTaskDispatcher:
             dispatcher.stop()
 
     def test_stop_set_state(self, monkeypatch):
-        dispatcher = runner_strategies.TaskDispatcher(
+        dispatcher = speedwagon.runner.TaskDispatcher(
             job_queue=Mock()
         )
 
@@ -387,10 +389,10 @@ class TestTaskDispatcher:
         # still manage to run.
         # ======================================================================
         dispatcher.current_state = \
-            runner_strategies.TaskDispatcherIdle(dispatcher)
+            speedwagon.runner.TaskDispatcherIdle(dispatcher)
 
         actual_halt_dispatch = \
-            runner_strategies.TaskDispatcherStopping.halt_dispatching
+            speedwagon.runner.TaskDispatcherStopping.halt_dispatching
 
         def halt_dispatching(*args, **kwargs):
             actual_halt_dispatch(*args, **kwargs)
@@ -400,7 +402,7 @@ class TestTaskDispatcher:
         # ======================================================================
 
         with monkeypatch.context() as mp:
-            mp.setattr(runner_strategies.TaskDispatcherStopping,
+            mp.setattr(speedwagon.runner.TaskDispatcherStopping,
                        "halt_dispatching",
                        lambda caller: halt_dispatching_method(caller)
                        )
@@ -415,10 +417,10 @@ class TestTaskDispatcher:
 
 class TestTaskDispatcherRunning:
     def test_running_on_active_is_noop_warning(self, caplog):
-        dispatcher = runner_strategies.TaskDispatcher(
+        dispatcher = speedwagon.runner.TaskDispatcher(
             job_queue=Mock()
         )
-        state = runner_strategies.TaskDispatcherRunning(dispatcher)
+        state = speedwagon.runner.TaskDispatcherRunning(dispatcher)
         state.start()
 
         assert any(
@@ -430,10 +432,10 @@ class TestTaskDispatcherRunning:
 
 class TestTaskDispatcherStopping:
     def test_running_stop_on_stopping_is_noop_warning(self, caplog):
-        dispatcher = runner_strategies.TaskDispatcher(
+        dispatcher = speedwagon.runner.TaskDispatcher(
             job_queue=Mock()
         )
-        state = runner_strategies.TaskDispatcherStopping(dispatcher)
+        state = speedwagon.runner.TaskDispatcherStopping(dispatcher)
         state.stop()
 
         assert any(
@@ -443,10 +445,10 @@ class TestTaskDispatcherStopping:
         )
 
     def test_running_starting_on_stopping_is_noop_warning(self, caplog):
-        dispatcher = runner_strategies.TaskDispatcher(
+        dispatcher = speedwagon.runner.TaskDispatcher(
             job_queue=Mock()
         )
-        state = runner_strategies.TaskDispatcherStopping(dispatcher)
+        state = speedwagon.runner.TaskDispatcherStopping(dispatcher)
         state.start()
 
         assert any(
@@ -458,7 +460,7 @@ class TestTaskDispatcherStopping:
 
 class TestTaskScheduler:
     def test_default_request_more_info_noop(self, capsys):
-        scheduler = runner_strategies.TaskScheduler(
+        scheduler = speedwagon.runner.TaskScheduler(
             working_directory="some_dir")
         assert scheduler.request_more_info(Mock(), "dummy", "dummy") is None
         captured = capsys.readouterr()
@@ -472,7 +474,7 @@ class TestTaskScheduler:
         ]
     )
     def test_run(self, monkeypatch, reporter):
-        scheduler = runner_strategies.TaskScheduler(
+        scheduler = speedwagon.runner.TaskScheduler(
             working_directory="some_dir")
         workflow = Mock()
         scheduler.reporter = reporter
@@ -482,10 +484,10 @@ class TestTaskScheduler:
         subtask.exec = Mock()
 
         monkeypatch.setattr(
-            runner_strategies.TaskGenerator,
+            speedwagon.runner.TaskGenerator,
             "get_main_tasks",
             create_autospec(
-                runner_strategies.TaskGenerator.get_main_tasks,
+                speedwagon.runner.TaskGenerator.get_main_tasks,
                 return_value=[subtask]
             )
         )
@@ -496,7 +498,7 @@ class TestTaskScheduler:
         assert subtask.exec.called is True
 
     def test_task_canceled(self):
-        scheduler = runner_strategies.TaskScheduler(
+        scheduler = speedwagon.runner.TaskScheduler(
             working_directory="some_dir")
         scheduler.reporter = Mock(user_canceled=True)
         scheduler.iter_tasks = Mock(return_value=[Mock()])
@@ -546,7 +548,18 @@ class SpamWorkflow(speedwagon.Workflow):
 
 class TestBackgroundJobManager:
 
-    def test_manager_does_nothing(self):
+    def test_manager_does_nothing(self, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.utils,
+            "read_file",
+            Mock(
+                side_effect=warnings.warn(
+                    "Should not need to read file for testing",
+                    category=ResourceWarning
+                ),
+                return_value=""
+            )
+        )
         with runner_strategies.BackgroundJobManager() as manager:
             assert manager is not None
 
@@ -555,7 +568,13 @@ class TestBackgroundJobManager:
         monkeypatch.setattr(
             speedwagon.utils,
             "read_file",
-            Mock(return_value="")
+            Mock(
+                side_effect=warnings.warn(
+                    "Should not need to read file for testing",
+                    category=ResourceWarning
+                ),
+                return_value=""
+            )
         )
         liaison = runner_strategies.JobManagerLiaison(
             callbacks=callbacks,
@@ -567,7 +586,6 @@ class TestBackgroundJobManager:
             lambda *_: "."
         )
         with runner_strategies.BackgroundJobManager() as manager:
-            manager.valid_workflows = {"spam": SpamWorkflow}
             manager.get_workflow_options_strategy = lambda workflow_name: {}
             manager.submit_job(
                 workflow_name="spam",
@@ -606,7 +624,6 @@ class TestBackgroundJobManager:
         )
         with pytest.raises(FileNotFoundError):
             with runner_strategies.BackgroundJobManager() as manager:
-                manager.valid_workflows = {"bacon": BaconWorkflow}
                 manager.submit_job(
                     workflow_name="bacon",
                     options={},
@@ -617,21 +634,21 @@ class TestBackgroundJobManager:
 
 class TestThreadedEvents:
     def test_done(self):
-        events = runner_strategies.ThreadedEvents()
+        events = speedwagon.runner.ThreadedEvents()
         assert events.is_done() is False
         events.done()
         assert events.is_done() is True
 
     def test_stop(self):
-        events = runner_strategies.ThreadedEvents()
+        events = speedwagon.runner.ThreadedEvents()
         assert events.is_stopped() is False
         events.stop()
         assert events.is_stopped() is True
 
     def test_started(self):
-        events = runner_strategies.ThreadedEvents()
+        events = speedwagon.runner.ThreadedEvents()
         assert events.has_started() is False
-        events.started.set()
+        events.start()
         assert events.has_started() is True
 
 
@@ -642,17 +659,26 @@ class TestThreadedEvents:
     'get_additional_info',
     'create_new_task'
 ])
-def test_simple_api_run_workflow_calls_methods(method_name):
+def test_simple_api_run_workflow_calls_methods(method_name, monkeypatch):
     mock_workflow = Mock(
         spec=speedwagon.Workflow,
         name="Workflow",
         get_additional_info=Mock()
     )
+    mock_workflow.name = "my_Workflow"
+    mock_workflow.get_additional_info = Mock(return_value={})
     mock_workflow.discover_task_metadata = Mock(return_value=[{}])
     mock_workflow.request_more_info = Mock(return_value={})
-    runner_strategies.simple_api_run_workflow(
-        mock_workflow, workflow_options={}
-    )
+    def available_workflows():
+        return {
+            "my_Workflow": Mock(return_value=mock_workflow)
+        }
+    monkeypatch.setattr(runner_strategies, "default_workflows_loader_strategy", available_workflows)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        runner_strategies.simple_api_run_workflow(
+            mock_workflow, workflow_options={}
+        )
 
     assert getattr(mock_workflow, method_name).called is True
 
@@ -663,45 +689,54 @@ def test_simple_api_calls_exec_on_task(monkeypatch):
         name="Workflow",
         get_additional_info=Mock()
     )
-    mock_task = Mock(spec=speedwagon.tasks.Subtask)
+    mock_workflow.name = "my_Workflow"
+    mock_task = Mock(spec=speedwagon.tasks.Subtask, logger=None)
     mock_workflow.discover_task_metadata = Mock(return_value=[{}])
     mock_workflow.request_more_info = Mock(return_value={})
 
+    def available_workflows():
+        return {
+            "my_Workflow": Mock(return_value=mock_workflow)
+        }
+    monkeypatch.setattr(runner_strategies, "default_workflows_loader_strategy", available_workflows)
     monkeypatch.setattr(
-        runner_strategies.TaskGenerator,
+        speedwagon.runner.TaskGenerator,
         "get_main_tasks",
         create_autospec(
-            runner_strategies.TaskGenerator.get_main_tasks, 
+            speedwagon.runner.TaskGenerator.get_main_tasks,
             return_value=[mock_task]
         )
     )
-
-    runner_strategies.simple_api_run_workflow(
-        mock_workflow, workflow_options={}
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        runner_strategies.simple_api_run_workflow(
+            mock_workflow, workflow_options={}
+        )
     assert mock_task.exec.called is True
 
 def test_simple_api2_calls_exec_on_task(monkeypatch):
     mock_workflow = Mock(
         spec=speedwagon.Workflow,
-        name="Workflow",
+        name="my_Workflow",
         get_additional_info=Mock()
     )
-    mock_task = Mock(spec=speedwagon.tasks.Subtask)
+    mock_workflow.name = "my_Workflow"
+    mock_task = Mock(spec=speedwagon.tasks.Subtask, logger=None)
     mock_workflow.discover_task_metadata = Mock(return_value=[{}])
     mock_workflow.request_more_info = Mock(return_value={})
 
     monkeypatch.setattr(
-        runner_strategies.TaskGenerator,
+        speedwagon.runner.TaskGenerator,
         "get_main_tasks",
         create_autospec(
-            runner_strategies.TaskGenerator.get_main_tasks,
+            speedwagon.runner.TaskGenerator.get_main_tasks,
             return_value=[mock_task]
         )
     )
 
+    workflows_loader_strategy = Mock(return_value={"my_Workflow": Mock(return_value=mock_workflow)})
     runner_strategies.simple_api_run_workflow2(
-        mock_workflow, config=runner_strategies.JobSubmitConfig()
+        "my_Workflow", config=runner_strategies.JobSubmitConfig(), workflows_loader_strategy=workflows_loader_strategy,
     )
     assert mock_task.exec.called is True
 
