@@ -1,4 +1,5 @@
 import logging
+import warnings
 from unittest.mock import Mock
 import pytest
 
@@ -995,8 +996,17 @@ class TestPluginsTab:
 myworkflow = True
 """
         config_file = "config.ini"
-        monkeypatch.setattr(settings.PluginsTab, "read_file", Mock(return_value=data))
-        # settings.PluginsTab.read_file = Mock(return_value=data)
+        monkeypatch.setattr(
+            settings.PluginsTab,
+            "read_file",
+            Mock(
+                side_effect=warnings.warn(
+                    "Should not need to read file for testing",
+                    category=ResourceWarning
+                ),
+                return_value=data
+            )
+        )
         tab = settings.PluginsTab()
         entry_point = Mock(
             importlib.metadata.EntryPoint,
@@ -1157,10 +1167,17 @@ class TestTabDataModelYAMLFileLoader:
                 ]
             def save(self, tabs):
                 pass
+
         monkeypatch.setattr(
             speedwagon.config.plugins,
             "read_file",
-            Mock(return_value="")
+            Mock(
+                side_effect=warnings.warn(
+                    "Should not need to read file for testing",
+                    category=ResourceWarning
+                ),
+                return_value=""
+            )
         )
         assert "All" in loader.prep_data(DummyStrategy())
 

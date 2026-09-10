@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+import warnings
 import webbrowser
 
 import pytest
@@ -22,11 +23,11 @@ gui_startup = pytest.importorskip("speedwagon.frontend.qtwidgets.gui_startup")
 from speedwagon.frontend.qtwidgets.dialog import dialogs
 from speedwagon.frontend.qtwidgets.dialog.settings import TabEditor, PluginsTab
 from speedwagon.frontend.qtwidgets.models.tabs import AbsLoadTabDataModelStrategy
-from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp, import_workflow_config
+from speedwagon.frontend.qtwidgets.gui_startup import save_workflow_config, TabsEditorApp, import_workflow_config, open_request_more_info_dialog_box
 from speedwagon.frontend.qtwidgets.models import tabs as tab_models
 import speedwagon.workflows.builtin
 from speedwagon.tasks import system as system_tasks
-from speedwagon.job import AbsWorkflowFinder
+from speedwagon.job import AbsWorkflowFinder, Workflow
 import speedwagon.startup
 
 def test_standalone_tab_editor_loads(qtbot, monkeypatch):
@@ -161,7 +162,11 @@ class TestSingleWorkflowJSON:
         )
         workflow = Mock()
         workflow.name = "Zip Packages"
-
+        monkeypatch.setattr(
+            speedwagon.utils,
+            "read_file",
+            Mock(return_value="")
+        )
         workflow_klass = Mock(return_value=workflow)
         import tracemalloc
         tracemalloc.start()
@@ -214,6 +219,23 @@ class TestSingleWorkflowJSON:
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
                 app=None
             )
+        monkeypatch.setattr(
+            speedwagon.utils,
+            "read_file",
+            Mock(return_value="")
+        )
+        monkeypatch.setattr(speedwagon.frontend.qtwidgets.gui_startup, "open_request_more_info_dialog_box", lambda *args, **kwargs: None)
+        startup.locate_available_workflows = lambda: {
+            "spam": Mock(
+                return_value=(
+                    Mock(
+                        spec_set=Workflow,
+                        name="Spam Workflow",
+                        discover_task_metadata=lambda *args, **kwargs:[]
+                    )
+                )
+            )
+        }
         startup.get_workflow_options_strategy = lambda workflow_name: {}
         exit_calls = []
         monkeypatch.setattr(QtWidgets.QApplication, 'exit', lambda: exit_calls.append(1))
@@ -234,16 +256,6 @@ class TestSingleWorkflowJSON:
             "exec",
             Mock()
         )
-        monkeypatch.setattr(
-            speedwagon.runner_strategies.BackgroundJobManager,
-            "run_job_on_thread",
-            lambda *args, **kwargs: Mock()
-        )
-        # monkeypatch.setattr(
-        #     speedwagon.runner_strategies.BackgroundJobManager,
-        #     "get_workflow_options",
-        #     lambda *args, **kwargs: {}
-        # )
         monkeypatch.setattr(
             speedwagon.frontend.qtwidgets.gui,
             "MainWindow3",
@@ -266,7 +278,7 @@ class TestSingleWorkflowJSON:
     def test_load_json(self, monkeypatch):
         monkeypatch.setattr(
             speedwagon.config,
-            "get_whitelisted_plugins_from_config_file",
+            "get_whitelisted_plugins_from_config_data",
             lambda: []
         )
         startup = gui_startup.SingleWorkflowJSON(app=None)
@@ -291,6 +303,16 @@ class TestSingleWorkflowJSON:
                startup.options["Output"] == "dummy_out" and \
                startup.workflow.name == 'Zip Packages'
 
+def test_request_more_info_emits_request_signal(qtbot):
+    workflow = Mock()
+    options = {}
+    pre_results = []
+    wait_condition = MagicMock()
+    request_window = speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo()
+    with qtbot.waitSignal(request_window.request):
+        open_request_more_info_dialog_box(
+            request_window, workflow, options, pre_results, wait_condition
+        )
 
 class TestStartQtThreaded:
     @pytest.fixture(scope="function")
@@ -490,7 +512,7 @@ class TestStartQtThreaded:
 
         main_window3 = speedwagon.frontend.qtwidgets.gui.MainWindow3()
         monkeypatch.setattr(
-            speedwagon.frontend.qtwidgets.gui_startup,
+            speedwagon.utils,
             "read_file",
             Mock(return_value="")
         )
@@ -601,18 +623,6 @@ class TestStartQtThreaded:
         gui_startup.load_help_web_page()
         open_new.assert_called_once()
 
-    def test_request_more_info_emits_request_signal(self, qtbot, starter):
-        workflow = Mock()
-        options = {}
-        pre_results = []
-        wait_condition = MagicMock()
-        with qtbot.waitSignal(starter._request_window.request):
-            starter.request_more_info(
-                workflow,
-                options,
-                pre_results,
-                wait_condition=wait_condition
-            )
 
     def test_submit_job_errors_on_unknown_workflow(
             self,
@@ -656,7 +666,17 @@ class TestStartQtThreaded:
         )
         def parse_plugin_config_strategy(config_file):
             return {}
-        monkeypatch.setattr(speedwagon.utils, "read_file", lambda *_: "")
+        monkeypatch.setattr(
+            speedwagon.utils,
+            "read_file",
+            Mock(
+                side_effect=warnings.warn(
+                    "Should not need to read file for testing",
+                    category=ResourceWarning
+                ),
+                return_value=""
+            )
+        )
         monkeypatch.setattr(speedwagon.config.plugins, "read_settings_data_plugins", lambda *_: {})
         monkeypatch.setattr(speedwagon.config.plugins, "parse_plugin_config_strategy", parse_plugin_config_strategy)
         monkeypatch.setattr(
@@ -705,15 +725,14 @@ class TestStartQtThreaded:
         loaded_workflows = {}
         start.load_all_workflows_tab(main_window, loaded_workflows)
 
-        # Flushing because qt quits before the logging qt signals are
-        # propagated to the log widget. This should be fixed but for now,
-        # it's managed here in the tests
-        for handler in start.logger.handlers:
-            handler.flush()
-
         main_window.add_tab.assert_called_with("All", {})
 
-    def test_set_application_name(self, qtbot):
+    def test_set_application_name(self, qtbot, monkeypatch):
+        monkeypatch.setattr(
+            speedwagon.utils,
+            "read_file",
+            Mock(return_value="")
+        )
         start = gui_startup.StartQtThreaded(app=Mock())
         start.set_application_name("new app")
         main_window = MainWindow3()
@@ -732,7 +751,17 @@ class TestStartQtThreaded:
         settings_builder_strategy.assert_called_once()
 
     def test_locate_available_workflows(self, qtbot, monkeypatch):
-        monkeypatch.setattr(gui_startup, "read_file", Mock(return_value=""))
+        monkeypatch.setattr(
+            gui_startup,
+            "read_file",
+            Mock(
+                side_effect=warnings.warn(
+                    "Should not need to read file for testing",
+                    category=ResourceWarning
+                ),
+                return_value=""
+            )
+        )
         def constructor(*args, **kwargs):
             return Mock(name="my workflow")
         monkeypatch.setattr(speedwagon.job, "available_workflows", lambda *_, **__: {"spam": constructor})
@@ -749,7 +778,17 @@ class TestStartQtThreaded:
         factory.assert_called_once()
 
     def test_locate_available_workflows_error_prints_message(self, qtbot, monkeypatch):
-        monkeypatch.setattr(gui_startup, "read_file", Mock(return_value=""))
+        monkeypatch.setattr(
+            gui_startup,
+            "read_file",
+            Mock(
+                side_effect=warnings.warn(
+                    "Should not need to read file for testing",
+                    category=ResourceWarning
+                ),
+                return_value=""
+            )
+        )
         def constructor(*args, **kwargs):
             raise speedwagon.exceptions.SpeedwagonException("Error occurred")
         monkeypatch.setattr(speedwagon.job, "available_workflows", lambda *_, **__: {"spam": constructor})
@@ -836,7 +875,7 @@ class TestWorkflowProgressCallbacks:
             )
 
         with qtbot.waitSignal(callbacks.signals.finished) as blocker:
-            callbacks.finished(speedwagon.runner_strategies.JobSuccess.SUCCESS)
+            callbacks.finished(speedwagon.runner.JobSuccess.SUCCESS)
 
     def test_job_status_signal(self, dialog_box, qtbot):
         callbacks = \
@@ -1372,7 +1411,17 @@ class TestLocalSettingsBuilder2:
         )
 def test_get_startup_tasks_includes_global_config_file_task(monkeypatch):
     startup_task = Mock(spec_set=system_tasks.AbsSystemTask)
-    monkeypatch.setattr(speedwagon.startup, "read_file", Mock(return_value=""))
+    monkeypatch.setattr(
+        speedwagon.startup,
+        "read_file",
+        Mock(
+            side_effect=warnings.warn(
+                "Should not need to read file for testing",
+                category=ResourceWarning
+            ),
+            return_value=""
+        )
+    )
     monkeypatch.setattr(speedwagon.config.plugins, "parse_plugin_config_strategy", Mock(return_value={}))
     tasks = speedwagon.startup.get_startup_tasks(
         config_backend = Mock(spec_set=speedwagon.config.AbsConfigSettings),
@@ -1387,7 +1436,17 @@ def test_get_startup_tasks_includes_global_config_file_task(monkeypatch):
 
 def test_get_startup_tasks_add_callable(monkeypatch):
     startup_task = Mock()
-    monkeypatch.setattr(speedwagon.startup, "read_file", Mock(return_value=""))
+    monkeypatch.setattr(
+        speedwagon.startup,
+        "read_file",
+        Mock(
+            side_effect=warnings.warn(
+                "Should not need to read file for testing",
+                category=ResourceWarning
+            ),
+            return_value=""
+        )
+    )
     monkeypatch.setattr(speedwagon.config.plugins, "parse_plugin_config_strategy", Mock(return_value={}))
     tasks = speedwagon.startup.get_startup_tasks(
         Mock(spec_set=speedwagon.config.AbsConfigSettings),

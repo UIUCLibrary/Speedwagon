@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import dataclasses
-import threading
 import typing
 from typing import (
     Dict,
@@ -33,6 +32,7 @@ from speedwagon.frontend.qtwidgets.dialog.dialogs import TableEditDialog
 
 if typing.TYPE_CHECKING:
     from speedwagon.job import Workflow
+    from speedwagon.runner import AbsWaiter
 
 DEFAULT_WINDOW_FLAGS = Qt.WindowType(0)
 
@@ -455,7 +455,10 @@ class QtRequestMoreInfo(QtCore.QObject):
 
     request = QtCore.Signal(object, object, object, object)
 
-    def __init__(self, parent: typing.Optional[QtWidgets.QWidget]) -> None:
+    def __init__(
+        self,
+        parent: typing.Optional[QtWidgets.QWidget] = None
+    ) -> None:
         """Create a new qt object."""
         super().__init__(parent)
         self.results: Optional[Mapping[str, typing.Any]] = None
@@ -465,7 +468,7 @@ class QtRequestMoreInfo(QtCore.QObject):
 
     def request_more_info(
         self,
-        user_is_interacting: threading.Condition,
+        user_is_interacting: AbsWaiter,
         workflow: Workflow[Any],
         options: Mapping[str, object],
         pre_results: List[typing.Any],

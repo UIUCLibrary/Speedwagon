@@ -249,7 +249,6 @@ class ApplicationLauncher:
         self.strategy.config_files_locator = StandardConfigFileLocator(
             self.application_config_directory_name
         )
-        self.strategy.set_application_name(self.application_name)
         self.strategy.startup_tasks = self.startup_tasks
         self.strategy.initialize()
 
@@ -436,6 +435,7 @@ class RunCommand(SubCommand):
         )
 
         app = ApplicationLauncher()
+        app.strategy = startup_strategy
         app.initialize()
         sys.exit(app_launcher.run())
 
@@ -626,13 +626,13 @@ class SingleWorkflowJSON(AbsStarter):
             )
             workflow_logger.addHandler(handler)
             speedwagon.runner_strategies.simple_api_run_workflow2(
-                self.workflow,
+                self.workflow.name,
                 speedwagon.runner_strategies.JobSubmitConfig(
                     workflow=workflow_options,
                     job=self.options or {},
                     global_settings=self.global_settings or {}
                 ),
-                workflow_logger,
+                workflows_loader_strategy=speedwagon.job.available_workflows,
             )
         return 0
 

@@ -409,6 +409,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
 class WorkflowProgress(WorkflowProgressGui):
     aborted = QtCore.Signal()
+    opened = QtCore.Signal()
 
     def __init__(
         self, parent: typing.Optional[QtWidgets.QWidget] = None
@@ -512,6 +513,10 @@ class WorkflowProgress(WorkflowProgressGui):
 
         cursor.insertText("\n")
         cursor.endEditBlock()
+
+    def showEvent(self, event: QtGui.QShowEvent, /) -> None:
+        super().showEvent(event)
+        self.opened.emit()
 
 
 class AbsSaveReport(abc.ABC):  # pylint: disable=R0903

@@ -8,7 +8,7 @@ from typing import Optional, TYPE_CHECKING
 
 from PySide6 import QtWidgets, QtCore
 
-from speedwagon import runner_strategies
+import speedwagon.runner
 
 if TYPE_CHECKING:
     from speedwagon.job import AbsWorkflow
@@ -36,7 +36,7 @@ class AbsRunner(metaclass=abc.ABCMeta):
         """Run the workflow."""
 
 
-class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
+class WorkflowProgressCallbacks(speedwagon.runner.AbsJobCallbacks):
     """Callback class for communicating between Qt and Python."""
 
     class WorkflowSignals(QtCore.QObject):
@@ -49,7 +49,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         message = QtCore.Signal(str, int)
         status_changed = QtCore.Signal(str)
         started = QtCore.Signal()
-        finished = QtCore.Signal(runner_strategies.JobSuccess)
+        finished = QtCore.Signal(speedwagon.runner.JobSuccess)
 
         def __init__(
             self, parent: qtwidgets.dialog.dialogs.WorkflowProgress
@@ -101,19 +101,19 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
             self.dialog_box.failed()
 
         @QtCore.Slot(object)
-        def _finished(self, results: runner_strategies.JobSuccess) -> None:
+        def _finished(self, results: speedwagon.runner.JobSuccess) -> None:
             if results in [
-                runner_strategies.JobSuccess.SUCCESS,
-                runner_strategies.JobSuccess.ABORTED,
+                speedwagon.runner.JobSuccess.SUCCESS,
+                speedwagon.runner.JobSuccess.ABORTED,
             ]:
                 self.dialog_box.success_completed()
             elif results in [
-                runner_strategies.JobSuccess.FAILURE,
+                speedwagon.runner.JobSuccess.FAILURE,
             ]:
                 self.dialog_box.reject()
 
         def finished_called(
-            self, result: runner_strategies.JobSuccess
+            self, result: speedwagon.runner.JobSuccess
         ) -> None:
             """Signal that job is finished."""
             self.finished.emit(result)
@@ -165,6 +165,11 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         traceback_string: Optional[str] = None,
     ) -> None:
         """Signal an error message."""
+        if not any([
+            isinstance(message, str),
+            message is None
+        ]):
+            raise TypeError("message must be a string or None")
         self.signals.submit_error(message, exc, traceback_string)
 
     def start(self) -> None:
@@ -172,7 +177,7 @@ class WorkflowProgressCallbacks(runner_strategies.AbsJobCallbacks):
         self.signals.started.emit()
         self.signals.dialog_box.start()
 
-    def finished(self, result: runner_strategies.JobSuccess) -> None:
+    def finished(self, result: speedwagon.runner.JobSuccess) -> None:
         """Signal that everything is finished."""
         self.signals.finished_called(result)
 

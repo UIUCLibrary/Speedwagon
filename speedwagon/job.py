@@ -59,7 +59,7 @@ class AbsWorkflow(Generic[_T], metaclass=abc.ABCMeta):
 
     active = True
     description: Optional[str] = None
-    name: Optional[str] = None
+    name: str
     global_settings: SettingsData = {}
     required_settings_keys: Set[str] = set()
 
