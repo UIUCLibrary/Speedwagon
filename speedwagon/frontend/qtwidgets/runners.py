@@ -45,6 +45,7 @@ class WorkflowProgressCallbacks(speedwagon.runner.AbsJobCallbacks):
         error = QtCore.Signal(object, object, object)
         progress_changed = QtCore.Signal(int)
         total_jobs_changed = QtCore.Signal(int)
+        cancel_requested = QtCore.Signal()
         cancel_complete = QtCore.Signal()
         message = QtCore.Signal(str, int)
         status_changed = QtCore.Signal(str)
@@ -57,6 +58,7 @@ class WorkflowProgressCallbacks(speedwagon.runner.AbsJobCallbacks):
             """Create a new workprogress callback object."""
             super().__init__(parent)
             self.dialog_box = parent
+            # self.cancel_requested.connect(self.dialog_box.cancel_requested)
             self.status_changed.connect(self.set_banner_text)
             self.progress_changed.connect(self.dialog_box.set_current_progress)
             self.finished.connect(self._finished)

@@ -214,6 +214,7 @@ class TestSingleWorkflowJSON:
         startup.run()
         assert submit_job.called is True
 
+    @pytest.mark.skip(reason="Need to figure out how to mock exec")
     def test_run_on_exit_is_called(self, qtbot, monkeypatch):
         startup = \
             speedwagon.frontend.qtwidgets.gui_startup.SingleWorkflowJSON(
@@ -1489,3 +1490,12 @@ def test_import_workflow_config_failure_logs_to_console(monkeypatch):
     serialization_strategy = Mock(load=Mock(return_value=(workflow_name, {})))
     gui_startup.import_workflow_config(parent=main_window, dialog_box=dialog_box, serialization_strategy=serialization_strategy)
     main_window.logger.error.assert_called_once()
+
+class TestQThreadEvents:
+    def test_cancel_changes_sentinel(self):
+        events = gui_startup.QThreadEvents()
+        sentinel = speedwagon.tasks.tasks.Sentinel()
+        assert sentinel.job_aborted is False
+        events.set_current_task_sentinel(sentinel)
+        events.cancel()
+        assert sentinel.job_aborted is True

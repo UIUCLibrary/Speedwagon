@@ -76,8 +76,8 @@ def get_workflows_from_plugin(
 
         for workflow_name, workflow_klass in registered_workflows.items():
             if (
-                    inclusion_filter is not None and
-                    inclusion_filter(workflow_klass) is False
+                inclusion_filter is not None and
+                inclusion_filter(workflow_klass) is False
             ):
                 continue
             workflows[workflow_name] = workflow_klass

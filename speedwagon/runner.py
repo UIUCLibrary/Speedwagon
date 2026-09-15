@@ -34,7 +34,7 @@ import speedwagon.tasks
 if typing.TYPE_CHECKING:
     from speedwagon.job import Workflow
     from speedwagon.tasks import Result
-    from speedwagon.tasks.tasks import BaseTask
+    from speedwagon.tasks.tasks import BaseTask, Sentinel
     from speedwagon.runner_strategies import JobSubmitConfig
 
 __all__ = [
@@ -42,6 +42,8 @@ __all__ = [
 ]
 
 USER_ABORTED_MESSAGE = "User Aborted"
+
+module_logger = logging.getLogger(__name__)
 
 
 class AbsTaskDispatcherState(abc.ABC):
@@ -137,13 +139,24 @@ class AbsEvents(abc.ABC):
     def done(self) -> None:
         """Set to done."""
 
+    @abc.abstractmethod
+    def set_current_task_sentinel(self, sentinel: Optional[Sentinel]):
+        """Set the current task's sentinel."""
+
+    @abc.abstractmethod
+    def cancel(self) -> None:
+        """Cancel the task."""
+
 
 class ThreadedEvents(AbsEvents):
+    """Communication for threaded events."""
+
     def __init__(self) -> None:
         super().__init__()
         self._stopped = threading.Event()
         self._started = threading.Event()
         self._done = threading.Event()
+        self._current_task_sentinel: Optional[Sentinel] = None
 
     def wait_for_started(self) -> None:
         self._started.wait()
@@ -165,6 +178,34 @@ class ThreadedEvents(AbsEvents):
 
     def is_done(self) -> bool:
         return self._done.is_set()
+
+    def set_current_task_sentinel(self, sentinel: Optional[Sentinel]):
+        self._current_task_sentinel = sentinel
+
+    def cancel(self) -> None:
+        """Cancel the current task.
+
+        Examples:
+
+        .. testsetup:: *
+
+            import speedwagon.runner
+            import speedwagon.tasks.tasks
+
+
+        >>> event = speedwagon.runner.ThreadedEvents()
+        >>> sentinel = speedwagon.tasks.tasks.Sentinel()
+        >>> sentinel.job_aborted
+        False
+        >>> event.set_current_task_sentinel(sentinel)
+        >>> event.cancel()
+        >>> sentinel.job_aborted
+        True
+        """
+        if self._current_task_sentinel is not None:
+            self._current_task_sentinel.job_aborted = True
+        else:
+            module_logger.warning("No current task sentinel to cancel")
 
 
 # pylint: disable-next=too-few-public-methods
@@ -732,7 +773,6 @@ class TaskScheduler:
             Yields subtasks for a workflow.
 
         """
-        # breakpoint()
         self.task_generator_strategy.clear_results()
         yield from self.task_generator_strategy.iterate_tasks(
             workflow, options, self
@@ -870,7 +910,9 @@ def _get_run_events(
             "done": lambda *_: None,
             'is_done': lambda: True,
             'is_stopped': lambda: True,
+            'set_current_task_sentinel': lambda *_: None,
             'start': lambda: None,
+            'cancel': lambda: None,
             'stop': lambda: None,
         }
     )()
@@ -903,7 +945,12 @@ def run(
             events.wait_for_started()
             for task in task_scheduler.iter_tasks(workflow, config.job):
                 if async_communication:
-                    if async_communication.events.is_stopped() is True:
+                    if task.sentinel:
+                        task.sentinel.job_aborted = False
+                    async_communication.events.set_current_task_sentinel(
+                        task.sentinel
+                    )
+                    if async_communication.events.is_stopped():
                         async_communication.callbacks.cancelling_complete()
                         break
 
