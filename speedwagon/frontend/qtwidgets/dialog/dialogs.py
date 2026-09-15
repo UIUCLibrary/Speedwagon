@@ -237,7 +237,7 @@ class WorkflowProgressStateWorking(AbsWorkflowProgressState):
 
     def close_dialog(self, event: QtGui.QCloseEvent) -> None:
         if self.ask_user_if_should_stop():
-            self.context.aborted.emit()
+            self.context.cancel_requested.emit()
             self.context.state = WorkflowProgressStateStopping(self.context)
             event.accept()
         else:
@@ -408,7 +408,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
 
 class WorkflowProgress(WorkflowProgressGui):
-    aborted = QtCore.Signal()
+    cancel_requested = QtCore.Signal()
     opened = QtCore.Signal()
 
     def __init__(
@@ -436,8 +436,7 @@ class WorkflowProgress(WorkflowProgressGui):
         # =====================================================================
         self.button_box.button(  # type: ignore
             QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        ).clicked.connect(self.aborted)
-
+        ).clicked.connect(self.cancel_requested)
         self.setModal(True)
         # =====================================================================
         self.state: AbsWorkflowProgressState = WorkflowProgressStateIdle(self)
@@ -516,7 +515,8 @@ class WorkflowProgress(WorkflowProgressGui):
 
     def showEvent(self, event: QtGui.QShowEvent, /) -> None:
         super().showEvent(event)
-        self.opened.emit()
+        if event.type() == event.Type.Show:
+            self.opened.emit()
 
 
 class AbsSaveReport(abc.ABC):  # pylint: disable=R0903

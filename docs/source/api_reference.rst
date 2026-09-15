@@ -8,6 +8,7 @@ API Reference
     speedwagon.frontend
     speedwagon.job
     speedwagon.reports
+    speedwagon.runner
     speedwagon.runner_strategies
     speedwagon.startup
     speedwagon.tasks
@@ -22,6 +23,7 @@ API Reference
     speedwagon/speedwagon
     speedwagon/speedwagon.config
     speedwagon/speedwagon.reports
+    speedwagon/speedwagon.runner
     speedwagon/speedwagon.startup
     speedwagon/speedwagon.tasks
     speedwagon/speedwagon.validators

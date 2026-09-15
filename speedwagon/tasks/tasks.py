@@ -5,6 +5,7 @@ import abc
 import collections
 from dataclasses import dataclass
 import enum
+import logging
 import os
 import sys
 import queue
@@ -25,9 +26,6 @@ from typing import (
 
 import speedwagon.exceptions
 
-if typing.TYPE_CHECKING:
-    import logging
-
 
 if sys.version_info < (3, 10):  # pragma: no cover
     from typing_extensions import ParamSpec
@@ -45,6 +43,9 @@ __all__ = [
     "TaskStatus",
     "BaseTask"
 ]
+
+module_logger = logging.getLogger(__name__)
+module_logger.setLevel(logging.INFO)
 
 
 class TaskStatus(enum.IntEnum):
@@ -212,6 +213,7 @@ class Subtask(BaseTask, Generic[_T], abc.ABC):
         super().__init__()
         self.logger: Optional[logging.Logger] = None
         self._result: Optional[Result[Type["Subtask"], _T]] = None
+        self.sentinel: Optional[Sentinel] = None
 
     @property
     def task_result(self) -> Optional[Result[Type["Subtask"], _T]]:
@@ -290,32 +292,41 @@ class PreTask(AbsSubtask):
 Param = ParamSpec("Param")
 
 
+@dataclass
+class DynamicSubtaskInternal(Generic[Param, _T]):
+    task_description: str
+    result: Optional[Result[Callable[Param, _T], _T]] = None
+
+
 class DynamicSubtask(BaseTask[_T], Generic[Param, _T]):
     def __init__(
         self,
         func: Callable[Param, _T],
         description: str,
-        logger: Optional[logging.Logger] = None
+        sentinel: Optional[Sentinel] = None,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         super().__init__()
-        self._task_description = description
+        self._internal: DynamicSubtaskInternal[Param, _T] =\
+            DynamicSubtaskInternal(
+                task_description=description
+            )
         self.logger = logger
+        self.sentinel = sentinel
         self.func = func
         self.args: Tuple[Any, ...] = ()
         self.kwargs: Dict[str, Any] = {}
-        self._result: Optional[Result[Callable[Param, _T], _T]] = (
-            None
-        )
 
     def task_description(self) -> Optional[str]:
-        return self._task_description
+        return self._internal.task_description
 
     def __call__(
         self, *args: Param.args, **kwargs: Param.kwargs
     ) -> "DynamicSubtask":
         new_task = DynamicSubtask[Param, _T](
             func=self.func,
-            description=self._task_description,
+            description=self._internal.task_description,
+            sentinel=self.sentinel,
             logger=self.logger
         )
         new_task.args = args
@@ -328,14 +339,14 @@ class DynamicSubtask(BaseTask[_T], Generic[Param, _T]):
         return True
 
     def set_results(self, results: _T) -> None:
-        self._result = Result(self.func, results)
+        self._internal.result = Result(self.func, results)
 
     @property
     def task_result(
         self,
     ) -> Optional[Result[Callable[Param, _T], _T]]:
         """Get the result of the function."""
-        return self._result
+        return self._internal.result
 
     def exec(self) -> None:
         """Execute subtask."""
@@ -754,13 +765,36 @@ class MultiStageTaskBuilder(BaseTaskBuilder):
         return task
 
 
+# pylint: disable-next=too-few-public-methods
+class Sentinel:
+    """Sentinel class for tracking task abortion status."""
+
+    def __init__(self) -> None:
+        self._job_aborted = False
+
+    @property
+    def job_aborted(self) -> bool:
+        return self._job_aborted
+
+    @job_aborted.setter
+    def job_aborted(self, value: bool) -> None:
+        module_logger.debug("Sentinel setting job aborted to %s", value)
+        self._job_aborted = value
+
+
 def workflow_task(
     description: str,
-    logger: Optional[logging.Logger] = None
+    logger: Optional[logging.Logger] = None,
+    sentinel: Optional[Sentinel] = None,
 ) -> typing.Callable[[Callable[Param, _T]], DynamicSubtask]:
     """Decorate a function to create subtasks."""
 
     def decorator(func: Callable[Param, _T]) -> DynamicSubtask:
-        return DynamicSubtask(func, description=description, logger=logger)
+        return DynamicSubtask(
+            func,
+            description=description,
+            sentinel=(sentinel or Sentinel()),
+            logger=logger
+        )
 
     return decorator

@@ -253,7 +253,7 @@ class ConcurrentQtThreaded(runner_strategies.ConcurrentJobBackendRunner):
         return not self.threaded_runner.isFinished()
 
     def clean_up(self) -> None:
-        self.threaded_runner.exit(0)
+        self.threaded_runner.wait()
 
 
 class AbsGuiStarter(speedwagon.startup.AbsStarter, abc.ABC):
@@ -326,7 +326,8 @@ class GuiStarter(AbsGuiStarter, abc.ABC):
             speedwagon.runner_strategies.ConcurrentJobBackendRunner
         ]
     ) -> None:
-        job_manager.backend_threading_strategy = threading_strategy
+        speedwagon.runner_strategies.BackgroundJobManager.threading_strategy =\
+            threading_strategy
 
         job_manager.get_workflow_options_strategy = (
             self.get_workflow_options_strategy
@@ -593,6 +594,7 @@ class QThreadEvents(speedwagon.runner.AbsEvents):
     def __init__(self, *args, **kwargs) -> None:
         self.on_started_callables: List[Callable[[], None]] = []
         self._base = _QThreadEvents(*args, **kwargs)
+        self._sentinel: Optional[speedwagon.tasks.tasks.Sentinel] = None
 
     def wait_for_started(self) -> None:
         self._base.wait_for_started()
@@ -614,6 +616,13 @@ class QThreadEvents(speedwagon.runner.AbsEvents):
 
     def done(self) -> None:
         self._base.done()
+
+    def cancel(self) -> None:
+        if self._sentinel:
+            self._sentinel.job_aborted = True
+
+    def set_current_task_sentinel(self, sentinel):
+        self._sentinel = sentinel
 
 
 def load_help_web_page(
@@ -956,7 +965,7 @@ class StartQtThreaded(GuiStarter):
     ) -> None:
         """Abort job."""
         dialog_box.stop()
-        events.stop()
+        events.cancel()
 
     @staticmethod
     def _get_locate_jobs_strategy(
@@ -1032,9 +1041,8 @@ class StartQtThreaded(GuiStarter):
             dialog_box.rejected.connect(_rejected)  # type: ignore
 
         dialog_box.setWindowTitle(workflow_name)
-        dialog_box.show()
         threaded_events = self.threaded_events_strategy()
-        dialog_box.aborted.connect(
+        dialog_box.cancel_requested.connect(
             lambda: self.abort_job(dialog_box, threaded_events)
         )
         callbacks = runners.WorkflowProgressCallbacks(dialog_box)
@@ -1064,6 +1072,7 @@ class StartQtThreaded(GuiStarter):
         )
 
         job_manager.get_plugin_data_strategy = self.get_plugin_data_strategy
+        dialog_box.opened.connect(threaded_events.start)
         job_manager.submit_job(
             workflow_name=workflow_name,
             options=serialize_options(options),
@@ -1080,7 +1089,7 @@ class StartQtThreaded(GuiStarter):
                 events=threaded_events
             ),
         )
-        threaded_events.start()
+        dialog_box.show()
 
     def _find_invalid(
         self, workflows: typing.Dict[str, typing.Type[speedwagon.job.Workflow]]
@@ -1432,7 +1441,7 @@ class SingleWorkflowJSON(GuiStarter):
         )
         dialog_box.setWindowTitle(workflow.name or "Workflow")
 
-        callbacks = (
+        callbacks_to_dialog_box = (
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
                 dialog_box
             )
@@ -1440,23 +1449,27 @@ class SingleWorkflowJSON(GuiStarter):
         dialog_box.attach_logger(job_manager.logger)
 
         job_manager.workflow_loader_strategy = self.load_workflow_strategy
+
+        liaison = speedwagon.runner_strategies.JobManagerLiaison(
+            callbacks=speedwagon.runner.JobRunnerCallbacks(
+                update_progress=callbacks_to_dialog_box.update_progress,
+                log=callbacks_to_dialog_box.log,
+                status=callbacks_to_dialog_box.status,
+                finished=callbacks_to_dialog_box.finished,
+                error=callbacks_to_dialog_box.error,
+                cancelling_complete=callbacks_to_dialog_box.cancelling_complete
+            ),
+            events=threaded_events,
+        )
+
+        dialog_box.cancel_requested.connect(threaded_events.cancel)
         job_manager.submit_job(
             workflow_name=workflow.name,
             options=options,
             app=self,
-            liaison=speedwagon.runner_strategies.JobManagerLiaison(
-                callbacks=speedwagon.runner.JobRunnerCallbacks(
-                    update_progress=callbacks.update_progress,
-                    log=callbacks.log,
-                    status=callbacks.status,
-                    finished=callbacks.finished,
-                    error=callbacks.error,
-                    cancelling_complete=callbacks.cancelling_complete
-                ),
-                events=threaded_events
-            ),
+            liaison=liaison,
         )
-        callbacks.start()
+        callbacks_to_dialog_box.start()
         threaded_events.start()
         dialog_box.exec()
         if callable(self.on_exit):

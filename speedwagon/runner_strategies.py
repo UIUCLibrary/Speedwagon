@@ -288,6 +288,10 @@ class BackgroundJobManager(BaseJobManager):
         exception_thrown: Optional[BaseException] = None
         backend: Optional[ConcurrentJobBackendRunner] = None
 
+    threading_strategy: Type[ConcurrentJobBackendRunner] = (
+        ConcurrentJobPyThreaded
+    )
+
     def __init__(self) -> None:
         super().__init__()
         self._internal = self.Internal()
@@ -305,9 +309,6 @@ class BackgroundJobManager(BaseJobManager):
         )
         self.workflow_loader_strategy: WorkflowLoaderProtocol = (
             self._get_workflow_loader_strategy(self.get_plugin_data_strategy())
-        )
-        self.backend_threading_strategy: Type[ConcurrentJobBackendRunner] = (
-            ConcurrentJobPyThreaded
         )
 
     def __enter__(self) -> "BackgroundJobManager":
@@ -363,7 +364,7 @@ class BackgroundJobManager(BaseJobManager):
             self._internal.backend is None or
             self._internal.backend.is_alive() is False
         ):
-            backend = self.backend_threading_strategy(
+            backend = self.threading_strategy(
                 self.workflow_loader_strategy,
                 liaison,
                 logger=self.logger,

@@ -333,89 +333,13 @@ class TestSubtask:
         with pytest.raises(speedwagon.exceptions.SpeedwagonException):
             task.exec()
         assert task.status == speedwagon.tasks.tasks.TaskStatus.FAILED
-#
-# @pytest.mark.adapter
-# # @pytest.mark.filterwarnings("ignore::DeprecationWarning")
-# def test_adapter_results_with_pretask(tmpdir):
-#     temp_path = tmpdir.mkdir("test")
-#     pretask = SimplePreTask("Starting")
-#
-#     builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
-#     builder.set_pretask(subtask=pretask)
-#     builder.add_subtask(subtask=SimpleSubtask("First"))
-#     builder.add_subtask(subtask=SimpleSubtask("Second"))
-#     new_task = builder.build_task()
-#
-#     with speedwagon.worker.ToolJobManager() as manager:
-#         for subtask in new_task.subtasks:
-#             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
-#             manager.add_job(adapted_tool, adapted_tool.settings)
-#         manager.start()
-#         results = list()
-#         for r in manager.get_results():
-#             results.append(r.data)
-#
-#         assert len(results) == 3
-#         assert "Starting" == results[0]
-#         assert "First" == results[1]
-#         assert "Second" == results[2]
-#     shutil.rmtree(tmpdir)
-#
-#     shortcut = \
-#         os.path.join(tmpdir.dirname, "test_adapter_results_with_pretcurrent")
-#
-#     if os.path.exists(shortcut):
-#         os.unlink(shortcut)
-#
 
-# @pytest.mark.slow
-# @pytest.mark.adapter
-# # @pytest.mark.filterwarnings(
-# #     "ignore::DeprecationWarning")
-# def test_adapter_results_with_posttask(tmpdir):
-#     from speedwagon.worker import ToolJobManager
-#     temp_path = tmpdir.mkdir("test")
-#     post_task = SimpleSubtask("Ending")
-#
-#     builder = speedwagon.tasks.TaskBuilder(SimpleTaskBuilder(), temp_path)
-#     builder.set_posttask(subtask=post_task)
-#     builder.add_subtask(subtask=SimpleSubtask("First"))
-#     builder.add_subtask(subtask=SimpleSubtask("Second"))
-#     new_task = builder.build_task()
-#
-#     queued_order = []
-#
-#     with ToolJobManager() as manager:
-#         for subtask in new_task.subtasks:
-#             adapted_tool = speedwagon.worker.SubtaskJobAdapter(subtask)
-#             manager.add_job(adapted_tool, adapted_tool.settings)
-#
-#         for message in manager._job_runtime._pending_jobs.queue:
-#             print(message)
-#             queued_order.append(message.args['message'])
-#
-#         manager.start()
-#
-#         # Fuzz this
-#         time.sleep(1)
-#
-#         results = list()
-#
-#         for r in manager.get_results():
-#             results.append(r.data)
-#
-#         assert len(results) == 3
-#
-#         assert "First" == results[0], "results = {}, queued_order={}".format(
-#             results, queued_order)
-#
-#         assert "Second" == results[1]
-#         assert "Ending" == results[2]
-#
-#     shutil.rmtree(tmpdir)
-#
-#     shortcut = \
-#         os.path.join(tmpdir.dirname, "test_adapter_results_with_postcurrent")
-#
-#     if os.path.exists(shortcut):
-#         os.unlink(shortcut)
+class TestSentinel:
+    def test_is_job_aborted_by_default_is_false(self):
+        assert speedwagon.tasks.tasks.Sentinel().job_aborted is False
+
+    @pytest.mark.parametrize("job_aborted", [True, False])
+    def test_is_job_aborted(self, job_aborted):
+        s = speedwagon.tasks.tasks.Sentinel()
+        s.job_aborted = job_aborted
+        assert s.job_aborted is job_aborted

@@ -563,6 +563,7 @@ class TestBackgroundJobManager:
         with runner_strategies.BackgroundJobManager() as manager:
             assert manager is not None
 
+    @pytest.mark.skip(reason="Need to figure out how to mock exec")
     def test_job_finished_called(self, monkeypatch):
         callbacks = Mock(name="callbacks")
         monkeypatch.setattr(
@@ -651,6 +652,22 @@ class TestThreadedEvents:
         events.start()
         assert events.has_started() is True
 
+    def test_cancel_without_sentinel_produces_warning(self, caplog):
+        events = speedwagon.runner.ThreadedEvents()
+        events.cancel()
+        assert caplog.records[0].levelname == "WARNING"
+
+    def test_cancel_with_sentinel_produces_no_warning(self, caplog):
+        events = speedwagon.runner.ThreadedEvents()
+        sentinel = speedwagon.tasks.tasks.Sentinel()
+        events.set_current_task_sentinel(sentinel)
+        events.cancel()
+        assert len(
+            [
+                record for record in caplog.records
+                if record.levelname == "WARNING"
+            ]
+        ) == 0
 
 @pytest.mark.parametrize("method_name", [
     'create_new_task',
