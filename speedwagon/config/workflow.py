@@ -5,15 +5,18 @@ import abc
 import collections.abc
 import os
 import io
+import logging
+import pathlib
 from typing import (
-    Optional,
-    Dict,
-    List,
-    TYPE_CHECKING,
-    Callable,
-    TextIO,
     Any,
+    Callable,
+    Dict,
     Iterator,
+    List,
+    Optional,
+    Protocol,
+    TextIO,
+    TYPE_CHECKING,
 )
 
 import yaml
@@ -44,6 +47,8 @@ __all__ = [
     "default_backend_factory",
     "AbsWorkflowBackend"
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class AbsSettingsSerializer(abc.ABC):  # pylint: disable=R0903
@@ -411,39 +416,83 @@ def get_workflow_config_from_yaml_file(
             raise speedwagon.exceptions.MissingConfiguration(
                 f"Workflow '{workflow_name}' not found in YAML data."
             )
-        workflow_config = yaml_data[workflow_name]
-        try:
-            for section in workflow_config:
-                if any(
-                    (
-                        ("name" not in section),
-                        ("value" not in section)
-                    )
-                ):
-                    raise speedwagon.exceptions.FileFormatError(
-                        f"{section} missing 'name' or 'value'"
-                    )
-        except (
-            TypeError,
-            speedwagon.exceptions.FileFormatError,
-        ) as format_error:
-            raise speedwagon.exceptions.FileFormatError(
-                "Config file format not valid"
-            ) from format_error
-
-        return {
-            entry['name']: entry['value']
-            for entry in workflow_config
-        }
+        return parse_workflow_yaml_config(yaml_data[workflow_name])
     except yaml.YAMLError as yaml_error:
         raise speedwagon.exceptions.FileFormatError(
             "Error parsing YAML file"
         ) from yaml_error
 
 
-def get_workflow_options(yml_file: str, workflow_name: str) -> SettingsData:
-    with open(yml_file, "r", encoding="utf-8") as fp:
-        return speedwagon.config.workflow.get_workflow_config_from_yaml_file(
-            fp,
-            workflow_name
-        )
+def parse_workflow_yaml_config(
+    workflow_config: List[Dict[str, str]]
+) -> SettingsData:
+    try:
+        for section in workflow_config:
+            if any((("name" not in section), ("value" not in section))):
+                raise speedwagon.exceptions.FileFormatError(
+                    f"{section} missing 'name' or 'value'"
+                )
+    except (
+        TypeError,
+        speedwagon.exceptions.FileFormatError,
+    ) as format_error:
+        raise speedwagon.exceptions.FileFormatError(
+            "Config file format not valid"
+        ) from format_error
+
+    return {entry["name"]: entry["value"] for entry in workflow_config}
+
+
+def get_workflow_config_from_yaml_ignore_incomplete(
+    fp: TextIO, workflow_name: str
+) -> SettingsData:
+    start_point = fp.tell()
+    fp.seek(0)
+    res = fp.read()
+    if res.strip() == "":
+        return {}
+    fp.seek(start_point)
+    try:
+        yaml_data = yaml.safe_load(fp)
+        if workflow_name not in yaml_data:
+            logger.debug(
+                "Workflow '%s' not found in YAML data.", workflow_name
+            )
+            return {}
+        workflow_config = yaml_data[workflow_name]
+        if not workflow_config:
+            return {}
+        return parse_workflow_yaml_config(workflow_config)
+
+    except yaml.YAMLError as yaml_error:
+        raise speedwagon.exceptions.FileFormatError(
+            "Error parsing YAML file"
+        ) from yaml_error
+
+
+# pylint: disable-next=too-few-public-methods
+class GetWorkflowOptionsFromYamlProtocol(Protocol):
+    """Protocol for getting workflow options from YAML file."""
+    def __call__(self, fp: TextIO, workflow_name: str) -> SettingsData:
+        ...
+
+
+def get_workflow_options(
+    yml_file: str,
+    workflow_name: str,
+    strategy: GetWorkflowOptionsFromYamlProtocol = (
+        get_workflow_config_from_yaml_file
+    ),
+    allow_missing: bool = False,
+) -> SettingsData:
+    try:
+        with pathlib.Path(yml_file).open("r", encoding="utf-8") as fp:
+            return strategy(
+                fp,
+                workflow_name
+            )
+    except FileNotFoundError:
+        if allow_missing:
+            logger.warning('Expected config file missing: %s', yml_file)
+            return {}
+        raise

@@ -405,6 +405,8 @@ class RunCommand(SubCommand):
                             default_yaml_file_name,
                         ),
                         workflow_name,
+                        allow_missing=True,
+                        strategy=speedwagon.config.workflow.get_workflow_config_from_yaml_ignore_incomplete,
                     )
                 )
             )
