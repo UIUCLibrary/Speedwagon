@@ -1368,7 +1368,7 @@ class SingleWorkflowJSON(GuiStarter):
         ] = None
         self.options: typing.Optional[SettingsData] = None
         self.workflow: typing.Optional[AbsWorkflow] = None
-        self.logger = logger or logging.getLogger(__name__)
+        self.logger = logger or logging.getLogger()
 
     def load_json_string(self, data: str) -> None:
         """Load json data containing options and workflow info.
@@ -1470,7 +1470,7 @@ class SingleWorkflowJSON(GuiStarter):
                 dialog_box
             )
         )
-        dialog_box.attach_logger(job_manager.logger)
+        dialog_box.attach_logger(self.logger)
 
         job_manager.workflow_loader_strategy = self.load_workflow_strategy
 

@@ -977,7 +977,8 @@ def run(
                     [
                             WorkerLogHandler(
                                 lambda record: callbacks.log(
-                                    text=record.message, level=record.levelno
+                                    text=record.getMessage(),
+                                    level=record.levelno
                                 )
                             )
                     ],

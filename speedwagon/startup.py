@@ -43,10 +43,8 @@ from typing import (
 import speedwagon.job
 import speedwagon.config
 import speedwagon.info
-from speedwagon.config.workflow import (
-    default_backend_factory,
-    AbsWorkflowBackend,
-)
+from speedwagon.config import workflow as workflow_config
+
 from speedwagon.config.plugins import (
     get_whitelisted_plugins_from_config_data,
     read_settings_data_plugins
@@ -232,7 +230,7 @@ class ApplicationLauncher:
             )
 
             config_backend_factory = functools.partial(
-                speedwagon.config.workflow.default_backend_factory,
+                workflow_config.default_backend_factory,
                 config_directory_name=self.application_config_directory_name,
             )
             self.strategy = strategy or StartQtThreaded(
@@ -256,7 +254,7 @@ class ApplicationLauncher:
         """Run Speedwagon."""
         self.strategy.set_application_name(self.application_name)
         config_backend = functools.partial(
-            default_backend_factory,
+            workflow_config.default_backend_factory,
             config_directory_name=self.application_config_directory_name,
         )
 
@@ -397,16 +395,18 @@ class RunCommand(SubCommand):
         try:
             default_yaml_file_name =\
                 speedwagon.config.workflow.WORKFLOWS_SETTINGS_YML_FILE_NAME
+            config_loader_strategy =\
+                workflow_config.get_workflow_config_from_yaml_ignore_incomplete
             startup_strategy.get_workflow_options_strategy = (
                 lambda workflow_name: (
-                    speedwagon.config.workflow.get_workflow_options(
+                    workflow_config.get_workflow_options(
                         os.path.join(
                             config_file_locator.get_app_data_dir(),
                             default_yaml_file_name,
                         ),
                         workflow_name,
                         allow_missing=True,
-                        strategy=speedwagon.config.workflow.get_workflow_config_from_yaml_ignore_incomplete,
+                        strategy=config_loader_strategy,
                     )
                 )
             )
@@ -552,7 +552,10 @@ class AbsStarter(metaclass=abc.ABCMeta):
         """
 
     def set_workflow_config_backend_factory(  # noqa: B027
-        self, factory: Callable[[speedwagon.job.Workflow], AbsWorkflowBackend]
+        self,
+        factory: Callable[
+            [speedwagon.job.Workflow], workflow_config.AbsWorkflowBackend
+        ]
     ) -> None:
         """Set the workflow config backend factory.
 
@@ -590,10 +593,10 @@ def default_get_workflow_options_strategy(
     config_files_locator = config_files_locator or StandardConfigFileLocator(
         config_directory_prefix=DEFAULT_CONFIG_DIRECTORY_NAME
     )
-    return speedwagon.config.workflow.get_workflow_options(
+    return workflow_config.get_workflow_options(
         os.path.join(
             config_files_locator.get_app_data_dir(),
-            speedwagon.config.workflow.WORKFLOWS_SETTINGS_YML_FILE_NAME,
+            workflow_config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
         ),
         workflow_name,
     )
