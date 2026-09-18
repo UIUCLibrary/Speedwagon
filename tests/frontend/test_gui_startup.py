@@ -876,9 +876,10 @@ class TestWorkflowProgressCallbacks:
             callbacks.finished(speedwagon.runner.JobSuccess.SUCCESS)
 
     def test_job_status_signal(self, dialog_box, qtbot):
+        qtbot.add_widget(dialog_box)
         callbacks = \
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
-                dialog_box
+                dialog_box=dialog_box
             )
 
         with qtbot.waitSignal(callbacks.signals.status_changed) as blocker:
@@ -887,6 +888,7 @@ class TestWorkflowProgressCallbacks:
         assert "some_other_status" in blocker.args
 
     def test_set_banner_text(self, dialog_box, qtbot):
+        qtbot.add_widget(dialog_box)
         dialog_box.banner.setText = Mock()
         callbacks = \
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(

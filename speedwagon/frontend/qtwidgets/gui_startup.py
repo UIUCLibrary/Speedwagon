@@ -191,6 +191,7 @@ class Worker(QtCore.QObject):
             ),
             workflow_loader_strategy=self._internal.workflow_loader_strategy,
             request_more_info_strategy=self.request_more_info_strategy,
+            log_level=logging.DEBUG,
         )
 
 
@@ -745,7 +746,7 @@ class StartQtThreaded(GuiStarter):
             sys.argv
         )
         self._internal_values = StartQtThreaded.InternalValues(
-            logger=logging.getLogger(),
+            logger=logging.getLogger(__name__),
             log_data=io.StringIO(),
             request_window=user_interaction.QtRequestMoreInfo(self.windows),
         )
@@ -1080,6 +1081,10 @@ class StartQtThreaded(GuiStarter):
             )
 
         dialog_box.attach_logger(self._internal_values.logger)
+        callbacks.signals.finished.connect(
+            lambda: dialog_box.detach_logger(self._internal_values.logger)
+        )
+
         job_manager.request_more_info = (
             lambda workflow, options, pretask_results, wait_condition=None: (
                 open_request_more_info_dialog_box(
@@ -1104,7 +1109,12 @@ class StartQtThreaded(GuiStarter):
             liaison=speedwagon.runner_strategies.JobManagerLiaison(
                 callbacks=speedwagon.runner.JobRunnerCallbacks(
                     update_progress=callbacks.update_progress,
-                    log=callbacks.log,
+                    log=lambda text, level=logging.INFO: (
+                        self._internal_values.logger.log(
+                            level=level,
+                            msg=text,
+                        )
+                    ),
                     status=callbacks.status,
                     finished=callbacks.finished,
                     error=callbacks.error,
@@ -1368,7 +1378,7 @@ class SingleWorkflowJSON(GuiStarter):
         ] = None
         self.options: typing.Optional[SettingsData] = None
         self.workflow: typing.Optional[AbsWorkflow] = None
-        self.logger = logger or logging.getLogger()
+        self.logger = logger or logging.getLogger(__name__)
 
     def load_json_string(self, data: str) -> None:
         """Load json data containing options and workflow info.
@@ -1471,17 +1481,25 @@ class SingleWorkflowJSON(GuiStarter):
             )
         )
         dialog_box.attach_logger(self.logger)
+        dialog_box.set_log_level(logging.DEBUG)
+        self.logger.setLevel(logging.DEBUG)
+        callbacks_to_dialog_box.signals.finished.connect(
+            lambda: dialog_box.detach_logger(self.logger)
+        )
 
         job_manager.workflow_loader_strategy = self.load_workflow_strategy
-
         liaison = speedwagon.runner_strategies.JobManagerLiaison(
             callbacks=speedwagon.runner.JobRunnerCallbacks(
                 update_progress=callbacks_to_dialog_box.update_progress,
-                log=callbacks_to_dialog_box.log,
+                log=lambda text, level=logging.INFO: self.logger.log(
+                    level=level, msg=text
+                ),
                 status=callbacks_to_dialog_box.status,
                 finished=callbacks_to_dialog_box.finished,
                 error=callbacks_to_dialog_box.error,
-                cancelling_complete=callbacks_to_dialog_box.cancelling_complete
+                cancelling_complete=(
+                    callbacks_to_dialog_box.cancelling_complete
+                ),
             ),
             events=threaded_events,
         )

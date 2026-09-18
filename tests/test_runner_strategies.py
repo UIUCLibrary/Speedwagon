@@ -309,7 +309,7 @@ class TestRunnerDisplay:
             def user_canceled(self):
                 return False
 
-        with warnings.catch_warnings(category=DeprecationWarning):
+        with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             return DummyRunner()
 

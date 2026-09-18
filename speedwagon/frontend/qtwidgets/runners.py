@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 USER_ABORTED_MESSAGE = "User Aborted"
 
+module_logger = logging.getLogger(__name__)
+
 
 class TaskFailed(Exception):
     """Task has failed."""
@@ -53,11 +55,13 @@ class WorkflowProgressCallbacks(speedwagon.runner.AbsJobCallbacks):
         finished = QtCore.Signal(speedwagon.runner.JobSuccess)
 
         def __init__(
-            self, parent: qtwidgets.dialog.dialogs.WorkflowProgress
+            self, parent: qtwidgets.dialog.dialogs.WorkflowProgress,
         ) -> None:
             """Create a new workprogress callback object."""
             super().__init__(parent)
+            self._active = True
             self.dialog_box = parent
+            self.dialog_box.destroyed.connect(self._on_parent_destroyed)
             # self.cancel_requested.connect(self.dialog_box.cancel_requested)
             self.status_changed.connect(self.set_banner_text)
             self.progress_changed.connect(self.dialog_box.set_current_progress)
@@ -69,7 +73,11 @@ class WorkflowProgressCallbacks(speedwagon.runner.AbsJobCallbacks):
             self.started.connect(self.dialog_box.show)
 
             self.status_changed.connect(self.dialog_box.flush)
-            self.message.connect(self.dialog_box.write_to_console)
+            self.message.connect(self._write_to_console)
+
+        def _on_parent_destroyed(self):
+            # so dialog_box is not written to by mistake after it's deleted
+            self._active = False
 
         def log(self, text: str, level: int) -> None:
             """Log a message."""
@@ -82,7 +90,8 @@ class WorkflowProgressCallbacks(speedwagon.runner.AbsJobCallbacks):
 
         def set_status(self, text: str) -> None:
             """Set the status of the job."""
-            self.status_changed.emit(text)
+            if self._active:
+                self.status_changed.emit(text)
 
         def _error_message(
             self,
@@ -91,8 +100,8 @@ class WorkflowProgressCallbacks(speedwagon.runner.AbsJobCallbacks):
             traceback: Optional[str] = None,
         ) -> None:
             if message is not None:
-                self.dialog_box.write_to_console(message)
-            self.dialog_box.write_to_console(str(exc), level=logging.ERROR)
+                self._write_to_console(message)
+            self._write_to_console(str(exc), level=logging.ERROR)
             error = QtWidgets.QMessageBox()
             error.setWindowTitle("Workflow Failed")
             error.setIcon(QtWidgets.QMessageBox.Icon.Critical)
@@ -101,6 +110,19 @@ class WorkflowProgressCallbacks(speedwagon.runner.AbsJobCallbacks):
                 error.setDetailedText(traceback)
             error.exec()
             self.dialog_box.failed()
+
+        def _write_to_console(
+            self,
+            text: str,
+            level: int = logging.INFO
+        ) -> None:
+            if not self._active:
+                return
+            try:
+                self.dialog_box.attach_logger(module_logger)
+                module_logger.log(level, text)
+            finally:
+                self.dialog_box.detach_logger(module_logger)
 
         @QtCore.Slot(object)
         def _finished(self, results: speedwagon.runner.JobSuccess) -> None:
