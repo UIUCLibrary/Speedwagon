@@ -885,7 +885,6 @@ class TestWorkflowProgressCallbacks:
             )
 
         with qtbot.waitSignal(callbacks.signals.status_changed) as blocker:
-            blocker.connect(callbacks.signals.status_changed)
             callbacks.status("some_other_status")
 
         assert "some_other_status" in blocker.args
@@ -929,7 +928,6 @@ class TestWorkflowProgressCallbacks:
         )
 
         with qtbot.waitSignal(callbacks.signals.error) as blocker:
-            blocker.connect(callbacks.signals.error)
             callbacks.error(message, exc, traceback)
         assert QMessageBox.called is True
 
