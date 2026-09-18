@@ -4,7 +4,7 @@ import configparser
 import io
 import logging
 from typing import Optional, List, TYPE_CHECKING, Any, Dict
-from unittest.mock import Mock, patch, mock_open, ANY, call
+from unittest.mock import Mock, patch, mock_open, ANY, MagicMock, create_autospec
 
 import pytest
 
@@ -939,6 +939,82 @@ def test_get_workflow_config_from_yaml_file_wrong_format_data(bad_yml_data):
             file_handler, workflow_name="Generate MARC.XML Files"
         )
 
+@pytest.mark.parametrize(
+    "yaml_data,workflow_name,expected",
+    [
+        (
+            """
+Generate MARC.XML Files:
+  - name: Getmarc server url
+    value: dummy
+Generate OCR Files:
+  - name: Tesseract data file location
+    value: /Users/testuser/tesseract_data
+    """.lstrip(),
+            "Generate MARC.XML Files",
+            {
+                "Getmarc server url": "dummy",
+            }
+        ),
+        (
+            "",
+            "Generate MARC.XML Files",
+            {}
+        ),
+        (
+            """
+Generate MARC.XML Files:
+  - name: Getmarc server url
+    value: dummy
+Generate OCR Files:
+  - name: Tesseract data file location
+    value: /Users/testuser/tesseract_data
+    """.lstrip(),
+            "some workflow without configs",
+            {}
+        ),
+        (
+            """
+Generate MARC.XML Files:
+Generate OCR Files:
+    """.lstrip(),
+            "Generate MARC.XML Files",
+            {}
+        ),
+    ]
+)
+def test_get_workflow_config_from_yaml_file_ignore_incomplete(yaml_data, workflow_name,expected):
+    file_handler = io.StringIO(yaml_data)
+    assert speedwagon.config.workflow.get_workflow_config_from_yaml_ignore_incomplete(
+        file_handler, workflow_name=workflow_name
+    ) == expected
+
+@pytest.mark.parametrize(
+    "yaml_data",
+    [
+        """
+        Generate MARC.XML Files:
+          - key: Tesseract data file location
+            value: /Users/testuser/tesseract_data
+        """.lstrip(),
+        """
+        app:
+          name: MyCoolApp
+          debug: true
+          invalid-indentation:
+            - item1
+            : item2  # Incorrect use of colon
+        """.lstrip(),
+    ]
+)
+def test_get_workflow_config_from_yaml_file_ignore_incomplete_invalid_data_raises(yaml_data):
+
+    file_handler = io.StringIO(yaml_data)
+    with pytest.raises(speedwagon.exceptions.FileFormatError):
+        speedwagon.config.workflow.get_workflow_config_from_yaml_ignore_incomplete(
+            file_handler, workflow_name="Generate MARC.XML Files"
+        )
+
 def test_parse_plugin_data():
     settings = {
         'global': {},
@@ -955,3 +1031,35 @@ def test_parse_plugin_data_warns_on_invalid_data(caplog):
         results = speedwagon.config.plugins.parse_plugin_data(settings)
     assert caplog.messages
     assert results['bacon'] == {'bacon': True}
+
+def test_get_workflow_options(monkeypatch):
+    yaml_file = "a_real_file.yml"
+    monkeypatch.setattr(speedwagon.config.workflow.pathlib, "Path", MagicMock())
+    strategy = create_autospec(speedwagon.config.workflow.GetWorkflowOptionsFromYamlProtocol, instance=True)
+    speedwagon.config.workflow.get_workflow_options(
+        yaml_file,
+        "some workflow",
+        strategy=strategy
+    )
+    strategy.assert_called_once()
+
+def test_get_workflow_options_missing_file_without_missing_file_raises():
+    yaml_file = "missing_file.yml"
+    strategy = create_autospec(speedwagon.config.workflow.GetWorkflowOptionsFromYamlProtocol, instance=True)
+    with pytest.raises(FileNotFoundError):
+        speedwagon.config.workflow.get_workflow_options(
+            yaml_file,
+            "some workflow",
+            strategy=strategy,
+            allow_missing=False
+        )
+
+def test_get_workflow_options_missing_file_with_missing_file_get_empty_dict():
+    yaml_file = "missing_file.yml"
+    strategy = create_autospec(speedwagon.config.workflow.GetWorkflowOptionsFromYamlProtocol, instance=True)
+    assert speedwagon.config.workflow.get_workflow_options(
+        yaml_file,
+        "some workflow",
+        strategy=strategy,
+        allow_missing=True
+    ) == {}

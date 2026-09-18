@@ -50,7 +50,7 @@ from speedwagon.config.config import (
 )
 from speedwagon.config.common import DEFAULT_CONFIG_DIRECTORY_NAME
 from speedwagon.config import plugins as plugin_config
-from speedwagon.config.workflow import WORKFLOWS_SETTINGS_YML_FILE_NAME
+from speedwagon.config import workflow as workflow_config
 from speedwagon.utils import (
     get_desktop_path,
     validate_user_input,
@@ -90,6 +90,8 @@ if typing.TYPE_CHECKING:
 __all__ = ["AbsGuiStarter", "StartQtThreaded", "SingleWorkflowJSON"]
 
 T = TypeVar("T")
+
+module_logger = logging.getLogger(__name__)
 
 system_info_report_formatters: DefaultDict[
     str, Callable[[info.SystemInfo], str]
@@ -686,6 +688,27 @@ def import_workflow_config(
         parent.logger.error("Failed to load workflow. Reason: %s", error)
 
 
+def get_workflow_options_if_config_file_exists(
+    config_file: str,
+    workflow_name: str
+) -> SettingsData:
+
+    if not os.path.exists(config_file):
+        module_logger.debug(
+            "Unable to locate workflow settings. "
+            'Reason: "%s" file does not exist.',
+            config_file,
+        )
+        return {}
+    return speedwagon.config.workflow.get_workflow_options(
+        config_file,
+        workflow_name,
+        strategy=(
+            workflow_config.get_workflow_config_from_yaml_ignore_incomplete
+        )
+    )
+
+
 class StartQtThreaded(GuiStarter):
     """Start a Qt Widgets base app using threads for job workers."""
 
@@ -766,16 +789,17 @@ class StartQtThreaded(GuiStarter):
             source_application_settings=settings_resolver,
             workflow_backend=factory,
         )
-
-        self.get_workflow_options_strategy = lambda workflow_name: (
-            speedwagon.config.workflow.get_workflow_options(
-                os.path.join(
-                    self.config_files_locator.get_app_data_dir(),
-                    WORKFLOWS_SETTINGS_YML_FILE_NAME,
-                ),
-                workflow_name,
-            )
+        config_file = os.path.join(
+            self.config_files_locator.get_app_data_dir(),
+            workflow_config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
         )
+
+        self.get_workflow_options_strategy =\
+            lambda workflow: get_workflow_options_if_config_file_exists(
+                config_file,
+                workflow
+            )
+
         self.get_plugin_data_strategy = lambda: (
             runner_strategies.get_plugin_data(
                 self.config_files_locator.get_config_file()
@@ -1244,7 +1268,7 @@ def default_get_workflow_options_strategy(
     return speedwagon.config.workflow.get_workflow_options(
         os.path.join(
             config_files_locator.get_app_data_dir(),
-            speedwagon.config.workflow.WORKFLOWS_SETTINGS_YML_FILE_NAME,
+            workflow_config.WORKFLOWS_SETTINGS_YML_FILE_NAME,
         ),
         workflow_name,
     )
@@ -1344,7 +1368,7 @@ class SingleWorkflowJSON(GuiStarter):
         ] = None
         self.options: typing.Optional[SettingsData] = None
         self.workflow: typing.Optional[AbsWorkflow] = None
-        self.logger = logger or logging.getLogger(__name__)
+        self.logger = logger or logging.getLogger()
 
     def load_json_string(self, data: str) -> None:
         """Load json data containing options and workflow info.
@@ -1446,7 +1470,7 @@ class SingleWorkflowJSON(GuiStarter):
                 dialog_box
             )
         )
-        dialog_box.attach_logger(job_manager.logger)
+        dialog_box.attach_logger(self.logger)
 
         job_manager.workflow_loader_strategy = self.load_workflow_strategy
 
@@ -1627,7 +1651,8 @@ def build_request_settings_dialog(
 ) -> QtWidgets.QDialog:
     settings_builder = LocalSettingsBuilder()
     workflow_settings_yaml = os.path.join(
-        settings_locator.get_app_data_dir(), WORKFLOWS_SETTINGS_YML_FILE_NAME
+        settings_locator.get_app_data_dir(),
+        workflow_config.WORKFLOWS_SETTINGS_YML_FILE_NAME
     )
     settings_builder.on_open_config_dir = functools.partial(
         dialog.settings.open_settings_dir,
