@@ -5,6 +5,51 @@ Change Log
 ----------
 
 
+0.4.0b26 (2026-09-18)
+=====================
+
+Feat
+----
+
+- get_workflow_options allows for strategies
+
+Fix
+---
+
+- commitizen now includes legacy tags
+- fixed logs not working in SingleWorkflowJSON
+
+0.4.0b25 (2026-09-15)
+=====================
+
+Feat
+----
+
+- speedwagon.tasks.workflow_task decorator supports sentinel optional argument
+- Qt based runtimes uses QThread
+- workflow_task decorator includes an optional logger parameter
+- Add debug info to json startup
+- Better reporting of issue when Workflow fails to load
+
+Fix
+---
+
+- fixed typehint on InnerForm.iter_row_rect method
+- issue with main gui app not loading the right config
+- widgets.py InnerForm.iter_row_rect has better error handling
+- alternative entrypoint subcommands can load workflows in with alternative config prefixes
+- alternative entrypoint subcommands can load workflows in with alternative config prefixes
+- SelectWorkflow.set_current_by_name throws WorkflowLoadFailure if workflow is not found
+- SingleWorkflowJSON.load() throws WorkflowLoadFailure if workflow is not found
+
+Refactor
+--------
+
+- removed deadcode
+- use strings for config data
+- parse_json_file in utils.py
+- --json cli arg uses a string instead of a file pointer
+
 0.4.0b23 (2026-07-08)
 =====================
 
