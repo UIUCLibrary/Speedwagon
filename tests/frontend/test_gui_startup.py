@@ -437,7 +437,6 @@ class TestStartQtThreaded:
         assert load_custom_tabs.called is False
 
     def test_save_log_opens_dialog(self, qtbot, monkeypatch, starter):
-        from PySide6 import QtWidgets
         getSaveFileName = Mock(
             return_value=("dummy", None)
         )
@@ -464,7 +463,6 @@ class TestStartQtThreaded:
         def getSaveFileName(*args, **kwargs):
             return save_file_return_name, None
 
-        from PySide6 import QtWidgets
         monkeypatch.setattr(
             QtWidgets.QFileDialog,
             "getSaveFileName",
@@ -631,7 +629,6 @@ class TestStartQtThreaded:
             monkeypatch,
             starter
     ):
-        from PySide6 import QtWidgets
         main_app = QtWidgets.QWidget()
         job_manager = Mock()
         workflow_name = "unknown_workflow"
@@ -801,7 +798,7 @@ class TestStartQtThreaded:
 
 class TestWorkflowProgressCallbacks:
 
-    @pytest.fixture()
+    @pytest.fixture
     def dialog_box(self, qtbot, monkeypatch):
         monkeypatch.setattr(
             dialogs.WorkflowProgress,
@@ -879,18 +876,19 @@ class TestWorkflowProgressCallbacks:
             callbacks.finished(speedwagon.runner.JobSuccess.SUCCESS)
 
     def test_job_status_signal(self, dialog_box, qtbot):
+        qtbot.add_widget(dialog_box)
         callbacks = \
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
-                dialog_box
+                dialog_box=dialog_box
             )
 
         with qtbot.waitSignal(callbacks.signals.status_changed) as blocker:
-            blocker.connect(callbacks.signals.status_changed)
             callbacks.status("some_other_status")
 
         assert "some_other_status" in blocker.args
 
     def test_set_banner_text(self, dialog_box, qtbot):
+        qtbot.add_widget(dialog_box)
         dialog_box.banner.setText = Mock()
         callbacks = \
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
@@ -914,7 +912,6 @@ class TestWorkflowProgressCallbacks:
             exc,
             traceback
     ):
-        from PySide6 import QtWidgets
         callbacks = \
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
                 dialog_box
@@ -929,7 +926,6 @@ class TestWorkflowProgressCallbacks:
         )
 
         with qtbot.waitSignal(callbacks.signals.error) as blocker:
-            blocker.connect(callbacks.signals.error)
             callbacks.error(message, exc, traceback)
         assert QMessageBox.called is True
 
@@ -949,7 +945,6 @@ class TestWorkflowProgressCallbacks:
             monkeypatch,
             qtbot
     ):
-        from PySide6 import QtCore
         callbacks = \
             speedwagon.frontend.qtwidgets.runners.WorkflowProgressCallbacks(
                 dialog_box
@@ -967,7 +962,6 @@ class TestWorkflowProgressCallbacks:
 
 class TestQtRequestMoreInfo:
     def test_job_cancelled(self, qtbot):
-        from PySide6 import QtWidgets
         info_request = \
             speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo(
                 QtWidgets.QWidget()
@@ -991,11 +985,8 @@ class TestQtRequestMoreInfo:
         assert info_request.exc == exc
 
     def test_job_exception_passes_on(self, qtbot):
-        from PySide6 import QtWidgets
         info_request = \
-            speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo(
-                QtWidgets.QWidget()
-            )
+            speedwagon.frontend.qtwidgets.user_interaction.QtRequestMoreInfo()
 
         user_is_interacting = MagicMock()
         workflow = Mock()

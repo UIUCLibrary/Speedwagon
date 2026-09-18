@@ -42,6 +42,8 @@ __all__ = ["SystemInfoDialog", "about_dialog_box"]
 ALREADY_STOPPED_MESSAGE = "Already stopped"
 DEFAULT_WINDOW_FLAGS = QtCore.Qt.WindowType(0)
 
+module_logger = logging.getLogger(__name__)
+
 
 def about_dialog_box(parent: QtWidgets.QWidget) -> None:
     """Launch the about speedwagon dialog box."""
@@ -249,7 +251,12 @@ class WorkflowProgressStateStopping(AbsWorkflowProgressState):
 
     def __init__(self, context: "WorkflowProgress"):
         super().__init__(context)
-        self.context.write_to_console("Stopping")
+        try:
+            self.context.attach_logger(module_logger)
+            module_logger.info("Stopping")
+            self.context.flush()
+        finally:
+            self.context.detach_logger(module_logger)
         self.context.banner.setText("Stopping")
 
         cancel_button: QtWidgets.QPushButton = self.context.button_box.button(
@@ -288,7 +295,11 @@ class WorkflowProgressStateAborted(AbsWorkflowProgressState):
         close_button: QtWidgets.QPushButton = self.context.button_box.button(
             QtWidgets.QDialogButtonBox.StandardButton.Close
         )
-        self.context.write_to_console("Successfully aborted")
+        try:
+            self.context.attach_logger(module_logger)
+            module_logger.info("Successfully aborted")
+        finally:
+            self.context.detach_logger(module_logger)
         self.context.banner.setText("Aborted")
         close_button.clicked.connect(self.context.accept)  # type: ignore
 
@@ -346,6 +357,9 @@ class WorkflowProgressGui(QtWidgets.QDialog):
     progress_bar: QtWidgets.QProgressBar
     console: QtWidgets.QTextBrowser
 
+    _WRITE_HTML_BLOCK_TO_CONSOLE_WARN_MSG = \
+        "Don't use write_html_block_to_console directly"
+
     def __init__(
         self, parent: typing.Optional[QtWidgets.QWidget] = None
     ) -> None:
@@ -370,7 +384,7 @@ class WorkflowProgressGui(QtWidgets.QDialog):
         self.banner: QtWidgets.QLabel
         # =====================================================================
         self._log_handler = logging_helpers.QtSignalLogHandler(self)
-        self._parent_logger: typing.Optional[logging.Logger] = None
+        self._log_handler.setLevel(logging.INFO)
 
         self._console_data = QtGui.QTextDocument(parent=self)
 
@@ -380,30 +394,38 @@ class WorkflowProgressGui(QtWidgets.QDialog):
 
         self.cursor.movePosition(self.cursor.MoveOperation.End)
 
+    def flush(self) -> None:
+        self._log_handler.flush()
+
     def write_html_block_to_console(self, html: str) -> None:
+        warnings.warn(
+            self._WRITE_HTML_BLOCK_TO_CONSOLE_WARN_MSG,
+            DeprecationWarning,
+            stacklevel=2
+        )
         self.cursor.beginEditBlock()
         self.cursor.insertHtml(html.strip())
         self.cursor.endEditBlock()
 
-    def flush(self) -> None:
-        self._log_handler.flush()
+    def _write_html_block_to_console(self, html: str) -> None:
+        self.cursor.beginEditBlock()
+        self.cursor.insertHtml(html.strip())
+        self.cursor.endEditBlock()
 
     def attach_logger(self, logger: logging.Logger) -> None:
-        self._parent_logger = logger
         self._log_handler.signals.messageSent.connect(  # type: ignore
-            self.write_html_block_to_console
+            self._write_html_block_to_console
         )
         formatter = logging_helpers.ConsoleFormatter()
         self._log_handler.setFormatter(formatter)
-        self._parent_logger.addHandler(self._log_handler)
+        logger.addHandler(self._log_handler)
 
-    def remove_log_handles(self) -> None:
-        if self._parent_logger is not None:
-            self._log_handler.flush()
-            self._parent_logger.removeHandler(self._log_handler)
-            self._parent_logger = None
+    def detach_logger(self, logger: logging.Logger) -> None:
+        logger.removeHandler(self._log_handler)
+        self._log_handler.flush()
 
     def get_console_content(self) -> str:
+        self._log_handler.flush()
         return self._console_data.toPlainText()
 
 
@@ -443,8 +465,6 @@ class WorkflowProgress(WorkflowProgressGui):
         # self.rejected.disconnect(self.button_box.rejected)
 
         # =====================================================================
-
-        self.finished.connect(self.remove_log_handles)  # type: ignore
 
     def clean_local_console(self) -> None:
         # CRITICAL: Running self.console.clear() seems to cause A SEGFAULT when
@@ -497,7 +517,16 @@ class WorkflowProgress(WorkflowProgressGui):
     def set_current_progress(self, value: int) -> None:
         self.progress_bar.setValue(value)
 
+    def set_log_level(self, level: int) -> None:
+        self._log_handler.setLevel(level)
+
     def write_to_console(self, text: str, level: int = logging.INFO) -> None:
+        warnings.warn(
+            "write_to_console is deprecated. "
+            "Use attach_logger and write to that instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         cursor = QtGui.QTextCursor(self._console_data)
         cursor.movePosition(cursor.MoveOperation.End)
         cursor.beginEditBlock()

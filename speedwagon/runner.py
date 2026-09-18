@@ -923,67 +923,80 @@ def run(
     config: JobSubmitConfig,
     workflow_loader_strategy: WorkflowLoaderProtocol,
     request_more_info_strategy: RequestMoreInfoProtocol,
-    async_communication: Optional[AsyncCommunication] = None
+    async_communication: Optional[AsyncCommunication] = None,
+    log_level: int = logging.INFO
 ) -> None:
     callbacks = _get_run_callbacks(async_communication)
     events = _get_run_events(async_communication)
-
+    callback_log_handler = WorkerLogHandler(
+        callback=lambda record: callbacks.log(record.msg, record.levelno),
+        level=log_level,
+    )
     with tempfile.TemporaryDirectory() as tmp_dir:
         try:
             task_scheduler = Run(tmp_dir)
             task_scheduler.workflow_loader_strategy = workflow_loader_strategy
             task_scheduler.request_more_info = request_more_info_strategy
+            task_scheduler.logger.setLevel(log_level)
+            with attach_logger_handlers(
+                task_scheduler.logger,
+                [
+                    callback_log_handler,
+                ],
+                level=log_level,
+            ):
 
-            workflow = task_scheduler.get_workflow(workflow_name)(
-                global_settings=config.global_settings
-            )
-            workflow.set_options_backend(
-                speedwagon.config.workflow.ReadOnlyConfigBackend(
-                    config.workflow
+                workflow = task_scheduler.get_workflow(workflow_name)(
+                    global_settings=config.global_settings
                 )
-            )
-            events.wait_for_started()
-            for task in task_scheduler.iter_tasks(workflow, config.job):
-                if async_communication:
-                    if task.sentinel:
-                        task.sentinel.job_aborted = False
-                    async_communication.events.set_current_task_sentinel(
-                        task.sentinel
+                workflow.set_options_backend(
+                    speedwagon.config.workflow.ReadOnlyConfigBackend(
+                        config.workflow
                     )
-                    if async_communication.events.is_stopped():
-                        async_communication.callbacks.cancelling_complete()
-                        break
-
-                    if task.name is not None:
-                        async_communication.callbacks.status(task.name)
-
-                if description := task.task_description():
-                    callbacks.log(text=description)
-
-                # HACK: pass the task logger
-                task.parent_task_log_q = type(
-                    "logger",
-                    (object,),
-                    {
-                        "append": (
-                            lambda msg, log=callbacks.log: log(
-                                text=msg
-                            )
-                        )
-                    },
                 )
-                with attach_logger_handlers(
-                    task.logger,
-                    [
+                events.wait_for_started()
+                for task in task_scheduler.iter_tasks(workflow, config.job):
+                    if async_communication:
+                        if task.sentinel:
+                            task.sentinel.job_aborted = False
+                        async_communication.events.set_current_task_sentinel(
+                            task.sentinel
+                        )
+                        if async_communication.events.is_stopped():
+                            async_communication.callbacks.cancelling_complete()
+                            break
+
+                        if task.name is not None:
+                            async_communication.callbacks.status(task.name)
+
+                    if description := task.task_description():
+                        callbacks.log(text=description)
+
+                    # HACK: pass the task logger
+                    task.parent_task_log_q = type(
+                        "logger",
+                        (object,),
+                        {
+                            "append": (
+                                lambda msg, log=callbacks.log: log(
+                                    text=msg
+                                )
+                            )
+                        },
+                    )
+                    with attach_logger_handlers(
+                        task.logger,
+                        [
                             WorkerLogHandler(
                                 lambda record: callbacks.log(
                                     text=record.getMessage(),
                                     level=record.levelno
-                                )
-                            )
-                    ],
-                ):
-                    task.exec()
+                                ),
+                            ),
+                        ],
+                        level=log_level
+                    ):
+                        task.exec()
                 callbacks.update_progress(
                     current=task_scheduler.current_task_progress,
                     total=task_scheduler.total_tasks

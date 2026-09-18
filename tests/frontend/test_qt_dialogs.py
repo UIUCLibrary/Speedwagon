@@ -798,7 +798,10 @@ class TestWorkflowProgress:
     def test_get_console(self, qtbot):
         progress_dialog = dialogs.WorkflowProgress()
         qtbot.add_widget(progress_dialog)
-        progress_dialog.write_to_console("spam")
+        logger = logging.getLogger("test_logger")
+        logger.setLevel(logging.INFO)
+        progress_dialog.attach_logger(logger)
+        logger.info("spam")
         assert "spam" in progress_dialog.get_console_content()
 
     def test_start_changes_state_to_working(self, qtbot, monkeypatch):
@@ -853,7 +856,7 @@ class TestWorkflowProgressGui:
         progress_dialog = dialogs.WorkflowProgressGui()
         qtbot.add_widget(progress_dialog)
         progress_dialog.attach_logger(logger)
-        progress_dialog.remove_log_handles()
+        progress_dialog.detach_logger(logger)
         logger.info("Some message")
         progress_dialog.flush()
         assert "Some message" not in progress_dialog.get_console_content()
@@ -869,12 +872,14 @@ class TestWorkflowProgressGui:
             progress_dialog.flush()
             assert "Some message" in progress_dialog.get_console_content()
         finally:
-            progress_dialog.remove_log_handles()
+            progress_dialog.detach_logger(logger)
 
     def test_write_html_block_to_console(self, qtbot):
         progress_dialog = dialogs.WorkflowProgressGui()
         qtbot.add_widget(progress_dialog)
-        progress_dialog.write_html_block_to_console("<h1>hello</h1>")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            progress_dialog.write_html_block_to_console("<h1>hello</h1>")
         assert "hello" in progress_dialog.get_console_content()
 
 
