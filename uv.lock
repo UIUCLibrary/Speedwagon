@@ -2,9 +2,12 @@ version = 1
 revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
-    "python_full_version >= '3.15'",
-    "python_full_version >= '3.12' and python_full_version < '3.15'",
-    "python_full_version < '3.12'",
+    "python_full_version >= '3.15' and platform_release < '23.4' and sys_platform == 'darwin'",
+    "(python_full_version >= '3.15' and platform_release >= '23.4') or (python_full_version >= '3.15' and sys_platform != 'darwin')",
+    "python_full_version >= '3.12' and python_full_version < '3.15' and platform_release < '23.4' and sys_platform == 'darwin'",
+    "(python_full_version >= '3.12' and python_full_version < '3.15' and platform_release >= '23.4') or (python_full_version >= '3.12' and python_full_version < '3.15' and sys_platform != 'darwin')",
+    "python_full_version < '3.12' and platform_release < '23.4' and sys_platform == 'darwin'",
+    "(python_full_version < '3.12' and platform_release >= '23.4') or (python_full_version < '3.12' and sys_platform != 'darwin')",
 ]
 
 [[package]]
@@ -1563,7 +1566,8 @@ type-checking = [
 requires-dist = [
     { name = "lxml" },
     { name = "pluggy", specifier = ">=1.0" },
-    { name = "pyside6", marker = "extra == 'qt'", specifier = "~=6.11" },
+    { name = "pyside6", marker = "platform_release < '23.4' and sys_platform == 'darwin' and extra == 'qt'", specifier = "<6.12" },
+    { name = "pyside6", marker = "extra == 'qt'", specifier = ">=6.11" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
@@ -1581,7 +1585,7 @@ ci = [
     { name = "pre-commit" },
     { name = "pydocstyle" },
     { name = "pylint" },
-    { name = "pyside6", specifier = "~=6.11" },
+    { name = "pyside6", specifier = ">=6.11" },
     { name = "pysonar" },
     { name = "pytest" },
     { name = "pytest-mock" },
@@ -1609,7 +1613,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pydocstyle" },
     { name = "pylint" },
-    { name = "pyside6", specifier = "~=6.11" },
+    { name = "pyside6", specifier = ">=6.11" },
     { name = "pytest" },
     { name = "pytest-mock" },
     { name = "pytest-qt", specifier = ">=3.3.0" },
@@ -1639,7 +1643,7 @@ test = [
     { name = "pytest-mock" },
 ]
 test-gui = [
-    { name = "pyside6", specifier = "~=6.11" },
+    { name = "pyside6", specifier = ">=6.11" },
     { name = "pytest" },
     { name = "pytest-mock" },
     { name = "pytest-qt", specifier = ">=3.3.0" },
@@ -1662,7 +1666,8 @@ name = "sphinx"
 version = "9.0.4"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.12'",
+    "python_full_version < '3.12' and platform_release < '23.4' and sys_platform == 'darwin'",
+    "(python_full_version < '3.12' and platform_release >= '23.4') or (python_full_version < '3.12' and sys_platform != 'darwin')",
 ]
 dependencies = [
     { name = "alabaster" },
@@ -1693,8 +1698,10 @@ name = "sphinx"
 version = "9.1.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.15'",
-    "python_full_version >= '3.12' and python_full_version < '3.15'",
+    "python_full_version >= '3.15' and platform_release < '23.4' and sys_platform == 'darwin'",
+    "(python_full_version >= '3.15' and platform_release >= '23.4') or (python_full_version >= '3.15' and sys_platform != 'darwin')",
+    "python_full_version >= '3.12' and python_full_version < '3.15' and platform_release < '23.4' and sys_platform == 'darwin'",
+    "(python_full_version >= '3.12' and python_full_version < '3.15' and platform_release >= '23.4') or (python_full_version >= '3.12' and python_full_version < '3.15' and sys_platform != 'darwin')",
 ]
 dependencies = [
     { name = "alabaster" },
