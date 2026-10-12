@@ -12,7 +12,7 @@ maintainers = [
 authors = [
     {name="University Library at The University of Illinois at Urbana Champaign: Preservation Services", email="prescons@library.illinois.edu"}
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "NCSA"
 license-files = ["LICENSE"]
 dependencies =[
