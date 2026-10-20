@@ -1753,7 +1753,8 @@ dependencies = [
 
 [package.optional-dependencies]
 qt = [
-    { name = "pyside6" },
+    { name = "pyside6", marker = "platform_release < '23.4' and sys_platform == 'darwin'" },
+    { name = "pyside6-essentials" },
 ]
 
 [package.dev-dependencies]
@@ -1854,7 +1855,7 @@ requires-dist = [
     { name = "lxml" },
     { name = "pluggy", specifier = ">=1.0" },
     { name = "pyside6", marker = "platform_release < '23.4' and sys_platform == 'darwin' and extra == 'qt'", specifier = "<6.12" },
-    { name = "pyside6", marker = "extra == 'qt'", specifier = ">=6.11" },
+    { name = "pyside6-essentials", marker = "extra == 'qt'", specifier = ">=6.11" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
