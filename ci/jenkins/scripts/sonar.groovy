@@ -39,7 +39,28 @@ def getSonarqubeUnresolvedIssues = { Map args = [:] ->
     return outstandingIssues
 }
 
+def submitToSonarQubeServer = { Map args = [:] ->
+    ['credentialsId', 'sonarInstallationName', 'sonarScannerExec'].each { k ->
+        if (!args.containsKey(k)) {
+            error "Missing required argument: '${k}'"
+        }
+    }
+    def sonarArgs = args?.sonarArgs ?: ''
+    def credentialsId = args.credentialsId
+    def sonarInstallationName = args.sonarInstallationName
+    def sonarScannerExec = args.sonarScannerExec
+    withSonarQubeEnv(installationName: sonarInstallationName, credentialsId: credentialsId) {
+       withCredentials([string(credentialsId: credentialsId, variable: 'token')]) {
+           sh(
+               label: 'Running Sonar Scanner',
+               script: "${sonarScannerExec} -t \$token ${sonarArgs}"
+           )
+       }
+    }
+}
+
 return [
     locateSonarReportTasksFile: locateSonarReportTasksFile,
-    getSonarqubeUnresolvedIssues: getSonarqubeUnresolvedIssues
+    getSonarqubeUnresolvedIssues: getSonarqubeUnresolvedIssues,
+    submitToSonarQubeServer: submitToSonarQubeServer
 ]
