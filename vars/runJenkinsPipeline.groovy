@@ -18,23 +18,6 @@ def getPypiConfig() {
 }
 
 
-
-def get_sonarqube_unresolved_issues(report_task_file){
-    script{
-        if(! fileExists(report_task_file)){
-            error "Could not find ${report_task_file}"
-        }
-        def props = readProperties  file: report_task_file
-        if(! props['serverUrl'] || ! props['projectKey']){
-            error "Could not find serverUrl or projectKey in ${report_task_file}"
-        }
-        def response = httpRequest url : props['serverUrl'] + '/api/issues/search?componentKeys=' + props['projectKey'] + '&resolved=no'
-        def outstandingIssues = readJSON text: response.content
-        return outstandingIssues
-    }
-}
-
-
 def installMSVCRuntime(cacheLocation){
     def cachedFile = "${cacheLocation}\\vc_redist.x64.exe".replaceAll(/\\\\+/, '\\\\')
     withEnv(
@@ -262,7 +245,7 @@ def call(){
                                                     } catch (e) {
                                                         cleanWs(
                                                             patterns: [
-                                                                [pattern: 'venv', type: 'INCLUDE'],
+                                                                [pattern: '.venv', type: 'INCLUDE'],
                                                                 [pattern: 'bootstrap_uv', type: 'INCLUDE'],
                                                             ]
                                                         )
@@ -464,7 +447,8 @@ def call(){
                                                 unstable "SonarQube quality gate: ${sonarqube_result.status}"
                                             }
                                             if(env.BRANCH_IS_PRIMARY){
-                                                writeJSON(file: 'reports/sonar-report.json', json: get_sonarqube_unresolved_issues('.sonar/report-task.txt'))
+                                                def sonarScripts = load('ci/jenkins/scripts/sonar.groovy')
+                                                writeJSON(file: 'reports/sonar-report.json', json: sonarScripts.getSonarqubeUnresolvedIssues(tasksReportFile: sonarScripts.locateSonarReportTasksFile()))
                                                 recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                            }
                                         }
@@ -475,14 +459,18 @@ def call(){
                         post{
                             cleanup{
                                 cleanWs(patterns: [
-                                        [pattern: 'venv/', type: 'INCLUDE'],
+                                        [pattern: '.venv/', type: 'INCLUDE'],
                                         [pattern: 'logs/*', type: 'INCLUDE'],
                                         [pattern: 'reports/', type: 'INCLUDE'],
                                         [pattern: '.coverage', type: 'INCLUDE']
                                     ])
                             }
                             failure{
-                                sh './venv/bin/uv pip list'
+                                script{
+                                    if(fileExists('./.venv/bin/uv')){
+                                        sh './.venv/bin/uv pip list'
+                                    }
+                                }
                             }
                         }
                     }
