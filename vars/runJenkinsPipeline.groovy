@@ -432,22 +432,20 @@ def call(){
                                 }
                                 steps{
                                     milestone label: 'sonarcloud', ordinal: 1
-                                    withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
-                                       withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'token')]) {
-                                           sh(
-                                               label: 'Running Sonar Scanner',
-                                               script: "uv run pysonar -t \$token -Dsonar.projectVersion=\$VERSION -Dsonar.buildString=\"\$BUILD_TAG\" " + '-Dsonar.sourceEncoding=UTF-8 ' + (env.CHANGE_ID ? '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME' : '-Dsonar.branch.name=$BRANCH_NAME')
-                                           )
-                                       }
-                                    }
                                     script{
+                                        def sonarScripts = load('ci/jenkins/scripts/sonar.groovy')
+                                        sonarScripts.submitToSonarQubeServer(
+                                            credentialsId: params.SONARCLOUD_TOKEN,
+                                            sonarInstallationName: 'sonarcloud',
+                                            sonarScannerExec: 'uv run pysonar',
+                                            sonarArgs: '-Dsonar.projectVersion="$VERSION" -Dsonar.buildString="$BUILD_TAG" -Dsonar.sourceEncoding=UTF-8 ' + (env.CHANGE_ID ? '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME' : '-Dsonar.branch.name=$BRANCH_NAME')
+                                        )
                                         timeout(time: 1, unit: 'HOURS') {
                                             def sonarqube_result = waitForQualityGate(abortPipeline: false)
                                             if (sonarqube_result.status != 'OK') {
                                                 unstable "SonarQube quality gate: ${sonarqube_result.status}"
                                             }
                                             if(env.BRANCH_IS_PRIMARY){
-                                                def sonarScripts = load('ci/jenkins/scripts/sonar.groovy')
                                                 writeJSON(file: 'reports/sonar-report.json', json: sonarScripts.getSonarqubeUnresolvedIssues(tasksReportFile: sonarScripts.locateSonarReportTasksFile()))
                                                 recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                            }
