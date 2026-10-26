@@ -576,11 +576,13 @@ def call(){
                                                 ){
                                                     withEnv(["UV_CONFIG_FILE=${createWindowUVConfig()}"]){
                                                         bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
-                                                        envs = bat(
-                                                            label: 'Get tox environments',
-                                                            script: '@.\\venv\\Scripts\\uv run --isolated --only-group tox --frozen --quiet tox list -d --no-desc',
-                                                            returnStdout: true,
-                                                        ).trim().split('\r\n')
+                                                        retry(3){
+                                                            envs = bat(
+                                                                label: 'Get tox environments',
+                                                                script: '@.\\venv\\Scripts\\uv run --isolated --only-group tox --frozen --quiet tox list -d --no-desc',
+                                                                returnStdout: true,
+                                                            ).trim().split('\r\n')
+                                                        }
                                                     }
                                                 }
                                             } finally{
