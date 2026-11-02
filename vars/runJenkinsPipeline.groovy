@@ -610,10 +610,16 @@ def call(){
                                                                                 "UV_CONFIG_FILE=${createWindowUVConfig()}"
                                                                             ]){
                                                                                 bat(
-                                                                                    label: 'Installing uv and required Python version if not already installed',
-                                                                                    script: """python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv
-                                                                                               .\\venv\\Scripts\\uv python find cpython-${version} --quiet 2>nul || .\\venv\\Scripts\\uv python install cpython-${version}
-                                                                                            """
+                                                                                    label: 'Installing uv',
+                                                                                    script: '''python -m venv venv
+                                                                                               venv\\Scripts\\pip install --disable-pip-version-check uv
+                                                                                               venv\\Scripts\\uv python update-shell
+                                                                                            '''
+                                                                                )
+
+                                                                                bat(
+                                                                                    label: 'Install required Python version if not already installed',
+                                                                                    script: ".\\venv\\Scripts\\uv python find cpython-${version} --quiet 2>nul || .\\venv\\Scripts\\uv python install cpython-${version}"
                                                                                 )
                                                                                 bat(label: 'Running Tox',
                                                                                     script: "venv\\Scripts\\uv run -p ${version} --frozen --only-group=tox-uv --isolated tox run --runner uv-venv-lock-runner -e ${toxEnv}"
