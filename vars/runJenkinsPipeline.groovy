@@ -359,12 +359,10 @@ def call(){
                                                 }
                                                 steps{
                                                     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                                        tee('reports/pylint.txt'){
-                                                            sh(
-                                                                label: 'Running pylint',
-                                                                script: 'uv run pylint speedwagon -j 2 -d duplicate-code --output-format=parseable',
-                                                            )
-                                                        }
+                                                        sh(
+                                                            label: 'Running pylint',
+                                                            script: '(set -o pipefail && uv run pylint speedwagon -j 2 -d duplicate-code --output-format=parseable | tee reports/pylint.txt)',
+                                                        )
                                                     }
                                                 }
                                                 post{
@@ -438,7 +436,7 @@ def call(){
                                             credentialsId: params.SONARCLOUD_TOKEN,
                                             sonarInstallationName: 'sonarcloud',
                                             sonarScannerExec: 'uv run pysonar',
-                                            sonarArgs: '-Dsonar.projectVersion="$VERSION" -Dsonar.buildString="$BUILD_TAG" -Dsonar.sourceEncoding=UTF-8 ' + (env.CHANGE_ID ? '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME' : '-Dsonar.branch.name=$BRANCH_NAME')
+                                            sonarArgs: '-Dsonar.projectVersion="$VERSION" -Dsonar.buildString="$BUILD_TAG" -Dsonar.sourceEncoding=UTF-8 -Dsonar.python.xunit.reportPath=reports/tests/pytest/pytest-junit.xml -Dsonar.python.pylint.reportPaths=reports/pylint.txt -Dsonar.python.ruff.reportPaths=reports/ruffoutput.json -Dsonar.python.coverage.reportPaths=reports/coverage.xml -Dsonar.python.flake8.reportPaths=logs/flake8.log ' + (env.CHANGE_ID ? '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME' : '-Dsonar.branch.name=$BRANCH_NAME')
                                         )
                                         timeout(time: 1, unit: 'HOURS') {
                                             def sonarqube_result = waitForQualityGate(abortPipeline: false)
