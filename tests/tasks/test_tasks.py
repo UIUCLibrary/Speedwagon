@@ -3,7 +3,7 @@ import os
 import shutil
 import time
 import typing
-import concurrent.futures
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from unittest.mock import Mock
 
 import pytest
@@ -144,10 +144,10 @@ def test_task_as_concurrent_future(simple_task_builder):
     new_task = simple_task_builder.build_task()
 
     futures = []
-    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+    with ProcessPoolExecutor(max_workers=1) as executor:
         futures.append(executor.submit(execute_task, new_task))
 
-        for future in concurrent.futures.as_completed(futures):
+        for future in as_completed(futures):
             assert "got it" == future.result()
 
 
